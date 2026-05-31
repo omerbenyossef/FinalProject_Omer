@@ -46,17 +46,16 @@ def load_config() -> dict:
         return json.load(f)
 
 
-def booking_job(guests: int | None = None):
+def booking_job(guests: int | None = None, dry_run: bool = False):
     logger.info("=== Weekly booking job started ===")
-    config = load_config()
-    result = asyncio.run(run_with_retry(guests=guests))
+    result = asyncio.run(run_with_retry(guests=guests, dry_run=dry_run or None))
     if result:
         logger.info("=== Booking job completed successfully ===")
     else:
         logger.error("=== Booking job FAILED ===")
 
 
-def setup_schedule(guests: int | None = None):
+def setup_schedule(guests: int | None = None, dry_run: bool = False):
     config = load_config()
     sched_cfg = config.get("scheduler", {})
     run_day = sched_cfg.get("run_day", "monday").lower()
@@ -67,7 +66,7 @@ def setup_schedule(guests: int | None = None):
         logger.error(f"Unknown scheduler day: {run_day}. Use monday–sunday.")
         sys.exit(1)
 
-    day_scheduler.at(run_time).do(booking_job, guests=guests)
+    day_scheduler.at(run_time).do(booking_job, guests=guests, dry_run=dry_run)
 
     logger.info(
         f"Scheduler ready – will book every {run_day.capitalize()} at {run_time} "
@@ -80,14 +79,15 @@ def main():
     parser = argparse.ArgumentParser(description="Weekly Ontopo restaurant booking scheduler")
     parser.add_argument("--now", action="store_true", help="Run booking immediately instead of waiting")
     parser.add_argument("--guests", type=int, default=None, help="Number of guests (overrides config)")
+    parser.add_argument("--dry-run", action="store_true", help="Fill form but do not submit")
     args = parser.parse_args()
 
     if args.now:
         logger.info("Running booking immediately (--now flag)")
-        booking_job(guests=args.guests)
+        booking_job(guests=args.guests, dry_run=args.dry_run)
         return
 
-    setup_schedule(guests=args.guests)
+    setup_schedule(guests=args.guests, dry_run=args.dry_run)
 
     logger.info("Scheduler running. Press Ctrl+C to stop.")
     try:

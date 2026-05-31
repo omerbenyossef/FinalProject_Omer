@@ -318,10 +318,13 @@ async def confirm_booking(page: Page, time_str: str, contact: dict, dry_run: boo
     return True
 
 
-async def run_booking(guests: int | None = None) -> bool:
+async def run_booking(guests: int | None = None, dry_run: bool | None = None) -> bool:
     config = load_config()
     booking = config["booking"]
     options = config["options"]
+
+    # CLI --dry-run overrides config value
+    effective_dry_run = dry_run if dry_run is not None else options.get("dry_run", False)
 
     contact = {
         "name": os.getenv("CONTACT_NAME", ""),
@@ -346,6 +349,7 @@ async def run_booking(guests: int | None = None) -> bool:
         f"Starting booking: {config['restaurant_name']} | "
         f"{reservation_date.strftime('%d/%m/%Y')} ({booking['reservation_day']}) "
         f"at {reservation_time} | {guests} guests"
+        + (" [DRY RUN]" if effective_dry_run else "")
     )
 
     async with async_playwright() as pw:
@@ -369,7 +373,7 @@ async def run_booking(guests: int | None = None) -> bool:
             if not params_ok:
                 return False
 
-            success = await confirm_booking(page, reservation_time, contact, options.get("dry_run", False))
+            success = await confirm_booking(page, reservation_time, contact, effective_dry_run)
             return success
 
         except Exception as exc:
@@ -381,14 +385,14 @@ async def run_booking(guests: int | None = None) -> bool:
             await browser.close()
 
 
-async def run_with_retry(guests: int | None = None) -> bool:
+async def run_with_retry(guests: int | None = None, dry_run: bool | None = None) -> bool:
     config = load_config()
     attempts = config["options"].get("retry_attempts", 3)
     delay = config["options"].get("retry_delay_seconds", 60)
 
     for attempt in range(1, attempts + 1):
         logger.info(f"Attempt {attempt}/{attempts}")
-        success = await run_booking(guests)
+        success = await run_booking(guests=guests, dry_run=dry_run)
         if success:
             return True
         if attempt < attempts:
@@ -407,11 +411,5 @@ if __name__ == "__main__":
     parser.add_argument("--dry-run", action="store_true", help="Fill form but do not submit")
     args = parser.parse_args()
 
-    if args.dry_run:
-        config = load_config()
-        config["options"]["dry_run"] = True
-        with open(CONFIG_PATH, "w", encoding="utf-8") as f:
-            json.dump(config, f, ensure_ascii=False, indent=2)
-
-    result = asyncio.run(run_with_retry(guests=args.guests))
+    result = asyncio.run(run_with_retry(guests=args.guests, dry_run=args.dry_run or None))
     sys.exit(0 if result else 1)
