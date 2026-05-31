@@ -1,0 +1,21 @@
+{
+  "restaurant_name": "שם המסעדה",
+  "restaurant_city": "תל אביב",
+  "booking": {
+    "reservation_day": "saturday",
+    "reservation_time": "20:00",
+    "guests": 2,
+    "advance_days": 5
+  },
+  "scheduler": {
+    "run_day": "monday",
+    "run_time": "10:00"
+  },
+  "options": {
+    "headless": true,
+    "dry_run": false,
+    "screenshot_on_error": true,
+    "retry_attempts": 3,
+    "retry_delay_seconds": 60
+  }
+}
