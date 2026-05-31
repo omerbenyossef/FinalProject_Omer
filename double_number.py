@@ -1,6 +1,6 @@
 def double_number():
     number = float(input("הכנס מספר: "))
-    result = number * 2
+    result = number * 3
     return result
 
 
