@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
+import Avatar from "../Avatar.jsx";
 
 export default function LeagueDetail() {
   const { leagueId } = useParams();
@@ -111,40 +112,58 @@ export default function LeagueDetail() {
       <div className="two-col">
         <section className="card">
           <h2>שחקנים בליגה ({members.length})</h2>
-          <ul className="plain-list">
+          <div className="member-chips">
             {members.map((m) => (
-              <li key={m.id}>
-                {m.name}
-                {m.id === user?.id && <span className="muted"> (את/ה)</span>}
-              </li>
+              <div className="member-chip" key={m.id}>
+                <Avatar name={m.name} id={m.id} size={24} />
+                <span>
+                  {m.name}
+                  {m.id === user?.id && <span className="muted"> (את/ה)</span>}
+                </span>
+              </div>
             ))}
-          </ul>
+          </div>
         </section>
 
         <section className="card">
           <h2>טבלת דירוג</h2>
-          <table className="standings-table">
-            <thead>
-              <tr>
-                <th>שחקן</th>
-                <th>משחקים</th>
-                <th>נצחונות</th>
-                <th>הפסדים</th>
-                <th>נקודות</th>
-              </tr>
-            </thead>
-            <tbody>
-              {standings.map((row) => (
-                <tr key={row.user.id}>
-                  <td>{row.user.name}</td>
-                  <td>{row.played}</td>
-                  <td>{row.wins}</td>
-                  <td>{row.losses}</td>
-                  <td>{row.points}</td>
+          <div className="table-wrap">
+            <table className="standings-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th className="player-col">שחקן</th>
+                  <th>משחקים</th>
+                  <th>נצחונות</th>
+                  <th>הפסדים</th>
+                  <th>נקודות</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {standings.map((row, index) => {
+                  const rank = index + 1;
+                  const isMe = row.user.id === user?.id;
+                  return (
+                    <tr key={row.user.id} className={isMe ? "me-row" : undefined}>
+                      <td>
+                        <span className={`rank-badge${rank === 1 ? " rank-1" : ""}`}>{rank}</span>
+                      </td>
+                      <td className="player-col">
+                        <span className="player-cell">
+                          <Avatar name={row.user.name} id={row.user.id} size={22} />
+                          {row.user.name}
+                        </span>
+                      </td>
+                      <td>{row.played}</td>
+                      <td>{row.wins}</td>
+                      <td>{row.losses}</td>
+                      <td>{row.points}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </section>
       </div>
 
