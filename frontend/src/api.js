@@ -36,6 +36,14 @@ export const api = {
   register: (data) => request("/auth/register", { method: "POST", body: data, auth: false }),
   login: (data) => request("/auth/login", { method: "POST", body: data, auth: false }),
   me: () => request("/auth/me"),
+  forgotPassword: (email) =>
+    request("/auth/forgot-password", { method: "POST", body: { email }, auth: false }),
+  resetPassword: (token, newPassword) =>
+    request("/auth/reset-password", {
+      method: "POST",
+      body: { token, new_password: newPassword },
+      auth: false,
+    }),
 
   listSports: () => request("/sports/", { auth: false }),
 

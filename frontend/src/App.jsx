@@ -3,6 +3,8 @@ import Layout from "./Layout.jsx";
 import { useAuth } from "./AuthContext.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
+import ForgotPassword from "./pages/ForgotPassword.jsx";
+import ResetPassword from "./pages/ResetPassword.jsx";
 import Leagues from "./pages/Leagues.jsx";
 import LeagueDetail from "./pages/LeagueDetail.jsx";
 
@@ -20,6 +22,8 @@ export default function App() {
         <Route path="/" element={<Navigate to="/leagues" replace />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/leagues" element={<Leagues />} />
         <Route
           path="/leagues/:leagueId"

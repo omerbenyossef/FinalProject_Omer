@@ -48,6 +48,9 @@ export default function Login() {
           {submitting ? "מתחבר..." : "כניסה"}
         </button>
       </form>
+      <p className="muted" style={{ marginTop: 10 }}>
+        <Link to="/forgot-password">שכחתי סיסמה</Link>
+      </p>
       <p className="muted">
         אין לך חשבון? <Link to="/register">הרשמה</Link>
       </p>
