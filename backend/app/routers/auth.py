@@ -2,6 +2,7 @@ import secrets
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from .. import models, schemas
@@ -46,6 +47,66 @@ def login(credentials: schemas.UserLogin, db: Session = Depends(get_db)):
 @router.get("/me", response_model=schemas.UserOut)
 def me(current_user: models.User = Depends(get_current_user)):
     return current_user
+
+
+@router.patch("/me", response_model=schemas.UserOut)
+def update_profile(
+    payload: schemas.UpdateProfileRequest,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    current_user.name = payload.name
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+
+@router.get("/me/stats", response_model=schemas.UserStats)
+def my_stats(
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    leagues_count = (
+        db.query(models.LeagueMembership)
+        .filter(models.LeagueMembership.user_id == current_user.id)
+        .count()
+    )
+
+    matches = (
+        db.query(models.Match)
+        .filter(
+            or_(
+                models.Match.player1_id == current_user.id,
+                models.Match.player2_id == current_user.id,
+            ),
+            models.Match.status == models.MatchStatus.completed,
+        )
+        .all()
+    )
+
+    wins = 0
+    for match in matches:
+        if match.player1_id == current_user.id and match.player1_score > match.player2_score:
+            wins += 1
+        elif match.player2_id == current_user.id and match.player2_score > match.player1_score:
+            wins += 1
+
+    return schemas.UserStats(leagues=leagues_count, matches_played=len(matches), wins=wins)
+
+
+@router.post("/change-password", response_model=schemas.MessageOut)
+def change_password(
+    payload: schemas.ChangePasswordRequest,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if not verify_password(payload.current_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="הסיסמה הנוכחית שגויה")
+
+    current_user.hashed_password = hash_password(payload.new_password)
+    db.commit()
+
+    return schemas.MessageOut(message="הסיסמה עודכנה בהצלחה")
 
 
 @router.post("/forgot-password", response_model=schemas.MessageOut)

@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext.jsx";
 
 export default function Layout({ children }) {
@@ -19,12 +19,9 @@ export default function Layout({ children }) {
         </Link>
         <nav>
           {user ? (
-            <>
-              <span className="muted">שלום, {user.name}</span>
-              <button className="link-btn" onClick={handleLogout}>
-                התנתקות
-              </button>
-            </>
+            <button className="link-btn" onClick={handleLogout}>
+              התנתקות
+            </button>
           ) : (
             <>
               <Link to="/login">כניסה</Link>
@@ -34,6 +31,22 @@ export default function Layout({ children }) {
         </nav>
       </header>
       <main className="content">{children}</main>
+      {user && (
+        <nav className="tabbar">
+          <NavLink to="/leagues" className={({ isActive }) => `tab${isActive ? " active" : ""}`}>
+            <span className="tab-icon" aria-hidden="true">🏆</span>
+            ליגות
+          </NavLink>
+          <NavLink to="/profile" className={({ isActive }) => `tab${isActive ? " active" : ""}`}>
+            <span className="tab-icon" aria-hidden="true">👤</span>
+            פרופיל
+          </NavLink>
+          <NavLink to="/settings" className={({ isActive }) => `tab${isActive ? " active" : ""}`}>
+            <span className="tab-icon" aria-hidden="true">⚙️</span>
+            הגדרות
+          </NavLink>
+        </nav>
+      )}
     </div>
   );
 }

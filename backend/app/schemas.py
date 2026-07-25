@@ -30,6 +30,21 @@ class MessageOut(BaseModel):
     message: str
 
 
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+
+class UpdateProfileRequest(BaseModel):
+    name: str
+
+
+class UserStats(BaseModel):
+    leagues: int
+    matches_played: int
+    wins: int
+
+
 class UserOut(BaseModel):
     id: int
     name: str
