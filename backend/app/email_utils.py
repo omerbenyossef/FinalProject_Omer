@@ -38,12 +38,14 @@ def send_reset_email(to_email: str, token: str) -> None:
         headers={
             "Authorization": f"Bearer {RESEND_API_KEY}",
             "Content-Type": "application/json",
+            "User-Agent": "league-app/1.0",
         },
     )
 
     try:
         with urllib.request.urlopen(request, timeout=10) as response:
             response.read()
+        print(f"[resend] reset email sent to {to_email}")
     except urllib.error.HTTPError as e:
         print(f"[resend] failed to send email to {to_email}: {e.code} {e.read().decode()}")
     except urllib.error.URLError as e:
