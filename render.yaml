@@ -1,3 +1,9 @@
+databases:
+  - name: league-db
+    plan: free
+    databaseName: league
+    user: league_user
+
 services:
   - type: web
     name: league-backend
@@ -11,3 +17,7 @@ services:
         value: 3.11.9
       - key: LEAGUE_APP_SECRET_KEY
         generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: league-db
+          property: connectionString
