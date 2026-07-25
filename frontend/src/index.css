@@ -312,6 +312,17 @@ button:active { transform: translateY(1px); }
 
 .btn-secondary:hover { background: var(--court-tint-strong); }
 
+.settings-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.settings-row h2 {
+  margin-bottom: 2px;
+}
+
 .page-header {
   display: flex;
   justify-content: space-between;
