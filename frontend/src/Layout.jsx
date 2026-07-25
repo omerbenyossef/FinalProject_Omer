@@ -14,7 +14,8 @@ export default function Layout({ children }) {
     <div className="app-shell">
       <header className="topbar">
         <Link to="/leagues" className="brand">
-          🏆 ליגת חובבים
+          <span className="brand-mark" aria-hidden="true" />
+          ליגת חובבים
         </Link>
         <nav>
           {user ? (
