@@ -11,6 +11,7 @@ export default function LeagueDetail() {
   const [league, setLeague] = useState(null);
   const [members, setMembers] = useState([]);
   const [matches, setMatches] = useState([]);
+  const [allMatches, setAllMatches] = useState([]);
   const [standings, setStandings] = useState([]);
   const [error, setError] = useState("");
   const [opponentId, setOpponentId] = useState("");
@@ -20,14 +21,16 @@ export default function LeagueDetail() {
 
   async function loadAll() {
     try {
-      const [leagueData, membersData, standingsData] = await Promise.all([
+      const [leagueData, membersData, standingsData, allMatchesData] = await Promise.all([
         api.getLeague(leagueId),
         api.listMembers(leagueId),
         api.getStandings(leagueId),
+        api.listAllMatches(leagueId),
       ]);
       setLeague(leagueData);
       setMembers(membersData);
       setStandings(standingsData);
+      setAllMatches(allMatchesData);
 
       if (user) {
         const matchesData = await api.listMatches(leagueId);
@@ -80,6 +83,19 @@ export default function LeagueDetail() {
         player1_score: Number(p1Score),
         player2_score: Number(p2Score),
       });
+      await loadAll();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleCancelMatch(matchId) {
+    setBusy(true);
+    setError("");
+    try {
+      await api.cancelMatch(leagueId, matchId);
       await loadAll();
     } catch (err) {
       setError(err.message);
@@ -200,59 +216,113 @@ export default function LeagueDetail() {
                 key={match.id}
                 match={match}
                 onReport={handleReportScore}
+                onCancel={handleCancelMatch}
                 busy={busy}
               />
             ))}
           </ul>
         </section>
       )}
+
+      <section className="card">
+        <h2>כל המשחקים בליגה</h2>
+        {allMatches.length === 0 && <p className="muted">עדיין אין משחקים בליגה.</p>}
+        <ul className="match-list">
+          {allMatches.map((match) => (
+            <li className="match-row" key={match.id}>
+              <div className="match-players">
+                <Avatar name={match.player1.name} id={match.player1.id} size={20} />
+                <strong>{match.player1.name}</strong> נגד{" "}
+                <Avatar name={match.player2.name} id={match.player2.id} size={20} />
+                <strong>{match.player2.name}</strong>
+              </div>
+              {match.status === "pending" ? (
+                <span className="pill-pending">ממתין לתוצאה</span>
+              ) : (
+                <div className="match-score">
+                  {match.player1_score} - {match.player2_score}
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      </section>
     </div>
   );
 }
 
-function MatchRow({ match, onReport, busy }) {
-  const [p1Score, setP1Score] = useState("");
-  const [p2Score, setP2Score] = useState("");
+function MatchRow({ match, onReport, onCancel, busy }) {
+  const [p1Score, setP1Score] = useState(match.player1_score ?? "");
+  const [p2Score, setP2Score] = useState(match.player2_score ?? "");
+  const [editing, setEditing] = useState(false);
   const isPending = match.status === "pending";
+
+  function submit(e) {
+    e.preventDefault();
+    onReport(match.id, p1Score, p2Score);
+    setEditing(false);
+  }
 
   return (
     <li className="match-row">
       <div className="match-players">
         <strong>{match.player1.name}</strong> נגד <strong>{match.player2.name}</strong>
       </div>
-      {isPending ? (
-        <form
-          className="inline-form"
-          onSubmit={(e) => {
-            e.preventDefault();
-            onReport(match.id, p1Score, p2Score);
-          }}
-        >
-          <input
-            type="number"
-            min="0"
-            placeholder={`תוצאת ${match.player1.name}`}
-            value={p1Score}
-            onChange={(e) => setP1Score(e.target.value)}
-            required
-          />
-          <span>-</span>
-          <input
-            type="number"
-            min="0"
-            placeholder={`תוצאת ${match.player2.name}`}
-            value={p2Score}
-            onChange={(e) => setP2Score(e.target.value)}
-            required
-          />
-          <button type="submit" className="btn-secondary" disabled={busy}>
-            דווח תוצאה
-          </button>
-        </form>
+      {isPending || editing ? (
+        <>
+          <form className="inline-form" onSubmit={submit}>
+            <input
+              type="number"
+              min="0"
+              placeholder={`תוצאת ${match.player1.name}`}
+              value={p1Score}
+              onChange={(e) => setP1Score(e.target.value)}
+              required
+            />
+            <span>-</span>
+            <input
+              type="number"
+              min="0"
+              placeholder={`תוצאת ${match.player2.name}`}
+              value={p2Score}
+              onChange={(e) => setP2Score(e.target.value)}
+              required
+            />
+            <button type="submit" className="btn-secondary" disabled={busy}>
+              {editing ? "עדכן תוצאה" : "דווח תוצאה"}
+            </button>
+            {editing && (
+              <button type="button" className="link-btn" onClick={() => setEditing(false)}>
+                ביטול
+              </button>
+            )}
+          </form>
+          {isPending && (
+            <button
+              type="button"
+              className="link-btn"
+              style={{ alignSelf: "flex-start", color: "var(--danger)" }}
+              disabled={busy}
+              onClick={() => onCancel(match.id)}
+            >
+              ביטול אתגר
+            </button>
+          )}
+        </>
       ) : (
-        <div className="match-score">
-          {match.player1_score} - {match.player2_score}
-        </div>
+        <>
+          <div className="match-score">
+            {match.player1_score} - {match.player2_score}
+          </div>
+          <button
+            type="button"
+            className="link-btn"
+            style={{ alignSelf: "flex-start" }}
+            onClick={() => setEditing(true)}
+          >
+            ערוך תוצאה
+          </button>
+        </>
       )}
     </li>
   );

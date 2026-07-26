@@ -62,8 +62,11 @@ export const api = {
   getStandings: (id) => request(`/leagues/${id}/standings`, { auth: false }),
 
   listMatches: (leagueId) => request(`/leagues/${leagueId}/matches/`),
+  listAllMatches: (leagueId) => request(`/leagues/${leagueId}/matches/all`, { auth: false }),
   createMatch: (leagueId, opponentId) =>
     request(`/leagues/${leagueId}/matches/`, { method: "POST", body: { opponent_id: opponentId } }),
   reportScore: (leagueId, matchId, scores) =>
     request(`/leagues/${leagueId}/matches/${matchId}/score`, { method: "POST", body: scores }),
+  cancelMatch: (leagueId, matchId) =>
+    request(`/leagues/${leagueId}/matches/${matchId}`, { method: "DELETE" }),
 };

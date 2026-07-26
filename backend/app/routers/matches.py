@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import or_
 from sqlalchemy.orm import Session, joinedload
 
@@ -40,6 +40,18 @@ def list_matches(
                 models.Match.player2_id == current_user.id,
             ),
         )
+        .order_by(models.Match.created_at.desc())
+        .all()
+    )
+    return matches
+
+
+@router.get("/all", response_model=list[schemas.MatchOut])
+def list_all_matches(league_id: int, db: Session = Depends(get_db)):
+    matches = (
+        db.query(models.Match)
+        .options(joinedload(models.Match.player1), joinedload(models.Match.player2))
+        .filter(models.Match.league_id == league_id)
         .order_by(models.Match.created_at.desc())
         .all()
     )
@@ -95,3 +107,26 @@ def report_score(
     db.commit()
     db.refresh(match)
     return match
+
+
+@router.delete("/{match_id}", status_code=status.HTTP_204_NO_CONTENT)
+def cancel_match(
+    league_id: int,
+    match_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    match = (
+        db.query(models.Match)
+        .filter(models.Match.id == match_id, models.Match.league_id == league_id)
+        .first()
+    )
+    if not match:
+        raise HTTPException(status_code=404, detail="Match not found")
+    if current_user.id not in (match.player1_id, match.player2_id):
+        raise HTTPException(status_code=403, detail="Not a participant in this match")
+    if match.status != models.MatchStatus.pending:
+        raise HTTPException(status_code=400, detail="אי אפשר לבטל משחק שכבר דווח")
+
+    db.delete(match)
+    db.commit()
