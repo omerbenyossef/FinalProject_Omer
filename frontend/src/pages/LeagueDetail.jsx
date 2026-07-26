@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
-import Avatar from "../Avatar.jsx";
 import SetScoreForm from "../SetScoreForm.jsx";
 import { formatSets } from "../matchUtils.js";
 
@@ -143,7 +142,6 @@ export default function LeagueDetail() {
           <div className="member-chips">
             {members.map((m) => (
               <div className="member-chip" key={m.id}>
-                <Avatar name={m.name} id={m.id} size={24} />
                 <span>
                   {m.name}
                   {m.id === user?.id && <span className="muted"> (את/ה)</span>}
@@ -177,10 +175,7 @@ export default function LeagueDetail() {
                         <span className={`rank-badge${rank === 1 ? " rank-1" : ""}`}>{rank}</span>
                       </td>
                       <td className="player-col">
-                        <span className="player-cell">
-                          <Avatar name={row.user.name} id={row.user.id} size={22} />
-                          {row.user.name}
-                        </span>
+                        <span className="player-cell">{row.user.name}</span>
                       </td>
                       <td>{row.played}</td>
                       <td>{row.wins}</td>
@@ -233,10 +228,7 @@ export default function LeagueDetail() {
           {allMatches.map((match) => (
             <li className="match-row" key={match.id}>
               <div className="match-players">
-                <Avatar name={match.player1.name} id={match.player1.id} size={20} />
-                <strong>{match.player1.name}</strong> נגד{" "}
-                <Avatar name={match.player2.name} id={match.player2.id} size={20} />
-                <strong>{match.player2.name}</strong>
+                <strong>{match.player1.name}</strong> נגד <strong>{match.player2.name}</strong>
               </div>
               {match.status === "pending" ? (
                 <span className="pill-pending">ממתין לתוצאה</span>
@@ -264,7 +256,6 @@ function MyNextMatchRow({ match, currentUserId, onSubmit, busy }) {
     <li className="match-row">
       <div className="match-players">
         <span>נגד</span>
-        <Avatar name={opponent.name} id={opponent.id} size={20} />
         <strong>{opponent.name}</strong>
       </div>
       {reporting ? (

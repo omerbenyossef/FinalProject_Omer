@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
-import Avatar from "../Avatar.jsx";
 
 export default function Profile() {
   const { user } = useAuth();
@@ -21,7 +20,6 @@ export default function Profile() {
     <div>
       <div className="card">
         <div className="profile-header">
-          <Avatar name={user.name} id={user.id} size={48} />
           <div>
             <span className="eyebrow">פרופיל שחקן</span>
             <h1 style={{ marginBottom: 2 }}>{user.name}</h1>
