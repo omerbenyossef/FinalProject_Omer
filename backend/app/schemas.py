@@ -81,6 +81,7 @@ class LeagueOut(BaseModel):
     sport: SportOut
     member_count: int = 0
     created_by: int
+    schedule_started_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -115,6 +116,7 @@ class MatchOut(BaseModel):
     player1_score: Optional[int]
     player2_score: Optional[int]
     sets: Optional[list[SetScore]] = None
+    round_number: Optional[int] = None
     status: MatchStatus
     created_at: datetime
     played_at: Optional[datetime]

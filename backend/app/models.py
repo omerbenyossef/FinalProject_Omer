@@ -53,6 +53,7 @@ class League(Base):
     sport_id = Column(Integer, ForeignKey("sports.id"), nullable=False)
     created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+    schedule_started_at = Column(DateTime, nullable=True)
 
     sport = relationship("Sport", back_populates="leagues")
     memberships = relationship("LeagueMembership", back_populates="league")
@@ -82,6 +83,7 @@ class Match(Base):
     player1_score = Column(Integer, nullable=True)
     player2_score = Column(Integer, nullable=True)
     sets = Column(JSON, nullable=True)
+    round_number = Column(Integer, nullable=True)
     status = Column(Enum(MatchStatus), default=MatchStatus.pending, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     played_at = Column(DateTime, nullable=True)

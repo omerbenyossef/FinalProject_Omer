@@ -3,7 +3,22 @@ import { useParams } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import SetScoreForm from "../SetScoreForm.jsx";
-import { formatSets } from "../matchUtils.js";
+import { formatSets, formatWeekLabel } from "../matchUtils.js";
+
+function groupMatchesByRound(matches) {
+  const groups = new Map();
+  for (const match of matches) {
+    const key = match.round_number ?? "none";
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(match);
+  }
+  const sortedKeys = [...groups.keys()].sort((a, b) => {
+    if (a === "none") return 1;
+    if (b === "none") return -1;
+    return a - b;
+  });
+  return sortedKeys.map((round) => ({ round, matches: groups.get(round) }));
+}
 
 export default function LeagueDetail() {
   const { leagueId } = useParams();
@@ -229,17 +244,26 @@ export default function LeagueDetail() {
           {showMatches && (
             <>
               {matches.length === 0 && <p className="muted">עדיין אין משחקים.</p>}
-              <ul className="match-list" style={{ marginTop: 14 }}>
-                {matches.map((match) => (
-                  <MatchRow
-                    key={match.id}
-                    match={match}
-                    onReport={handleReportScore}
-                    onCancel={handleCancelMatch}
-                    busy={busy}
-                  />
-                ))}
-              </ul>
+              {groupMatchesByRound(matches).map(({ round, matches: roundMatches }) => (
+                <div key={round} style={{ marginTop: 16 }}>
+                  <h3 className="week-label">
+                    {round === "none"
+                      ? "משחקים נוספים"
+                      : formatWeekLabel(league.schedule_started_at, round)}
+                  </h3>
+                  <ul className="match-list" style={{ marginTop: 8 }}>
+                    {roundMatches.map((match) => (
+                      <MatchRow
+                        key={match.id}
+                        match={match}
+                        onReport={handleReportScore}
+                        onCancel={handleCancelMatch}
+                        busy={busy}
+                      />
+                    ))}
+                  </ul>
+                </div>
+              ))}
             </>
           )}
         </section>
