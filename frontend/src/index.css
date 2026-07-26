@@ -12,8 +12,6 @@
   --court-tint-strong: rgba(14, 143, 82, 0.18);
   --gold: #b9812a;
   --gold-tint: rgba(185, 129, 42, 0.14);
-  --blue: #3b6ea5;
-  --blue-tint: rgba(59, 110, 165, 0.14);
   --danger: #b8412a;
   --danger-tint: rgba(184, 65, 42, 0.1);
   --shadow: 0 1px 1px rgba(0, 0, 0, 0.03), 0 20px 40px -26px rgba(0, 0, 0, 0.16);
@@ -43,8 +41,6 @@
     --court-tint-strong: rgba(56, 214, 133, 0.22);
     --gold: #e2ac54;
     --gold-tint: rgba(226, 172, 84, 0.16);
-    --blue: #6fa8dc;
-    --blue-tint: rgba(111, 168, 220, 0.18);
     --danger: #e2765d;
     --danger-tint: rgba(226, 118, 93, 0.14);
     --shadow: 0 1px 1px rgba(0, 0, 0, 0.4), 0 20px 40px -26px rgba(0, 0, 0, 0.7);
@@ -232,10 +228,6 @@ a { color: var(--court); text-decoration: none; }
   border-radius: 16px;
   background: var(--card-alt);
 }
-
-.stat-tile-green { background: var(--court-tint-strong); }
-.stat-tile-blue { background: var(--blue-tint); }
-.stat-tile-orange { background: var(--gold-tint); }
 
 .stat-value {
   font-size: 21px;

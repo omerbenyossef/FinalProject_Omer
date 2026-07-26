@@ -33,9 +33,9 @@ export default function Profile() {
         {error && <p className="error">{error}</p>}
         {stats && (
           <div className="stat-row">
-            <StatTile value={stats.leagues} label="ליגות" tone="green" />
-            <StatTile value={stats.matches_played} label="משחקים" tone="blue" />
-            <StatTile value={stats.wins} label="נצחונות" tone="orange" />
+            <StatTile value={stats.leagues} label="ליגות" />
+            <StatTile value={stats.matches_played} label="משחקים" />
+            <StatTile value={stats.wins} label="נצחונות" />
           </div>
         )}
       </div>
@@ -43,9 +43,9 @@ export default function Profile() {
   );
 }
 
-function StatTile({ value, label, tone }) {
+function StatTile({ value, label }) {
   return (
-    <div className={`stat-tile stat-tile-${tone}`}>
+    <div className="stat-tile">
       <div className="stat-value">{value}</div>
       <div className="stat-label">{label}</div>
     </div>
