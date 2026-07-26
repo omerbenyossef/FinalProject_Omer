@@ -1,5 +1,6 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext.jsx";
+import { PersonIcon, SettingsIcon, TrophyIcon } from "./Icons.jsx";
 
 export default function Layout({ children }) {
   const { user, logout } = useAuth();
@@ -34,15 +35,15 @@ export default function Layout({ children }) {
       {user && (
         <nav className="tabbar">
           <NavLink to="/leagues" className={({ isActive }) => `tab${isActive ? " active" : ""}`}>
-            <span className="tab-icon" aria-hidden="true">🏆</span>
+            <TrophyIcon className="tab-icon" aria-hidden="true" />
             ליגות
           </NavLink>
           <NavLink to="/profile" className={({ isActive }) => `tab${isActive ? " active" : ""}`}>
-            <span className="tab-icon" aria-hidden="true">👤</span>
+            <PersonIcon className="tab-icon" aria-hidden="true" />
             פרופיל
           </NavLink>
           <NavLink to="/settings" className={({ isActive }) => `tab${isActive ? " active" : ""}`}>
-            <span className="tab-icon" aria-hidden="true">⚙️</span>
+            <SettingsIcon className="tab-icon" aria-hidden="true" />
             הגדרות
           </NavLink>
         </nav>
