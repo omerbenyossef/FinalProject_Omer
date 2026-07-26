@@ -8,6 +8,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Enum,
+    JSON,
     UniqueConstraint,
 )
 from sqlalchemy.orm import relationship
@@ -80,6 +81,7 @@ class Match(Base):
     player2_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     player1_score = Column(Integer, nullable=True)
     player2_score = Column(Integer, nullable=True)
+    sets = Column(JSON, nullable=True)
     status = Column(Enum(MatchStatus), default=MatchStatus.pending, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     played_at = Column(DateTime, nullable=True)

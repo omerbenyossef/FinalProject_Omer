@@ -67,8 +67,9 @@ export const api = {
     request(`/leagues/${leagueId}/matches/`, { method: "POST", body: { opponent_id: opponentId } }),
   generateSchedule: (leagueId) =>
     request(`/leagues/${leagueId}/matches/generate-schedule`, { method: "POST" }),
-  reportScore: (leagueId, matchId, scores) =>
-    request(`/leagues/${leagueId}/matches/${matchId}/score`, { method: "POST", body: scores }),
+  reportScore: (leagueId, matchId, sets) =>
+    request(`/leagues/${leagueId}/matches/${matchId}/score`, { method: "POST", body: { sets } }),
   cancelMatch: (leagueId, matchId) =>
     request(`/leagues/${leagueId}/matches/${matchId}`, { method: "DELETE" }),
+  myNextMatches: () => request(`/leagues/mine/next-matches`),
 };

@@ -2,10 +2,13 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
+import Avatar from "../Avatar.jsx";
+import SetScoreForm from "../SetScoreForm.jsx";
 
 export default function Leagues() {
   const [leagues, setLeagues] = useState([]);
   const [sports, setSports] = useState([]);
+  const [nextMatches, setNextMatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -22,6 +25,11 @@ export default function Leagues() {
       setLeagues(leaguesData);
       setSports(sportsData);
       if (sportsData.length && !sportId) setSportId(String(sportsData[0].id));
+
+      if (user) {
+        const nextMatchesData = await api.myNextMatches();
+        setNextMatches(nextMatchesData.filter((entry) => entry.match));
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -32,7 +40,7 @@ export default function Leagues() {
   useEffect(() => {
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user]);
 
   async function handleCreate(e) {
     e.preventDefault();
@@ -50,6 +58,18 @@ export default function Leagues() {
       setSubmitting(false);
     }
   }
+
+  async function handleReportScore(leagueId, matchId, sets) {
+    setError("");
+    try {
+      await api.reportScore(leagueId, matchId, sets);
+      await loadData();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  const leagueNameById = Object.fromEntries(leagues.map((l) => [l.id, l.name]));
 
   return (
     <div>
@@ -91,8 +111,27 @@ export default function Leagues() {
         </form>
       )}
 
-      {loading && <p className="muted">טוען...</p>}
       {error && !showForm && <p className="error">{error}</p>}
+
+      {nextMatches.length > 0 && (
+        <section className="card">
+          <h2>המשחק הבא שלך</h2>
+          <ul className="match-list">
+            {nextMatches.map((entry) => (
+              <NextMatchRow
+                key={entry.match.id}
+                leagueId={entry.league_id}
+                leagueName={leagueNameById[entry.league_id]}
+                match={entry.match}
+                currentUserId={user.id}
+                onSubmit={(sets) => handleReportScore(entry.league_id, entry.match.id, sets)}
+              />
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {loading && <p className="muted">טוען...</p>}
 
       <div className="league-grid">
         {leagues.map((league) => (
@@ -108,5 +147,43 @@ export default function Leagues() {
         )}
       </div>
     </div>
+  );
+}
+
+function NextMatchRow({ leagueId, leagueName, match, currentUserId, onSubmit }) {
+  const [reporting, setReporting] = useState(false);
+  const opponent = match.player1.id === currentUserId ? match.player2 : match.player1;
+
+  return (
+    <li className="match-row">
+      <div className="match-players">
+        <Link to={`/leagues/${leagueId}`} className="sport-tag" style={{ marginBottom: 0 }}>
+          {leagueName}
+        </Link>
+        <span>נגד</span>
+        <Avatar name={opponent.name} id={opponent.id} size={20} />
+        <strong>{opponent.name}</strong>
+      </div>
+      {reporting ? (
+        <SetScoreForm
+          player1Name={match.player1.name}
+          player2Name={match.player2.name}
+          onSubmit={(sets) => {
+            onSubmit(sets);
+            setReporting(false);
+          }}
+          onCancel={() => setReporting(false)}
+        />
+      ) : (
+        <button
+          type="button"
+          className="btn-secondary"
+          style={{ alignSelf: "flex-start" }}
+          onClick={() => setReporting(true)}
+        >
+          דווח תוצאה
+        </button>
+      )}
+    </li>
   );
 }

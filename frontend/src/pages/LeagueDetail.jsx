@@ -3,6 +3,8 @@ import { useParams } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import Avatar from "../Avatar.jsx";
+import SetScoreForm from "../SetScoreForm.jsx";
+import { formatSets } from "../matchUtils.js";
 
 export default function LeagueDetail() {
   const { leagueId } = useParams();
@@ -71,14 +73,11 @@ export default function LeagueDetail() {
     }
   }
 
-  async function handleReportScore(matchId, p1Score, p2Score) {
+  async function handleReportScore(matchId, sets) {
     setBusy(true);
     setError("");
     try {
-      await api.reportScore(leagueId, matchId, {
-        player1_score: Number(p1Score),
-        player2_score: Number(p2Score),
-      });
+      await api.reportScore(leagueId, matchId, sets);
       await loadAll();
     } catch (err) {
       setError(err.message);
@@ -225,8 +224,11 @@ export default function LeagueDetail() {
               {match.status === "pending" ? (
                 <span className="pill-pending">ממתין לתוצאה</span>
               ) : (
-                <div className="match-score">
-                  {match.player1_score} - {match.player2_score}
+                <div>
+                  <div className="match-score">
+                    {match.player1_score} - {match.player2_score}
+                  </div>
+                  <div className="sets-breakdown">{formatSets(match.sets)}</div>
                 </div>
               )}
             </li>
@@ -238,14 +240,11 @@ export default function LeagueDetail() {
 }
 
 function MatchRow({ match, onReport, onCancel, busy }) {
-  const [p1Score, setP1Score] = useState(match.player1_score ?? "");
-  const [p2Score, setP2Score] = useState(match.player2_score ?? "");
   const [editing, setEditing] = useState(false);
   const isPending = match.status === "pending";
 
-  function submit(e) {
-    e.preventDefault();
-    onReport(match.id, p1Score, p2Score);
+  function submit(sets) {
+    onReport(match.id, sets);
     setEditing(false);
   }
 
@@ -256,33 +255,15 @@ function MatchRow({ match, onReport, onCancel, busy }) {
       </div>
       {isPending || editing ? (
         <>
-          <form className="inline-form" onSubmit={submit}>
-            <input
-              type="number"
-              min="0"
-              placeholder={`תוצאת ${match.player1.name}`}
-              value={p1Score}
-              onChange={(e) => setP1Score(e.target.value)}
-              required
-            />
-            <span>-</span>
-            <input
-              type="number"
-              min="0"
-              placeholder={`תוצאת ${match.player2.name}`}
-              value={p2Score}
-              onChange={(e) => setP2Score(e.target.value)}
-              required
-            />
-            <button type="submit" className="btn-secondary" disabled={busy}>
-              {editing ? "עדכן תוצאה" : "דווח תוצאה"}
-            </button>
-            {editing && (
-              <button type="button" className="link-btn" onClick={() => setEditing(false)}>
-                ביטול
-              </button>
-            )}
-          </form>
+          <SetScoreForm
+            player1Name={match.player1.name}
+            player2Name={match.player2.name}
+            initialSets={match.sets}
+            onSubmit={submit}
+            onCancel={editing ? () => setEditing(false) : undefined}
+            busy={busy}
+            submitLabel={editing ? "עדכן תוצאה" : "דווח תוצאה"}
+          />
           {isPending && (
             <button
               type="button"
@@ -300,6 +281,7 @@ function MatchRow({ match, onReport, onCancel, busy }) {
           <div className="match-score">
             {match.player1_score} - {match.player2_score}
           </div>
+          <div className="sets-breakdown">{formatSets(match.sets)}</div>
           <button
             type="button"
             className="link-btn"

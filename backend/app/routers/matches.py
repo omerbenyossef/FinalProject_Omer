@@ -143,9 +143,12 @@ def report_score(
         raise HTTPException(status_code=404, detail="Match not found")
     if current_user.id not in (match.player1_id, match.player2_id):
         raise HTTPException(status_code=403, detail="Not a participant in this match")
+    if not score_in.sets:
+        raise HTTPException(status_code=400, detail="צריך לדווח לפחות סט אחד")
 
-    match.player1_score = score_in.player1_score
-    match.player2_score = score_in.player2_score
+    match.sets = [s.model_dump() for s in score_in.sets]
+    match.player1_score = sum(1 for s in score_in.sets if s.player1_games > s.player2_games)
+    match.player2_score = sum(1 for s in score_in.sets if s.player2_games > s.player1_games)
     match.status = models.MatchStatus.completed
     match.played_at = datetime.utcnow()
     db.commit()

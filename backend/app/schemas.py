@@ -98,9 +98,13 @@ class MatchCreate(BaseModel):
     opponent_id: int
 
 
+class SetScore(BaseModel):
+    player1_games: int
+    player2_games: int
+
+
 class MatchScoreUpdate(BaseModel):
-    player1_score: int
-    player2_score: int
+    sets: list[SetScore]
 
 
 class MatchOut(BaseModel):
@@ -110,12 +114,18 @@ class MatchOut(BaseModel):
     player2: MemberOut
     player1_score: Optional[int]
     player2_score: Optional[int]
+    sets: Optional[list[SetScore]] = None
     status: MatchStatus
     created_at: datetime
     played_at: Optional[datetime]
 
     class Config:
         from_attributes = True
+
+
+class NextMatchEntry(BaseModel):
+    league_id: int
+    match: Optional[MatchOut]
 
 
 class StandingRow(BaseModel):
