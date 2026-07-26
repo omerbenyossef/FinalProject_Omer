@@ -45,18 +45,29 @@ export default function Layout({ children }) {
       <main className="content">{children}</main>
       {user && (
         <nav className="tabbar">
-          <NavLink to="/leagues" className={({ isActive }) => `tab${isActive ? " active" : ""}`}>
-            <TrophyIcon className="tab-icon" aria-hidden="true" />
-            ליגות
-          </NavLink>
-          <NavLink to="/profile" className={({ isActive }) => `tab${isActive ? " active" : ""}`}>
-            <PersonIcon className="tab-icon" aria-hidden="true" />
-            פרופיל
-          </NavLink>
-          <NavLink to="/settings" className={({ isActive }) => `tab${isActive ? " active" : ""}`}>
-            <SettingsIcon className="tab-icon" aria-hidden="true" />
-            הגדרות
-          </NavLink>
+          <div className="tabbar-inner">
+            <NavLink
+              to="/leagues"
+              className={({ isActive }) => `tab${isActive ? " active" : ""}`}
+              aria-label="ליגות"
+            >
+              <TrophyIcon className="tab-icon" aria-hidden="true" />
+            </NavLink>
+            <NavLink
+              to="/profile"
+              className={({ isActive }) => `tab${isActive ? " active" : ""}`}
+              aria-label="פרופיל"
+            >
+              <PersonIcon className="tab-icon" aria-hidden="true" />
+            </NavLink>
+            <NavLink
+              to="/settings"
+              className={({ isActive }) => `tab${isActive ? " active" : ""}`}
+              aria-label="הגדרות"
+            >
+              <SettingsIcon className="tab-icon" aria-hidden="true" />
+            </NavLink>
+          </div>
         </nav>
       )}
     </div>

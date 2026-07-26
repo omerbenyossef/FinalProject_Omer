@@ -12,6 +12,8 @@
   --court-tint-strong: rgba(14, 143, 82, 0.18);
   --gold: #b9812a;
   --gold-tint: rgba(185, 129, 42, 0.14);
+  --blue: #3b6ea5;
+  --blue-tint: rgba(59, 110, 165, 0.14);
   --danger: #b8412a;
   --danger-tint: rgba(184, 65, 42, 0.1);
   --shadow: 0 1px 1px rgba(0, 0, 0, 0.03), 0 20px 40px -26px rgba(0, 0, 0, 0.16);
@@ -41,6 +43,8 @@
     --court-tint-strong: rgba(56, 214, 133, 0.22);
     --gold: #e2ac54;
     --gold-tint: rgba(226, 172, 84, 0.16);
+    --blue: #6fa8dc;
+    --blue-tint: rgba(111, 168, 220, 0.18);
     --danger: #e2765d;
     --danger-tint: rgba(226, 118, 93, 0.14);
     --shadow: 0 1px 1px rgba(0, 0, 0, 0.4), 0 20px 40px -26px rgba(0, 0, 0, 0.7);
@@ -162,33 +166,41 @@ a { color: var(--court); text-decoration: none; }
   position: sticky;
   bottom: 0;
   display: flex;
-  border-top: 1px solid var(--line);
-  background: var(--glass);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+  justify-content: center;
+  padding: 0 16px calc(14px + env(safe-area-inset-bottom));
+  pointer-events: none;
+}
+
+.tabbar-inner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #17181c;
+  border-radius: 999px;
+  padding: 7px;
+  box-shadow: 0 16px 32px -14px rgba(0, 0, 0, 0.45);
+  pointer-events: auto;
 }
 
 .tab {
-  flex: 1;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 3px;
-  padding: 6px 4px;
-  border-radius: 10px;
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 600;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  color: rgba(255, 255, 255, 0.5);
+  transition: background-color 0.15s, color 0.15s;
 }
 
 .tab-icon {
-  width: 23px;
-  height: 23px;
+  width: 21px;
+  height: 21px;
 }
 
 .tab.active {
-  color: var(--court);
+  background: #ffffff;
+  color: #17181c;
 }
 
 .eyebrow {
@@ -209,20 +221,33 @@ a { color: var(--court); text-decoration: none; }
 
 .stat-row {
   display: flex;
-  gap: 18px;
+  gap: 10px;
   margin-top: 10px;
 }
 
 .stat-tile {
   flex: 1;
-  text-align: center;
+  text-align: right;
+  padding: 14px 12px;
+  border-radius: 16px;
+  background: var(--card-alt);
 }
 
+.stat-tile-green { background: var(--court-tint-strong); }
+.stat-tile-blue { background: var(--blue-tint); }
+.stat-tile-orange { background: var(--gold-tint); }
+
 .stat-value {
-  font-size: 24px;
+  font-size: 21px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   color: var(--ink);
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
 }
 
 .muted {
