@@ -102,6 +102,9 @@ export default function LeagueDetail() {
   if (!league) return <p className="muted">טוען...</p>;
 
   const isCreator = league.created_by === user?.id;
+  const myNextMatch = matches
+    .filter((m) => m.status === "pending")
+    .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))[0];
 
   return (
     <div>
@@ -119,6 +122,20 @@ export default function LeagueDetail() {
       </div>
 
       {error && <p className="error">{error}</p>}
+
+      {isMember && myNextMatch && (
+        <section className="card">
+          <h2>המשחק הבא שלך</h2>
+          <ul className="match-list">
+            <MyNextMatchRow
+              match={myNextMatch}
+              currentUserId={user.id}
+              onSubmit={(sets) => handleReportScore(myNextMatch.id, sets)}
+              busy={busy}
+            />
+          </ul>
+        </section>
+      )}
 
       <div className="two-col">
         <section className="card">
@@ -236,6 +253,42 @@ export default function LeagueDetail() {
         </ul>
       </section>
     </div>
+  );
+}
+
+function MyNextMatchRow({ match, currentUserId, onSubmit, busy }) {
+  const [reporting, setReporting] = useState(false);
+  const opponent = match.player1.id === currentUserId ? match.player2 : match.player1;
+
+  return (
+    <li className="match-row">
+      <div className="match-players">
+        <span>נגד</span>
+        <Avatar name={opponent.name} id={opponent.id} size={20} />
+        <strong>{opponent.name}</strong>
+      </div>
+      {reporting ? (
+        <SetScoreForm
+          player1Name={match.player1.name}
+          player2Name={match.player2.name}
+          onSubmit={(sets) => {
+            onSubmit(sets);
+            setReporting(false);
+          }}
+          onCancel={() => setReporting(false)}
+          busy={busy}
+        />
+      ) : (
+        <button
+          type="button"
+          className="btn-secondary"
+          style={{ alignSelf: "flex-start" }}
+          onClick={() => setReporting(true)}
+        >
+          דווח תוצאה
+        </button>
+      )}
+    </li>
   );
 }
 
