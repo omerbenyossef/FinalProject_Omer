@@ -33,6 +33,7 @@ export default function LeagueDetail() {
   const [busy, setBusy] = useState(false);
   const [showMatches, setShowMatches] = useState(false);
   const [showMembers, setShowMembers] = useState(false);
+  const [showAllMatches, setShowAllMatches] = useState(false);
 
   const isMember = members.some((m) => m.id === user?.id);
 
@@ -270,34 +271,49 @@ export default function LeagueDetail() {
       )}
 
       <section className="card">
-        <h2>כל המשחקים בליגה</h2>
-        {allMatches.length === 0 && <p className="muted">עדיין אין משחקים בליגה.</p>}
-        {groupMatchesByRound(allMatches).map(({ round, matches: roundMatches }) => (
-          <div key={round} style={{ marginTop: 16 }}>
-            <h3 className="week-label">
-              {round === "none" ? "משחקים נוספים" : formatWeekLabel(league.schedule_started_at, round)}
-            </h3>
-            <ul className="match-list" style={{ marginTop: 8 }}>
-              {roundMatches.map((match) => (
-                <li className="match-row" key={match.id}>
-                  <div className="match-players">
-                    <strong>{match.player1.name}</strong> נגד <strong>{match.player2.name}</strong>
-                  </div>
-                  {match.status === "pending" ? (
-                    <span className="pill-pending">ממתין לתוצאה</span>
-                  ) : (
-                    <div>
-                      <div className="match-score">
-                        {match.player1_score} - {match.player2_score}
+        <button
+          type="button"
+          className="settings-row collapsible-toggle"
+          onClick={() => setShowAllMatches((v) => !v)}
+        >
+          <h2>כל המשחקים בליגה</h2>
+          <span className="muted">{showAllMatches ? "הסתר" : "הצג"}</span>
+        </button>
+
+        {showAllMatches && (
+          <>
+            {allMatches.length === 0 && <p className="muted">עדיין אין משחקים בליגה.</p>}
+            {groupMatchesByRound(allMatches).map(({ round, matches: roundMatches }) => (
+              <div key={round} style={{ marginTop: 16 }}>
+                <h3 className="week-label">
+                  {round === "none"
+                    ? "משחקים נוספים"
+                    : formatWeekLabel(league.schedule_started_at, round)}
+                </h3>
+                <ul className="match-list" style={{ marginTop: 8 }}>
+                  {roundMatches.map((match) => (
+                    <li className="match-row" key={match.id}>
+                      <div className="match-players">
+                        <strong>{match.player1.name}</strong> נגד{" "}
+                        <strong>{match.player2.name}</strong>
                       </div>
-                      <div className="sets-breakdown">{formatSets(match.sets)}</div>
-                    </div>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
+                      {match.status === "pending" ? (
+                        <span className="pill-pending">ממתין לתוצאה</span>
+                      ) : (
+                        <div>
+                          <div className="match-score">
+                            {match.player1_score} - {match.player2_score}
+                          </div>
+                          <div className="sets-breakdown">{formatSets(match.sets)}</div>
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </>
+        )}
       </section>
     </div>
   );
