@@ -1,4 +1,6 @@
+import random
 from datetime import datetime
+from itertools import combinations
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import or_
@@ -56,6 +58,48 @@ def list_all_matches(league_id: int, db: Session = Depends(get_db)):
         .all()
     )
     return matches
+
+
+@router.post("/generate-schedule", response_model=list[schemas.MatchOut])
+def generate_schedule(
+    league_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    league = db.query(models.League).filter(models.League.id == league_id).first()
+    if not league:
+        raise HTTPException(status_code=404, detail="League not found")
+    if league.created_by != current_user.id:
+        raise HTTPException(status_code=403, detail="רק יוצר הליגה יכול ליצור לוח משחקים")
+
+    member_ids = [
+        m.user_id
+        for m in db.query(models.LeagueMembership)
+        .filter(models.LeagueMembership.league_id == league_id)
+        .all()
+    ]
+    if len(member_ids) < 2:
+        raise HTTPException(status_code=400, detail="צריך לפחות 2 שחקנים כדי ליצור לוח משחקים")
+
+    existing_pairs = {
+        frozenset((m.player1_id, m.player2_id))
+        for m in db.query(models.Match).filter(models.Match.league_id == league_id).all()
+    }
+
+    pairs = [pair for pair in combinations(member_ids, 2) if frozenset(pair) not in existing_pairs]
+    random.shuffle(pairs)
+
+    created = []
+    for p1, p2 in pairs:
+        a, b = (p1, p2) if random.random() < 0.5 else (p2, p1)
+        match = models.Match(league_id=league_id, player1_id=a, player2_id=b)
+        db.add(match)
+        created.append(match)
+
+    db.commit()
+    for match in created:
+        db.refresh(match)
+    return created
 
 
 @router.post("/", response_model=schemas.MatchOut)

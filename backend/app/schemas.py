@@ -80,6 +80,7 @@ class LeagueOut(BaseModel):
     description: Optional[str]
     sport: SportOut
     member_count: int = 0
+    created_by: int
 
     class Config:
         from_attributes = True

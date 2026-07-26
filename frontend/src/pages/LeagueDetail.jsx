@@ -14,7 +14,6 @@ export default function LeagueDetail() {
   const [allMatches, setAllMatches] = useState([]);
   const [standings, setStandings] = useState([]);
   const [error, setError] = useState("");
-  const [opponentId, setOpponentId] = useState("");
   const [busy, setBusy] = useState(false);
 
   const isMember = members.some((m) => m.id === user?.id);
@@ -59,14 +58,11 @@ export default function LeagueDetail() {
     }
   }
 
-  async function handleChallenge(e) {
-    e.preventDefault();
-    if (!opponentId) return;
+  async function handleGenerateSchedule() {
     setBusy(true);
     setError("");
     try {
-      await api.createMatch(leagueId, Number(opponentId));
-      setOpponentId("");
+      await api.generateSchedule(leagueId);
       await loadAll();
     } catch (err) {
       setError(err.message);
@@ -106,7 +102,7 @@ export default function LeagueDetail() {
 
   if (!league) return <p className="muted">טוען...</p>;
 
-  const opponents = members.filter((m) => m.id !== user?.id);
+  const isCreator = league.created_by === user?.id;
 
   return (
     <div>
@@ -183,26 +179,16 @@ export default function LeagueDetail() {
         </section>
       </div>
 
-      {isMember && (
+      {isCreator && (
         <section className="card">
-          <h2>מצא יריב</h2>
-          {opponents.length === 0 ? (
-            <p className="muted">אין עדיין שחקנים נוספים בליגה. שתפו חברים כדי שיצטרפו!</p>
-          ) : (
-            <form className="inline-form" onSubmit={handleChallenge}>
-              <select value={opponentId} onChange={(e) => setOpponentId(e.target.value)} required>
-                <option value="">בחר יריב...</option>
-                {opponents.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.name}
-                  </option>
-                ))}
-              </select>
-              <button type="submit" className="btn-primary" disabled={busy}>
-                אתגר משחק
-              </button>
-            </form>
-          )}
+          <h2>לוח משחקים</h2>
+          <p className="muted" style={{ marginBottom: 12 }}>
+            יצירת לוח משחקים מסדרת אוטומטית משחק בין כל זוג שחקנים בליגה שעדיין לא שיחקו ביניהם
+            (בסדר אקראי). אפשר להריץ שוב כל פעם שמצטרפים שחקנים חדשים.
+          </p>
+          <button className="btn-primary" onClick={handleGenerateSchedule} disabled={busy}>
+            {busy ? "יוצר..." : "צור לוח משחקים"}
+          </button>
         </section>
       )}
 
