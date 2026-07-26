@@ -16,6 +16,7 @@ export default function LeagueDetail() {
   const [standings, setStandings] = useState([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [showMatches, setShowMatches] = useState(false);
 
   const isMember = members.some((m) => m.id === user?.id);
 
@@ -205,19 +206,31 @@ export default function LeagueDetail() {
 
       {isMember && (
         <section className="card">
-          <h2>המשחקים שלי</h2>
-          {matches.length === 0 && <p className="muted">עדיין אין משחקים.</p>}
-          <ul className="match-list">
-            {matches.map((match) => (
-              <MatchRow
-                key={match.id}
-                match={match}
-                onReport={handleReportScore}
-                onCancel={handleCancelMatch}
-                busy={busy}
-              />
-            ))}
-          </ul>
+          <button
+            type="button"
+            className="settings-row collapsible-toggle"
+            onClick={() => setShowMatches((v) => !v)}
+          >
+            <h2>המשחקים שלי</h2>
+            <span className="muted">{showMatches ? "הסתר" : "הצג"}</span>
+          </button>
+
+          {showMatches && (
+            <>
+              {matches.length === 0 && <p className="muted">עדיין אין משחקים.</p>}
+              <ul className="match-list" style={{ marginTop: 14 }}>
+                {matches.map((match) => (
+                  <MatchRow
+                    key={match.id}
+                    match={match}
+                    onReport={handleReportScore}
+                    onCancel={handleCancelMatch}
+                    busy={busy}
+                  />
+                ))}
+              </ul>
+            </>
+          )}
         </section>
       )}
 
