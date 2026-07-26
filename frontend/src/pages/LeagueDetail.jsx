@@ -17,6 +17,7 @@ export default function LeagueDetail() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [showMatches, setShowMatches] = useState(false);
+  const [showMembers, setShowMembers] = useState(false);
 
   const isMember = members.some((m) => m.id === user?.id);
 
@@ -139,17 +140,27 @@ export default function LeagueDetail() {
 
       <div className="two-col">
         <section className="card">
-          <h2>שחקנים בליגה ({members.length})</h2>
-          <div className="member-chips">
-            {members.map((m) => (
-              <div className="member-chip" key={m.id}>
-                <span>
-                  {m.name}
-                  {m.id === user?.id && <span className="muted"> (את/ה)</span>}
-                </span>
-              </div>
-            ))}
-          </div>
+          <button
+            type="button"
+            className="settings-row collapsible-toggle"
+            onClick={() => setShowMembers((v) => !v)}
+          >
+            <h2>שחקנים בליגה ({members.length})</h2>
+            <span className="muted">{showMembers ? "הסתר" : "הצג"}</span>
+          </button>
+
+          {showMembers && (
+            <div className="member-chips" style={{ marginTop: 14 }}>
+              {members.map((m) => (
+                <div className="member-chip" key={m.id}>
+                  <span>
+                    {m.name}
+                    {m.id === user?.id && <span className="muted"> (את/ה)</span>}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
 
         <section className="card">
