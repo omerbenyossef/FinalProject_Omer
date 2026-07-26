@@ -257,6 +257,7 @@ export default function LeagueDetail() {
                       <MatchRow
                         key={match.id}
                         match={match}
+                        currentUserId={user.id}
                         onReport={handleReportScore}
                         onCancel={handleCancelMatch}
                         busy={busy}
@@ -354,32 +355,43 @@ function MyNextMatchRow({ match, currentUserId, onSubmit, busy }) {
   );
 }
 
-function MatchRow({ match, onReport, onCancel, busy }) {
+function MatchRow({ match, currentUserId, onReport, onCancel, busy }) {
+  const [reporting, setReporting] = useState(false);
   const [editing, setEditing] = useState(false);
   const isPending = match.status === "pending";
+  const opponent = match.player1.id === currentUserId ? match.player2 : match.player1;
 
   function submit(sets) {
     onReport(match.id, sets);
+    setReporting(false);
     setEditing(false);
   }
 
   return (
     <li className="match-row">
       <div className="match-players">
-        <strong>{match.player1.name}</strong> נגד <strong>{match.player2.name}</strong>
+        <span>נגד</span>
+        <strong>{opponent.name}</strong>
       </div>
-      {isPending || editing ? (
-        <>
+      {isPending ? (
+        reporting ? (
           <SetScoreForm
             player1Name={match.player1.name}
             player2Name={match.player2.name}
-            initialSets={match.sets}
             onSubmit={submit}
-            onCancel={editing ? () => setEditing(false) : undefined}
+            onCancel={() => setReporting(false)}
             busy={busy}
-            submitLabel={editing ? "עדכן תוצאה" : "דווח תוצאה"}
           />
-          {isPending && (
+        ) : (
+          <>
+            <button
+              type="button"
+              className="btn-secondary"
+              style={{ alignSelf: "flex-start" }}
+              onClick={() => setReporting(true)}
+            >
+              דווח תוצאה
+            </button>
             <button
               type="button"
               className="link-btn"
@@ -389,8 +401,18 @@ function MatchRow({ match, onReport, onCancel, busy }) {
             >
               ביטול אתגר
             </button>
-          )}
-        </>
+          </>
+        )
+      ) : editing ? (
+        <SetScoreForm
+          player1Name={match.player1.name}
+          player2Name={match.player2.name}
+          initialSets={match.sets}
+          onSubmit={submit}
+          onCancel={() => setEditing(false)}
+          busy={busy}
+          submitLabel="עדכן תוצאה"
+        />
       ) : (
         <>
           <div className="match-score">
