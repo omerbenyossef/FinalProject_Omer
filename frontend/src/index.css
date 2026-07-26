@@ -478,10 +478,6 @@ button:active { transform: translateY(1px); }
   color: var(--gold);
 }
 
-.standings-table tr.me-row {
-  background: var(--court-tint);
-}
-
 .standings-table tr.me-row td {
   font-weight: 700;
 }
