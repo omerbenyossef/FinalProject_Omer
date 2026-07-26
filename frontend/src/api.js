@@ -71,5 +71,4 @@ export const api = {
     request(`/leagues/${leagueId}/matches/${matchId}/score`, { method: "POST", body: { sets } }),
   cancelMatch: (leagueId, matchId) =>
     request(`/leagues/${leagueId}/matches/${matchId}`, { method: "DELETE" }),
-  myNextMatches: () => request(`/leagues/mine/next-matches`),
 };
