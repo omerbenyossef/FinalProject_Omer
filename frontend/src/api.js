@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8123";
+const API_BASE = import.meta.env.VITE_API_BASE || "https://league-backend-97i9.onrender.com";
 
 function getToken() {
   return localStorage.getItem("token");
