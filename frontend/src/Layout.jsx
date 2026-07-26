@@ -2,6 +2,17 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext.jsx";
 import { PersonIcon, SettingsIcon, TrophyIcon } from "./Icons.jsx";
 
+function BrandMark() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 48 48" aria-hidden="true">
+      <rect width="48" height="48" rx="12" fill="#16a34a" />
+      <circle cx="24" cy="24" r="15" fill="#f5f7d4" stroke="#0b1220" strokeWidth="1.4" />
+      <path d="M10 15 C 18 22, 18 26, 10 33" stroke="#0b1220" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+      <path d="M38 15 C 30 22, 30 26, 38 33" stroke="#0b1220" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export default function Layout({ children }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -15,8 +26,8 @@ export default function Layout({ children }) {
     <div className="app-shell">
       <header className="topbar">
         <Link to="/leagues" className="brand">
-          <span className="brand-mark" aria-hidden="true" />
-          ליגת חובבים
+          <BrandMark />
+          Rally
         </Link>
         <nav>
           {user ? (

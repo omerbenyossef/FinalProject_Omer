@@ -1,6 +1,6 @@
 {
-  "name": "ליגת חובבים",
-  "short_name": "ליגת חובבים",
+  "name": "Rally",
+  "short_name": "Rally",
   "description": "פלטפורמה להרשמה לליגות ספורט חובבים ומשחק מול שחקנים נוספים",
   "start_url": "/",
   "display": "standalone",
