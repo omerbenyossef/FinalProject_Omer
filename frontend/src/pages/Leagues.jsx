@@ -3,10 +3,13 @@ import { Link } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 
-function LeagueCard({ league }) {
+function LeagueCard({ league, isMember }) {
   return (
     <Link to={`/leagues/${league.id}`} className="card league-card">
-      <span className="sport-tag">{league.sport.name}</span>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <span className="sport-tag">{league.sport.name}</span>
+        {isMember && <span className="pill-pending">את/ה חבר/ה</span>}
+      </div>
       <h3>{league.name}</h3>
       {league.description && <p className="muted">{league.description}</p>}
       <p className="member-count">{league.member_count} שחקנים</p>
@@ -75,6 +78,7 @@ export default function Leagues() {
   }
 
   const openLeagues = leagues.filter((l) => l.is_open);
+  const myLeagueIds = new Set(myLeagues.map((l) => l.id));
 
   return (
     <div>
@@ -168,7 +172,7 @@ export default function Leagues() {
         {showOpenLeagues && (
           <div className="league-grid" style={{ marginTop: 14 }}>
             {openLeagues.map((league) => (
-              <LeagueCard league={league} key={league.id} />
+              <LeagueCard league={league} key={league.id} isMember={myLeagueIds.has(league.id)} />
             ))}
             {!loading && openLeagues.length === 0 && (
               <p className="muted">אין כרגע ליגות פתוחות.</p>
