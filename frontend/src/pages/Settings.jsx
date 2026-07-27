@@ -27,20 +27,22 @@ export default function Settings() {
           <LanguageToggleButton />
         </div>
       </div>
-      <EditProfileCard user={user} updateUser={updateUser} />
-      <ChangeEmailCard user={user} updateUser={updateUser} />
-      <ChangePasswordCard />
-      <section className="card">
-        <div className="settings-row">
-          <div>
-            <h2>{t("יציאה מהחשבון")}</h2>
-            <p className="muted">{user?.email}</p>
+      <div className="settings-flat">
+        <EditProfileCard user={user} updateUser={updateUser} />
+        <ChangeEmailCard user={user} updateUser={updateUser} />
+        <ChangePasswordCard />
+        <div className="settings-flat-row">
+          <div className="settings-row">
+            <div>
+              <h2>{t("יציאה מהחשבון")}</h2>
+              <p className="muted">{user?.email}</p>
+            </div>
+            <button type="button" className="link-btn" style={{ color: "var(--danger)" }} onClick={handleLogout}>
+              {t("התנתקות")}
+            </button>
           </div>
-          <button type="button" className="btn-secondary" onClick={handleLogout}>
-            {t("התנתקות")}
-          </button>
         </div>
-      </section>
+      </div>
     </div>
   );
 }
@@ -111,14 +113,14 @@ function EditProfileCard({ user, updateUser }) {
   }
 
   return (
-    <section className="card">
+    <div className="settings-flat-row">
       <div className="settings-row">
         <div>
           <h2>{t("פרופיל")}</h2>
           <p className="muted">{user?.name}</p>
         </div>
         {!editing && (
-          <button type="button" className="btn-secondary" onClick={openEditor}>
+          <button type="button" className="link-btn" onClick={openEditor}>
             {t("ערוך")}
           </button>
         )}
@@ -152,7 +154,7 @@ function EditProfileCard({ user, updateUser }) {
         </form>
       )}
       {!editing && message && <p className="muted">{t(message)}</p>}
-    </section>
+    </div>
   );
 }
 
@@ -191,14 +193,14 @@ function ChangeEmailCard({ user, updateUser }) {
   }
 
   return (
-    <section className="card">
+    <div className="settings-flat-row">
       <div className="settings-row">
         <div>
           <h2>{t("אימייל")}</h2>
           <p className="muted">{user?.email}</p>
         </div>
         {!editing && (
-          <button type="button" className="btn-secondary" onClick={openEditor}>
+          <button type="button" className="link-btn" onClick={openEditor}>
             {t("שנה אימייל")}
           </button>
         )}
@@ -236,7 +238,7 @@ function ChangeEmailCard({ user, updateUser }) {
         </form>
       )}
       {!editing && message && <p className="muted">{t(message)}</p>}
-    </section>
+    </div>
   );
 }
 
@@ -274,14 +276,14 @@ function ChangePasswordCard() {
   }
 
   return (
-    <section className="card">
+    <div className="settings-flat-row">
       <div className="settings-row">
         <div>
           <h2>{t("שינוי סיסמה")}</h2>
           <p className="muted">••••••••</p>
         </div>
         {!editing && (
-          <button type="button" className="btn-secondary" onClick={openEditor}>
+          <button type="button" className="link-btn" onClick={openEditor}>
             {t("שנה סיסמה")}
           </button>
         )}
@@ -320,6 +322,6 @@ function ChangePasswordCard() {
         </form>
       )}
       {!editing && message && <p className="muted">{t(message)}</p>}
-    </section>
+    </div>
   );
 }

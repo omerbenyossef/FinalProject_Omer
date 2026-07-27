@@ -514,6 +514,33 @@ button:active { transform: translateY(1px); }
   font-size: 12.5px;
 }
 
+.section-tabs {
+  display: flex;
+  gap: 6px;
+  background: var(--card-alt);
+  border-radius: 999px;
+  padding: 4px;
+  margin-bottom: 16px;
+}
+
+.section-tab {
+  flex: 1;
+  background: none;
+  border: none;
+  border-radius: 999px;
+  padding: 9px 0;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--muted);
+  text-transform: capitalize;
+}
+
+.section-tab.active {
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+}
+
 .invite-fab {
   position: fixed;
   left: 16px;
@@ -546,6 +573,24 @@ button:active { transform: translateY(1px); }
 
 .settings-row h2 {
   margin-bottom: 2px;
+}
+
+.settings-flat {
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-flat-row {
+  padding: 18px 2px;
+  border-bottom: 1px solid var(--line);
+}
+
+.settings-flat-row:last-child {
+  border-bottom: none;
+}
+
+.settings-flat-row form {
+  margin-top: 14px;
 }
 
 .collapsible-toggle {

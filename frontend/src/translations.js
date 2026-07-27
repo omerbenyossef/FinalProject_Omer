@@ -84,6 +84,7 @@ const PAIRS = [
   ["לעזוב את הליגה", "Leave the league"],
   ["המשחק הבא שלך", "Your next match"],
   ["הסטטיסטיקה שלי בליגה", "My stats in this league"],
+  ["הסטטיסטיקה שלי", "My Stats"],
   ["נקודות", "points"],
   ["הפסדים", "losses"],
   ["ניצחונות", "wins"],
