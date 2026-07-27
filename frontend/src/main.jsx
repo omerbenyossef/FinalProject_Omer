@@ -4,6 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 import "./index.css";
 import App from "./App.jsx";
 import { AuthProvider } from "./AuthContext.jsx";
+import { SportProvider } from "./SportContext.jsx";
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
@@ -15,7 +16,9 @@ createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
       <AuthProvider>
-        <App />
+        <SportProvider>
+          <App />
+        </SportProvider>
       </AuthProvider>
     </BrowserRouter>
   </StrictMode>

@@ -1,5 +1,6 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext.jsx";
+import { useSport } from "./SportContext.jsx";
 import { PersonIcon, SettingsIcon, TrophyIcon } from "./Icons.jsx";
 
 function BrandMark() {
@@ -15,6 +16,7 @@ function BrandMark() {
 
 export default function Layout({ children }) {
   const { user, logout } = useAuth();
+  const { sports, selectedSportId, setSelectedSportId } = useSport();
   const navigate = useNavigate();
 
   function handleLogout() {
@@ -29,6 +31,21 @@ export default function Layout({ children }) {
           <BrandMark />
           Rally
         </Link>
+
+        {sports.length > 0 && (
+          <select
+            className="sport-switcher"
+            value={selectedSportId ?? ""}
+            onChange={(e) => setSelectedSportId(Number(e.target.value))}
+          >
+            {sports.map((sport) => (
+              <option key={sport.id} value={sport.id}>
+                {sport.name}
+              </option>
+            ))}
+          </select>
+        )}
+
         <nav>
           {user ? (
             <button className="link-btn" onClick={handleLogout}>

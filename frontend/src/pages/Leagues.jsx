@@ -1,15 +1,12 @@
 import { useEffect, useState } from "react";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
+import { useSport } from "../SportContext.jsx";
 import LeagueCard from "../LeagueCard.jsx";
-import SportTabs from "../SportTabs.jsx";
-import { getStoredSportId, setStoredSportId } from "../sportPreference.js";
 
 export default function Leagues() {
   const [leagues, setLeagues] = useState([]);
   const [myLeagues, setMyLeagues] = useState([]);
-  const [sports, setSports] = useState([]);
-  const [selectedSportId, setSelectedSportId] = useState(getStoredSportId());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -20,16 +17,13 @@ export default function Leagues() {
   const [isOpen, setIsOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const { user } = useAuth();
+  const { selectedSportId } = useSport();
 
   async function loadData() {
     setLoading(true);
     try {
-      const [leaguesData, sportsData] = await Promise.all([api.listLeagues(), api.listSports()]);
+      const leaguesData = await api.listLeagues();
       setLeagues(leaguesData);
-      setSports(sportsData);
-      setSelectedSportId((current) =>
-        current && sportsData.some((s) => s.id === current) ? current : sportsData[0]?.id ?? null
-      );
 
       if (user) {
         const mine = await api.myLeagues();
@@ -48,11 +42,6 @@ export default function Leagues() {
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
-
-  function handleSelectSport(id) {
-    setSelectedSportId(id);
-    setStoredSportId(id);
-  }
 
   async function handleCreate(e) {
     e.preventDefault();
@@ -87,8 +76,6 @@ export default function Leagues() {
           </button>
         )}
       </div>
-
-      <SportTabs sports={sports} selected={selectedSportId} onSelect={handleSelectSport} />
 
       {!user && <p className="muted">רוצה להקים ליגה? יש להירשם או להתחבר קודם.</p>}
 

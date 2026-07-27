@@ -1,19 +1,17 @@
 import { useEffect, useState } from "react";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
+import { useSport } from "../SportContext.jsx";
 import CircularGauge from "../CircularGauge.jsx";
 import LeagueCard from "../LeagueCard.jsx";
 import NextMatchRow from "../NextMatchRow.jsx";
-import SportTabs from "../SportTabs.jsx";
 import { UserPlusIcon } from "../Icons.jsx";
-import { getStoredSportId, setStoredSportId } from "../sportPreference.js";
 
 export default function Profile() {
   const { user } = useAuth();
+  const { selectedSportId } = useSport();
   const [stats, setStats] = useState(null);
   const [error, setError] = useState("");
-  const [sports, setSports] = useState([]);
-  const [selectedSportId, setSelectedSportId] = useState(getStoredSportId());
   const [myLeagues, setMyLeagues] = useState([]);
   const [showMyLeagues, setShowMyLeagues] = useState(false);
   const [nextMatches, setNextMatches] = useState([]);
@@ -33,12 +31,6 @@ export default function Profile() {
   }
 
   useEffect(() => {
-    api.listSports().then((sportsData) => {
-      setSports(sportsData);
-      setSelectedSportId((current) =>
-        current && sportsData.some((s) => s.id === current) ? current : sportsData[0]?.id ?? null
-      );
-    });
     api
       .myLeagues()
       .then(setMyLeagues)
@@ -53,11 +45,6 @@ export default function Profile() {
       .then(setStats)
       .catch((err) => setError(err.message));
   }, [selectedSportId]);
-
-  function handleSelectSport(id) {
-    setSelectedSportId(id);
-    setStoredSportId(id);
-  }
 
   async function handleReportScore(leagueId, matchId, sets) {
     setBusy(true);
@@ -100,8 +87,6 @@ export default function Profile() {
           </div>
         </div>
       </div>
-
-      <SportTabs sports={sports} selected={selectedSportId} onSelect={handleSelectSport} />
 
       <div className="card">
         {error && <p className="error">{error}</p>}
