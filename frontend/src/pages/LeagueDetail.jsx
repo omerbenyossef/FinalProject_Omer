@@ -181,7 +181,6 @@ export default function LeagueDetail() {
     <div>
       <div className="page-header">
         <div>
-          <span className="sport-tag">{league.sport.name}</span>
           <h1>{league.name}</h1>
           {league.description && <p className="muted">{league.description}</p>}
         </div>
