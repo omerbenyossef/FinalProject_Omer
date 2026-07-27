@@ -1,3 +1,22 @@
+@font-face {
+  font-family: "Rubik";
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url("/fonts/rubik-hebrew-900.woff2") format("woff2");
+  unicode-range: U+0307-0308, U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
+}
+
+@font-face {
+  font-family: "Rubik";
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url("/fonts/rubik-latin-900.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F,
+    U+20AC, U+2122;
+}
+
 :root {
   --ink: #0b0b0c;
   --paper: #f2f2f7;
@@ -19,6 +38,7 @@
 
   --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Roboto Mono", monospace;
+  --display: "Rubik", var(--sans);
 
   font: 16px/1.6 var(--sans);
   color-scheme: light dark;
@@ -68,9 +88,10 @@ h1, h2, h3 {
 }
 
 h1 {
+  font-family: var(--display);
   font-size: 32px;
-  font-weight: 800;
-  letter-spacing: -0.02em;
+  font-weight: 900;
+  letter-spacing: -0.03em;
   position: relative;
   padding-bottom: 14px;
 }
