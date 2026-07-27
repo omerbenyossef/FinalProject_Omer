@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import SetScoreForm from "../SetScoreForm.jsx";
@@ -26,6 +26,7 @@ function groupMatchesByRound(matches) {
 export default function LeagueDetail() {
   const { leagueId } = useParams();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const codeFromLink = (searchParams.get("code") || "").trim();
 
@@ -147,6 +148,21 @@ export default function LeagueDetail() {
     } catch (err) {
       setError(err.message);
     } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleDeleteLeague() {
+    if (!window.confirm(`למחוק את הליגה "${league.name}"? הפעולה תמחק גם את כל המשחקים והחברויות בה, ולא ניתנת לביטול.`)) {
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      await api.deleteLeague(leagueId);
+      navigate("/leagues");
+    } catch (err) {
+      setError(err.message);
       setBusy(false);
     }
   }
@@ -373,6 +389,24 @@ export default function LeagueDetail() {
           </>
         )}
       </section>
+
+      {user?.is_admin && (
+        <section className="card">
+          <h2>ניהול ליגה</h2>
+          <p className="muted" style={{ marginBottom: 12 }}>
+            מחיקת הליגה תסיר לצמיתות את כל המשחקים והחברויות בה.
+          </p>
+          <button
+            type="button"
+            className="btn-secondary"
+            style={{ color: "var(--danger)" }}
+            onClick={handleDeleteLeague}
+            disabled={busy}
+          >
+            מחק ליגה
+          </button>
+        </section>
+      )}
     </div>
   );
 }

@@ -189,6 +189,22 @@ def get_invite_code(
     return schemas.InviteCodeOut(code=league.join_code)
 
 
+@router.delete("/{league_id}", status_code=204)
+def delete_league(
+    league_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="רק מנהל יכול למחוק ליגה")
+
+    league = _get_league_or_404(db, league_id)
+    db.query(models.Match).filter(models.Match.league_id == league_id).delete()
+    db.query(models.LeagueMembership).filter(models.LeagueMembership.league_id == league_id).delete()
+    db.delete(league)
+    db.commit()
+
+
 @router.get("/{league_id}/members", response_model=list[schemas.MemberOut])
 def list_members(league_id: int, db: Session = Depends(get_db)):
     league = _get_league_or_404(db, league_id)

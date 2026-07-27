@@ -61,6 +61,7 @@ export const api = {
   getLeague: (id) => request(`/leagues/${id}`, { auth: false }),
   joinLeague: (id, code) => request(`/leagues/${id}/join`, { method: "POST", body: { code } }),
   getInviteCode: (id) => request(`/leagues/${id}/invite-code`),
+  deleteLeague: (id) => request(`/leagues/${id}`, { method: "DELETE" }),
 
   headToHead: (opponentId) => request(`/players/${opponentId}/head-to-head`),
   listMembers: (id) => request(`/leagues/${id}/members`, { auth: false }),
