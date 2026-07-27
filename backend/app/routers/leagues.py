@@ -170,6 +170,43 @@ def join_league(
     return _to_league_out(league)
 
 
+@router.post("/{league_id}/leave", status_code=204)
+def leave_league(
+    league_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    league = _get_league_or_404(db, league_id)
+
+    if league.created_by == current_user.id:
+        raise HTTPException(
+            status_code=400, detail="יוצר הליגה לא יכול לעזוב אותה, אפשר למחוק את הליגה"
+        )
+
+    membership = (
+        db.query(models.LeagueMembership)
+        .filter(
+            models.LeagueMembership.league_id == league_id,
+            models.LeagueMembership.user_id == current_user.id,
+        )
+        .first()
+    )
+    if not membership:
+        raise HTTPException(status_code=400, detail="אינך חבר בליגה הזו")
+
+    db.query(models.Match).filter(
+        models.Match.league_id == league_id,
+        models.Match.status == models.MatchStatus.pending,
+        or_(
+            models.Match.player1_id == current_user.id,
+            models.Match.player2_id == current_user.id,
+        ),
+    ).delete()
+
+    db.delete(membership)
+    db.commit()
+
+
 @router.get("/{league_id}/invite-code", response_model=schemas.InviteCodeOut)
 def get_invite_code(
     league_id: int,

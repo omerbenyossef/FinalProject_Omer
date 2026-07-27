@@ -167,6 +167,21 @@ export default function LeagueDetail() {
     }
   }
 
+  async function handleLeaveLeague() {
+    if (!window.confirm(`לעזוב את הליגה "${league.name}"?`)) {
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      await api.leaveLeague(leagueId);
+      navigate("/leagues");
+    } catch (err) {
+      setError(err.message);
+      setBusy(false);
+    }
+  }
+
   if (!league) return <p className="muted">טוען...</p>;
 
   const isCreator = league.created_by === user?.id;
@@ -204,6 +219,17 @@ export default function LeagueDetail() {
             disabled={busy}
           >
             {busy ? "יוצר..." : "צור לוח משחקים"}
+          </button>
+        )}
+        {isMember && !isCreator && (
+          <button
+            type="button"
+            className="btn-secondary btn-small"
+            style={{ color: "var(--danger)" }}
+            onClick={handleLeaveLeague}
+            disabled={busy}
+          >
+            עזיבת ליגה
           </button>
         )}
       </div>

@@ -60,6 +60,7 @@ export const api = {
   createLeague: (data) => request("/leagues/", { method: "POST", body: data }),
   getLeague: (id) => request(`/leagues/${id}`, { auth: false }),
   joinLeague: (id, code) => request(`/leagues/${id}/join`, { method: "POST", body: { code } }),
+  leaveLeague: (id) => request(`/leagues/${id}/leave`, { method: "POST" }),
   getInviteCode: (id) => request(`/leagues/${id}/invite-code`),
   deleteLeague: (id) => request(`/leagues/${id}`, { method: "DELETE" }),
 
