@@ -32,7 +32,7 @@ function ThemeToggleButton() {
 
   return (
     <button type="button" className="btn-secondary btn-small" onClick={cycle}>
-      מראה: {THEME_LABELS[theme]}
+      תצוגה: {THEME_LABELS[theme]}
     </button>
   );
 }
