@@ -37,11 +37,12 @@ export default function Profile() {
 
   return (
     <div>
+      <h1>פרופיל שחקן</h1>
+
       <div className="card">
         <div className="profile-header">
           <div>
-            <span className="eyebrow">פרופיל שחקן</span>
-            <h1 style={{ marginBottom: 2 }}>{user.name}</h1>
+            <h2 style={{ marginBottom: 2 }}>{user.name}</h2>
             <p className="muted">{user.email}</p>
           </div>
         </div>
