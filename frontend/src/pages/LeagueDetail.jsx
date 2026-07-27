@@ -360,6 +360,9 @@ function MatchRow({ match, currentUserId, onReport, onCancel, busy }) {
   const [editing, setEditing] = useState(false);
   const isPending = match.status === "pending";
   const opponent = match.player1.id === currentUserId ? match.player2 : match.player1;
+  const myScore = match.player1.id === currentUserId ? match.player1_score : match.player2_score;
+  const opponentScore = match.player1.id === currentUserId ? match.player2_score : match.player1_score;
+  const iWon = !isPending && myScore > opponentScore;
 
   function submit(sets) {
     onReport(match.id, sets);
@@ -415,8 +418,11 @@ function MatchRow({ match, currentUserId, onReport, onCancel, busy }) {
         />
       ) : (
         <>
-          <div className="match-score">
-            {match.player1_score} - {match.player2_score}
+          <div className="score-row">
+            <span className={`status-dot ${iWon ? "dot-win" : "dot-loss"}`} />
+            <div className="match-score">
+              {match.player1_score} - {match.player2_score}
+            </div>
           </div>
           <div className="sets-breakdown">{formatSets(match.sets)}</div>
           <button
