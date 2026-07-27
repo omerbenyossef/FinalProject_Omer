@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import SetScoreForm from "../SetScoreForm.jsx";
@@ -25,6 +25,8 @@ function groupMatchesByRound(matches) {
 export default function LeagueDetail() {
   const { leagueId } = useParams();
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const codeFromLink = (searchParams.get("code") || "").trim();
 
   const [league, setLeague] = useState(null);
   const [members, setMembers] = useState([]);
@@ -35,10 +37,10 @@ export default function LeagueDetail() {
   const [busy, setBusy] = useState(false);
   const [showMatches, setShowMatches] = useState(false);
   const [showAllMatches, setShowAllMatches] = useState(false);
-  const [joinCode, setJoinCode] = useState("");
   const [inviteCode, setInviteCode] = useState(null);
   const [inviteError, setInviteError] = useState("");
   const [inviteLoading, setInviteLoading] = useState(false);
+  const autoJoinAttempted = useRef(false);
 
   const isMember = members.some((m) => m.id === user?.id);
 
@@ -69,11 +71,11 @@ export default function LeagueDetail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leagueId, user]);
 
-  async function handleJoin() {
+  async function handleJoin(codeOverride) {
     setBusy(true);
     setError("");
     try {
-      await api.joinLeague(leagueId, joinCode);
+      await api.joinLeague(leagueId, codeOverride ?? codeFromLink);
       await loadAll();
     } catch (err) {
       setError(err.message);
@@ -82,23 +84,31 @@ export default function LeagueDetail() {
     }
   }
 
-  async function handleShowInviteCode() {
+  useEffect(() => {
+    if (!user || !league || isMember || !codeFromLink || autoJoinAttempted.current) return;
+    autoJoinAttempted.current = true;
+    handleJoin(codeFromLink);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, league, isMember, codeFromLink]);
+
+  async function handleShareWhatsApp() {
     setInviteError("");
     setInviteLoading(true);
     try {
-      const data = await api.getInviteCode(leagueId);
-      setInviteCode(data.code);
+      let code = inviteCode;
+      if (!code) {
+        const data = await api.getInviteCode(leagueId);
+        code = data.code;
+        setInviteCode(code);
+      }
+      const url = `${window.location.origin}/leagues/${leagueId}?code=${code}`;
+      const message = `בוא/י תצטרף/י לליגה "${league.name}" ב-Rally!\n${url}`;
+      window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
     } catch (err) {
       setInviteError(err.message);
     } finally {
       setInviteLoading(false);
     }
-  }
-
-  function handleShareWhatsApp() {
-    const url = `${window.location.origin}/leagues/${leagueId}`;
-    const message = `בוא/י תצטרף/י לליגה "${league.name}" ב-Rally!\nקוד הצטרפות: ${inviteCode}\n${url}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
   }
 
   async function handleGenerateSchedule() {
@@ -158,18 +168,17 @@ export default function LeagueDetail() {
           <h1>{league.name}</h1>
           {league.description && <p className="muted">{league.description}</p>}
         </div>
-        {!isMember && user && (
+        {!isMember && user && (league.is_open || codeFromLink) && (
           <div className="inline-form">
-            <input
-              placeholder="קוד הזמנה (אם יש)"
-              value={joinCode}
-              onChange={(e) => setJoinCode(e.target.value)}
-              style={{ width: 140 }}
-            />
-            <button className="btn-primary" onClick={handleJoin} disabled={busy}>
-              הצטרפות לליגה
+            <button className="btn-primary" onClick={() => handleJoin()} disabled={busy}>
+              {busy ? "מצטרף..." : "הצטרפות לליגה"}
             </button>
           </div>
+        )}
+        {!isMember && user && !league.is_open && !codeFromLink && (
+          <p className="muted" style={{ fontSize: 14 }}>
+            הליגה סגורה. כדי להצטרף צריך קישור הזמנה מאחד מחברי הליגה.
+          </p>
         )}
       </div>
 
@@ -254,25 +263,12 @@ export default function LeagueDetail() {
       {isMember && (
         <section className="card">
           <h2>הזמנת חברים</h2>
-          {inviteCode ? (
-            <>
-              <p className="muted" style={{ fontSize: 20, fontWeight: 700, color: "var(--ink)" }}>
-                {inviteCode}
-              </p>
-              <button className="btn-primary" onClick={handleShareWhatsApp} style={{ marginTop: 10 }}>
-                שיתוף בוואטסאפ
-              </button>
-            </>
-          ) : (
-            <>
-              <p className="muted" style={{ marginBottom: 12 }}>
-                כל מי שיצטרף לליגה יצטרך להזין את הקוד הזה.
-              </p>
-              <button className="btn-secondary" onClick={handleShowInviteCode} disabled={inviteLoading}>
-                {inviteLoading ? "טוען..." : "הצג קוד הזמנה"}
-              </button>
-            </>
-          )}
+          <p className="muted" style={{ marginBottom: 12 }}>
+            שלח/י קישור בוואטסאפ - מי שילחץ עליו יצטרף לליגה ישירות, בלי להזין קוד.
+          </p>
+          <button className="btn-primary" onClick={handleShareWhatsApp} disabled={inviteLoading}>
+            {inviteLoading ? "טוען..." : "שיתוף בוואטסאפ"}
+          </button>
           {inviteError && <p className="error">{inviteError}</p>}
         </section>
       )}

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 
@@ -11,6 +11,7 @@ export default function Register() {
   const [submitting, setSubmitting] = useState(false);
   const { loginWithToken } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -19,7 +20,8 @@ export default function Register() {
     try {
       const data = await api.register({ name, email, password });
       loginWithToken(data.access_token, data.user);
-      navigate("/leagues");
+      const redirect = searchParams.get("redirect");
+      navigate(redirect || "/leagues");
     } catch (err) {
       setError(err.message);
     } finally {
@@ -55,7 +57,16 @@ export default function Register() {
         </button>
       </form>
       <p className="muted">
-        כבר יש לך חשבון? <Link to="/login">כניסה</Link>
+        כבר יש לך חשבון?{" "}
+        <Link
+          to={
+            searchParams.get("redirect")
+              ? `/login?redirect=${encodeURIComponent(searchParams.get("redirect"))}`
+              : "/login"
+          }
+        >
+          כניסה
+        </Link>
       </p>
     </div>
   );

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 
@@ -10,6 +10,7 @@ export default function Login() {
   const [submitting, setSubmitting] = useState(false);
   const { loginWithToken } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -18,7 +19,8 @@ export default function Login() {
     try {
       const data = await api.login({ email, password });
       loginWithToken(data.access_token, data.user);
-      navigate("/leagues");
+      const redirect = searchParams.get("redirect");
+      navigate(redirect || "/leagues");
     } catch (err) {
       setError(err.message);
     } finally {
@@ -52,7 +54,16 @@ export default function Login() {
         <Link to="/forgot-password">שכחתי סיסמה</Link>
       </p>
       <p className="muted">
-        אין לך חשבון? <Link to="/register">הרשמה</Link>
+        אין לך חשבון?{" "}
+        <Link
+          to={
+            searchParams.get("redirect")
+              ? `/register?redirect=${encodeURIComponent(searchParams.get("redirect"))}`
+              : "/register"
+          }
+        >
+          הרשמה
+        </Link>
       </p>
     </div>
   );

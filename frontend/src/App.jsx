@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import Layout from "./Layout.jsx";
 import { useAuth } from "./AuthContext.jsx";
 import Login from "./pages/Login.jsx";
@@ -13,8 +13,12 @@ import HeadToHead from "./pages/HeadToHead.jsx";
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
+  const location = useLocation();
   if (loading) return <p className="muted">טוען...</p>;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) {
+    const redirectTo = encodeURIComponent(location.pathname + location.search);
+    return <Navigate to={`/login?redirect=${redirectTo}`} replace />;
+  }
   return children;
 }
 
