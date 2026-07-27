@@ -260,7 +260,7 @@ export default function LeagueDetail() {
                 return (
                   <tr key={row.user.id} className={isMe ? "me-row" : undefined}>
                     <td>
-                      <span className={`rank-badge${rank === 1 ? " rank-1" : ""}`}>{rank}</span>
+                      <span className={`rank-badge${rank <= 3 ? ` rank-${rank}` : ""}`}>{rank}</span>
                     </td>
                     <td className="player-col">
                       <span className="player-cell">{row.user.name}</span>

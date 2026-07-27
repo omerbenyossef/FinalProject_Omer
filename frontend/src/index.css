@@ -32,6 +32,10 @@
   --court-tint-strong: rgba(14, 143, 82, 0.18);
   --gold: #b9812a;
   --gold-tint: rgba(185, 129, 42, 0.14);
+  --silver: #46536b;
+  --silver-tint: rgba(70, 83, 107, 0.22);
+  --bronze: #a8683f;
+  --bronze-tint: rgba(168, 104, 63, 0.2);
   --danger: #b8412a;
   --danger-tint: rgba(184, 65, 42, 0.1);
   --shadow: 0 1px 1px rgba(0, 0, 0, 0.03), 0 20px 40px -26px rgba(0, 0, 0, 0.16);
@@ -64,6 +68,10 @@
     --court-tint-strong: rgba(198, 232, 56, 0.2);
     --gold: #e2ac54;
     --gold-tint: rgba(226, 172, 84, 0.16);
+    --silver: #c3cbdb;
+    --silver-tint: rgba(195, 203, 219, 0.22);
+    --bronze: #cd9166;
+    --bronze-tint: rgba(205, 145, 102, 0.22);
     --danger: #e2765d;
     --danger-tint: rgba(226, 118, 93, 0.14);
     --shadow: 0 1px 1px rgba(0, 0, 0, 0.4), 0 20px 40px -26px rgba(0, 0, 0, 0.7);
@@ -554,14 +562,19 @@ button:active { transform: translateY(1px); }
 
 .standings-table th, .standings-table td {
   text-align: center;
-  padding: 9px 5px;
+  padding: 11px 5px;
   border-bottom: 1px solid var(--line);
+}
+
+.standings-table tbody tr:last-child td {
+  border-bottom: none;
 }
 
 .standings-table thead th {
   color: var(--muted);
   font-weight: 700;
   font-size: 11px;
+  padding-bottom: 12px;
 }
 
 .standings-table .player-col {
@@ -572,15 +585,16 @@ button:active { transform: translateY(1px); }
 .player-cell {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 9px;
+  font-weight: 600;
 }
 
 .rank-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   font-family: var(--mono);
   font-weight: 800;
@@ -594,8 +608,30 @@ button:active { transform: translateY(1px); }
   color: var(--gold);
 }
 
+.rank-badge.rank-2 {
+  background: var(--silver-tint);
+  color: var(--silver);
+}
+
+.rank-badge.rank-3 {
+  background: var(--bronze-tint);
+  color: var(--bronze);
+}
+
+.standings-table tr.me-row {
+  background: var(--court-tint);
+}
+
 .standings-table tr.me-row td {
   font-weight: 700;
+}
+
+.standings-table tr.me-row td:first-child {
+  border-radius: 0 10px 10px 0;
+}
+
+.standings-table tr.me-row td:last-child {
+  border-radius: 10px 0 0 10px;
 }
 
 .inline-form {
