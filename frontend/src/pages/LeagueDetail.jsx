@@ -440,6 +440,12 @@ function MatchRow({ match, currentUserId, onReport, onCancel, busy }) {
         <>
           <div className="score-row">
             <span className={`status-dot ${iWon ? "dot-win" : "dot-loss"}`} />
+            <span
+              className="muted"
+              style={{ color: iWon ? "var(--court)" : "var(--muted)", fontWeight: 700 }}
+            >
+              {iWon ? "ניצחון" : "הפסד"}
+            </span>
             <div className="match-score">
               {myScore} - {opponentScore}
             </div>
