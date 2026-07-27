@@ -110,12 +110,10 @@ h2 { font-size: 17px; }
 h3 { font-size: 15px; }
 
 .week-label {
-  font-family: var(--mono);
   font-size: 12.5px;
   font-weight: 700;
   color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.01em;
   margin: 0;
 }
 
@@ -235,11 +233,9 @@ a { color: var(--court); text-decoration: none; }
 
 .eyebrow {
   display: block;
-  font-family: var(--mono);
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: var(--muted);
   margin-bottom: 4px;
 }
@@ -273,9 +269,7 @@ a { color: var(--court); text-decoration: none; }
 }
 
 .stat-label {
-  font-family: var(--mono);
   font-size: 11.5px;
-  letter-spacing: 0.04em;
   color: var(--muted);
   margin-top: 2px;
 }
@@ -307,7 +301,6 @@ a { color: var(--court); text-decoration: none; }
 }
 
 .gauge-caption {
-  font-family: var(--mono);
   font-size: 10.5px;
   color: var(--muted);
   margin-top: 4px;
@@ -340,9 +333,8 @@ a { color: var(--court); text-decoration: none; }
 }
 
 .chip {
-  font-family: var(--mono);
   font-size: 11px;
-  letter-spacing: 0.03em;
+  font-weight: 600;
   padding: 5px 11px;
   border: 1px solid var(--line);
   border-radius: 999px;
@@ -497,10 +489,9 @@ button:active { transform: translateY(1px); }
   color: var(--muted);
   border-radius: 999px;
   padding: 3px 11px;
-  font-family: var(--mono);
   font-size: 11.5px;
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.01em;
   margin-bottom: 8px;
 }
 
@@ -575,12 +566,9 @@ button:active { transform: translateY(1px); }
 }
 
 .standings-table thead th {
-  font-family: var(--mono);
   color: var(--muted);
   font-weight: 700;
   font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 
 .standings-table .player-col {
@@ -698,10 +686,8 @@ button:active { transform: translateY(1px); }
 
 .pill-pending {
   align-self: flex-start;
-  font-family: var(--mono);
   font-size: 11.5px;
   font-weight: 700;
-  letter-spacing: 0.03em;
   color: var(--muted);
   background: var(--card-alt);
   border: 1px dashed var(--line);
