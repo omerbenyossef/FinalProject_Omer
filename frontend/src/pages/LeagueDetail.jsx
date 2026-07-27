@@ -3,6 +3,8 @@ import { Link, useParams } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import SetScoreForm from "../SetScoreForm.jsx";
+import NextMatchRow from "../NextMatchRow.jsx";
+import CircularGauge from "../CircularGauge.jsx";
 import { formatSets, formatWeekLabel } from "../matchUtils.js";
 
 function groupMatchesByRound(matches) {
@@ -138,6 +140,9 @@ export default function LeagueDetail() {
   const myNextMatch = matches
     .filter((m) => m.status === "pending")
     .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))[0];
+  const myStanding = standings.find((row) => row.user.id === user?.id);
+  const myWinRate =
+    myStanding && myStanding.played > 0 ? Math.round((myStanding.wins / myStanding.played) * 100) : null;
 
   return (
     <div>
@@ -168,13 +173,37 @@ export default function LeagueDetail() {
         <section className="card">
           <h2>המשחק הבא שלך</h2>
           <ul className="match-list">
-            <MyNextMatchRow
+            <NextMatchRow
               match={myNextMatch}
               currentUserId={user.id}
               onSubmit={(sets) => handleReportScore(myNextMatch.id, sets)}
               busy={busy}
             />
           </ul>
+        </section>
+      )}
+
+      {isMember && myStanding && (
+        <section className="card">
+          <div className="hero-stat">
+            <CircularGauge
+              value={myStanding.wins}
+              max={Math.max(myStanding.played, 1)}
+              size={92}
+              strokeWidth={9}
+            >
+              <div className="gauge-value">{myStanding.wins}</div>
+              <div className="gauge-caption">/ {myStanding.played} משחקים</div>
+            </CircularGauge>
+            <div className="hero-copy">
+              <span className="eyebrow">הסטטיסטיקה שלי בליגה</span>
+              <div className="chip-row">
+                <span className="chip">{myStanding.points} נקודות</span>
+                <span className="chip">{myStanding.losses} הפסדים</span>
+                {myWinRate !== null && <span className="chip">{myWinRate}% ניצחונות</span>}
+              </div>
+            </div>
+          </div>
         </section>
       )}
 
@@ -339,42 +368,6 @@ export default function LeagueDetail() {
   );
 }
 
-function MyNextMatchRow({ match, currentUserId, onSubmit, busy }) {
-  const [reporting, setReporting] = useState(false);
-  const opponent = match.player1.id === currentUserId ? match.player2 : match.player1;
-
-  return (
-    <li className="match-row">
-      <div className="match-players">
-        <span>נגד</span>
-        <Link to={`/head-to-head/${opponent.id}`}>
-          <strong>{opponent.name}</strong>
-        </Link>
-      </div>
-      {reporting ? (
-        <SetScoreForm
-          player1Name={match.player1.name}
-          player2Name={match.player2.name}
-          onSubmit={(sets) => {
-            onSubmit(sets);
-            setReporting(false);
-          }}
-          onCancel={() => setReporting(false)}
-          busy={busy}
-        />
-      ) : (
-        <button
-          type="button"
-          className="btn-secondary"
-          style={{ alignSelf: "flex-start" }}
-          onClick={() => setReporting(true)}
-        >
-          דווח תוצאה
-        </button>
-      )}
-    </li>
-  );
-}
 
 function MatchRow({ match, currentUserId, onReport, onCancel, busy }) {
   const [reporting, setReporting] = useState(false);

@@ -2,6 +2,7 @@ import random
 import string
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import or_
 from sqlalchemy.orm import Session, joinedload
 
 from .. import models, schemas
@@ -51,6 +52,42 @@ def list_my_leagues(
         .all()
     )
     return [_to_league_out(l) for l in leagues]
+
+
+@router.get("/mine/next-matches", response_model=list[schemas.NextMatchEntry])
+def my_next_matches(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    my_leagues = (
+        db.query(models.League)
+        .join(models.LeagueMembership)
+        .filter(models.LeagueMembership.user_id == current_user.id)
+        .all()
+    )
+
+    entries = []
+    for league in my_leagues:
+        match = (
+            db.query(models.Match)
+            .options(joinedload(models.Match.player1), joinedload(models.Match.player2))
+            .filter(
+                models.Match.league_id == league.id,
+                models.Match.status == models.MatchStatus.pending,
+                or_(
+                    models.Match.player1_id == current_user.id,
+                    models.Match.player2_id == current_user.id,
+                ),
+            )
+            .order_by(models.Match.created_at.asc())
+            .first()
+        )
+        if match:
+            entries.append(
+                schemas.NextMatchEntry(league_id=league.id, league_name=league.name, match=match)
+            )
+
+    return entries
 
 
 @router.post("/", response_model=schemas.LeagueOut)

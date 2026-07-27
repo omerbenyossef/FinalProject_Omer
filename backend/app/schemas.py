@@ -138,6 +138,12 @@ class MatchOut(BaseModel):
         from_attributes = True
 
 
+class NextMatchEntry(BaseModel):
+    league_id: int
+    league_name: str
+    match: MatchOut
+
+
 class StandingRow(BaseModel):
     user: MemberOut
     played: int

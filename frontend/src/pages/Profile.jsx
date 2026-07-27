@@ -3,6 +3,7 @@ import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import CircularGauge from "../CircularGauge.jsx";
 import LeagueCard from "../LeagueCard.jsx";
+import NextMatchRow from "../NextMatchRow.jsx";
 
 export default function Profile() {
   const { user } = useAuth();
@@ -10,6 +11,15 @@ export default function Profile() {
   const [error, setError] = useState("");
   const [myLeagues, setMyLeagues] = useState([]);
   const [showMyLeagues, setShowMyLeagues] = useState(false);
+  const [nextMatches, setNextMatches] = useState([]);
+  const [busy, setBusy] = useState(false);
+
+  function loadNextMatches() {
+    api
+      .myNextMatches()
+      .then(setNextMatches)
+      .catch(() => {});
+  }
 
   useEffect(() => {
     api
@@ -20,7 +30,20 @@ export default function Profile() {
       .myLeagues()
       .then(setMyLeagues)
       .catch(() => {});
+    loadNextMatches();
   }, []);
+
+  async function handleReportScore(leagueId, matchId, sets) {
+    setBusy(true);
+    try {
+      await api.reportScore(leagueId, matchId, sets);
+      loadNextMatches();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
 
   if (!user) return null;
 
@@ -72,6 +95,25 @@ export default function Profile() {
           </div>
         )}
       </div>
+
+      {nextMatches.length > 0 && (
+        <section className="card">
+          <h2>המשחקים הבאים שלי</h2>
+          <ul className="match-list">
+            {nextMatches.map((entry) => (
+              <NextMatchRow
+                key={entry.match.id}
+                match={entry.match}
+                currentUserId={user.id}
+                leagueName={entry.league_name}
+                leagueId={entry.league_id}
+                busy={busy}
+                onSubmit={(sets) => handleReportScore(entry.league_id, entry.match.id, sets)}
+              />
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className="card">
         <button
