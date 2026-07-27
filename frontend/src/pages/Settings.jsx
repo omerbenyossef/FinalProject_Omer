@@ -3,54 +3,37 @@ import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import { getTheme, setTheme } from "../theme.js";
 
+const THEME_ORDER = ["system", "light", "dark"];
+const THEME_LABELS = { system: "אוטומטי", light: "בהיר", dark: "כהה" };
+
 export default function Settings() {
   const { user, updateUser } = useAuth();
 
   return (
     <div>
-      <h1>הגדרות</h1>
+      <div className="page-header">
+        <h1>הגדרות</h1>
+        <ThemeToggleButton />
+      </div>
       <EditProfileCard user={user} updateUser={updateUser} />
-      <ThemeCard />
       <ChangePasswordCard />
     </div>
   );
 }
 
-function ThemeCard() {
+function ThemeToggleButton() {
   const [theme, setThemeState] = useState(getTheme());
 
-  function choose(value) {
-    setTheme(value);
-    setThemeState(value);
+  function cycle() {
+    const next = THEME_ORDER[(THEME_ORDER.indexOf(theme) + 1) % THEME_ORDER.length];
+    setTheme(next);
+    setThemeState(next);
   }
 
   return (
-    <section className="card">
-      <h2>מראה</h2>
-      <div className="segmented" style={{ marginTop: 12 }}>
-        <button
-          type="button"
-          className={`segmented-btn${theme === "system" ? " active" : ""}`}
-          onClick={() => choose("system")}
-        >
-          אוטומטי
-        </button>
-        <button
-          type="button"
-          className={`segmented-btn${theme === "light" ? " active" : ""}`}
-          onClick={() => choose("light")}
-        >
-          בהיר
-        </button>
-        <button
-          type="button"
-          className={`segmented-btn${theme === "dark" ? " active" : ""}`}
-          onClick={() => choose("dark")}
-        >
-          כהה
-        </button>
-      </div>
-    </section>
+    <button type="button" className="btn-secondary btn-small" onClick={cycle}>
+      מראה: {THEME_LABELS[theme]}
+    </button>
   );
 }
 
