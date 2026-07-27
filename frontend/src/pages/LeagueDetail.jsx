@@ -32,7 +32,6 @@ export default function LeagueDetail() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [showMatches, setShowMatches] = useState(false);
-  const [showMembers, setShowMembers] = useState(false);
   const [showAllMatches, setShowAllMatches] = useState(false);
   const [joinCode, setJoinCode] = useState("");
   const [inviteCode, setInviteCode] = useState(null);
@@ -179,69 +178,43 @@ export default function LeagueDetail() {
         </section>
       )}
 
-      <div className="two-col">
-        <section className="card">
-          <button
-            type="button"
-            className="settings-row collapsible-toggle"
-            onClick={() => setShowMembers((v) => !v)}
-          >
-            <h2>שחקנים בליגה ({members.length})</h2>
-            <span className="muted">{showMembers ? "הסתר" : "הצג"}</span>
-          </button>
-
-          {showMembers && (
-            <div className="member-chips" style={{ marginTop: 14 }}>
-              {members.map((m) => (
-                <div className="member-chip" key={m.id}>
-                  <span>
-                    {m.name}
-                    {m.id === user?.id && <span className="muted"> (את/ה)</span>}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section className="card">
-          <h2>טבלת דירוג</h2>
-          <div className="table-wrap">
-            <table className="standings-table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th className="player-col">שחקן</th>
-                  <th>משחקים</th>
-                  <th>נצחונות</th>
-                  <th>הפסדים</th>
-                  <th>נקודות</th>
-                </tr>
-              </thead>
-              <tbody>
-                {standings.map((row, index) => {
-                  const rank = index + 1;
-                  const isMe = row.user.id === user?.id;
-                  return (
-                    <tr key={row.user.id} className={isMe ? "me-row" : undefined}>
-                      <td>
-                        <span className={`rank-badge${rank === 1 ? " rank-1" : ""}`}>{rank}</span>
-                      </td>
-                      <td className="player-col">
-                        <span className="player-cell">{row.user.name}</span>
-                      </td>
-                      <td>{row.played}</td>
-                      <td>{row.wins}</td>
-                      <td>{row.losses}</td>
-                      <td>{row.points}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      </div>
+      <section className="card">
+        <h2>טבלת דירוג</h2>
+        <div className="table-wrap">
+          <table className="standings-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th className="player-col">שחקן</th>
+                <th>משחקים</th>
+                <th>נצחונות</th>
+                <th>הפסדים</th>
+                <th>נקודות</th>
+              </tr>
+            </thead>
+            <tbody>
+              {standings.map((row, index) => {
+                const rank = index + 1;
+                const isMe = row.user.id === user?.id;
+                return (
+                  <tr key={row.user.id} className={isMe ? "me-row" : undefined}>
+                    <td>
+                      <span className={`rank-badge${rank === 1 ? " rank-1" : ""}`}>{rank}</span>
+                    </td>
+                    <td className="player-col">
+                      <span className="player-cell">{row.user.name}</span>
+                    </td>
+                    <td>{row.played}</td>
+                    <td>{row.wins}</td>
+                    <td>{row.losses}</td>
+                    <td>{row.points}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </section>
 
       {isMember && (
         <section className="card">
