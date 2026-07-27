@@ -365,24 +365,42 @@ export default function LeagueDetail() {
                     : formatWeekLabel(league.schedule_started_at, round)}
                 </h3>
                 <ul className="match-list" style={{ marginTop: 8 }}>
-                  {roundMatches.map((match) => (
-                    <li className="match-row" key={match.id}>
-                      <div className="match-players">
-                        <strong>{match.player1.name}</strong> נגד{" "}
-                        <strong>{match.player2.name}</strong>
-                      </div>
-                      {match.status === "pending" ? (
-                        <span className="pill-pending">ממתין לתוצאה</span>
-                      ) : (
-                        <div>
-                          <div className="match-score">
-                            {match.player1_score} - {match.player2_score}
-                          </div>
-                          <div className="sets-breakdown">{formatSets(match.sets)}</div>
+                  {roundMatches.map((match) => {
+                    const isCompleted = match.status === "completed";
+                    const p1Won = isCompleted && match.player1_score > match.player2_score;
+                    const p2Won = isCompleted && match.player2_score > match.player1_score;
+                    return (
+                      <li className="match-row" key={match.id}>
+                        <div className="match-players">
+                          {isCompleted ? (
+                            <span className={p1Won ? "match-winner-name" : "match-loser-name"}>
+                              {match.player1.name}
+                            </span>
+                          ) : (
+                            <strong>{match.player1.name}</strong>
+                          )}{" "}
+                          נגד{" "}
+                          {isCompleted ? (
+                            <span className={p2Won ? "match-winner-name" : "match-loser-name"}>
+                              {match.player2.name}
+                            </span>
+                          ) : (
+                            <strong>{match.player2.name}</strong>
+                          )}
                         </div>
-                      )}
-                    </li>
-                  ))}
+                        {!isCompleted ? (
+                          <span className="pill-pending">ממתין לתוצאה</span>
+                        ) : (
+                          <div>
+                            <div className="match-score">
+                              {match.player1_score} - {match.player2_score}
+                            </div>
+                            <div className="sets-breakdown">{formatSets(match.sets)}</div>
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             ))}
