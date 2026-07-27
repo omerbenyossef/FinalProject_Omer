@@ -51,6 +51,11 @@ export const api = {
       method: "POST",
       body: { current_password: currentPassword, new_password: newPassword },
     }),
+  changeEmail: (currentPassword, newEmail) =>
+    request("/auth/change-email", {
+      method: "POST",
+      body: { current_password: currentPassword, new_email: newEmail },
+    }),
 
   listSports: () => request("/sports/", { auth: false }),
 

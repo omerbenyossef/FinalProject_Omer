@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import { getTheme, setTheme } from "../theme.js";
@@ -7,7 +8,13 @@ const THEME_ORDER = ["system", "light", "dark"];
 const THEME_LABELS = { system: "אוטומטי", light: "בהיר", dark: "כהה" };
 
 export default function Settings() {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, logout } = useAuth();
+  const navigate = useNavigate();
+
+  function handleLogout() {
+    logout();
+    navigate("/login");
+  }
 
   return (
     <div>
@@ -16,7 +23,19 @@ export default function Settings() {
         <ThemeToggleButton />
       </div>
       <EditProfileCard user={user} updateUser={updateUser} />
+      <ChangeEmailCard user={user} updateUser={updateUser} />
       <ChangePasswordCard />
+      <section className="card">
+        <div className="settings-row">
+          <div>
+            <h2>יציאה מהחשבון</h2>
+            <p className="muted">{user?.email}</p>
+          </div>
+          <button type="button" className="btn-secondary" onClick={handleLogout}>
+            התנתקות
+          </button>
+        </div>
+      </section>
     </div>
   );
 }
@@ -104,6 +123,89 @@ function EditProfileCard({ user, updateUser }) {
           <div className="inline-form">
             <button type="submit" className="btn-primary" disabled={submitting}>
               {submitting ? "שומר..." : "שמור"}
+            </button>
+            <button type="button" className="link-btn" onClick={() => setEditing(false)}>
+              ביטול
+            </button>
+          </div>
+        </form>
+      )}
+      {!editing && message && <p className="muted">{message}</p>}
+    </section>
+  );
+}
+
+function ChangeEmailCard({ user, updateUser }) {
+  const [editing, setEditing] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  function openEditor() {
+    setCurrentPassword("");
+    setNewEmail(user?.email || "");
+    setMessage("");
+    setError("");
+    setEditing(true);
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setError("");
+    setMessage("");
+    setSubmitting(true);
+    try {
+      const updated = await api.changeEmail(currentPassword, newEmail);
+      updateUser(updated);
+      setMessage("האימייל עודכן בהצלחה");
+      setEditing(false);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <section className="card">
+      <div className="settings-row">
+        <div>
+          <h2>אימייל</h2>
+          <p className="muted">{user?.email}</p>
+        </div>
+        {!editing && (
+          <button type="button" className="btn-secondary" onClick={openEditor}>
+            שנה אימייל
+          </button>
+        )}
+      </div>
+
+      {editing && (
+        <form onSubmit={handleSubmit} style={{ marginTop: 14 }}>
+          <label>
+            אימייל חדש
+            <input
+              type="email"
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
+              required
+            />
+          </label>
+          <label>
+            סיסמה נוכחית
+            <input
+              type="password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              required
+            />
+          </label>
+          {error && <p className="error">{error}</p>}
+          <div className="inline-form">
+            <button type="submit" className="btn-primary" disabled={submitting}>
+              {submitting ? "מעדכן..." : "עדכן אימייל"}
             </button>
             <button type="button" className="link-btn" onClick={() => setEditing(false)}>
               ביטול

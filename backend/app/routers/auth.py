@@ -115,6 +115,25 @@ def change_password(
     return schemas.MessageOut(message="הסיסמה עודכנה בהצלחה")
 
 
+@router.post("/change-email", response_model=schemas.UserOut)
+def change_email(
+    payload: schemas.ChangeEmailRequest,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if not verify_password(payload.current_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="הסיסמה הנוכחית שגויה")
+
+    existing = db.query(models.User).filter(models.User.email == payload.new_email).first()
+    if existing and existing.id != current_user.id:
+        raise HTTPException(status_code=400, detail="האימייל הזה כבר בשימוש")
+
+    current_user.email = payload.new_email
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+
 @router.post("/forgot-password", response_model=schemas.MessageOut)
 def forgot_password(payload: schemas.ForgotPasswordRequest, db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.email == payload.email).first()

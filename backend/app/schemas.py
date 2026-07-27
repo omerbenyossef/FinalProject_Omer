@@ -35,6 +35,11 @@ class ChangePasswordRequest(BaseModel):
     new_password: str
 
 
+class ChangeEmailRequest(BaseModel):
+    current_password: str
+    new_email: EmailStr
+
+
 class UpdateProfileRequest(BaseModel):
     name: str
     age: Optional[int] = None
