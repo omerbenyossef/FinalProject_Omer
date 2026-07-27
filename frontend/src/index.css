@@ -462,6 +462,11 @@ button:active { transform: translateY(1px); }
 
 .btn-secondary:hover { border-color: var(--muted); }
 
+.btn-small {
+  padding: 7px 13px;
+  font-size: 12.5px;
+}
+
 .invite-fab {
   position: fixed;
   left: 16px;

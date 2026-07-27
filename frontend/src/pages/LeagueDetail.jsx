@@ -197,6 +197,16 @@ export default function LeagueDetail() {
             הליגה סגורה. כדי להצטרף צריך קישור הזמנה מאחד מחברי הליגה.
           </p>
         )}
+        {isCreator && (
+          <button
+            type="button"
+            className="btn-secondary btn-small"
+            onClick={handleGenerateSchedule}
+            disabled={busy}
+          >
+            {busy ? "יוצר..." : "צור לוח משחקים"}
+          </button>
+        )}
       </div>
 
       {error && <p className="error">{error}</p>}
@@ -289,19 +299,6 @@ export default function LeagueDetail() {
           <UserPlusIcon aria-hidden="true" />
           {inviteLoading ? "טוען..." : "הזמן חבר לליגה"}
         </button>
-      )}
-
-      {isCreator && (
-        <section className="card">
-          <h2>לוח משחקים</h2>
-          <p className="muted" style={{ marginBottom: 12 }}>
-            יצירת לוח משחקים מסדרת אוטומטית משחק בין כל זוג שחקנים בליגה שעדיין לא שיחקו ביניהם
-            (בסדר אקראי). אפשר להריץ שוב כל פעם שמצטרפים שחקנים חדשים.
-          </p>
-          <button className="btn-primary" onClick={handleGenerateSchedule} disabled={busy}>
-            {busy ? "יוצר..." : "צור לוח משחקים"}
-          </button>
-        </section>
       )}
 
       {isMember && (
