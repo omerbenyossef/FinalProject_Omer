@@ -51,6 +51,7 @@ class UserOut(BaseModel):
     name: str
     age: Optional[int] = None
     email: EmailStr
+    is_admin: bool = False
 
     class Config:
         from_attributes = True
@@ -74,6 +75,7 @@ class LeagueCreate(BaseModel):
     name: str
     description: Optional[str] = None
     sport_id: int
+    is_open: bool = False
 
 
 class LeagueOut(BaseModel):

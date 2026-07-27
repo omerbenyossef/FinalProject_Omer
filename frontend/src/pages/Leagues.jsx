@@ -12,6 +12,7 @@ export default function Leagues() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [sportId, setSportId] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const { user } = useAuth();
 
@@ -39,9 +40,10 @@ export default function Leagues() {
     setError("");
     setSubmitting(true);
     try {
-      await api.createLeague({ name, description, sport_id: Number(sportId) });
+      await api.createLeague({ name, description, sport_id: Number(sportId), is_open: isOpen });
       setName("");
       setDescription("");
+      setIsOpen(false);
       setShowForm(false);
       await loadData();
     } catch (err) {
@@ -84,6 +86,17 @@ export default function Leagues() {
             תיאור (אופציונלי)
             <input value={description} onChange={(e) => setDescription(e.target.value)} />
           </label>
+          {user?.is_admin && (
+            <label style={{ flexDirection: "row-reverse", justifyContent: "flex-end", gap: 8 }}>
+              <input
+                type="checkbox"
+                checked={isOpen}
+                onChange={(e) => setIsOpen(e.target.checked)}
+                style={{ width: "auto" }}
+              />
+              ליגה פתוחה (כל אחד יכול להצטרף בלי קוד הזמנה)
+            </label>
+          )}
           {error && <p className="error">{error}</p>}
           <button type="submit" className="btn-primary" disabled={submitting}>
             {submitting ? "יוצר..." : "צור ליגה"}

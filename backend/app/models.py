@@ -1,4 +1,5 @@
 import enum
+import os
 from datetime import datetime
 
 from sqlalchemy import (
@@ -34,6 +35,11 @@ class User(Base):
     reset_token_expires = Column(DateTime, nullable=True)
 
     memberships = relationship("LeagueMembership", back_populates="user")
+
+    @property
+    def is_admin(self) -> bool:
+        admin_email = os.environ.get("ADMIN_EMAIL", "")
+        return bool(admin_email) and self.email.lower() == admin_email.lower()
 
 
 class Sport(Base):

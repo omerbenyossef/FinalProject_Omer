@@ -46,12 +46,15 @@ def create_league(
     if not sport:
         raise HTTPException(status_code=404, detail="Sport not found")
 
+    if league_in.is_open and not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="רק המנהל יכול ליצור ליגה פתוחה")
+
     league = models.League(
         name=league_in.name,
         description=league_in.description,
         sport_id=league_in.sport_id,
         created_by=current_user.id,
-        join_code=_generate_join_code(db),
+        join_code=None if league_in.is_open else _generate_join_code(db),
     )
     db.add(league)
     db.commit()
