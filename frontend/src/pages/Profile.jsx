@@ -42,7 +42,7 @@ export default function Profile() {
       <div className="card">
         <div className="profile-header">
           <div>
-            <h2 style={{ marginBottom: 2 }}>{user.name}</h2>
+            <h2 style={{ marginBottom: 2, fontSize: 24 }}>{user.name}</h2>
             <p className="muted">{user.email}</p>
           </div>
         </div>
