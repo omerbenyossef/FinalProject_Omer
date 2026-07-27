@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
+import { useLanguage } from "../LanguageContext.jsx";
 import { getTheme, setTheme } from "../theme.js";
 
 const THEME_ORDER = ["system", "light", "dark"];
@@ -9,6 +10,7 @@ const THEME_LABELS = { system: "אוטומטי", light: "בהיר", dark: "כה�
 
 export default function Settings() {
   const { user, updateUser, logout } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   function handleLogout() {
@@ -19,8 +21,11 @@ export default function Settings() {
   return (
     <div>
       <div className="page-header">
-        <h1>הגדרות</h1>
-        <ThemeToggleButton />
+        <h1>{t("הגדרות")}</h1>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <ThemeToggleButton />
+          <LanguageToggleButton />
+        </div>
       </div>
       <EditProfileCard user={user} updateUser={updateUser} />
       <ChangeEmailCard user={user} updateUser={updateUser} />
@@ -28,11 +33,11 @@ export default function Settings() {
       <section className="card">
         <div className="settings-row">
           <div>
-            <h2>יציאה מהחשבון</h2>
+            <h2>{t("יציאה מהחשבון")}</h2>
             <p className="muted">{user?.email}</p>
           </div>
           <button type="button" className="btn-secondary" onClick={handleLogout}>
-            התנתקות
+            {t("התנתקות")}
           </button>
         </div>
       </section>
@@ -42,6 +47,7 @@ export default function Settings() {
 
 function ThemeToggleButton() {
   const [theme, setThemeState] = useState(getTheme());
+  const { t } = useLanguage();
 
   function cycle() {
     const next = THEME_ORDER[(THEME_ORDER.indexOf(theme) + 1) % THEME_ORDER.length];
@@ -51,7 +57,21 @@ function ThemeToggleButton() {
 
   return (
     <button type="button" className="btn-secondary btn-small" onClick={cycle}>
-      תצוגה: {THEME_LABELS[theme]}
+      {t("תצוגה: " + THEME_LABELS[theme])}
+    </button>
+  );
+}
+
+function LanguageToggleButton() {
+  const { language, setLanguage } = useLanguage();
+
+  function cycle() {
+    setLanguage(language === "en" ? "he" : "en");
+  }
+
+  return (
+    <button type="button" className="btn-secondary btn-small" onClick={cycle}>
+      {language === "en" ? "Language: English" : "שפה: עברית"}
     </button>
   );
 }
@@ -63,6 +83,7 @@ function EditProfileCard({ user, updateUser }) {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const { t } = useLanguage();
 
   function openEditor() {
     setName(user?.name || "");
@@ -93,12 +114,12 @@ function EditProfileCard({ user, updateUser }) {
     <section className="card">
       <div className="settings-row">
         <div>
-          <h2>פרופיל</h2>
+          <h2>{t("פרופיל")}</h2>
           <p className="muted">{user?.name}</p>
         </div>
         {!editing && (
           <button type="button" className="btn-secondary" onClick={openEditor}>
-            ערוך
+            {t("ערוך")}
           </button>
         )}
       </div>
@@ -106,11 +127,11 @@ function EditProfileCard({ user, updateUser }) {
       {editing && (
         <form onSubmit={handleSubmit} style={{ marginTop: 14 }}>
           <label>
-            שם מלא
+            {t("שם מלא")}
             <input value={name} onChange={(e) => setName(e.target.value)} required />
           </label>
           <label>
-            גיל
+            {t("גיל")}
             <input
               type="number"
               min="1"
@@ -119,18 +140,18 @@ function EditProfileCard({ user, updateUser }) {
               onChange={(e) => setAge(e.target.value)}
             />
           </label>
-          {error && <p className="error">{error}</p>}
+          {error && <p className="error">{t(error)}</p>}
           <div className="inline-form">
             <button type="submit" className="btn-primary" disabled={submitting}>
-              {submitting ? "שומר..." : "שמור"}
+              {submitting ? t("שומר...") : t("שמור")}
             </button>
             <button type="button" className="link-btn" onClick={() => setEditing(false)}>
-              ביטול
+              {t("ביטול")}
             </button>
           </div>
         </form>
       )}
-      {!editing && message && <p className="muted">{message}</p>}
+      {!editing && message && <p className="muted">{t(message)}</p>}
     </section>
   );
 }
@@ -142,6 +163,7 @@ function ChangeEmailCard({ user, updateUser }) {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const { t } = useLanguage();
 
   function openEditor() {
     setCurrentPassword("");
@@ -172,12 +194,12 @@ function ChangeEmailCard({ user, updateUser }) {
     <section className="card">
       <div className="settings-row">
         <div>
-          <h2>אימייל</h2>
+          <h2>{t("אימייל")}</h2>
           <p className="muted">{user?.email}</p>
         </div>
         {!editing && (
           <button type="button" className="btn-secondary" onClick={openEditor}>
-            שנה אימייל
+            {t("שנה אימייל")}
           </button>
         )}
       </div>
@@ -185,7 +207,7 @@ function ChangeEmailCard({ user, updateUser }) {
       {editing && (
         <form onSubmit={handleSubmit} style={{ marginTop: 14 }}>
           <label>
-            אימייל חדש
+            {t("אימייל חדש")}
             <input
               type="email"
               value={newEmail}
@@ -194,7 +216,7 @@ function ChangeEmailCard({ user, updateUser }) {
             />
           </label>
           <label>
-            סיסמה נוכחית
+            {t("סיסמה נוכחית")}
             <input
               type="password"
               value={currentPassword}
@@ -202,18 +224,18 @@ function ChangeEmailCard({ user, updateUser }) {
               required
             />
           </label>
-          {error && <p className="error">{error}</p>}
+          {error && <p className="error">{t(error)}</p>}
           <div className="inline-form">
             <button type="submit" className="btn-primary" disabled={submitting}>
-              {submitting ? "מעדכן..." : "עדכן אימייל"}
+              {submitting ? t("מעדכן...") : t("עדכן אימייל")}
             </button>
             <button type="button" className="link-btn" onClick={() => setEditing(false)}>
-              ביטול
+              {t("ביטול")}
             </button>
           </div>
         </form>
       )}
-      {!editing && message && <p className="muted">{message}</p>}
+      {!editing && message && <p className="muted">{t(message)}</p>}
     </section>
   );
 }
@@ -225,6 +247,7 @@ function ChangePasswordCard() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const { t } = useLanguage();
 
   function openEditor() {
     setCurrentPassword("");
@@ -254,12 +277,12 @@ function ChangePasswordCard() {
     <section className="card">
       <div className="settings-row">
         <div>
-          <h2>שינוי סיסמה</h2>
+          <h2>{t("שינוי סיסמה")}</h2>
           <p className="muted">••••••••</p>
         </div>
         {!editing && (
           <button type="button" className="btn-secondary" onClick={openEditor}>
-            שנה סיסמה
+            {t("שנה סיסמה")}
           </button>
         )}
       </div>
@@ -267,7 +290,7 @@ function ChangePasswordCard() {
       {editing && (
         <form onSubmit={handleSubmit} style={{ marginTop: 14 }}>
           <label>
-            סיסמה נוכחית
+            {t("סיסמה נוכחית")}
             <input
               type="password"
               value={currentPassword}
@@ -276,7 +299,7 @@ function ChangePasswordCard() {
             />
           </label>
           <label>
-            סיסמה חדשה
+            {t("סיסמה חדשה")}
             <input
               type="password"
               minLength={6}
@@ -285,18 +308,18 @@ function ChangePasswordCard() {
               required
             />
           </label>
-          {error && <p className="error">{error}</p>}
+          {error && <p className="error">{t(error)}</p>}
           <div className="inline-form">
             <button type="submit" className="btn-primary" disabled={submitting}>
-              {submitting ? "מעדכן..." : "עדכן סיסמה"}
+              {submitting ? t("מעדכן...") : t("עדכן סיסמה")}
             </button>
             <button type="button" className="link-btn" onClick={() => setEditing(false)}>
-              ביטול
+              {t("ביטול")}
             </button>
           </div>
         </form>
       )}
-      {!editing && message && <p className="muted">{message}</p>}
+      {!editing && message && <p className="muted">{t(message)}</p>}
     </section>
   );
 }

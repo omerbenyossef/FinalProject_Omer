@@ -5,6 +5,7 @@ import "./index.css";
 import App from "./App.jsx";
 import { AuthProvider } from "./AuthContext.jsx";
 import { SportProvider } from "./SportContext.jsx";
+import { LanguageProvider } from "./LanguageContext.jsx";
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
@@ -16,9 +17,11 @@ createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
       <AuthProvider>
-        <SportProvider>
-          <App />
-        </SportProvider>
+        <LanguageProvider>
+          <SportProvider>
+            <App />
+          </SportProvider>
+        </LanguageProvider>
       </AuthProvider>
     </BrowserRouter>
   </StrictMode>

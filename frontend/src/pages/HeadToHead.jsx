@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api } from "../api";
+import { useLanguage } from "../LanguageContext.jsx";
 import { formatSets } from "../matchUtils.js";
 
 export default function HeadToHead() {
   const { opponentId } = useParams();
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
+  const { t } = useLanguage();
 
   useEffect(() => {
     api
@@ -15,17 +17,17 @@ export default function HeadToHead() {
       .catch((err) => setError(err.message));
   }, [opponentId]);
 
-  if (error) return <p className="error">{error}</p>;
-  if (!data) return <p className="muted">טוען...</p>;
+  if (error) return <p className="error">{t(error)}</p>;
+  if (!data) return <p className="muted">{t("טוען...")}</p>;
 
   return (
     <div>
       <Link to="/leagues" className="link-btn" style={{ display: "inline-block", marginBottom: 12 }}>
-        חזרה לליגות
+        {t("חזרה לליגות")}
       </Link>
       <div className="page-header">
         <div>
-          <span className="eyebrow">ראש בראש</span>
+          <span className="eyebrow">{t("ראש בראש")}</span>
           <h1>{data.opponent.name}</h1>
         </div>
       </div>
@@ -34,22 +36,22 @@ export default function HeadToHead() {
         <div className="stat-row">
           <div className="stat-tile">
             <div className="stat-value">{data.wins}</div>
-            <div className="stat-label">ניצחונות</div>
+            <div className="stat-label">{t("ניצחונות")}</div>
           </div>
           <div className="stat-tile">
             <div className="stat-value">{data.losses}</div>
-            <div className="stat-label">הפסדים</div>
+            <div className="stat-label">{t("הפסדים")}</div>
           </div>
           <div className="stat-tile">
             <div className="stat-value">{data.matches.length}</div>
-            <div className="stat-label">משחקים</div>
+            <div className="stat-label">{t("משחקים")}</div>
           </div>
         </div>
       </div>
 
       <section className="card">
-        <h2>היסטוריית משחקים</h2>
-        {data.matches.length === 0 && <p className="muted">עדיין לא שיחקתם אחד נגד השני.</p>}
+        <h2>{t("היסטוריית משחקים")}</h2>
+        {data.matches.length === 0 && <p className="muted">{t("עדיין לא שיחקתם אחד נגד השני.")}</p>}
         <ul className="match-list">
           {data.matches.map((m) => {
             const iWon = m.my_score > m.opponent_score;

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
+import { useLanguage } from "../LanguageContext.jsx";
 
 export default function Register() {
   const [name, setName] = useState("");
@@ -10,6 +11,7 @@ export default function Register() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const { loginWithToken } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -31,18 +33,18 @@ export default function Register() {
 
   return (
     <div className="card form-card">
-      <h1>הרשמה</h1>
+      <h1>{t("הרשמה")}</h1>
       <form onSubmit={handleSubmit}>
         <label>
-          שם מלא
+          {t("שם מלא")}
           <input value={name} onChange={(e) => setName(e.target.value)} required />
         </label>
         <label>
-          אימייל
+          {t("אימייל")}
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
         </label>
         <label>
-          סיסמה
+          {t("סיסמה")}
           <input
             type="password"
             minLength={6}
@@ -51,13 +53,13 @@ export default function Register() {
             required
           />
         </label>
-        {error && <p className="error">{error}</p>}
+        {error && <p className="error">{t(error)}</p>}
         <button type="submit" className="btn-primary" disabled={submitting}>
-          {submitting ? "נרשם..." : "הרשמה"}
+          {submitting ? t("נרשם...") : t("הרשמה")}
         </button>
       </form>
       <p className="muted">
-        כבר יש לך חשבון?{" "}
+        {t("כבר יש לך חשבון?")}{" "}
         <Link
           to={
             searchParams.get("redirect")
@@ -65,7 +67,7 @@ export default function Register() {
               : "/login"
           }
         >
-          כניסה
+          {t("כניסה")}
         </Link>
       </p>
     </div>

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import { useSport } from "../SportContext.jsx";
+import { useLanguage } from "../LanguageContext.jsx";
 import CircularGauge from "../CircularGauge.jsx";
 import LeagueCard from "../LeagueCard.jsx";
 import NextMatchRow from "../NextMatchRow.jsx";
@@ -10,6 +11,7 @@ import { UserPlusIcon } from "../Icons.jsx";
 export default function Profile() {
   const { user } = useAuth();
   const { selectedSportId } = useSport();
+  const { t } = useLanguage();
   const [stats, setStats] = useState(null);
   const [error, setError] = useState("");
   const [myLeagues, setMyLeagues] = useState([]);
@@ -19,7 +21,7 @@ export default function Profile() {
 
   function handleInviteToApp() {
     const url = `${window.location.origin}/login`;
-    const message = `בוא/י תצטרף/י ל-Rally, אפליקציית ניהול הליגות שלנו!\n${url}`;
+    const message = t("בוא/י תצטרף/י ל-Rally, אפליקציית ניהול הליגות שלנו!\n{url}", { url });
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
   }
 
@@ -67,17 +69,17 @@ export default function Profile() {
   const winRate =
     stats && stats.matches_played > 0 ? Math.round((stats.wins / stats.matches_played) * 100) : null;
 
-  let blurb = "עדיין לא שיחקת אף משחק. השבוע זה הזמן להתחיל!";
+  let blurb = t("עדיין לא שיחקת אף משחק. השבוע זה הזמן להתחיל!");
   if (winRate !== null) {
     blurb =
       winRate >= 50
-        ? `ניצחת ב-${winRate}% מהמשחקים שלך. תמשיך ככה!`
-        : `ניצחת ב-${winRate}% מהמשחקים שלך. עוד יש לאן להשתפר.`;
+        ? t("ניצחת ב-{rate}% מהמשחקים שלך. תמשיך ככה!", { rate: winRate })
+        : t("ניצחת ב-{rate}% מהמשחקים שלך. עוד יש לאן להשתפר.", { rate: winRate });
   }
 
   return (
     <div>
-      <h1>פרופיל שחקן</h1>
+      <h1>{t("פרופיל שחקן")}</h1>
 
       <div className="card">
         <div className="profile-header">
@@ -89,7 +91,7 @@ export default function Profile() {
       </div>
 
       <div className="card">
-        {error && <p className="error">{error}</p>}
+        {error && <p className="error">{t(error)}</p>}
         {stats && (
           <div className="hero-stat">
             <CircularGauge
@@ -99,14 +101,20 @@ export default function Profile() {
               strokeWidth={10}
             >
               <div className="gauge-value">{stats.wins}</div>
-              <div className="gauge-caption">{winRate !== null ? `${winRate}% ניצחונות` : "אין עדיין"}</div>
+              <div className="gauge-caption">
+                {winRate !== null ? `${winRate}% ${t("ניצחונות")}` : t("אין עדיין")}
+              </div>
             </CircularGauge>
             <div className="hero-copy">
-              <span className="eyebrow">סטטיסטיקה</span>
+              <span className="eyebrow">{t("סטטיסטיקה")}</span>
               <p>{blurb}</p>
               <div className="chip-row">
-                <span className="chip">{stats.leagues} ליגות</span>
-                <span className="chip">{stats.matches_played} משחקים</span>
+                <span className="chip">
+                  {stats.leagues} {t("ליגות")}
+                </span>
+                <span className="chip">
+                  {stats.matches_played} {t("משחקים")}
+                </span>
               </div>
             </div>
           </div>
@@ -115,7 +123,7 @@ export default function Profile() {
 
       {nextMatchesForSport.length > 0 && (
         <section className="card">
-          <h2>המשחקים הבאים שלי</h2>
+          <h2>{t("המשחקים הבאים שלי")}</h2>
           <ul className="match-list">
             {nextMatchesForSport.map((entry) => (
               <NextMatchRow
@@ -138,8 +146,8 @@ export default function Profile() {
           className="settings-row collapsible-toggle"
           onClick={() => setShowMyLeagues((v) => !v)}
         >
-          <h2>הליגות שלי ({myLeaguesForSport.length})</h2>
-          <span className="muted">{showMyLeagues ? "הסתר" : "הצג"}</span>
+          <h2>{t("הליגות שלי")} ({myLeaguesForSport.length})</h2>
+          <span className="muted">{showMyLeagues ? t("הסתר") : t("הצג")}</span>
         </button>
 
         {showMyLeagues && (
@@ -148,7 +156,7 @@ export default function Profile() {
               <LeagueCard league={league} key={league.id} />
             ))}
             {myLeaguesForSport.length === 0 && (
-              <p className="muted">עדיין לא הצטרפת לאף ליגה בענף הזה.</p>
+              <p className="muted">{t("עדיין לא הצטרפת לאף ליגה בענף הזה.")}</p>
             )}
           </div>
         )}
@@ -156,7 +164,7 @@ export default function Profile() {
 
       <button type="button" className="invite-fab" onClick={handleInviteToApp}>
         <UserPlusIcon aria-hidden="true" />
-        הזמן חבר
+        {t("הזמן חבר")}
       </button>
     </div>
   );

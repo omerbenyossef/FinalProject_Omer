@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../api";
+import { useLanguage } from "../LanguageContext.jsx";
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
@@ -9,6 +10,7 @@ export default function ResetPassword() {
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   async function handleSubmit(e) {
@@ -28,9 +30,9 @@ export default function ResetPassword() {
   if (!token) {
     return (
       <div className="card form-card">
-        <h1>קישור לא תקין</h1>
+        <h1>{t("קישור לא תקין")}</h1>
         <p className="muted">
-          הקישור חסר או שגוי. אפשר לבקש קישור חדש <Link to="/forgot-password">כאן</Link>.
+          {t("הקישור חסר או שגוי. אפשר לבקש קישור חדש")} <Link to="/forgot-password">{t("כאן")}</Link>.
         </p>
       </div>
     );
@@ -39,9 +41,9 @@ export default function ResetPassword() {
   if (done) {
     return (
       <div className="card form-card">
-        <h1>הסיסמה עודכנה</h1>
+        <h1>{t("הסיסמה עודכנה")}</h1>
         <p className="muted" style={{ marginBottom: 14 }}>
-          אפשר עכשיו להתחבר עם הסיסמה החדשה.
+          {t("אפשר עכשיו להתחבר עם הסיסמה החדשה.")}
         </p>
         <button
           type="button"
@@ -49,7 +51,7 @@ export default function ResetPassword() {
           style={{ width: "100%" }}
           onClick={() => navigate("/login")}
         >
-          מעבר לכניסה
+          {t("מעבר לכניסה")}
         </button>
       </div>
     );
@@ -57,10 +59,10 @@ export default function ResetPassword() {
 
   return (
     <div className="card form-card">
-      <h1>איפוס סיסמה</h1>
+      <h1>{t("איפוס סיסמה")}</h1>
       <form onSubmit={handleSubmit}>
         <label>
-          סיסמה חדשה
+          {t("סיסמה חדשה")}
           <input
             type="password"
             minLength={6}
@@ -69,9 +71,9 @@ export default function ResetPassword() {
             required
           />
         </label>
-        {error && <p className="error">{error}</p>}
+        {error && <p className="error">{t(error)}</p>}
         <button type="submit" className="btn-primary" disabled={submitting}>
-          {submitting ? "מעדכן..." : "עדכן סיסמה"}
+          {submitting ? t("מעדכן...") : t("עדכן סיסמה")}
         </button>
       </form>
     </div>

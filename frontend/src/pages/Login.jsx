@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
+import { useLanguage } from "../LanguageContext.jsx";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -9,6 +10,7 @@ export default function Login() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const { loginWithToken } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -30,14 +32,14 @@ export default function Login() {
 
   return (
     <div className="card form-card">
-      <h1>כניסה</h1>
+      <h1>{t("כניסה")}</h1>
       <form onSubmit={handleSubmit}>
         <label>
-          אימייל
+          {t("אימייל")}
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
         </label>
         <label>
-          סיסמה
+          {t("סיסמה")}
           <input
             type="password"
             value={password}
@@ -45,16 +47,16 @@ export default function Login() {
             required
           />
         </label>
-        {error && <p className="error">{error}</p>}
+        {error && <p className="error">{t(error)}</p>}
         <button type="submit" className="btn-primary" disabled={submitting}>
-          {submitting ? "מתחבר..." : "כניסה"}
+          {submitting ? t("מתחבר...") : t("כניסה")}
         </button>
       </form>
       <p className="muted" style={{ marginTop: 10 }}>
-        <Link to="/forgot-password">שכחתי סיסמה</Link>
+        <Link to="/forgot-password">{t("שכחתי סיסמה")}</Link>
       </p>
       <p className="muted">
-        אין לך חשבון?{" "}
+        {t("אין לך חשבון?")}{" "}
         <Link
           to={
             searchParams.get("redirect")
@@ -62,7 +64,7 @@ export default function Login() {
               : "/register"
           }
         >
-          הרשמה
+          {t("הרשמה")}
         </Link>
       </p>
     </div>

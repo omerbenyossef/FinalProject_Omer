@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLanguage } from "./LanguageContext.jsx";
 
 function initialRows(sets) {
   if (sets && sets.length > 0) {
@@ -17,6 +18,7 @@ export default function SetScoreForm({
   submitLabel = "דווח תוצאה",
 }) {
   const [rows, setRows] = useState(() => initialRows(initialSets));
+  const { t } = useLanguage();
 
   function updateRow(index, key, value) {
     setRows((prev) => prev.map((row, i) => (i === index ? { ...row, [key]: value } : row)));
@@ -43,7 +45,7 @@ export default function SetScoreForm({
     <form onSubmit={handleSubmit} className="set-score-form">
       {rows.map((row, index) => (
         <div className="set-score-row" key={index}>
-          <span className="muted set-score-label">סט {index + 1}</span>
+          <span className="muted set-score-label">{t("סט {n}", { n: index + 1 })}</span>
           <input
             type="number"
             min="0"
@@ -68,7 +70,7 @@ export default function SetScoreForm({
               style={{ color: "var(--danger)" }}
               onClick={() => removeRow(index)}
             >
-              הסר
+              {t("הסר")}
             </button>
           )}
         </div>
@@ -76,14 +78,14 @@ export default function SetScoreForm({
 
       <div className="inline-form">
         <button type="button" className="link-btn" onClick={addRow}>
-          + הוסף סט
+          {t("+ הוסף סט")}
         </button>
         <button type="submit" className="btn-secondary" disabled={busy}>
-          {submitLabel}
+          {t(submitLabel)}
         </button>
         {onCancel && (
           <button type="button" className="link-btn" onClick={onCancel}>
-            ביטול
+            {t("ביטול")}
           </button>
         )}
       </div>

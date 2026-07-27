@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
+import { useLanguage } from "../LanguageContext.jsx";
 import SetScoreForm from "../SetScoreForm.jsx";
 import NextMatchRow from "../NextMatchRow.jsx";
 import CircularGauge from "../CircularGauge.jsx";
@@ -26,6 +27,7 @@ function groupMatchesByRound(matches) {
 export default function LeagueDetail() {
   const { leagueId } = useParams();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const codeFromLink = (searchParams.get("code") || "").trim();
@@ -104,7 +106,7 @@ export default function LeagueDetail() {
         setInviteCode(code);
       }
       const url = `${window.location.origin}/leagues/${leagueId}?code=${code}`;
-      const message = `בוא/י תצטרף/י לליגה "${league.name}" ב-Rally!\n${url}`;
+      const message = t('בוא/י תצטרף/י לליגה "{name}" ב-Rally!\n{url}', { name: league.name, url });
       window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
     } catch (err) {
       setInviteError(err.message);
@@ -153,7 +155,13 @@ export default function LeagueDetail() {
   }
 
   async function handleDeleteLeague() {
-    if (!window.confirm(`למחוק את הליגה "${league.name}"? הפעולה תמחק גם את כל המשחקים והחברויות בה, ולא ניתנת לביטול.`)) {
+    if (
+      !window.confirm(
+        t('למחוק את הליגה "{name}"? הפעולה תמחק גם את כל המשחקים והחברויות בה, ולא ניתנת לביטול.', {
+          name: league.name,
+        })
+      )
+    ) {
       return;
     }
     setBusy(true);
@@ -168,7 +176,7 @@ export default function LeagueDetail() {
   }
 
   async function handleLeaveLeague() {
-    if (!window.confirm(`לעזוב את הליגה "${league.name}"?`)) {
+    if (!window.confirm(t('לעזוב את הליגה "{name}"?', { name: league.name }))) {
       return;
     }
     setBusy(true);
@@ -182,7 +190,7 @@ export default function LeagueDetail() {
     }
   }
 
-  if (!league) return <p className="muted">טוען...</p>;
+  if (!league) return <p className="muted">{t("טוען...")}</p>;
 
   const isCreator = league.created_by === user?.id;
   const myNextMatch = matches
@@ -202,13 +210,13 @@ export default function LeagueDetail() {
         {!isMember && user && (league.is_open || codeFromLink) && (
           <div className="inline-form">
             <button className="btn-primary" onClick={() => handleJoin()} disabled={busy}>
-              {busy ? "מצטרף..." : "הצטרפות לליגה"}
+              {busy ? t("מצטרף...") : t("הצטרפות לליגה")}
             </button>
           </div>
         )}
         {!isMember && user && !league.is_open && !codeFromLink && (
           <p className="muted" style={{ fontSize: 14 }}>
-            הליגה סגורה. כדי להצטרף צריך קישור הזמנה מאחד מחברי הליגה.
+            {t("הליגה סגורה. כדי להצטרף צריך קישור הזמנה מאחד מחברי הליגה.")}
           </p>
         )}
         {isCreator && (
@@ -218,7 +226,7 @@ export default function LeagueDetail() {
             onClick={handleGenerateSchedule}
             disabled={busy}
           >
-            {busy ? "יוצר..." : "צור לוח משחקים"}
+            {busy ? t("יוצר...") : t("צור לוח משחקים")}
           </button>
         )}
         {isMember && !isCreator && (
@@ -229,16 +237,16 @@ export default function LeagueDetail() {
             onClick={handleLeaveLeague}
             disabled={busy}
           >
-            עזיבת ליגה
+            {t("עזיבת ליגה")}
           </button>
         )}
       </div>
 
-      {error && <p className="error">{error}</p>}
+      {error && <p className="error">{t(error)}</p>}
 
       {isMember && myNextMatch && (
         <section className="card">
-          <h2>המשחק הבא שלך</h2>
+          <h2>{t("המשחק הבא שלך")}</h2>
           <ul className="match-list">
             <NextMatchRow
               match={myNextMatch}
@@ -260,14 +268,22 @@ export default function LeagueDetail() {
               strokeWidth={9}
             >
               <div className="gauge-value">{myStanding.wins}</div>
-              <div className="gauge-caption">{myWinRate !== null ? `${myWinRate}% ניצחונות` : "אין עדיין"}</div>
+              <div className="gauge-caption">
+                {myWinRate !== null ? `${myWinRate}% ${t("ניצחונות")}` : t("אין עדיין")}
+              </div>
             </CircularGauge>
             <div className="hero-copy">
-              <span className="eyebrow">הסטטיסטיקה שלי בליגה</span>
+              <span className="eyebrow">{t("הסטטיסטיקה שלי בליגה")}</span>
               <div className="chip-row">
-                <span className="chip">{myStanding.points} נקודות</span>
-                <span className="chip">{myStanding.losses} הפסדים</span>
-                <span className="chip">{myStanding.played} משחקים</span>
+                <span className="chip">
+                  {myStanding.points} {t("נקודות")}
+                </span>
+                <span className="chip">
+                  {myStanding.losses} {t("הפסדים")}
+                </span>
+                <span className="chip">
+                  {myStanding.played} {t("משחקים")}
+                </span>
               </div>
             </div>
           </div>
@@ -275,17 +291,17 @@ export default function LeagueDetail() {
       )}
 
       <section className="card">
-        <h2>טבלת דירוג</h2>
+        <h2>{t("טבלת דירוג")}</h2>
         <div className="table-wrap">
           <table className="standings-table">
             <thead>
               <tr>
                 <th>#</th>
-                <th className="player-col">שחקן</th>
-                <th>משחקים</th>
-                <th>נצחונות</th>
-                <th>הפסדים</th>
-                <th>נקודות</th>
+                <th className="player-col">{t("שחקן")}</th>
+                <th>{t("משחקים")}</th>
+                <th>{t("נצחונות")}</th>
+                <th>{t("הפסדים")}</th>
+                <th>{t("נקודות")}</th>
               </tr>
             </thead>
             <tbody>
@@ -312,7 +328,7 @@ export default function LeagueDetail() {
         </div>
       </section>
 
-      {inviteError && <p className="error">{inviteError}</p>}
+      {inviteError && <p className="error">{t(inviteError)}</p>}
 
       {isMember && (
         <button
@@ -322,7 +338,7 @@ export default function LeagueDetail() {
           disabled={inviteLoading}
         >
           <UserPlusIcon aria-hidden="true" />
-          {inviteLoading ? "טוען..." : "הזמן חבר לליגה"}
+          {inviteLoading ? t("טוען...") : t("הזמן חבר לליגה")}
         </button>
       )}
 
@@ -333,19 +349,19 @@ export default function LeagueDetail() {
             className="settings-row collapsible-toggle"
             onClick={() => setShowMatches((v) => !v)}
           >
-            <h2>המשחקים שלי</h2>
-            <span className="muted">{showMatches ? "הסתר" : "הצג"}</span>
+            <h2>{t("המשחקים שלי")}</h2>
+            <span className="muted">{showMatches ? t("הסתר") : t("הצג")}</span>
           </button>
 
           {showMatches && (
             <>
-              {matches.length === 0 && <p className="muted">עדיין אין משחקים.</p>}
+              {matches.length === 0 && <p className="muted">{t("עדיין אין משחקים.")}</p>}
               {groupMatchesByRound(matches).map(({ round, matches: roundMatches }) => (
                 <div key={round} style={{ marginTop: 16 }}>
                   <h3 className="week-label">
                     {round === "none"
-                      ? "משחקים נוספים"
-                      : formatWeekLabel(league.schedule_started_at, round)}
+                      ? t("משחקים נוספים")
+                      : formatWeekLabel(league.schedule_started_at, round, t)}
                   </h3>
                   <ul className="match-list" style={{ marginTop: 8 }}>
                     {roundMatches.map((match) => (
@@ -372,19 +388,19 @@ export default function LeagueDetail() {
           className="settings-row collapsible-toggle"
           onClick={() => setShowAllMatches((v) => !v)}
         >
-          <h2>כל המשחקים בליגה</h2>
-          <span className="muted">{showAllMatches ? "הסתר" : "הצג"}</span>
+          <h2>{t("כל המשחקים בליגה")}</h2>
+          <span className="muted">{showAllMatches ? t("הסתר") : t("הצג")}</span>
         </button>
 
         {showAllMatches && (
           <>
-            {allMatches.length === 0 && <p className="muted">עדיין אין משחקים בליגה.</p>}
+            {allMatches.length === 0 && <p className="muted">{t("עדיין אין משחקים בליגה.")}</p>}
             {groupMatchesByRound(allMatches).map(({ round, matches: roundMatches }) => (
               <div key={round} style={{ marginTop: 16 }}>
                 <h3 className="week-label">
                   {round === "none"
-                    ? "משחקים נוספים"
-                    : formatWeekLabel(league.schedule_started_at, round)}
+                    ? t("משחקים נוספים")
+                    : formatWeekLabel(league.schedule_started_at, round, t)}
                 </h3>
                 <ul className="match-list" style={{ marginTop: 8 }}>
                   {roundMatches.map((match) => {
@@ -401,7 +417,7 @@ export default function LeagueDetail() {
                           ) : (
                             <strong>{match.player1.name}</strong>
                           )}{" "}
-                          נגד{" "}
+                          {t("נגד")}{" "}
                           {isCompleted ? (
                             <span className={p2Won ? "match-winner-name" : "match-loser-name"}>
                               {match.player2.name}
@@ -411,7 +427,7 @@ export default function LeagueDetail() {
                           )}
                         </div>
                         {!isCompleted ? (
-                          <span className="pill-pending">ממתין לתוצאה</span>
+                          <span className="pill-pending">{t("ממתין לתוצאה")}</span>
                         ) : (
                           <div>
                             <div className="match-score">
@@ -432,9 +448,9 @@ export default function LeagueDetail() {
 
       {user?.is_admin && (
         <section className="card">
-          <h2>ניהול ליגה</h2>
+          <h2>{t("ניהול ליגה")}</h2>
           <p className="muted" style={{ marginBottom: 12 }}>
-            מחיקת הליגה תסיר לצמיתות את כל המשחקים והחברויות בה.
+            {t("מחיקת הליגה תסיר לצמיתות את כל המשחקים והחברויות בה.")}
           </p>
           <button
             type="button"
@@ -443,7 +459,7 @@ export default function LeagueDetail() {
             onClick={handleDeleteLeague}
             disabled={busy}
           >
-            מחק ליגה
+            {t("מחק ליגה")}
           </button>
         </section>
       )}
@@ -455,6 +471,7 @@ export default function LeagueDetail() {
 function MatchRow({ match, currentUserId, onReport, onCancel, busy }) {
   const [reporting, setReporting] = useState(false);
   const [editing, setEditing] = useState(false);
+  const { t } = useLanguage();
   const isPending = match.status === "pending";
   const iAmPlayer1 = match.player1.id === currentUserId;
   const opponent = iAmPlayer1 ? match.player2 : match.player1;
@@ -475,14 +492,14 @@ function MatchRow({ match, currentUserId, onReport, onCancel, busy }) {
     <li className="match-row">
       <div className="match-players" style={{ justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span>נגד</span>
+          <span>{t("נגד")}</span>
           <Link to={`/head-to-head/${opponent.id}`}>
             <strong>{opponent.name}</strong>
           </Link>
         </div>
         {!isPending && !editing && (
           <span style={{ color: iWon ? "var(--court)" : "var(--muted)", fontWeight: 700 }}>
-            {iWon ? "ניצחון" : "הפסד"}
+            {iWon ? t("ניצחון") : t("הפסד")}
           </span>
         )}
       </div>
@@ -503,7 +520,7 @@ function MatchRow({ match, currentUserId, onReport, onCancel, busy }) {
               style={{ alignSelf: "flex-start" }}
               onClick={() => setReporting(true)}
             >
-              דווח תוצאה
+              {t("דווח תוצאה")}
             </button>
             <button
               type="button"
@@ -512,7 +529,7 @@ function MatchRow({ match, currentUserId, onReport, onCancel, busy }) {
               disabled={busy}
               onClick={() => onCancel(match.id)}
             >
-              ביטול אתגר
+              {t("ביטול אתגר")}
             </button>
           </>
         )
@@ -541,7 +558,7 @@ function MatchRow({ match, currentUserId, onReport, onCancel, busy }) {
             style={{ alignSelf: "flex-start" }}
             onClick={() => setEditing(true)}
           >
-            ערוך תוצאה
+            {t("ערוך תוצאה")}
           </button>
         </>
       )}

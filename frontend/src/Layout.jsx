@@ -1,6 +1,7 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext.jsx";
 import { useSport } from "./SportContext.jsx";
+import { useLanguage } from "./LanguageContext.jsx";
 import { PersonIcon, SettingsIcon, TrophyIcon } from "./Icons.jsx";
 
 function BrandMark() {
@@ -17,6 +18,7 @@ function BrandMark() {
 export default function Layout({ children }) {
   const { user, logout } = useAuth();
   const { sports, selectedSportId, setSelectedSportId } = useSport();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   function handleLogout() {
@@ -40,7 +42,7 @@ export default function Layout({ children }) {
           >
             {sports.map((sport) => (
               <option key={sport.id} value={sport.id}>
-                {sport.name}
+                {t(sport.name)}
               </option>
             ))}
           </select>
@@ -49,12 +51,12 @@ export default function Layout({ children }) {
         <nav>
           {user ? (
             <button className="link-btn" onClick={handleLogout}>
-              התנתקות
+              {t("התנתקות")}
             </button>
           ) : (
             <>
-              <Link to="/login">כניסה</Link>
-              <Link to="/register">הרשמה</Link>
+              <Link to="/login">{t("כניסה")}</Link>
+              <Link to="/register">{t("הרשמה")}</Link>
             </>
           )}
         </nav>
@@ -66,21 +68,21 @@ export default function Layout({ children }) {
             <NavLink
               to="/leagues"
               className={({ isActive }) => `tab${isActive ? " active" : ""}`}
-              aria-label="ליגות"
+              aria-label={t("ליגות")}
             >
               <TrophyIcon className="tab-icon" aria-hidden="true" />
             </NavLink>
             <NavLink
               to="/profile"
               className={({ isActive }) => `tab${isActive ? " active" : ""}`}
-              aria-label="פרופיל"
+              aria-label={t("פרופיל")}
             >
               <PersonIcon className="tab-icon" aria-hidden="true" />
             </NavLink>
             <NavLink
               to="/settings"
               className={({ isActive }) => `tab${isActive ? " active" : ""}`}
-              aria-label="הגדרות"
+              aria-label={t("הגדרות")}
             >
               <SettingsIcon className="tab-icon" aria-hidden="true" />
             </NavLink>

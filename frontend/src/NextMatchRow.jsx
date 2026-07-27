@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import SetScoreForm from "./SetScoreForm.jsx";
+import { useLanguage } from "./LanguageContext.jsx";
 
 export default function NextMatchRow({ match, currentUserId, onSubmit, busy, leagueName, leagueId }) {
   const [reporting, setReporting] = useState(false);
+  const { t } = useLanguage();
   const opponent = match.player1.id === currentUserId ? match.player2 : match.player1;
 
   return (
@@ -14,7 +16,7 @@ export default function NextMatchRow({ match, currentUserId, onSubmit, busy, lea
             {leagueName}
           </Link>
         )}
-        <span>נגד</span>
+        <span>{t("נגד")}</span>
         <Link to={`/head-to-head/${opponent.id}`}>
           <strong>{opponent.name}</strong>
         </Link>
@@ -37,7 +39,7 @@ export default function NextMatchRow({ match, currentUserId, onSubmit, busy, lea
           style={{ alignSelf: "flex-start" }}
           onClick={() => setReporting(true)}
         >
-          דווח תוצאה
+          {t("דווח תוצאה")}
         </button>
       )}
     </li>

@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api";
+import { useLanguage } from "../LanguageContext.jsx";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const { t } = useLanguage();
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -24,26 +26,26 @@ export default function ForgotPassword() {
 
   return (
     <div className="card form-card">
-      <h1>שכחתי סיסמה</h1>
+      <h1>{t("שכחתי סיסמה")}</h1>
       <p className="muted" style={{ marginBottom: 14 }}>
-        הזינו את כתובת האימייל שלכם ונשלח אליכם קישור לאיפוס הסיסמה
+        {t("הזינו את כתובת האימייל שלכם ונשלח אליכם קישור לאיפוס הסיסמה")}
       </p>
       {message ? (
-        <p className="muted">{message}</p>
+        <p className="muted">{t(message)}</p>
       ) : (
         <form onSubmit={handleSubmit}>
           <label>
-            אימייל
+            {t("אימייל")}
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </label>
-          {error && <p className="error">{error}</p>}
+          {error && <p className="error">{t(error)}</p>}
           <button type="submit" className="btn-primary" disabled={submitting}>
-            {submitting ? "שולח..." : "שלח קישור לאיפוס"}
+            {submitting ? t("שולח...") : t("שלח קישור לאיפוס")}
           </button>
         </form>
       )}
       <p className="muted" style={{ marginTop: 14 }}>
-        <Link to="/login">חזרה לכניסה</Link>
+        <Link to="/login">{t("חזרה לכניסה")}</Link>
       </p>
     </div>
   );

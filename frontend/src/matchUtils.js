@@ -14,7 +14,7 @@ function formatDayMonth(date) {
   return `${date.getDate()}.${date.getMonth() + 1}`;
 }
 
-export function formatWeekLabel(scheduleStartedAt, roundNumber) {
+export function formatWeekLabel(scheduleStartedAt, roundNumber, t) {
   if (!scheduleStartedAt || !roundNumber) return "";
   const anchor = new Date(scheduleStartedAt);
   const round1End = weekEndSaturday(anchor);
@@ -30,5 +30,5 @@ export function formatWeekLabel(scheduleStartedAt, roundNumber) {
     end.setDate(end.getDate() + 7 * (roundNumber - 1));
   }
 
-  return `שבוע ${roundNumber} (${formatDayMonth(start)} - ${formatDayMonth(end)})`;
+  return `${t("שבוע {n}", { n: roundNumber })} (${formatDayMonth(start)} - ${formatDayMonth(end)})`;
 }

@@ -16,6 +16,11 @@
           if (theme === "light" || theme === "dark") {
             document.documentElement.setAttribute("data-theme", theme);
           }
+          var language = localStorage.getItem("rally-language");
+          if (language === "en") {
+            document.documentElement.lang = "en";
+            document.documentElement.dir = "ltr";
+          }
         } catch (e) {}
       })();
     </script>

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import { useSport } from "../SportContext.jsx";
+import { useLanguage } from "../LanguageContext.jsx";
 import LeagueCard from "../LeagueCard.jsx";
 
 export default function Leagues() {
@@ -18,6 +19,7 @@ export default function Leagues() {
   const [submitting, setSubmitting] = useState(false);
   const { user } = useAuth();
   const { selectedSportId } = useSport();
+  const { t, dir } = useLanguage();
 
   async function loadData() {
     setLoading(true);
@@ -69,47 +71,47 @@ export default function Leagues() {
   return (
     <div>
       <div className="page-header">
-        <h1>ליגות פעילות</h1>
+        <h1>{t("ליגות פעילות")}</h1>
         {user && (
           <button className="btn-primary" onClick={() => setShowForm((v) => !v)}>
-            {showForm ? "ביטול" : "+ יצירת ליגה"}
+            {showForm ? t("ביטול") : `+ ${t("יצירת ליגה")}`}
           </button>
         )}
       </div>
 
-      {!user && <p className="muted">רוצה להקים ליגה? יש להירשם או להתחבר קודם.</p>}
+      {!user && <p className="muted">{t("רוצה להקים ליגה? יש להירשם או להתחבר קודם.")}</p>}
 
       {showForm && (
         <form className="card form-card" onSubmit={handleCreate}>
           <label>
-            שם הליגה
+            {t("שם הליגה")}
             <input value={name} onChange={(e) => setName(e.target.value)} required />
           </label>
           <label>
-            תיאור (אופציונלי)
+            {t("תיאור (אופציונלי)")}
             <input value={description} onChange={(e) => setDescription(e.target.value)} />
           </label>
           {user?.is_admin && (
-            <label style={{ flexDirection: "row-reverse", justifyContent: "flex-end", gap: 8 }}>
+            <label style={{ flexDirection: dir === "rtl" ? "row-reverse" : "row", justifyContent: "flex-end", gap: 8 }}>
               <input
                 type="checkbox"
                 checked={isOpen}
                 onChange={(e) => setIsOpen(e.target.checked)}
                 style={{ width: "auto" }}
               />
-              ליגה פתוחה (כל אחד יכול להצטרף בלי קוד הזמנה)
+              {t("ליגה פתוחה (כל אחד יכול להצטרף בלי קוד הזמנה)")}
             </label>
           )}
-          {error && <p className="error">{error}</p>}
+          {error && <p className="error">{t(error)}</p>}
           <button type="submit" className="btn-primary" disabled={submitting}>
-            {submitting ? "יוצר..." : "צור ליגה"}
+            {submitting ? t("יוצר...") : t("צור ליגה")}
           </button>
         </form>
       )}
 
-      {error && !showForm && <p className="error">{error}</p>}
+      {error && !showForm && <p className="error">{t(error)}</p>}
 
-      {loading && <p className="muted">טוען...</p>}
+      {loading && <p className="muted">{t("טוען...")}</p>}
 
       {user && (
         <section className="card">
@@ -118,8 +120,8 @@ export default function Leagues() {
             className="settings-row collapsible-toggle"
             onClick={() => setShowMyLeagues((v) => !v)}
           >
-            <h2>הליגות שלי ({myLeaguesForSport.length})</h2>
-            <span className="muted">{showMyLeagues ? "הסתר" : "הצג"}</span>
+            <h2>{t("הליגות שלי")} ({myLeaguesForSport.length})</h2>
+            <span className="muted">{showMyLeagues ? t("הסתר") : t("הצג")}</span>
           </button>
 
           {showMyLeagues && (
@@ -128,7 +130,7 @@ export default function Leagues() {
                 <LeagueCard league={league} key={league.id} />
               ))}
               {!loading && myLeaguesForSport.length === 0 && (
-                <p className="muted">עדיין לא הצטרפת לאף ליגה בענף הזה.</p>
+                <p className="muted">{t("עדיין לא הצטרפת לאף ליגה בענף הזה.")}</p>
               )}
             </div>
           )}
@@ -141,8 +143,8 @@ export default function Leagues() {
           className="settings-row collapsible-toggle"
           onClick={() => setShowOpenLeagues((v) => !v)}
         >
-          <h2>ליגות פתוחות ({openLeagues.length})</h2>
-          <span className="muted">{showOpenLeagues ? "הסתר" : "הצג"}</span>
+          <h2>{t("ליגות פתוחות")} ({openLeagues.length})</h2>
+          <span className="muted">{showOpenLeagues ? t("הסתר") : t("הצג")}</span>
         </button>
 
         {showOpenLeagues && (
@@ -151,7 +153,7 @@ export default function Leagues() {
               <LeagueCard league={league} key={league.id} isMember={myLeagueIds.has(league.id)} />
             ))}
             {!loading && openLeagues.length === 0 && (
-              <p className="muted">אין כרגע ליגות פתוחות.</p>
+              <p className="muted">{t("אין כרגע ליגות פתוחות.")}</p>
             )}
           </div>
         )}
