@@ -235,14 +235,14 @@ export default function LeagueDetail() {
               strokeWidth={9}
             >
               <div className="gauge-value">{myStanding.wins}</div>
-              <div className="gauge-caption">/ {myStanding.played} משחקים</div>
+              <div className="gauge-caption">{myWinRate !== null ? `${myWinRate}% ניצחונות` : "אין עדיין"}</div>
             </CircularGauge>
             <div className="hero-copy">
               <span className="eyebrow">הסטטיסטיקה שלי בליגה</span>
               <div className="chip-row">
                 <span className="chip">{myStanding.points} נקודות</span>
                 <span className="chip">{myStanding.losses} הפסדים</span>
-                {myWinRate !== null && <span className="chip">{myWinRate}% ניצחונות</span>}
+                <span className="chip">{myStanding.played} משחקים</span>
               </div>
             </div>
           </div>

@@ -89,14 +89,14 @@ export default function Profile() {
               strokeWidth={10}
             >
               <div className="gauge-value">{stats.wins}</div>
-              <div className="gauge-caption">/ {stats.matches_played} משחקים</div>
+              <div className="gauge-caption">{winRate !== null ? `${winRate}% ניצחונות` : "אין עדיין"}</div>
             </CircularGauge>
             <div className="hero-copy">
               <span className="eyebrow">סטטיסטיקה</span>
               <p>{blurb}</p>
               <div className="chip-row">
                 <span className="chip">{stats.leagues} ליגות</span>
-                {winRate !== null && <span className="chip">{winRate}% ניצחונות</span>}
+                <span className="chip">{stats.matches_played} משחקים</span>
               </div>
             </div>
           </div>
