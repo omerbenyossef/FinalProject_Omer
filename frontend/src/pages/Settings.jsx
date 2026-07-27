@@ -51,7 +51,7 @@ function EditProfileCard({ user, updateUser }) {
     <section className="card">
       <div className="settings-row">
         <div>
-          <h2>עריכת פרופיל</h2>
+          <h2>פרופיל ופרטים אישיים</h2>
           <p className="muted">{user?.name}</p>
         </div>
         {!editing && (
