@@ -390,11 +390,18 @@ function MatchRow({ match, currentUserId, onReport, onCancel, busy }) {
 
   return (
     <li className="match-row">
-      <div className="match-players">
-        <span>נגד</span>
-        <Link to={`/head-to-head/${opponent.id}`}>
-          <strong>{opponent.name}</strong>
-        </Link>
+      <div className="match-players" style={{ justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span>נגד</span>
+          <Link to={`/head-to-head/${opponent.id}`}>
+            <strong>{opponent.name}</strong>
+          </Link>
+        </div>
+        {!isPending && !editing && (
+          <span style={{ color: iWon ? "var(--court)" : "var(--muted)", fontWeight: 700 }}>
+            {iWon ? "ניצחון" : "הפסד"}
+          </span>
+        )}
       </div>
       {isPending ? (
         reporting ? (
@@ -440,12 +447,6 @@ function MatchRow({ match, currentUserId, onReport, onCancel, busy }) {
         <>
           <div className="score-row">
             <span className={`status-dot ${iWon ? "dot-win" : "dot-loss"}`} />
-            <span
-              className="muted"
-              style={{ color: iWon ? "var(--court)" : "var(--muted)", fontWeight: 700 }}
-            >
-              {iWon ? "ניצחון" : "הפסד"}
-            </span>
             <div className="match-score">
               {myScore} - {opponentScore}
             </div>
