@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
+import { getTheme, setTheme } from "../theme.js";
 
 export default function Settings() {
   const { user, updateUser } = useAuth();
@@ -9,8 +10,47 @@ export default function Settings() {
     <div>
       <h1>הגדרות</h1>
       <EditProfileCard user={user} updateUser={updateUser} />
+      <ThemeCard />
       <ChangePasswordCard />
     </div>
+  );
+}
+
+function ThemeCard() {
+  const [theme, setThemeState] = useState(getTheme());
+
+  function choose(value) {
+    setTheme(value);
+    setThemeState(value);
+  }
+
+  return (
+    <section className="card">
+      <h2>מראה</h2>
+      <div className="segmented" style={{ marginTop: 12 }}>
+        <button
+          type="button"
+          className={`segmented-btn${theme === "system" ? " active" : ""}`}
+          onClick={() => choose("system")}
+        >
+          אוטומטי
+        </button>
+        <button
+          type="button"
+          className={`segmented-btn${theme === "light" ? " active" : ""}`}
+          onClick={() => choose("light")}
+        >
+          בהיר
+        </button>
+        <button
+          type="button"
+          className={`segmented-btn${theme === "dark" ? " active" : ""}`}
+          onClick={() => choose("dark")}
+        >
+          כהה
+        </button>
+      </div>
+    </section>
   );
 }
 

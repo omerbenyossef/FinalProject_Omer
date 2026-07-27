@@ -53,7 +53,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --ink: #eef1f7;
     --paper: #0c0e14;
     --card: #141821;
@@ -76,6 +76,35 @@
     --danger-tint: rgba(226, 118, 93, 0.14);
     --shadow: 0 1px 1px rgba(0, 0, 0, 0.4), 0 20px 40px -26px rgba(0, 0, 0, 0.7);
   }
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ink: #eef1f7;
+  --paper: #0c0e14;
+  --card: #141821;
+  --card-alt: #1b202b;
+  --line: rgba(148, 163, 184, 0.16);
+  --muted: #8b93a6;
+  --glass: rgba(12, 14, 20, 0.78);
+  --court: #c6e838;
+  --court-deep: #b0d020;
+  --court-contrast: #14150f;
+  --court-tint: rgba(198, 232, 56, 0.12);
+  --court-tint-strong: rgba(198, 232, 56, 0.2);
+  --gold: #e2ac54;
+  --gold-tint: rgba(226, 172, 84, 0.16);
+  --silver: #c3cbdb;
+  --silver-tint: rgba(195, 203, 219, 0.22);
+  --bronze: #cd9166;
+  --bronze-tint: rgba(205, 145, 102, 0.22);
+  --danger: #e2765d;
+  --danger-tint: rgba(226, 118, 93, 0.14);
+  --shadow: 0 1px 1px rgba(0, 0, 0, 0.4), 0 20px 40px -26px rgba(0, 0, 0, 0.7);
 }
 
 * {
@@ -465,6 +494,31 @@ button:active { transform: translateY(1px); }
 .btn-small {
   padding: 7px 13px;
   font-size: 12.5px;
+}
+
+.segmented {
+  display: flex;
+  background: var(--card-alt);
+  border-radius: 999px;
+  padding: 4px;
+  gap: 4px;
+}
+
+.segmented-btn {
+  flex: 1;
+  background: none;
+  border: none;
+  border-radius: 999px;
+  padding: 9px 0;
+  font-weight: 700;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+
+.segmented-btn.active {
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
 }
 
 .invite-fab {
