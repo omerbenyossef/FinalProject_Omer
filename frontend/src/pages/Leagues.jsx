@@ -3,12 +3,26 @@ import { Link } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 
+function LeagueCard({ league }) {
+  return (
+    <Link to={`/leagues/${league.id}`} className="card league-card">
+      <span className="sport-tag">{league.sport.name}</span>
+      <h3>{league.name}</h3>
+      {league.description && <p className="muted">{league.description}</p>}
+      <p className="member-count">{league.member_count} שחקנים</p>
+    </Link>
+  );
+}
+
 export default function Leagues() {
   const [leagues, setLeagues] = useState([]);
+  const [myLeagues, setMyLeagues] = useState([]);
   const [sports, setSports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [showMyLeagues, setShowMyLeagues] = useState(false);
+  const [showOpenLeagues, setShowOpenLeagues] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [sportId, setSportId] = useState("");
@@ -23,6 +37,13 @@ export default function Leagues() {
       setLeagues(leaguesData);
       setSports(sportsData);
       if (sportsData.length && !sportId) setSportId(String(sportsData[0].id));
+
+      if (user) {
+        const mine = await api.myLeagues();
+        setMyLeagues(mine);
+      } else {
+        setMyLeagues([]);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -52,6 +73,8 @@ export default function Leagues() {
       setSubmitting(false);
     }
   }
+
+  const openLeagues = leagues.filter((l) => l.is_open);
 
   return (
     <div>
@@ -108,19 +131,51 @@ export default function Leagues() {
 
       {loading && <p className="muted">טוען...</p>}
 
-      <div className="league-grid">
-        {leagues.map((league) => (
-          <Link to={`/leagues/${league.id}`} key={league.id} className="card league-card">
-            <span className="sport-tag">{league.sport.name}</span>
-            <h3>{league.name}</h3>
-            {league.description && <p className="muted">{league.description}</p>}
-            <p className="member-count">{league.member_count} שחקנים</p>
-          </Link>
-        ))}
-        {!loading && leagues.length === 0 && (
-          <p className="muted">עדיין אין ליגות. היו הראשונים להקים אחת!</p>
+      {user && (
+        <section className="card">
+          <button
+            type="button"
+            className="settings-row collapsible-toggle"
+            onClick={() => setShowMyLeagues((v) => !v)}
+          >
+            <h2>הליגות שלי ({myLeagues.length})</h2>
+            <span className="muted">{showMyLeagues ? "הסתר" : "הצג"}</span>
+          </button>
+
+          {showMyLeagues && (
+            <div className="league-grid" style={{ marginTop: 14 }}>
+              {myLeagues.map((league) => (
+                <LeagueCard league={league} key={league.id} />
+              ))}
+              {!loading && myLeagues.length === 0 && (
+                <p className="muted">עדיין לא הצטרפת לאף ליגה.</p>
+              )}
+            </div>
+          )}
+        </section>
+      )}
+
+      <section className="card">
+        <button
+          type="button"
+          className="settings-row collapsible-toggle"
+          onClick={() => setShowOpenLeagues((v) => !v)}
+        >
+          <h2>ליגות פתוחות ({openLeagues.length})</h2>
+          <span className="muted">{showOpenLeagues ? "הסתר" : "הצג"}</span>
+        </button>
+
+        {showOpenLeagues && (
+          <div className="league-grid" style={{ marginTop: 14 }}>
+            {openLeagues.map((league) => (
+              <LeagueCard league={league} key={league.id} />
+            ))}
+            {!loading && openLeagues.length === 0 && (
+              <p className="muted">אין כרגע ליגות פתוחות.</p>
+            )}
+          </div>
         )}
-      </div>
+      </section>
     </div>
   );
 }

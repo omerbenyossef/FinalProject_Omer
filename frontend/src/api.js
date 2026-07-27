@@ -55,6 +55,7 @@ export const api = {
   listSports: () => request("/sports/", { auth: false }),
 
   listLeagues: () => request("/leagues/", { auth: false }),
+  myLeagues: () => request("/leagues/mine"),
   createLeague: (data) => request("/leagues/", { method: "POST", body: data }),
   getLeague: (id) => request(`/leagues/${id}`, { auth: false }),
   joinLeague: (id, code) => request(`/leagues/${id}/join`, { method: "POST", body: { code } }),

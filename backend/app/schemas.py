@@ -86,6 +86,7 @@ class LeagueOut(BaseModel):
     member_count: int = 0
     created_by: int
     schedule_started_at: Optional[datetime] = None
+    is_open: bool = False
 
     class Config:
         from_attributes = True

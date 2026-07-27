@@ -22,6 +22,7 @@ def _generate_join_code(db: Session) -> str:
 def _to_league_out(league: models.League) -> schemas.LeagueOut:
     out = schemas.LeagueOut.model_validate(league)
     out.member_count = len(league.memberships)
+    out.is_open = league.join_code is None
     return out
 
 
@@ -30,6 +31,22 @@ def list_leagues(db: Session = Depends(get_db)):
     leagues = (
         db.query(models.League)
         .options(joinedload(models.League.sport), joinedload(models.League.memberships))
+        .order_by(models.League.created_at.desc())
+        .all()
+    )
+    return [_to_league_out(l) for l in leagues]
+
+
+@router.get("/mine", response_model=list[schemas.LeagueOut])
+def list_my_leagues(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    leagues = (
+        db.query(models.League)
+        .join(models.LeagueMembership)
+        .options(joinedload(models.League.sport), joinedload(models.League.memberships))
+        .filter(models.LeagueMembership.user_id == current_user.id)
         .order_by(models.League.created_at.desc())
         .all()
     )
