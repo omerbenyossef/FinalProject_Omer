@@ -45,7 +45,7 @@ export const api = {
       auth: false,
     }),
   myStats: () => request("/auth/me/stats"),
-  updateProfile: (name) => request("/auth/me", { method: "PATCH", body: { name } }),
+  updateProfile: (name, age) => request("/auth/me", { method: "PATCH", body: { name, age } }),
   changePassword: (currentPassword, newPassword) =>
     request("/auth/change-password", {
       method: "POST",

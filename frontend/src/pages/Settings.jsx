@@ -8,21 +8,23 @@ export default function Settings() {
   return (
     <div>
       <h1>הגדרות</h1>
-      <EditNameCard user={user} updateUser={updateUser} />
+      <EditProfileCard user={user} updateUser={updateUser} />
       <ChangePasswordCard />
     </div>
   );
 }
 
-function EditNameCard({ user, updateUser }) {
+function EditProfileCard({ user, updateUser }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(user?.name || "");
+  const [age, setAge] = useState(user?.age ?? "");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   function openEditor() {
     setName(user?.name || "");
+    setAge(user?.age ?? "");
     setMessage("");
     setError("");
     setEditing(true);
@@ -34,9 +36,9 @@ function EditNameCard({ user, updateUser }) {
     setMessage("");
     setSubmitting(true);
     try {
-      const updated = await api.updateProfile(name);
+      const updated = await api.updateProfile(name, age === "" ? null : Number(age));
       updateUser(updated);
-      setMessage("השם עודכן בהצלחה");
+      setMessage("הפרופיל עודכן בהצלחה");
       setEditing(false);
     } catch (err) {
       setError(err.message);
@@ -49,12 +51,12 @@ function EditNameCard({ user, updateUser }) {
     <section className="card">
       <div className="settings-row">
         <div>
-          <h2>עריכת שם</h2>
+          <h2>עריכת פרופיל</h2>
           <p className="muted">{user?.name}</p>
         </div>
         {!editing && (
           <button type="button" className="btn-secondary" onClick={openEditor}>
-            ערוך פרופיל
+            ערוך
           </button>
         )}
       </div>
@@ -65,10 +67,20 @@ function EditNameCard({ user, updateUser }) {
             שם מלא
             <input value={name} onChange={(e) => setName(e.target.value)} required />
           </label>
+          <label>
+            גיל
+            <input
+              type="number"
+              min="1"
+              max="120"
+              value={age}
+              onChange={(e) => setAge(e.target.value)}
+            />
+          </label>
           {error && <p className="error">{error}</p>}
           <div className="inline-form">
             <button type="submit" className="btn-primary" disabled={submitting}>
-              {submitting ? "שומר..." : "שמור שם"}
+              {submitting ? "שומר..." : "שמור"}
             </button>
             <button type="button" className="link-btn" onClick={() => setEditing(false)}>
               ביטול

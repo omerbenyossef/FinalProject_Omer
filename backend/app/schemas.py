@@ -37,6 +37,7 @@ class ChangePasswordRequest(BaseModel):
 
 class UpdateProfileRequest(BaseModel):
     name: str
+    age: Optional[int] = None
 
 
 class UserStats(BaseModel):
@@ -48,6 +49,7 @@ class UserStats(BaseModel):
 class UserOut(BaseModel):
     id: int
     name: str
+    age: Optional[int] = None
     email: EmailStr
 
     class Config:

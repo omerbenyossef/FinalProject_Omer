@@ -56,6 +56,7 @@ def update_profile(
     db: Session = Depends(get_db),
 ):
     current_user.name = payload.name
+    current_user.age = payload.age
     db.commit()
     db.refresh(current_user)
     return current_user
