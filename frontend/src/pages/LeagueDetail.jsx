@@ -271,7 +271,7 @@ export default function LeagueDetail() {
           disabled={inviteLoading}
         >
           <UserPlusIcon aria-hidden="true" />
-          {inviteLoading ? "טוען..." : "הזמן חבר"}
+          {inviteLoading ? "טוען..." : "הזמן חבר לליגה"}
         </button>
       )}
 
