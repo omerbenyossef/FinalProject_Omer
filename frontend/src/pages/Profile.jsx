@@ -2,17 +2,24 @@ import { useEffect, useState } from "react";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import CircularGauge from "../CircularGauge.jsx";
+import LeagueCard from "../LeagueCard.jsx";
 
 export default function Profile() {
   const { user } = useAuth();
   const [stats, setStats] = useState(null);
   const [error, setError] = useState("");
+  const [myLeagues, setMyLeagues] = useState([]);
+  const [showMyLeagues, setShowMyLeagues] = useState(false);
 
   useEffect(() => {
     api
       .myStats()
       .then(setStats)
       .catch((err) => setError(err.message));
+    api
+      .myLeagues()
+      .then(setMyLeagues)
+      .catch(() => {});
   }, []);
 
   if (!user) return null;
@@ -64,6 +71,26 @@ export default function Profile() {
           </div>
         )}
       </div>
+
+      <section className="card">
+        <button
+          type="button"
+          className="settings-row collapsible-toggle"
+          onClick={() => setShowMyLeagues((v) => !v)}
+        >
+          <h2>הליגות שלי ({myLeagues.length})</h2>
+          <span className="muted">{showMyLeagues ? "הסתר" : "הצג"}</span>
+        </button>
+
+        {showMyLeagues && (
+          <div className="league-grid" style={{ marginTop: 14 }}>
+            {myLeagues.map((league) => (
+              <LeagueCard league={league} key={league.id} />
+            ))}
+            {myLeagues.length === 0 && <p className="muted">עדיין לא הצטרפת לאף ליגה.</p>}
+          </div>
+        )}
+      </section>
     </div>
   );
 }
