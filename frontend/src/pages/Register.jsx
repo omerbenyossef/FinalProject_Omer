@@ -21,7 +21,7 @@ export default function Register() {
       const data = await api.register({ name, email, password });
       loginWithToken(data.access_token, data.user);
       const redirect = searchParams.get("redirect");
-      navigate(redirect || "/leagues");
+      navigate(redirect || "/profile");
     } catch (err) {
       setError(err.message);
     } finally {
