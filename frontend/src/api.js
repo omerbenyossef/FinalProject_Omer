@@ -44,7 +44,7 @@ export const api = {
       body: { token, new_password: newPassword },
       auth: false,
     }),
-  myStats: () => request("/auth/me/stats"),
+  myStats: (sportId) => request(`/auth/me/stats${sportId ? `?sport_id=${sportId}` : ""}`),
   updateProfile: (name, age) => request("/auth/me", { method: "PATCH", body: { name, age } }),
   changePassword: (currentPassword, newPassword) =>
     request("/auth/change-password", {

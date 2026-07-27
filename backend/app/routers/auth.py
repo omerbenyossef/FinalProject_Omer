@@ -64,26 +64,31 @@ def update_profile(
 
 @router.get("/me/stats", response_model=schemas.UserStats)
 def my_stats(
+    sport_id: int | None = None,
     current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    leagues_count = (
-        db.query(models.LeagueMembership)
-        .filter(models.LeagueMembership.user_id == current_user.id)
-        .count()
+    membership_query = db.query(models.LeagueMembership).filter(
+        models.LeagueMembership.user_id == current_user.id
     )
-
-    matches = (
-        db.query(models.Match)
-        .filter(
-            or_(
-                models.Match.player1_id == current_user.id,
-                models.Match.player2_id == current_user.id,
-            ),
-            models.Match.status == models.MatchStatus.completed,
+    if sport_id is not None:
+        membership_query = membership_query.join(models.League).filter(
+            models.League.sport_id == sport_id
         )
-        .all()
+    leagues_count = membership_query.count()
+
+    matches_query = db.query(models.Match).filter(
+        or_(
+            models.Match.player1_id == current_user.id,
+            models.Match.player2_id == current_user.id,
+        ),
+        models.Match.status == models.MatchStatus.completed,
     )
+    if sport_id is not None:
+        matches_query = matches_query.join(models.League).filter(
+            models.League.sport_id == sport_id
+        )
+    matches = matches_query.all()
 
     wins = 0
     for match in matches:

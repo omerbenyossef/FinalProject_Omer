@@ -2,11 +2,14 @@ import { useEffect, useState } from "react";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import LeagueCard from "../LeagueCard.jsx";
+import SportTabs from "../SportTabs.jsx";
+import { getStoredSportId, setStoredSportId } from "../sportPreference.js";
 
 export default function Leagues() {
   const [leagues, setLeagues] = useState([]);
   const [myLeagues, setMyLeagues] = useState([]);
   const [sports, setSports] = useState([]);
+  const [selectedSportId, setSelectedSportId] = useState(getStoredSportId());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -14,7 +17,6 @@ export default function Leagues() {
   const [showOpenLeagues, setShowOpenLeagues] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [sportId, setSportId] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const { user } = useAuth();
@@ -25,7 +27,9 @@ export default function Leagues() {
       const [leaguesData, sportsData] = await Promise.all([api.listLeagues(), api.listSports()]);
       setLeagues(leaguesData);
       setSports(sportsData);
-      if (sportsData.length && !sportId) setSportId(String(sportsData[0].id));
+      setSelectedSportId((current) =>
+        current && sportsData.some((s) => s.id === current) ? current : sportsData[0]?.id ?? null
+      );
 
       if (user) {
         const mine = await api.myLeagues();
@@ -45,12 +49,17 @@ export default function Leagues() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
+  function handleSelectSport(id) {
+    setSelectedSportId(id);
+    setStoredSportId(id);
+  }
+
   async function handleCreate(e) {
     e.preventDefault();
     setError("");
     setSubmitting(true);
     try {
-      await api.createLeague({ name, description, sport_id: Number(sportId), is_open: isOpen });
+      await api.createLeague({ name, description, sport_id: selectedSportId, is_open: isOpen });
       setName("");
       setDescription("");
       setIsOpen(false);
@@ -63,8 +72,10 @@ export default function Leagues() {
     }
   }
 
-  const openLeagues = leagues.filter((l) => l.is_open);
-  const myLeagueIds = new Set(myLeagues.map((l) => l.id));
+  const bySelectedSport = (l) => l.sport.id === selectedSportId;
+  const openLeagues = leagues.filter((l) => l.is_open && bySelectedSport(l));
+  const myLeaguesForSport = myLeagues.filter(bySelectedSport);
+  const myLeagueIds = new Set(myLeaguesForSport.map((l) => l.id));
 
   return (
     <div>
@@ -77,6 +88,8 @@ export default function Leagues() {
         )}
       </div>
 
+      <SportTabs sports={sports} selected={selectedSportId} onSelect={handleSelectSport} />
+
       {!user && <p className="muted">רוצה להקים ליגה? יש להירשם או להתחבר קודם.</p>}
 
       {showForm && (
@@ -84,16 +97,6 @@ export default function Leagues() {
           <label>
             שם הליגה
             <input value={name} onChange={(e) => setName(e.target.value)} required />
-          </label>
-          <label>
-            ענף ספורט
-            <select value={sportId} onChange={(e) => setSportId(e.target.value)} required>
-              {sports.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
           </label>
           <label>
             תיאור (אופציונלי)
@@ -128,17 +131,17 @@ export default function Leagues() {
             className="settings-row collapsible-toggle"
             onClick={() => setShowMyLeagues((v) => !v)}
           >
-            <h2>הליגות שלי ({myLeagues.length})</h2>
+            <h2>הליגות שלי ({myLeaguesForSport.length})</h2>
             <span className="muted">{showMyLeagues ? "הסתר" : "הצג"}</span>
           </button>
 
           {showMyLeagues && (
             <div className="league-grid" style={{ marginTop: 14 }}>
-              {myLeagues.map((league) => (
+              {myLeaguesForSport.map((league) => (
                 <LeagueCard league={league} key={league.id} />
               ))}
-              {!loading && myLeagues.length === 0 && (
-                <p className="muted">עדיין לא הצטרפת לאף ליגה.</p>
+              {!loading && myLeaguesForSport.length === 0 && (
+                <p className="muted">עדיין לא הצטרפת לאף ליגה בענף הזה.</p>
               )}
             </div>
           )}

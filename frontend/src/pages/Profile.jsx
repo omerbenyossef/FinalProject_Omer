@@ -4,12 +4,16 @@ import { useAuth } from "../AuthContext.jsx";
 import CircularGauge from "../CircularGauge.jsx";
 import LeagueCard from "../LeagueCard.jsx";
 import NextMatchRow from "../NextMatchRow.jsx";
+import SportTabs from "../SportTabs.jsx";
 import { UserPlusIcon } from "../Icons.jsx";
+import { getStoredSportId, setStoredSportId } from "../sportPreference.js";
 
 export default function Profile() {
   const { user } = useAuth();
   const [stats, setStats] = useState(null);
   const [error, setError] = useState("");
+  const [sports, setSports] = useState([]);
+  const [selectedSportId, setSelectedSportId] = useState(getStoredSportId());
   const [myLeagues, setMyLeagues] = useState([]);
   const [showMyLeagues, setShowMyLeagues] = useState(false);
   const [nextMatches, setNextMatches] = useState([]);
@@ -29,16 +33,31 @@ export default function Profile() {
   }
 
   useEffect(() => {
-    api
-      .myStats()
-      .then(setStats)
-      .catch((err) => setError(err.message));
+    api.listSports().then((sportsData) => {
+      setSports(sportsData);
+      setSelectedSportId((current) =>
+        current && sportsData.some((s) => s.id === current) ? current : sportsData[0]?.id ?? null
+      );
+    });
     api
       .myLeagues()
       .then(setMyLeagues)
       .catch(() => {});
     loadNextMatches();
   }, []);
+
+  useEffect(() => {
+    if (!selectedSportId) return;
+    api
+      .myStats(selectedSportId)
+      .then(setStats)
+      .catch((err) => setError(err.message));
+  }, [selectedSportId]);
+
+  function handleSelectSport(id) {
+    setSelectedSportId(id);
+    setStoredSportId(id);
+  }
 
   async function handleReportScore(leagueId, matchId, sets) {
     setBusy(true);
@@ -53,6 +72,10 @@ export default function Profile() {
   }
 
   if (!user) return null;
+
+  const myLeaguesForSport = myLeagues.filter((l) => l.sport.id === selectedSportId);
+  const myLeagueIdsForSport = new Set(myLeaguesForSport.map((l) => l.id));
+  const nextMatchesForSport = nextMatches.filter((entry) => myLeagueIdsForSport.has(entry.league_id));
 
   const winRate =
     stats && stats.matches_played > 0 ? Math.round((stats.wins / stats.matches_played) * 100) : null;
@@ -77,6 +100,8 @@ export default function Profile() {
           </div>
         </div>
       </div>
+
+      <SportTabs sports={sports} selected={selectedSportId} onSelect={handleSelectSport} />
 
       <div className="card">
         {error && <p className="error">{error}</p>}
@@ -103,11 +128,11 @@ export default function Profile() {
         )}
       </div>
 
-      {nextMatches.length > 0 && (
+      {nextMatchesForSport.length > 0 && (
         <section className="card">
           <h2>המשחקים הבאים שלי</h2>
           <ul className="match-list">
-            {nextMatches.map((entry) => (
+            {nextMatchesForSport.map((entry) => (
               <NextMatchRow
                 key={entry.match.id}
                 match={entry.match}
@@ -128,16 +153,18 @@ export default function Profile() {
           className="settings-row collapsible-toggle"
           onClick={() => setShowMyLeagues((v) => !v)}
         >
-          <h2>הליגות שלי ({myLeagues.length})</h2>
+          <h2>הליגות שלי ({myLeaguesForSport.length})</h2>
           <span className="muted">{showMyLeagues ? "הסתר" : "הצג"}</span>
         </button>
 
         {showMyLeagues && (
           <div className="league-grid" style={{ marginTop: 14 }}>
-            {myLeagues.map((league) => (
+            {myLeaguesForSport.map((league) => (
               <LeagueCard league={league} key={league.id} />
             ))}
-            {myLeagues.length === 0 && <p className="muted">עדיין לא הצטרפת לאף ליגה.</p>}
+            {myLeaguesForSport.length === 0 && (
+              <p className="muted">עדיין לא הצטרפת לאף ליגה בענף הזה.</p>
+            )}
           </div>
         )}
       </section>

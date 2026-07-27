@@ -496,6 +496,34 @@ button:active { transform: translateY(1px); }
   font-size: 12.5px;
 }
 
+.sport-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin-bottom: 20px;
+}
+
+.sport-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.sport-tab {
+  flex-shrink: 0;
+  background: var(--card-alt);
+  border: none;
+  border-radius: 999px;
+  padding: 9px 17px;
+  font-weight: 700;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+
+.sport-tab.active {
+  background: var(--court);
+  color: var(--court-contrast);
+}
+
 .invite-fab {
   position: fixed;
   left: 16px;
