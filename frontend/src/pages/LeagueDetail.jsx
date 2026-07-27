@@ -5,6 +5,7 @@ import { useAuth } from "../AuthContext.jsx";
 import SetScoreForm from "../SetScoreForm.jsx";
 import NextMatchRow from "../NextMatchRow.jsx";
 import CircularGauge from "../CircularGauge.jsx";
+import { UserPlusIcon } from "../Icons.jsx";
 import { formatSets, formatWeekLabel } from "../matchUtils.js";
 
 function groupMatchesByRound(matches) {
@@ -260,17 +261,18 @@ export default function LeagueDetail() {
         </div>
       </section>
 
+      {inviteError && <p className="error">{inviteError}</p>}
+
       {isMember && (
-        <section className="card">
-          <h2>הזמנת חברים</h2>
-          <p className="muted" style={{ marginBottom: 12 }}>
-            שלח/י קישור בוואטסאפ - מי שילחץ עליו יצטרף לליגה ישירות, בלי להזין קוד.
-          </p>
-          <button className="btn-primary" onClick={handleShareWhatsApp} disabled={inviteLoading}>
-            {inviteLoading ? "טוען..." : "שיתוף בוואטסאפ"}
-          </button>
-          {inviteError && <p className="error">{inviteError}</p>}
-        </section>
+        <button
+          type="button"
+          className="invite-fab"
+          onClick={handleShareWhatsApp}
+          disabled={inviteLoading}
+        >
+          <UserPlusIcon aria-hidden="true" />
+          {inviteLoading ? "טוען..." : "הזמן חבר"}
+        </button>
       )}
 
       {isCreator && (

@@ -454,6 +454,29 @@ button:active { transform: translateY(1px); }
 
 .btn-secondary:hover { border-color: var(--muted); }
 
+.invite-fab {
+  position: fixed;
+  left: 16px;
+  bottom: calc(88px + env(safe-area-inset-bottom));
+  z-index: 20;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--court);
+  color: var(--court-contrast);
+  border: none;
+  border-radius: 999px;
+  padding: 11px 18px 11px 14px;
+  font-weight: 700;
+  font-size: 13.5px;
+  box-shadow: 0 14px 28px -12px rgba(0, 0, 0, 0.45);
+}
+
+.invite-fab:hover { background: var(--court-deep); }
+.invite-fab:disabled { opacity: 0.6; cursor: default; }
+
+.invite-fab svg { width: 18px; height: 18px; }
+
 .settings-row {
   display: flex;
   justify-content: space-between;

@@ -4,6 +4,7 @@ import { useAuth } from "../AuthContext.jsx";
 import CircularGauge from "../CircularGauge.jsx";
 import LeagueCard from "../LeagueCard.jsx";
 import NextMatchRow from "../NextMatchRow.jsx";
+import { UserPlusIcon } from "../Icons.jsx";
 
 export default function Profile() {
   const { user } = useAuth();
@@ -13,6 +14,12 @@ export default function Profile() {
   const [showMyLeagues, setShowMyLeagues] = useState(false);
   const [nextMatches, setNextMatches] = useState([]);
   const [busy, setBusy] = useState(false);
+
+  function handleInviteToApp() {
+    const url = `${window.location.origin}/login`;
+    const message = `בוא/י תצטרף/י ל-Rally, אפליקציית ניהול הליגות שלנו!\n${url}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
+  }
 
   function loadNextMatches() {
     api
@@ -134,6 +141,11 @@ export default function Profile() {
           </div>
         )}
       </section>
+
+      <button type="button" className="invite-fab" onClick={handleInviteToApp}>
+        <UserPlusIcon aria-hidden="true" />
+        הזמן חבר
+      </button>
     </div>
   );
 }
