@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import SetScoreForm from "../SetScoreForm.jsx";
@@ -34,6 +34,10 @@ export default function LeagueDetail() {
   const [showMatches, setShowMatches] = useState(false);
   const [showMembers, setShowMembers] = useState(false);
   const [showAllMatches, setShowAllMatches] = useState(false);
+  const [joinCode, setJoinCode] = useState("");
+  const [inviteCode, setInviteCode] = useState(null);
+  const [inviteError, setInviteError] = useState("");
+  const [inviteLoading, setInviteLoading] = useState(false);
 
   const isMember = members.some((m) => m.id === user?.id);
 
@@ -68,12 +72,25 @@ export default function LeagueDetail() {
     setBusy(true);
     setError("");
     try {
-      await api.joinLeague(leagueId);
+      await api.joinLeague(leagueId, joinCode);
       await loadAll();
     } catch (err) {
       setError(err.message);
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function handleShowInviteCode() {
+    setInviteError("");
+    setInviteLoading(true);
+    try {
+      const data = await api.getInviteCode(leagueId);
+      setInviteCode(data.code);
+    } catch (err) {
+      setInviteError(err.message);
+    } finally {
+      setInviteLoading(false);
     }
   }
 
@@ -131,10 +148,18 @@ export default function LeagueDetail() {
           <h1>{league.name}</h1>
           {league.description && <p className="muted">{league.description}</p>}
         </div>
-        {!isMember && (
-          <button className="btn-primary" onClick={handleJoin} disabled={busy}>
-            הצטרפות לליגה
-          </button>
+        {!isMember && user && (
+          <div className="inline-form">
+            <input
+              placeholder="קוד הזמנה (אם יש)"
+              value={joinCode}
+              onChange={(e) => setJoinCode(e.target.value)}
+              style={{ width: 140 }}
+            />
+            <button className="btn-primary" onClick={handleJoin} disabled={busy}>
+              הצטרפות לליגה
+            </button>
+          </div>
         )}
       </div>
 
@@ -217,6 +242,27 @@ export default function LeagueDetail() {
           </div>
         </section>
       </div>
+
+      {isMember && (
+        <section className="card">
+          <h2>הזמנת חברים</h2>
+          {inviteCode ? (
+            <p className="muted" style={{ fontSize: 20, fontWeight: 700, color: "var(--ink)" }}>
+              {inviteCode}
+            </p>
+          ) : (
+            <>
+              <p className="muted" style={{ marginBottom: 12 }}>
+                כל מי שיצטרף לליגה יצטרך להזין את הקוד הזה.
+              </p>
+              <button className="btn-secondary" onClick={handleShowInviteCode} disabled={inviteLoading}>
+                {inviteLoading ? "טוען..." : "הצג קוד הזמנה"}
+              </button>
+            </>
+          )}
+          {inviteError && <p className="error">{inviteError}</p>}
+        </section>
+      )}
 
       {isCreator && (
         <section className="card">
@@ -328,7 +374,9 @@ function MyNextMatchRow({ match, currentUserId, onSubmit, busy }) {
     <li className="match-row">
       <div className="match-players">
         <span>נגד</span>
-        <strong>{opponent.name}</strong>
+        <Link to={`/head-to-head/${opponent.id}`}>
+          <strong>{opponent.name}</strong>
+        </Link>
       </div>
       {reporting ? (
         <SetScoreForm
@@ -378,7 +426,9 @@ function MatchRow({ match, currentUserId, onReport, onCancel, busy }) {
     <li className="match-row">
       <div className="match-players">
         <span>נגד</span>
-        <strong>{opponent.name}</strong>
+        <Link to={`/head-to-head/${opponent.id}`}>
+          <strong>{opponent.name}</strong>
+        </Link>
       </div>
       {isPending ? (
         reporting ? (

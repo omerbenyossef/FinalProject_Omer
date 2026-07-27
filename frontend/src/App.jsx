@@ -9,6 +9,7 @@ import Leagues from "./pages/Leagues.jsx";
 import LeagueDetail from "./pages/LeagueDetail.jsx";
 import Profile from "./pages/Profile.jsx";
 import Settings from "./pages/Settings.jsx";
+import HeadToHead from "./pages/HeadToHead.jsx";
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -40,6 +41,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <Profile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/head-to-head/:opponentId"
+          element={
+            <ProtectedRoute>
+              <HeadToHead />
             </ProtectedRoute>
           }
         />

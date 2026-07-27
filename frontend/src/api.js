@@ -57,7 +57,10 @@ export const api = {
   listLeagues: () => request("/leagues/", { auth: false }),
   createLeague: (data) => request("/leagues/", { method: "POST", body: data }),
   getLeague: (id) => request(`/leagues/${id}`, { auth: false }),
-  joinLeague: (id) => request(`/leagues/${id}/join`, { method: "POST" }),
+  joinLeague: (id, code) => request(`/leagues/${id}/join`, { method: "POST", body: { code } }),
+  getInviteCode: (id) => request(`/leagues/${id}/invite-code`),
+
+  headToHead: (opponentId) => request(`/players/${opponentId}/head-to-head`),
   listMembers: (id) => request(`/leagues/${id}/members`, { auth: false }),
   getStandings: (id) => request(`/leagues/${id}/standings`, { auth: false }),
 

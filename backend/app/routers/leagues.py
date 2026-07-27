@@ -1,3 +1,6 @@
+import random
+import string
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
 
@@ -6,6 +9,14 @@ from ..auth import get_current_user
 from ..database import get_db
 
 router = APIRouter(prefix="/leagues", tags=["leagues"])
+
+
+def _generate_join_code(db: Session) -> str:
+    while True:
+        code = "".join(random.choices(string.ascii_uppercase + string.digits, k=6))
+        exists = db.query(models.League).filter(models.League.join_code == code).first()
+        if not exists:
+            return code
 
 
 def _to_league_out(league: models.League) -> schemas.LeagueOut:
@@ -40,6 +51,7 @@ def create_league(
         description=league_in.description,
         sport_id=league_in.sport_id,
         created_by=current_user.id,
+        join_code=_generate_join_code(db),
     )
     db.add(league)
     db.commit()
@@ -73,6 +85,7 @@ def get_league(league_id: int, db: Session = Depends(get_db)):
 @router.post("/{league_id}/join", response_model=schemas.LeagueOut)
 def join_league(
     league_id: int,
+    join_in: schemas.JoinLeagueRequest = schemas.JoinLeagueRequest(),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
@@ -89,12 +102,34 @@ def join_league(
     if existing:
         return _to_league_out(league)
 
+    if league.join_code and league.join_code != (join_in.code or "").strip().upper():
+        raise HTTPException(status_code=403, detail="קוד הזמנה שגוי")
+
     membership = models.LeagueMembership(league_id=league_id, user_id=current_user.id)
     db.add(membership)
     db.commit()
 
     db.refresh(league)
     return _to_league_out(league)
+
+
+@router.get("/{league_id}/invite-code", response_model=schemas.InviteCodeOut)
+def get_invite_code(
+    league_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    league = _get_league_or_404(db, league_id)
+    is_member = any(m.user_id == current_user.id for m in league.memberships)
+    if not is_member:
+        raise HTTPException(status_code=403, detail="רק חברי הליגה יכולים לראות את קוד ההזמנה")
+
+    if not league.join_code:
+        league.join_code = _generate_join_code(db)
+        db.commit()
+        db.refresh(league)
+
+    return schemas.InviteCodeOut(code=league.join_code)
 
 
 @router.get("/{league_id}/members", response_model=list[schemas.MemberOut])

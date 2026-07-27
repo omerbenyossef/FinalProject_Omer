@@ -97,6 +97,14 @@ class MemberOut(BaseModel):
         from_attributes = True
 
 
+class JoinLeagueRequest(BaseModel):
+    code: Optional[str] = None
+
+
+class InviteCodeOut(BaseModel):
+    code: str
+
+
 class MatchCreate(BaseModel):
     opponent_id: int
 
@@ -133,3 +141,20 @@ class StandingRow(BaseModel):
     wins: int
     losses: int
     points: int
+
+
+class HeadToHeadMatch(BaseModel):
+    id: int
+    league_id: int
+    league_name: str
+    my_score: int
+    opponent_score: int
+    sets: Optional[list[SetScore]] = None
+    played_at: Optional[datetime]
+
+
+class HeadToHeadOut(BaseModel):
+    opponent: MemberOut
+    wins: int
+    losses: int
+    matches: list[HeadToHeadMatch]

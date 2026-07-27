@@ -55,6 +55,7 @@ class League(Base):
     created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     schedule_started_at = Column(DateTime, nullable=True)
+    join_code = Column(String, nullable=True)
 
     sport = relationship("Sport", back_populates="leagues")
     memberships = relationship("LeagueMembership", back_populates="league")
