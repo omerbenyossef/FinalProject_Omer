@@ -95,6 +95,12 @@ export default function LeagueDetail() {
     }
   }
 
+  function handleShareWhatsApp() {
+    const url = `${window.location.origin}/leagues/${leagueId}`;
+    const message = `בוא/י תצטרף/י לליגה "${league.name}" ב-Rally!\nקוד הצטרפות: ${inviteCode}\n${url}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
+  }
+
   async function handleGenerateSchedule() {
     setBusy(true);
     setError("");
@@ -249,9 +255,14 @@ export default function LeagueDetail() {
         <section className="card">
           <h2>הזמנת חברים</h2>
           {inviteCode ? (
-            <p className="muted" style={{ fontSize: 20, fontWeight: 700, color: "var(--ink)" }}>
-              {inviteCode}
-            </p>
+            <>
+              <p className="muted" style={{ fontSize: 20, fontWeight: 700, color: "var(--ink)" }}>
+                {inviteCode}
+              </p>
+              <button className="btn-primary" onClick={handleShareWhatsApp} style={{ marginTop: 10 }}>
+                שיתוף בוואטסאפ
+              </button>
+            </>
           ) : (
             <>
               <p className="muted" style={{ marginBottom: 12 }}>
