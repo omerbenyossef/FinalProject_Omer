@@ -27,11 +27,11 @@ export default function Settings() {
           <LanguageToggleButton />
         </div>
       </div>
-      <div className="settings-flat">
+      <div className="flat-sections">
         <EditProfileCard user={user} updateUser={updateUser} />
         <ChangeEmailCard user={user} updateUser={updateUser} />
         <ChangePasswordCard />
-        <div className="settings-flat-row">
+        <div className="flat-section">
           <div className="settings-row">
             <div>
               <h2>{t("יציאה מהחשבון")}</h2>
@@ -113,7 +113,7 @@ function EditProfileCard({ user, updateUser }) {
   }
 
   return (
-    <div className="settings-flat-row">
+    <div className="flat-section">
       <div className="settings-row">
         <div>
           <h2>{t("פרופיל")}</h2>
@@ -193,7 +193,7 @@ function ChangeEmailCard({ user, updateUser }) {
   }
 
   return (
-    <div className="settings-flat-row">
+    <div className="flat-section">
       <div className="settings-row">
         <div>
           <h2>{t("אימייל")}</h2>
@@ -276,7 +276,7 @@ function ChangePasswordCard() {
   }
 
   return (
-    <div className="settings-flat-row">
+    <div className="flat-section">
       <div className="settings-row">
         <div>
           <h2>{t("שינוי סיסמה")}</h2>

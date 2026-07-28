@@ -113,51 +113,53 @@ export default function Leagues() {
 
       {loading && <p className="muted">{t("טוען...")}</p>}
 
-      {user && (
-        <section className="card">
-          <button
-            type="button"
-            className="settings-row collapsible-toggle"
-            onClick={() => setShowMyLeagues((v) => !v)}
-          >
-            <h2>{t("הליגות שלי")} ({myLeaguesForSport.length})</h2>
-            <span className="muted">{showMyLeagues ? t("הסתר") : t("הצג")}</span>
-          </button>
+      <div className="flat-sections">
+        {user && (
+          <div className="flat-section">
+            <button
+              type="button"
+              className="settings-row collapsible-toggle"
+              onClick={() => setShowMyLeagues((v) => !v)}
+            >
+              <h2>{t("הליגות שלי")} ({myLeaguesForSport.length})</h2>
+              <span className="muted">{showMyLeagues ? t("הסתר") : t("הצג")}</span>
+            </button>
 
-          {showMyLeagues && (
-            <div className="league-grid" style={{ marginTop: 14 }}>
-              {myLeaguesForSport.map((league) => (
-                <LeagueCard league={league} key={league.id} />
-              ))}
-              {!loading && myLeaguesForSport.length === 0 && (
-                <p className="muted">{t("עדיין לא הצטרפת לאף ליגה בענף הזה.")}</p>
-              )}
-            </div>
-          )}
-        </section>
-      )}
-
-      <section className="card">
-        <button
-          type="button"
-          className="settings-row collapsible-toggle"
-          onClick={() => setShowOpenLeagues((v) => !v)}
-        >
-          <h2>{t("ליגות פתוחות")} ({openLeagues.length})</h2>
-          <span className="muted">{showOpenLeagues ? t("הסתר") : t("הצג")}</span>
-        </button>
-
-        {showOpenLeagues && (
-          <div className="league-grid" style={{ marginTop: 14 }}>
-            {openLeagues.map((league) => (
-              <LeagueCard league={league} key={league.id} isMember={myLeagueIds.has(league.id)} />
-            ))}
-            {!loading && openLeagues.length === 0 && (
-              <p className="muted">{t("אין כרגע ליגות פתוחות.")}</p>
+            {showMyLeagues && (
+              <div className="league-grid" style={{ marginTop: 14 }}>
+                {myLeaguesForSport.map((league) => (
+                  <LeagueCard league={league} key={league.id} />
+                ))}
+                {!loading && myLeaguesForSport.length === 0 && (
+                  <p className="muted">{t("עדיין לא הצטרפת לאף ליגה בענף הזה.")}</p>
+                )}
+              </div>
             )}
           </div>
         )}
-      </section>
+
+        <div className="flat-section">
+          <button
+            type="button"
+            className="settings-row collapsible-toggle"
+            onClick={() => setShowOpenLeagues((v) => !v)}
+          >
+            <h2>{t("ליגות פתוחות")} ({openLeagues.length})</h2>
+            <span className="muted">{showOpenLeagues ? t("הסתר") : t("הצג")}</span>
+          </button>
+
+          {showOpenLeagues && (
+            <div className="league-grid" style={{ marginTop: 14 }}>
+              {openLeagues.map((league) => (
+                <LeagueCard league={league} key={league.id} isMember={myLeagueIds.has(league.id)} />
+              ))}
+              {!loading && openLeagues.length === 0 && (
+                <p className="muted">{t("אין כרגע ליגות פתוחות.")}</p>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

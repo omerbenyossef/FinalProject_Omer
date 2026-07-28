@@ -82,89 +82,91 @@ export default function Profile() {
     <div>
       <h1>{t("פרופיל שחקן")}</h1>
 
-      <div className="card">
-        <div className="profile-header">
-          <div>
-            <h2 style={{ marginBottom: 2, fontSize: 24 }}>{user.name}</h2>
-            <p className="muted">{user.email}</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="card">
-        {error && <p className="error">{t(error)}</p>}
-        {stats && (
-          <div className="hero-stat">
-            <CircularGauge
-              value={stats.wins}
-              max={Math.max(stats.matches_played, 1)}
-              size={104}
-              strokeWidth={10}
-            >
-              <div className="gauge-value">{stats.wins}</div>
-              <div className="gauge-caption">
-                {winRate !== null ? `${winRate}% ${t("ניצחונות")}` : t("אין עדיין")}
-              </div>
-            </CircularGauge>
-            <div className="hero-copy">
-              <span className="eyebrow">{t("סטטיסטיקה")}</span>
-              <p>{blurb}</p>
-              <div className="chip-row">
-                <span className="chip">
-                  {stats.leagues} {t("ליגות")}
-                </span>
-                <span className="chip">
-                  {stats.matches_played} {t("משחקים")}
-                </span>
-              </div>
+      <div className="flat-sections">
+        <div className="flat-section">
+          <div className="profile-header">
+            <div>
+              <h2 style={{ marginBottom: 2, fontSize: 24 }}>{user.name}</h2>
+              <p className="muted">{user.email}</p>
             </div>
           </div>
-        )}
+        </div>
+
+        <div className="flat-section">
+          {error && <p className="error">{t(error)}</p>}
+          {stats && (
+            <div className="hero-stat">
+              <CircularGauge
+                value={stats.wins}
+                max={Math.max(stats.matches_played, 1)}
+                size={104}
+                strokeWidth={10}
+              >
+                <div className="gauge-value">{stats.wins}</div>
+                <div className="gauge-caption">
+                  {winRate !== null ? `${winRate}% ${t("ניצחונות")}` : t("אין עדיין")}
+                </div>
+              </CircularGauge>
+              <div className="hero-copy">
+                <span className="eyebrow">{t("סטטיסטיקה")}</span>
+                <p>{blurb}</p>
+                <div className="chip-row">
+                  <span className="chip">
+                    {stats.leagues} {t("ליגות")}
+                  </span>
+                  <span className="chip">
+                    {stats.matches_played} {t("משחקים")}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="flat-section">
+          <h2>{t("המשחקים שלי השבוע")}</h2>
+          {nextMatchesForSport.length === 0 ? (
+            <p className="muted">{t("אין לך ליגות עם לוח משחקים עדיין.")}</p>
+          ) : (
+            <ul className="match-list">
+              {nextMatchesForSport.map((entry) => (
+                <NextMatchRow
+                  key={entry.match.id}
+                  match={entry.match}
+                  currentUserId={user.id}
+                  leagueName={entry.league_name}
+                  leagueId={entry.league_id}
+                  weekLabel={formatWeekLabel(entry.schedule_started_at, entry.match.round_number, t)}
+                  busy={busy}
+                  onSubmit={(sets) => handleReportScore(entry.league_id, entry.match.id, sets)}
+                />
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div className="flat-section">
+          <button
+            type="button"
+            className="settings-row collapsible-toggle"
+            onClick={() => setShowMyLeagues((v) => !v)}
+          >
+            <h2>{t("הליגות שלי")} ({myLeaguesForSport.length})</h2>
+            <span className="muted">{showMyLeagues ? t("הסתר") : t("הצג")}</span>
+          </button>
+
+          {showMyLeagues && (
+            <div className="league-grid" style={{ marginTop: 14 }}>
+              {myLeaguesForSport.map((league) => (
+                <LeagueCard league={league} key={league.id} />
+              ))}
+              {myLeaguesForSport.length === 0 && (
+                <p className="muted">{t("עדיין לא הצטרפת לאף ליגה בענף הזה.")}</p>
+              )}
+            </div>
+          )}
+        </div>
       </div>
-
-      <section className="card">
-        <h2>{t("המשחקים שלי השבוע")}</h2>
-        {nextMatchesForSport.length === 0 ? (
-          <p className="muted">{t("אין לך ליגות עם לוח משחקים עדיין.")}</p>
-        ) : (
-          <ul className="match-list">
-            {nextMatchesForSport.map((entry) => (
-              <NextMatchRow
-                key={entry.match.id}
-                match={entry.match}
-                currentUserId={user.id}
-                leagueName={entry.league_name}
-                leagueId={entry.league_id}
-                weekLabel={formatWeekLabel(entry.schedule_started_at, entry.match.round_number, t)}
-                busy={busy}
-                onSubmit={(sets) => handleReportScore(entry.league_id, entry.match.id, sets)}
-              />
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <section className="card">
-        <button
-          type="button"
-          className="settings-row collapsible-toggle"
-          onClick={() => setShowMyLeagues((v) => !v)}
-        >
-          <h2>{t("הליגות שלי")} ({myLeaguesForSport.length})</h2>
-          <span className="muted">{showMyLeagues ? t("הסתר") : t("הצג")}</span>
-        </button>
-
-        {showMyLeagues && (
-          <div className="league-grid" style={{ marginTop: 14 }}>
-            {myLeaguesForSport.map((league) => (
-              <LeagueCard league={league} key={league.id} />
-            ))}
-            {myLeaguesForSport.length === 0 && (
-              <p className="muted">{t("עדיין לא הצטרפת לאף ליגה בענף הזה.")}</p>
-            )}
-          </div>
-        )}
-      </section>
 
       <button type="button" className="invite-fab" onClick={handleInviteToApp}>
         <UserPlusIcon aria-hidden="true" />

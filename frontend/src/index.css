@@ -575,21 +575,26 @@ button:active { transform: translateY(1px); }
   margin-bottom: 2px;
 }
 
-.settings-flat {
+.flat-sections {
   display: flex;
   flex-direction: column;
 }
 
-.settings-flat-row {
+.flat-section {
   padding: 18px 2px;
   border-bottom: 1px solid var(--line);
 }
 
-.settings-flat-row:last-child {
-  border-bottom: none;
+.flat-section:first-child {
+  padding-top: 0;
 }
 
-.settings-flat-row form {
+.flat-section:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.flat-section form {
   margin-top: 14px;
 }
 

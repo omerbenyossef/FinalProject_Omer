@@ -32,48 +32,50 @@ export default function HeadToHead() {
         </div>
       </div>
 
-      <div className="card">
-        <div className="stat-row">
-          <div className="stat-tile">
-            <div className="stat-value">{data.wins}</div>
-            <div className="stat-label">{t("ניצחונות")}</div>
-          </div>
-          <div className="stat-tile">
-            <div className="stat-value">{data.losses}</div>
-            <div className="stat-label">{t("הפסדים")}</div>
-          </div>
-          <div className="stat-tile">
-            <div className="stat-value">{data.matches.length}</div>
-            <div className="stat-label">{t("משחקים")}</div>
+      <div className="flat-sections">
+        <div className="flat-section">
+          <div className="stat-row">
+            <div className="stat-tile">
+              <div className="stat-value">{data.wins}</div>
+              <div className="stat-label">{t("ניצחונות")}</div>
+            </div>
+            <div className="stat-tile">
+              <div className="stat-value">{data.losses}</div>
+              <div className="stat-label">{t("הפסדים")}</div>
+            </div>
+            <div className="stat-tile">
+              <div className="stat-value">{data.matches.length}</div>
+              <div className="stat-label">{t("משחקים")}</div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <section className="card">
-        <h2>{t("היסטוריית משחקים")}</h2>
-        {data.matches.length === 0 && <p className="muted">{t("עדיין לא שיחקתם אחד נגד השני.")}</p>}
-        <ul className="match-list">
-          {data.matches.map((m) => {
-            const iWon = m.my_score > m.opponent_score;
-            return (
-              <li className="match-row" key={m.id}>
-                <div className="match-players">
-                  <Link to={`/leagues/${m.league_id}`} className="sport-tag" style={{ marginBottom: 0 }}>
-                    {m.league_name}
-                  </Link>
-                </div>
-                <div className="score-row">
-                  <span className={`status-dot ${iWon ? "dot-win" : "dot-loss"}`} />
-                  <div className="match-score">
-                    {m.my_score} - {m.opponent_score}
+        <div className="flat-section">
+          <h2>{t("היסטוריית משחקים")}</h2>
+          {data.matches.length === 0 && <p className="muted">{t("עדיין לא שיחקתם אחד נגד השני.")}</p>}
+          <ul className="match-list">
+            {data.matches.map((m) => {
+              const iWon = m.my_score > m.opponent_score;
+              return (
+                <li className="match-row" key={m.id}>
+                  <div className="match-players">
+                    <Link to={`/leagues/${m.league_id}`} className="sport-tag" style={{ marginBottom: 0 }}>
+                      {m.league_name}
+                    </Link>
                   </div>
-                </div>
-                <div className="sets-breakdown">{formatSets(m.sets)}</div>
-              </li>
-            );
-          })}
-        </ul>
-      </section>
+                  <div className="score-row">
+                    <span className={`status-dot ${iWon ? "dot-win" : "dot-loss"}`} />
+                    <div className="match-score">
+                      {m.my_score} - {m.opponent_score}
+                    </div>
+                  </div>
+                  <div className="sets-breakdown">{formatSets(m.sets)}</div>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </div>
     </div>
   );
 }

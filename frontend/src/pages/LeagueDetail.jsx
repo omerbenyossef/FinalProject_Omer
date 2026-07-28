@@ -283,7 +283,7 @@ export default function LeagueDetail() {
         </button>
       </div>
 
-      <section className="card">
+      <div>
         {activeTab === "stats" && isMember && (
           <>
             {myNextMatch && (
@@ -475,7 +475,7 @@ export default function LeagueDetail() {
             </div>
           </>
         )}
-      </section>
+      </div>
 
       {inviteError && <p className="error">{t(inviteError)}</p>}
 
@@ -492,21 +492,21 @@ export default function LeagueDetail() {
       )}
 
       {user?.is_admin && (
-        <section className="card">
+        <div style={{ marginTop: 28, paddingTop: 20, borderTop: "1px solid var(--line)" }}>
           <h2>{t("ניהול ליגה")}</h2>
           <p className="muted" style={{ marginBottom: 12 }}>
             {t("מחיקת הליגה תסיר לצמיתות את כל המשחקים והחברויות בה.")}
           </p>
           <button
             type="button"
-            className="btn-secondary"
+            className="link-btn"
             style={{ color: "var(--danger)" }}
             onClick={handleDeleteLeague}
             disabled={busy}
           >
             {t("מחק ליגה")}
           </button>
-        </section>
+        </div>
       )}
     </div>
   );
