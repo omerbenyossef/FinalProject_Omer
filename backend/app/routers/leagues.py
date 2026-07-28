@@ -68,23 +68,41 @@ def my_next_matches(
 
     entries = []
     for league in my_leagues:
+        my_match_filter = or_(
+            models.Match.player1_id == current_user.id,
+            models.Match.player2_id == current_user.id,
+        )
         match = (
             db.query(models.Match)
             .options(joinedload(models.Match.player1), joinedload(models.Match.player2))
             .filter(
                 models.Match.league_id == league.id,
                 models.Match.status == models.MatchStatus.pending,
-                or_(
-                    models.Match.player1_id == current_user.id,
-                    models.Match.player2_id == current_user.id,
-                ),
+                my_match_filter,
             )
             .order_by(models.Match.created_at.asc())
             .first()
         )
+        if not match:
+            match = (
+                db.query(models.Match)
+                .options(joinedload(models.Match.player1), joinedload(models.Match.player2))
+                .filter(
+                    models.Match.league_id == league.id,
+                    models.Match.status == models.MatchStatus.completed,
+                    my_match_filter,
+                )
+                .order_by(models.Match.round_number.desc(), models.Match.played_at.desc())
+                .first()
+            )
         if match:
             entries.append(
-                schemas.NextMatchEntry(league_id=league.id, league_name=league.name, match=match)
+                schemas.NextMatchEntry(
+                    league_id=league.id,
+                    league_name=league.name,
+                    schedule_started_at=league.schedule_started_at,
+                    match=match,
+                )
             )
 
     return entries

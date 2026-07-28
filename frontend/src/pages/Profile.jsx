@@ -7,6 +7,7 @@ import CircularGauge from "../CircularGauge.jsx";
 import LeagueCard from "../LeagueCard.jsx";
 import NextMatchRow from "../NextMatchRow.jsx";
 import { UserPlusIcon } from "../Icons.jsx";
+import { formatWeekLabel } from "../matchUtils.js";
 
 export default function Profile() {
   const { user } = useAuth();
@@ -121,9 +122,11 @@ export default function Profile() {
         )}
       </div>
 
-      {nextMatchesForSport.length > 0 && (
-        <section className="card">
-          <h2>{t("המשחקים הבאים שלי")}</h2>
+      <section className="card">
+        <h2>{t("המשחקים שלי השבוע")}</h2>
+        {nextMatchesForSport.length === 0 ? (
+          <p className="muted">{t("אין לך ליגות עם לוח משחקים עדיין.")}</p>
+        ) : (
           <ul className="match-list">
             {nextMatchesForSport.map((entry) => (
               <NextMatchRow
@@ -132,13 +135,14 @@ export default function Profile() {
                 currentUserId={user.id}
                 leagueName={entry.league_name}
                 leagueId={entry.league_id}
+                weekLabel={formatWeekLabel(entry.schedule_started_at, entry.match.round_number, t)}
                 busy={busy}
                 onSubmit={(sets) => handleReportScore(entry.league_id, entry.match.id, sets)}
               />
             ))}
           </ul>
-        </section>
-      )}
+        )}
+      </section>
 
       <section className="card">
         <button

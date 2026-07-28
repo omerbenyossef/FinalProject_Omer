@@ -146,6 +146,7 @@ class MatchOut(BaseModel):
 class NextMatchEntry(BaseModel):
     league_id: int
     league_name: str
+    schedule_started_at: Optional[datetime] = None
     match: MatchOut
 
 

@@ -146,6 +146,8 @@ const PAIRS = [
   ["ניצחת ב-{rate}% מהמשחקים שלך. תמשיך ככה!", "You've won {rate}% of your matches. Keep it up!"],
   ["ניצחת ב-{rate}% מהמשחקים שלך. עוד יש לאן להשתפר.", "You've won {rate}% of your matches. There's still room to improve."],
   ["המשחקים הבאים שלי", "My upcoming matches"],
+  ["המשחקים שלי השבוע", "My matches this week"],
+  ["אין לך ליגות עם לוח משחקים עדיין.", "You don't have any leagues with a schedule yet."],
 
   // Settings
   ["הגדרות", "Settings"],
