@@ -20,8 +20,8 @@ export default function CircularGauge({ value, max, size = 104, strokeWidth = 10
   const cx = size / 2;
   const cy = size / 2;
   const pct = max > 0 ? Math.min(value / max, 1) : 0;
-  const tickWidth = strokeWidth * 0.4;
-  const tickDash = `${strokeWidth * 0.65} ${strokeWidth * 0.45}`;
+  const tickWidth = strokeWidth * 0.55;
+  const tickDash = `${strokeWidth * 0.55} ${strokeWidth * 1.1}`;
   const trackArc = describeArc(cx, cy, radius, 0, 360);
   const fillArc = pct > 0 ? describeArc(cx, cy, radius, 0, pct * 360) : null;
 
@@ -34,7 +34,7 @@ export default function CircularGauge({ value, max, size = 104, strokeWidth = 10
           fill="none"
           stroke="var(--muted)"
           strokeWidth={tickWidth}
-          strokeLinecap="round"
+          strokeLinecap="butt"
           strokeDasharray={tickDash}
           opacity={0.55}
         />
@@ -46,7 +46,7 @@ export default function CircularGauge({ value, max, size = 104, strokeWidth = 10
               fill="none"
               stroke="var(--court-deep)"
               strokeWidth={tickWidth}
-              strokeLinecap="round"
+              strokeLinecap="butt"
               strokeDasharray={tickDash}
             />
           </>
