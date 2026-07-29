@@ -21,7 +21,7 @@ export default function CircularGauge({ value, max, size = 104, strokeWidth = 10
   const cy = size / 2;
   const pct = max > 0 ? Math.min(value / max, 1) : 0;
   const tickWidth = strokeWidth * 0.3;
-  const tickDash = `${strokeWidth * 0.38} ${strokeWidth * 0.3}`;
+  const tickDash = `${strokeWidth * 0.4} ${strokeWidth * 0.75}`;
   const trackArc = describeArc(cx, cy, radius, 0, 360);
   const fillArc = pct > 0 ? describeArc(cx, cy, radius, 0, pct * 360) : null;
 
