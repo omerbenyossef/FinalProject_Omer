@@ -365,7 +365,7 @@ a { color: var(--court); text-decoration: none; }
 
 .gauge-value {
   font-family: "JetBrains Mono", var(--mono);
-  font-size: 28px;
+  font-size: 22px;
   font-weight: 800;
   color: var(--ink);
   line-height: 1;
