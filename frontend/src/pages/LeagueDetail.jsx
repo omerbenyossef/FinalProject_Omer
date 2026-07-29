@@ -443,7 +443,7 @@ export default function LeagueDetail() {
                                 ) : (
                                   <strong>{match.player1.name}</strong>
                                 )}{" "}
-                                {t("נגד")}{" "}
+                                <span className="vs-label">vs</span>{" "}
                                 {isCompleted ? (
                                   <span className={p2Won ? "match-winner-name" : "match-loser-name"}>
                                     {match.player2.name}
@@ -535,7 +535,7 @@ function MatchRow({ match, currentUserId, onReport, onCancel, busy }) {
     <li className="match-row">
       <div className="match-players" style={{ justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span>{t("נגד")}</span>
+          <span className="vs-label">vs</span>
           <Link to={`/head-to-head/${opponent.id}`}>
             <strong>{opponent.name}</strong>
           </Link>

@@ -34,7 +34,7 @@ export default function NextMatchRow({
               {leagueName}
             </Link>
           )}
-          <span>{t("נגד")}</span>
+          <span className="vs-label">vs</span>
           <Link to={`/head-to-head/${opponent.id}`}>
             <strong>{opponent.name}</strong>
           </Link>

@@ -837,6 +837,12 @@ button:active { transform: translateY(1px); }
   font-size: 14.5px;
 }
 
+.vs-label {
+  font-family: var(--sans);
+  color: var(--muted);
+  font-weight: 500;
+}
+
 .match-winner-name {
   font-weight: 700;
   color: var(--ink);

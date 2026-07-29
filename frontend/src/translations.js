@@ -101,7 +101,6 @@ const PAIRS = [
   ["כל המשחקים בליגה", "All league matches"],
   ["עדיין אין משחקים בליגה.", "There are no matches in this league yet."],
   ["ממתין לתוצאה", "Awaiting result"],
-  ["נגד", "vs"],
   ["ניצחון", "Win"],
   ["הפסד", "Loss"],
   ["דווח תוצאה", "Report result"],
