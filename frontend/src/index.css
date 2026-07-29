@@ -817,7 +817,7 @@ button:active { transform: translateY(1px); }
 }
 
 .match-score {
-  font-family: var(--mono);
+  font-family: "JetBrains Mono", var(--mono);
   font-weight: 800;
   font-size: 19px;
   color: var(--ink);
