@@ -36,7 +36,6 @@ export default function CircularGauge({ value, max, size = 104, strokeWidth = 10
           strokeWidth={tickWidth}
           strokeLinecap="round"
           strokeDasharray={tickDash}
-          opacity={0.55}
         />
         {fillArc && (
           <>
@@ -44,10 +43,11 @@ export default function CircularGauge({ value, max, size = 104, strokeWidth = 10
             <path
               d={fillArc}
               fill="none"
-              stroke="var(--court-deep)"
+              stroke="rgba(0, 0, 0, 0.45)"
               strokeWidth={tickWidth}
               strokeLinecap="round"
               strokeDasharray={tickDash}
+              style={{ mixBlendMode: "multiply" }}
             />
           </>
         )}
