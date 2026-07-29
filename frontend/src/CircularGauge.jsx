@@ -1,32 +1,48 @@
+function polarToCartesian(cx, cy, r, angleDeg) {
+  const angleRad = ((angleDeg - 90) * Math.PI) / 180;
+  return { x: cx + r * Math.cos(angleRad), y: cy + r * Math.sin(angleRad) };
+}
+
+function describeArc(cx, cy, r, startAngle, endAngle) {
+  if (endAngle - startAngle >= 359.99) {
+    const start = polarToCartesian(cx, cy, r, startAngle);
+    const mid = polarToCartesian(cx, cy, r, startAngle + 180);
+    return `M ${start.x} ${start.y} A ${r} ${r} 0 1 1 ${mid.x} ${mid.y} A ${r} ${r} 0 1 1 ${start.x} ${start.y}`;
+  }
+  const start = polarToCartesian(cx, cy, r, startAngle);
+  const end = polarToCartesian(cx, cy, r, endAngle);
+  const largeArcFlag = endAngle - startAngle > 180 ? 1 : 0;
+  return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArcFlag} 1 ${end.x} ${end.y}`;
+}
+
 export default function CircularGauge({ value, max, size = 104, strokeWidth = 10, children }) {
   const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
+  const cx = size / 2;
+  const cy = size / 2;
   const pct = max > 0 ? Math.min(value / max, 1) : 0;
-  const offset = circumference * (1 - pct);
+  const tickDash = `${strokeWidth * 0.85} ${strokeWidth * 0.7}`;
 
   return (
     <div className="gauge-wrap" style={{ width: size, height: size }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
+        <path
+          d={describeArc(cx, cy, radius, 0, 360)}
           fill="none"
           stroke="var(--card-alt)"
           strokeWidth={strokeWidth}
-        />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke="var(--court)"
-          strokeWidth={strokeWidth}
           strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          transform={`rotate(-90 ${size / 2} ${size / 2})`}
+          strokeDasharray={tickDash}
         />
+        {pct > 0 && (
+          <path
+            d={describeArc(cx, cy, radius, 0, pct * 360)}
+            fill="none"
+            stroke="var(--court)"
+            strokeWidth={strokeWidth}
+            strokeLinecap="round"
+            strokeDasharray={tickDash}
+          />
+        )}
       </svg>
       <div className="gauge-center">{children}</div>
     </div>
