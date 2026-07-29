@@ -122,7 +122,15 @@ export default function Profile() {
         </div>
 
         <div className="flat-section">
-          <h2>{t("המשחקים שלי השבוע")}</h2>
+          <h2>
+            {t("המשחקים שלי השבוע")}
+            {nextMatchesForSport.length > 0 &&
+              (() => {
+                const first = nextMatchesForSport[0];
+                const weekLabel = formatWeekLabel(first.schedule_started_at, first.match.round_number, t);
+                return weekLabel ? <span className="week-label-inline"> - {weekLabel}</span> : null;
+              })()}
+          </h2>
           {nextMatchesForSport.length === 0 ? (
             <p className="muted">{t("אין לך ליגות עם לוח משחקים עדיין.")}</p>
           ) : (
@@ -134,7 +142,6 @@ export default function Profile() {
                   currentUserId={user.id}
                   leagueName={entry.league_name}
                   leagueId={entry.league_id}
-                  weekLabel={formatWeekLabel(entry.schedule_started_at, entry.match.round_number, t)}
                   busy={busy}
                   onSubmit={(sets) => handleReportScore(entry.league_id, entry.match.id, sets)}
                 />

@@ -11,7 +11,6 @@ export default function NextMatchRow({
   busy,
   leagueName,
   leagueId,
-  weekLabel,
 }) {
   const [reporting, setReporting] = useState(false);
   const { t } = useLanguage();
@@ -45,12 +44,6 @@ export default function NextMatchRow({
           </span>
         )}
       </div>
-
-      {weekLabel && (
-        <h3 className="week-label" style={{ margin: 0 }}>
-          {weekLabel}
-        </h3>
-      )}
 
       {isCompleted ? (
         <>

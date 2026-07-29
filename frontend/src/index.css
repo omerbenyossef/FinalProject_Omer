@@ -170,6 +170,12 @@ h3 { font-size: 15px; }
   margin: 0;
 }
 
+.week-label-inline {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
 p { margin: 4px 0; }
 
 a { color: var(--court); text-decoration: none; }
