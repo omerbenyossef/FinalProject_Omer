@@ -100,7 +100,7 @@ export default function Profile() {
                 value={stats.wins}
                 max={Math.max(stats.matches_played, 1)}
                 size={104}
-                strokeWidth={7}
+                strokeWidth={9}
               >
                 <div className="gauge-value">{winRate !== null ? `${winRate}%` : "–"}</div>
                 <div className="gauge-caption">{t("ניצחונות")}</div>

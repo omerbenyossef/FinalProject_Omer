@@ -305,7 +305,7 @@ export default function LeagueDetail() {
                   value={myStanding.wins}
                   max={Math.max(myStanding.played, 1)}
                   size={92}
-                  strokeWidth={6.5}
+                  strokeWidth={8}
                 >
                   <div className="gauge-value">{myWinRate !== null ? `${myWinRate}%` : "–"}</div>
                   <div className="gauge-caption">{t("ניצחונות")}</div>
