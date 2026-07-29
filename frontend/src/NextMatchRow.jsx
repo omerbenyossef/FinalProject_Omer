@@ -26,17 +26,19 @@ export default function NextMatchRow({
 
   return (
     <li className="match-row">
-      <div className="match-players" style={{ justifyContent: "space-between" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+      <div className="match-players" style={{ justifyContent: "space-between", alignItems: "flex-start" }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 6 }}>
           {leagueName && (
             <Link to={`/leagues/${leagueId}`} className="sport-tag" style={{ marginBottom: 0 }}>
               {leagueName}
             </Link>
           )}
-          <span className="vs-label">vs</span>
-          <Link to={`/head-to-head/${opponent.id}`}>
-            <strong>{opponent.name}</strong>
-          </Link>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+            <span className="vs-label">vs</span>
+            <Link to={`/head-to-head/${opponent.id}`}>
+              <strong>{opponent.name}</strong>
+            </Link>
+          </div>
         </div>
         {isCompleted && (
           <span style={{ color: iWon ? "var(--court)" : "var(--muted)", fontWeight: 700 }}>
