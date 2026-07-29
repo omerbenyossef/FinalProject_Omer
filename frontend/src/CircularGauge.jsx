@@ -20,28 +20,35 @@ export default function CircularGauge({ value, max, size = 104, strokeWidth = 10
   const cx = size / 2;
   const cy = size / 2;
   const pct = max > 0 ? Math.min(value / max, 1) : 0;
-  const tickDash = `${strokeWidth * 0.85} ${strokeWidth * 0.7}`;
+  const tickWidth = strokeWidth * 0.32;
+  const tickDash = `${strokeWidth * 0.6} ${strokeWidth * 0.55}`;
+  const trackArc = describeArc(cx, cy, radius, 0, 360);
+  const fillArc = pct > 0 ? describeArc(cx, cy, radius, 0, pct * 360) : null;
 
   return (
     <div className="gauge-wrap" style={{ width: size, height: size }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <path d={trackArc} fill="none" stroke="var(--card-alt)" strokeWidth={strokeWidth} strokeLinecap="round" />
         <path
-          d={describeArc(cx, cy, radius, 0, 360)}
+          d={trackArc}
           fill="none"
-          stroke="var(--card-alt)"
-          strokeWidth={strokeWidth}
+          stroke="var(--line)"
+          strokeWidth={tickWidth}
           strokeLinecap="round"
           strokeDasharray={tickDash}
         />
-        {pct > 0 && (
-          <path
-            d={describeArc(cx, cy, radius, 0, pct * 360)}
-            fill="none"
-            stroke="var(--court)"
-            strokeWidth={strokeWidth}
-            strokeLinecap="round"
-            strokeDasharray={tickDash}
-          />
+        {fillArc && (
+          <>
+            <path d={fillArc} fill="none" stroke="var(--court)" strokeWidth={strokeWidth} strokeLinecap="round" />
+            <path
+              d={fillArc}
+              fill="none"
+              stroke="var(--court-deep)"
+              strokeWidth={tickWidth}
+              strokeLinecap="round"
+              strokeDasharray={tickDash}
+            />
+          </>
         )}
       </svg>
       <div className="gauge-center">{children}</div>
