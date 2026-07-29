@@ -102,10 +102,8 @@ export default function Profile() {
                 size={104}
                 strokeWidth={10}
               >
-                <div className="gauge-value">{stats.wins}</div>
-                <div className="gauge-caption">
-                  {winRate !== null ? `${winRate}% ${t("ניצחונות")}` : t("אין עדיין")}
-                </div>
+                <div className="gauge-value">{winRate !== null ? `${winRate}%` : "–"}</div>
+                <div className="gauge-caption">{t("ניצחונות")}</div>
               </CircularGauge>
               <div className="hero-copy">
                 <span className="eyebrow">{t("סטטיסטיקה")}</span>

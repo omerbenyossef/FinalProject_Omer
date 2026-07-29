@@ -307,10 +307,8 @@ export default function LeagueDetail() {
                   size={92}
                   strokeWidth={9}
                 >
-                  <div className="gauge-value">{myStanding.wins}</div>
-                  <div className="gauge-caption">
-                    {myWinRate !== null ? `${myWinRate}% ${t("ניצחונות")}` : t("אין עדיין")}
-                  </div>
+                  <div className="gauge-value">{myWinRate !== null ? `${myWinRate}%` : "–"}</div>
+                  <div className="gauge-caption">{t("ניצחונות")}</div>
                 </CircularGauge>
                 <div className="hero-copy">
                   <span className="eyebrow">{t("הסטטיסטיקה שלי בליגה")}</span>
