@@ -791,6 +791,7 @@ button:active { transform: translateY(1px); }
   direction: ltr;
   text-align: right;
   letter-spacing: 0.02em;
+  text-shadow: 0 0 10px var(--court-tint-strong);
 }
 
 .inline-form input {
