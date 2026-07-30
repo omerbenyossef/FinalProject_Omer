@@ -48,7 +48,7 @@ export default function NextMatchRow({
       </div>
 
       {isCompleted ? (
-        <>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
           <div className="score-row">
             <span className={`status-dot ${iWon ? "dot-win" : "dot-loss"}`} />
             <div className="match-score">
@@ -56,7 +56,7 @@ export default function NextMatchRow({
             </div>
           </div>
           <div className="sets-breakdown">{formatSets(mySets)}</div>
-        </>
+        </div>
       ) : reporting ? (
         <SetScoreForm
           player1Name={match.player1.name}
