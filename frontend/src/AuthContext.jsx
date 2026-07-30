@@ -13,11 +13,29 @@ export function AuthProvider({ children }) {
       setLoading(false);
       return;
     }
+
+    // The backend can take a while to wake up (free-tier cold start), so
+    // don't leave the user staring at a loading screen forever: fall back
+    // to the logged-out state after a timeout, and still log them in if
+    // the slow response eventually comes back.
+    let timedOut = false;
+    const timeout = setTimeout(() => {
+      timedOut = true;
+      setLoading(false);
+    }, 8000);
+
     api
       .me()
-      .then(setUser)
-      .catch(() => localStorage.removeItem("token"))
-      .finally(() => setLoading(false));
+      .then((userData) => {
+        setUser(userData);
+      })
+      .catch(() => {
+        if (!timedOut) localStorage.removeItem("token");
+      })
+      .finally(() => {
+        clearTimeout(timeout);
+        setLoading(false);
+      });
   }, []);
 
   function loginWithToken(token, userData) {
