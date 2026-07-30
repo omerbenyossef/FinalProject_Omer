@@ -180,8 +180,9 @@ def report_score(
     match.sets = [s.model_dump() for s in score_in.sets]
     match.player1_score = sum(1 for s in score_in.sets if s.player1_games > s.player2_games)
     match.player2_score = sum(1 for s in score_in.sets if s.player2_games > s.player1_games)
+    if match.status != models.MatchStatus.completed:
+        match.played_at = datetime.utcnow()
     match.status = models.MatchStatus.completed
-    match.played_at = datetime.utcnow()
     db.commit()
     db.refresh(match)
     return match
