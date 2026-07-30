@@ -138,7 +138,7 @@ const PAIRS = [
   ["Player not found", "השחקן לא נמצא"],
 
   // Profile
-  ["פרופיל שחקן", "Player Profile"],
+  ["היי, {name}", "Hi, {name}"],
   ["סטטיסטיקה", "Statistics"],
   ["ליגות", "leagues"],
   ["עדיין לא שיחקת אף משחק. השבוע זה הזמן להתחיל!", "You haven't played a match yet. This week is the time to start!"],

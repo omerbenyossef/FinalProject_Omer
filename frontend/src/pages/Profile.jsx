@@ -80,18 +80,9 @@ export default function Profile() {
 
   return (
     <div>
-      <h1>{t("פרופיל שחקן")}</h1>
+      <h1>{t("היי, {name}", { name: user.name })}</h1>
 
       <div className="flat-sections">
-        <div className="flat-section">
-          <div className="profile-header">
-            <div>
-              <h2 style={{ marginBottom: 2, fontSize: 24 }}>{user.name}</h2>
-              <p className="muted">{user.email}</p>
-            </div>
-          </div>
-        </div>
-
         <div className="flat-section">
           {error && <p className="error">{t(error)}</p>}
           {stats && (

@@ -317,12 +317,6 @@ a { color: var(--court); text-decoration: none; }
   margin-bottom: 4px;
 }
 
-.profile-header {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
 .stat-row {
   display: flex;
   gap: 10px;
