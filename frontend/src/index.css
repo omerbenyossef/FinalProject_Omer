@@ -837,8 +837,8 @@ button:active { transform: translateY(1px); }
   font-size: 16px;
 }
 
-.match-row-title .name {
-  color: var(--court);
+.match-row-title a {
+  color: inherit;
 }
 
 .match-row-subtitle {

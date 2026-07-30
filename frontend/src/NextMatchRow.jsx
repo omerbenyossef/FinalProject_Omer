@@ -16,6 +16,7 @@ export default function NextMatchRow({
   const { t } = useLanguage();
   const iAmPlayer1 = match.player1.id === currentUserId;
   const opponent = iAmPlayer1 ? match.player2 : match.player1;
+  const myName = iAmPlayer1 ? match.player1.name : match.player2.name;
   const isCompleted = match.status === "completed";
   const myScore = iAmPlayer1 ? match.player1_score : match.player2_score;
   const opponentScore = iAmPlayer1 ? match.player2_score : match.player1_score;
@@ -29,7 +30,7 @@ export default function NextMatchRow({
       <li className="match-row match-row-completed">
         <div className="match-row-info">
           <div className="match-row-title">
-            <span className="vs-label">vs</span>{" "}
+            <strong className="name">{myName}</strong> &amp;{" "}
             <Link to={`/head-to-head/${opponent.id}`}>
               <strong className="name">{opponent.name}</strong>
             </Link>
