@@ -30,7 +30,7 @@ export default function NextMatchRow({
       <li className="match-row match-row-completed">
         <div className="match-row-info">
           <div className="match-row-title">
-            <strong className="name">{myName}</strong> &amp;{" "}
+            <strong className="name">{myName}</strong> <strong>&amp;</strong>{" "}
             <Link to={`/head-to-head/${opponent.id}`}>
               <strong className="name">{opponent.name}</strong>
             </Link>
