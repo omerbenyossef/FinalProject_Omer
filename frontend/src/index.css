@@ -834,7 +834,7 @@ button:active { transform: translateY(1px); }
 
 .match-row-title {
   font-family: var(--display);
-  font-size: 16px;
+  font-size: 18px;
 }
 
 .match-row-title a {

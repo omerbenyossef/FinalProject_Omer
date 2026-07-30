@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import SetScoreForm from "./SetScoreForm.jsx";
 import { useLanguage } from "./LanguageContext.jsx";
-import { formatSets } from "./matchUtils.js";
+import { formatSets, formatDayMonth } from "./matchUtils.js";
 
 export default function NextMatchRow({
   match,
@@ -35,9 +35,11 @@ export default function NextMatchRow({
               <strong className="name">{opponent.name}</strong>
             </Link>
           </div>
-          {leagueName && (
+          {(leagueName || match.played_at) && (
             <Link to={`/leagues/${leagueId}`} className="match-row-subtitle">
-              {leagueName}
+              {[leagueName, match.played_at && formatDayMonth(new Date(match.played_at))]
+                .filter(Boolean)
+                .join(" · ")}
             </Link>
           )}
         </div>

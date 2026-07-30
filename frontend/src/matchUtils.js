@@ -10,7 +10,7 @@ function weekEndSaturday(date) {
   return d;
 }
 
-function formatDayMonth(date) {
+export function formatDayMonth(date) {
   return `${date.getDate()}.${date.getMonth() + 1}`;
 }
 
