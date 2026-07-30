@@ -818,6 +818,41 @@ button:active { transform: translateY(1px); }
   gap: 9px;
 }
 
+.match-row-completed {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.match-row-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.match-row-title {
+  font-family: var(--display);
+  font-size: 16px;
+}
+
+.match-row-title .name {
+  color: var(--court);
+}
+
+.match-row-subtitle {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.match-row-result {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+
 .match-score {
   font-family: "JetBrains Mono", var(--mono);
   font-weight: 800;

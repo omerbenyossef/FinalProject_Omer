@@ -24,6 +24,30 @@ export default function NextMatchRow({
     ? match.sets
     : match.sets?.map((s) => ({ player1_games: s.player2_games, player2_games: s.player1_games }));
 
+  if (isCompleted) {
+    return (
+      <li className="match-row match-row-completed">
+        <div className="match-row-info">
+          <div className="match-row-title">
+            <span className="vs-label">vs</span>{" "}
+            <Link to={`/head-to-head/${opponent.id}`}>
+              <strong className="name">{opponent.name}</strong>
+            </Link>
+          </div>
+          {leagueName && (
+            <Link to={`/leagues/${leagueId}`} className="match-row-subtitle">
+              {leagueName}
+            </Link>
+          )}
+        </div>
+        <div className="match-row-result">
+          <div className="sets-breakdown">{formatSets(mySets)}</div>
+          <span className={`status-dot ${iWon ? "dot-win" : "dot-loss"}`} />
+        </div>
+      </li>
+    );
+  }
+
   return (
     <li className="match-row">
       <div className="match-players" style={{ justifyContent: "space-between", alignItems: "flex-start" }}>
@@ -40,24 +64,9 @@ export default function NextMatchRow({
             </Link>
           </div>
         </div>
-        {isCompleted && (
-          <span style={{ color: iWon ? "var(--court)" : "var(--muted)", fontWeight: 700 }}>
-            {iWon ? t("ניצחון") : t("הפסד")}
-          </span>
-        )}
       </div>
 
-      {isCompleted ? (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
-          <div className="score-row">
-            <span className={`status-dot ${iWon ? "dot-win" : "dot-loss"}`} />
-            <div className="match-score">
-              {myScore} - {opponentScore}
-            </div>
-          </div>
-          <div className="sets-breakdown">{formatSets(mySets)}</div>
-        </div>
-      ) : reporting ? (
+      {reporting ? (
         <SetScoreForm
           player1Name={match.player1.name}
           player2Name={match.player2.name}
