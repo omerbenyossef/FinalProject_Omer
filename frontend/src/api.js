@@ -83,4 +83,8 @@ export const api = {
     request(`/leagues/${leagueId}/matches/${matchId}/score`, { method: "POST", body: { sets } }),
   cancelMatch: (leagueId, matchId) =>
     request(`/leagues/${leagueId}/matches/${matchId}`, { method: "DELETE" }),
+
+  getVapidKey: () => request("/push/vapid-public-key", { auth: false }),
+  subscribePush: (subscription) => request("/push/subscribe", { method: "POST", body: subscription }),
+  unsubscribePush: (endpoint) => request("/push/unsubscribe", { method: "POST", body: { endpoint } }),
 };

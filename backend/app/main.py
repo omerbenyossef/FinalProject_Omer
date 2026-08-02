@@ -4,7 +4,7 @@ from sqlalchemy import inspect, text
 
 from . import models
 from .database import Base, engine, SessionLocal
-from .routers import auth, leagues, matches, players, sports
+from .routers import auth, leagues, matches, players, push, sports
 
 Base.metadata.create_all(bind=engine)
 
@@ -60,6 +60,7 @@ app.include_router(sports.router)
 app.include_router(leagues.router)
 app.include_router(matches.router)
 app.include_router(players.router)
+app.include_router(push.router)
 
 
 @app.get("/health")

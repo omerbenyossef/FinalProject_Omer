@@ -35,6 +35,7 @@ class User(Base):
     reset_token_expires = Column(DateTime, nullable=True)
 
     memberships = relationship("LeagueMembership", back_populates="user")
+    push_subscriptions = relationship("PushSubscription", back_populates="user")
 
     @property
     def is_admin(self) -> bool:
@@ -99,3 +100,17 @@ class Match(Base):
     league = relationship("League", back_populates="matches")
     player1 = relationship("User", foreign_keys=[player1_id])
     player2 = relationship("User", foreign_keys=[player2_id])
+
+
+class PushSubscription(Base):
+    __tablename__ = "push_subscriptions"
+    __table_args__ = (UniqueConstraint("endpoint", name="uq_push_endpoint"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    endpoint = Column(String, nullable=False)
+    p256dh = Column(String, nullable=False)
+    auth = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", back_populates="push_subscriptions")

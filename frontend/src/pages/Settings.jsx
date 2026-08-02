@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import { getTheme, setTheme } from "../theme.js";
+import { getExistingSubscription, isPushSupported, subscribeToPush, unsubscribeFromPush } from "../push.js";
 
 const THEME_ORDER = ["system", "light", "dark"];
 const THEME_LABELS = { system: "אוטומטי", light: "בהיר", dark: "כהה" };
@@ -31,6 +32,7 @@ export default function Settings() {
         <EditProfileCard user={user} updateUser={updateUser} />
         <ChangeEmailCard user={user} updateUser={updateUser} />
         <ChangePasswordCard />
+        <NotificationsCard />
         <div className="flat-section">
           <div className="settings-row">
             <div>
@@ -238,6 +240,76 @@ function ChangeEmailCard({ user, updateUser }) {
         </form>
       )}
       {!editing && message && <p className="muted">{t(message)}</p>}
+    </div>
+  );
+}
+
+function NotificationsCard() {
+  const { t } = useLanguage();
+  const [supported, setSupported] = useState(true);
+  const [subscribed, setSubscribed] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!isPushSupported()) {
+      setSupported(false);
+      setLoading(false);
+      return;
+    }
+    getExistingSubscription()
+      .then((sub) => setSubscribed(!!sub))
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function handleToggle() {
+    setError("");
+    setSubmitting(true);
+    try {
+      if (subscribed) {
+        await unsubscribeFromPush();
+        setSubscribed(false);
+      } else {
+        if (Notification.permission === "denied") {
+          setError("ההתראות חסומות בדפדפן, יש לאשר אותן בהגדרות הדפדפן");
+          return;
+        }
+        const permission = await Notification.requestPermission();
+        if (permission !== "granted") {
+          setError("צריך לאשר התראות כדי להפעיל אותן");
+          return;
+        }
+        await subscribeToPush();
+        setSubscribed(true);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="flat-section">
+      <div className="settings-row">
+        <div>
+          <h2>{t("התראות")}</h2>
+          <p className="muted">
+            {!supported
+              ? t("לא נתמך בדפדפן הזה")
+              : subscribed
+              ? t("מופעלות")
+              : t("כבויות")}
+          </p>
+        </div>
+        {supported && !loading && (
+          <button type="button" className="link-btn" onClick={handleToggle} disabled={submitting}>
+            {subscribed ? t("כבה") : t("הפעל")}
+          </button>
+        )}
+      </div>
+      {error && <p className="error">{t(error)}</p>}
     </div>
   );
 }

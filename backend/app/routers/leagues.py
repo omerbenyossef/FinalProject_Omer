@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session, joinedload
 from .. import models, schemas
 from ..auth import get_current_user
 from ..database import get_db
+from ..push_utils import notify_user
 
 router = APIRouter(prefix="/leagues", tags=["leagues"])
 
@@ -185,6 +186,16 @@ def join_league(
     db.commit()
 
     db.refresh(league)
+
+    if league.created_by != current_user.id:
+        notify_user(
+            db,
+            league.created_by,
+            "חבר חדש הצטרף לליגה",
+            f"{current_user.name} הצטרף/ה לליגה {league.name}",
+            f"/leagues/{league_id}",
+        )
+
     return _to_league_out(league)
 
 

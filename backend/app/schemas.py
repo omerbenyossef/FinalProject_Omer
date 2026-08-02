@@ -117,6 +117,20 @@ class MatchCreate(BaseModel):
     opponent_id: int
 
 
+class PushSubscriptionKeys(BaseModel):
+    p256dh: str
+    auth: str
+
+
+class PushSubscriptionIn(BaseModel):
+    endpoint: str
+    keys: PushSubscriptionKeys
+
+
+class PushUnsubscribeIn(BaseModel):
+    endpoint: str
+
+
 class SetScore(BaseModel):
     player1_games: int
     player2_games: int

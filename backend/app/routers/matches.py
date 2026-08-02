@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session, joinedload
 from .. import models, schemas
 from ..auth import get_current_user
 from ..database import get_db
+from ..push_utils import notify_user
 
 router = APIRouter(prefix="/leagues/{league_id}/matches", tags=["matches"])
 
@@ -130,6 +131,19 @@ def generate_schedule(
     db.commit()
     for match in created:
         db.refresh(match)
+
+    if created:
+        for member_id in member_ids:
+            if member_id == current_user.id:
+                continue
+            notify_user(
+                db,
+                member_id,
+                "לוח משחקים חדש",
+                f"נוצר לוח משחקים חדש בליגה {league.name}",
+                f"/leagues/{league_id}",
+            )
+
     return created
 
 
@@ -180,11 +194,23 @@ def report_score(
     match.sets = [s.model_dump() for s in score_in.sets]
     match.player1_score = sum(1 for s in score_in.sets if s.player1_games > s.player2_games)
     match.player2_score = sum(1 for s in score_in.sets if s.player2_games > s.player1_games)
-    if match.status != models.MatchStatus.completed:
+    was_completed = match.status == models.MatchStatus.completed
+    if not was_completed:
         match.played_at = datetime.utcnow()
     match.status = models.MatchStatus.completed
     db.commit()
     db.refresh(match)
+
+    if not was_completed:
+        opponent_id = match.player2_id if current_user.id == match.player1_id else match.player1_id
+        notify_user(
+            db,
+            opponent_id,
+            "תוצאה חדשה דווחה",
+            f"{current_user.name} דיווח תוצאה למשחק שלכם",
+            f"/leagues/{league_id}",
+        )
+
     return match
 
 
