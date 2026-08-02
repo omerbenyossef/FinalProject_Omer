@@ -5,6 +5,7 @@ import { useAuth } from "../AuthContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import { getTheme, setTheme } from "../theme.js";
 import { getExistingSubscription, isPushSupported, subscribeToPush, unsubscribeFromPush } from "../push.js";
+import PageHelp from "../PageHelp.jsx";
 
 const THEME_ORDER = ["system", "light", "dark"];
 const THEME_LABELS = { system: "אוטומטי", light: "בהיר", dark: "כהה" };
@@ -22,7 +23,13 @@ export default function Settings() {
   return (
     <div>
       <div className="page-header">
-        <h1>{t("הגדרות")}</h1>
+        <div className="page-title-row">
+          <h1>{t("הגדרות")}</h1>
+          <PageHelp
+            title="עמוד ההגדרות"
+            text="כאן תוכלו לערוך את הפרופיל שלכם, לשנות סיסמה או אימייל, להפעיל התראות, ולשנות שפה או מראה."
+          />
+        </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <ThemeToggleButton />
           <LanguageToggleButton />

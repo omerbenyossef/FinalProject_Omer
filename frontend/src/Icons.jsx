@@ -70,6 +70,16 @@ export function CloseIcon(props) {
   );
 }
 
+export function QuestionIcon(props) {
+  return (
+    <svg {...common} {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.2 9.6a2.8 2.8 0 1 1 4.6 2.1c-.9.7-1.4 1.2-1.4 2.3" />
+      <circle cx="12" cy="16.5" r="0.6" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 export function RankingIcon(props) {
   return (
     <svg {...common} {...props}>

@@ -8,6 +8,7 @@ import LeagueCard from "../LeagueCard.jsx";
 import EmptyState from "../EmptyState.jsx";
 import { TrophyIcon } from "../Icons.jsx";
 import { SkeletonLeagueCard } from "../Skeleton.jsx";
+import PageHelp from "../PageHelp.jsx";
 
 export default function Leagues() {
   const [leagues, setLeagues] = useState([]);
@@ -75,7 +76,13 @@ export default function Leagues() {
   return (
     <div>
       <div className="page-header">
-        <h1>{t("ליגות פעילות")}</h1>
+        <div className="page-title-row">
+          <h1>{t("ליגות פעילות")}</h1>
+          <PageHelp
+            title="עמוד הליגות"
+            text="כאן תוכלו לראות את הליגות שאתם חברים בהן, לעיין בליגות ציבוריות פתוחות, וליצור ליגה חדשה."
+          />
+        </div>
         {user && (
           <button className="btn-primary" onClick={() => setShowForm((v) => !v)}>
             {showForm ? t("ביטול") : `+ ${t("יצירת ליגה")}`}

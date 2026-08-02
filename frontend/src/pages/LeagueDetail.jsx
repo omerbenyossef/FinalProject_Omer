@@ -10,6 +10,7 @@ import { UserPlusIcon, CalendarIcon } from "../Icons.jsx";
 import EmptyState from "../EmptyState.jsx";
 import { formatSets, formatWeekLabel } from "../matchUtils.js";
 import { SkeletonPageHeader, SkeletonHeroStat, SkeletonStandingsTable } from "../Skeleton.jsx";
+import PageHelp from "../PageHelp.jsx";
 
 function groupMatchesByRound(matches) {
   const groups = new Map();
@@ -232,7 +233,13 @@ export default function LeagueDetail() {
     <div>
       <div className="page-header">
         <div>
-          <h1>{league.name}</h1>
+          <div className="page-title-row">
+            <h1>{league.name}</h1>
+            <PageHelp
+              title="עמוד הליגה"
+              text="כאן תראו את טבלת הדירוג, את המשחקים שלכם ושל שאר חברי הליגה, ואת הסטטיסטיקה האישית שלכם בליגה הזו."
+            />
+          </div>
           {league.description && <p className="muted">{league.description}</p>}
         </div>
         {!isMember && user && (league.is_open || codeFromLink) && (

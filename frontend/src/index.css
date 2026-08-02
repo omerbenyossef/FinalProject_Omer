@@ -680,6 +680,85 @@ a { color: var(--court); text-decoration: none; }
   width: 100%;
 }
 
+.page-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.page-help-btn {
+  background: var(--card-alt);
+  color: var(--muted);
+  border: none;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  padding: 0;
+}
+
+.page-help-btn svg {
+  width: 13px;
+  height: 13px;
+}
+
+.page-help-btn:hover {
+  background: var(--court-tint);
+  color: var(--court);
+}
+
+.page-help-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 18, 32, 0.55);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 50;
+}
+
+.page-help-card {
+  position: relative;
+  background: var(--card);
+  border-radius: 20px;
+  padding: 28px 24px 24px;
+  max-width: 320px;
+  width: 100%;
+}
+
+.page-help-close {
+  position: absolute;
+  top: 14px;
+  inset-inline-end: 14px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  padding: 4px;
+  display: flex;
+}
+
+.page-help-close svg {
+  width: 16px;
+  height: 16px;
+}
+
+.page-help-title {
+  margin: 0 0 8px;
+  padding-inline-end: 24px;
+}
+
+.page-help-text {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+}
+
 .error {
   color: var(--danger);
   background: var(--danger-tint);

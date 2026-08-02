@@ -6,6 +6,7 @@ import { formatSets } from "../matchUtils.js";
 import EmptyState from "../EmptyState.jsx";
 import { PersonIcon } from "../Icons.jsx";
 import { SkeletonBar, SkeletonStatRow, SkeletonMatchRow } from "../Skeleton.jsx";
+import PageHelp from "../PageHelp.jsx";
 
 export default function HeadToHead() {
   const { opponentId } = useParams();
@@ -57,7 +58,13 @@ export default function HeadToHead() {
       <div className="page-header">
         <div>
           <span className="eyebrow">{t("ראש בראש")}</span>
-          <h1>{data.opponent.name}</h1>
+          <div className="page-title-row">
+            <h1>{data.opponent.name}</h1>
+            <PageHelp
+              title="ראש בראש"
+              text="כאן תוכלו לראות את ההשוואה בינך לבין השחקן הזה - כמה ניצחתם, הפסדתם, ואת כל היסטוריית המשחקים ביניכם."
+            />
+          </div>
         </div>
       </div>
 

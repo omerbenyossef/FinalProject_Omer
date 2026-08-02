@@ -11,6 +11,7 @@ import { formatWeekLabel } from "../matchUtils.js";
 import EmptyState from "../EmptyState.jsx";
 import { Link } from "react-router-dom";
 import { SkeletonHeroStat, SkeletonMatchRow } from "../Skeleton.jsx";
+import PageHelp from "../PageHelp.jsx";
 
 export default function Profile() {
   const { user } = useAuth();
@@ -85,7 +86,13 @@ export default function Profile() {
 
   return (
     <div>
-      <h1>{t("היי, {name}", { name: user.name })}</h1>
+      <div className="page-title-row">
+        <h1>{t("היי, {name}", { name: user.name })}</h1>
+        <PageHelp
+          title="עמוד הפרופיל"
+          text="כאן תראו את אחוז הניצחונות שלכם, את המשחק הבא שלכם השבוע, ואת רשימת הליגות שאתם חברים בהן."
+        />
+      </div>
 
       <div className="flat-sections">
         <div className="flat-section">
