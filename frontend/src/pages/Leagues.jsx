@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import { useSport } from "../SportContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import LeagueCard from "../LeagueCard.jsx";
+import EmptyState from "../EmptyState.jsx";
+import { TrophyIcon } from "../Icons.jsx";
 
 export default function Leagues() {
   const [leagues, setLeagues] = useState([]);
@@ -79,7 +82,18 @@ export default function Leagues() {
         )}
       </div>
 
-      {!user && <p className="muted">{t("רוצה להקים ליגה? יש להירשם או להתחבר קודם.")}</p>}
+      {!user && (
+        <EmptyState
+          icon={<TrophyIcon aria-hidden="true" />}
+          action={
+            <Link to="/login" className="btn-secondary btn-small">
+              {t("כניסה")}
+            </Link>
+          }
+        >
+          {t("רוצה להקים ליגה? יש להירשם או להתחבר קודם.")}
+        </EmptyState>
+      )}
 
       {showForm && (
         <form className="card form-card" onSubmit={handleCreate}>
@@ -131,7 +145,9 @@ export default function Leagues() {
                   <LeagueCard league={league} key={league.id} />
                 ))}
                 {!loading && myLeaguesForSport.length === 0 && (
-                  <p className="muted">{t("עדיין לא הצטרפת לאף ליגה בענף הזה.")}</p>
+                  <EmptyState icon={<TrophyIcon aria-hidden="true" />}>
+                    {t("עדיין לא הצטרפת לאף ליגה בענף הזה.")}
+                  </EmptyState>
                 )}
               </div>
             )}
@@ -154,7 +170,9 @@ export default function Leagues() {
                 <LeagueCard league={league} key={league.id} isMember={myLeagueIds.has(league.id)} />
               ))}
               {!loading && openLeagues.length === 0 && (
-                <p className="muted">{t("אין כרגע ליגות פתוחות.")}</p>
+                <EmptyState icon={<TrophyIcon aria-hidden="true" />}>
+                  {t("אין כרגע ליגות פתוחות.")}
+                </EmptyState>
               )}
             </div>
           )}

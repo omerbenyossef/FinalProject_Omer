@@ -64,6 +64,7 @@ const PAIRS = [
   ["טוען...", "Loading..."],
   ["הליגות שלי", "My Leagues"],
   ["עדיין לא הצטרפת לאף ליגה בענף הזה.", "You haven't joined any league in this sport yet."],
+  ["עיין בליגות", "Browse leagues"],
   ["ליגות פתוחות", "Open Leagues"],
   ["אין כרגע ליגות פתוחות.", "There are no open leagues right now."],
   ["הסתר", "Hide"],

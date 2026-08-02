@@ -6,8 +6,10 @@ import { useLanguage } from "../LanguageContext.jsx";
 import CircularGauge from "../CircularGauge.jsx";
 import LeagueCard from "../LeagueCard.jsx";
 import NextMatchRow from "../NextMatchRow.jsx";
-import { UserPlusIcon } from "../Icons.jsx";
+import { UserPlusIcon, CalendarIcon, TrophyIcon } from "../Icons.jsx";
 import { formatWeekLabel } from "../matchUtils.js";
+import EmptyState from "../EmptyState.jsx";
+import { Link } from "react-router-dom";
 
 export default function Profile() {
   const { user } = useAuth();
@@ -123,7 +125,16 @@ export default function Profile() {
               })()}
           </h2>
           {nextMatchesForSport.length === 0 ? (
-            <p className="muted">{t("אין לך ליגות עם לוח משחקים עדיין.")}</p>
+            <EmptyState
+              icon={<CalendarIcon aria-hidden="true" />}
+              action={
+                <Link to="/leagues" className="btn-secondary btn-small">
+                  {t("עיין בליגות")}
+                </Link>
+              }
+            >
+              {t("אין לך ליגות עם לוח משחקים עדיין.")}
+            </EmptyState>
           ) : (
             <ul className="match-list">
               {nextMatchesForSport.map((entry) => (
@@ -157,7 +168,16 @@ export default function Profile() {
                 <LeagueCard league={league} key={league.id} />
               ))}
               {myLeaguesForSport.length === 0 && (
-                <p className="muted">{t("עדיין לא הצטרפת לאף ליגה בענף הזה.")}</p>
+                <EmptyState
+                  icon={<TrophyIcon aria-hidden="true" />}
+                  action={
+                    <Link to="/leagues" className="btn-secondary btn-small">
+                      {t("עיין בליגות")}
+                    </Link>
+                  }
+                >
+                  {t("עדיין לא הצטרפת לאף ליגה בענף הזה.")}
+                </EmptyState>
               )}
             </div>
           )}

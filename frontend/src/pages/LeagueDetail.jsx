@@ -6,7 +6,8 @@ import { useLanguage } from "../LanguageContext.jsx";
 import SetScoreForm from "../SetScoreForm.jsx";
 import NextMatchRow from "../NextMatchRow.jsx";
 import CircularGauge from "../CircularGauge.jsx";
-import { UserPlusIcon } from "../Icons.jsx";
+import { UserPlusIcon, CalendarIcon } from "../Icons.jsx";
+import EmptyState from "../EmptyState.jsx";
 import { formatSets, formatWeekLabel } from "../matchUtils.js";
 
 function groupMatchesByRound(matches) {
@@ -381,7 +382,11 @@ export default function LeagueDetail() {
 
                 {showMatches && (
                   <>
-                    {matches.length === 0 && <p className="muted">{t("עדיין אין משחקים.")}</p>}
+                    {matches.length === 0 && (
+                      <EmptyState icon={<CalendarIcon aria-hidden="true" />}>
+                        {t("עדיין אין משחקים.")}
+                      </EmptyState>
+                    )}
                     {groupMatchesByRound(matches).map(({ round, matches: roundMatches }) => (
                       <div key={round} style={{ marginTop: 16 }}>
                         <h3 className="week-label">
@@ -420,7 +425,11 @@ export default function LeagueDetail() {
 
               {showAllMatches && (
                 <>
-                  {allMatches.length === 0 && <p className="muted">{t("עדיין אין משחקים בליגה.")}</p>}
+                  {allMatches.length === 0 && (
+                    <EmptyState icon={<CalendarIcon aria-hidden="true" />}>
+                      {t("עדיין אין משחקים בליגה.")}
+                    </EmptyState>
+                  )}
                   {groupMatchesByRound(allMatches).map(({ round, matches: roundMatches }) => (
                     <div key={round} style={{ marginTop: 16 }}>
                       <h3 className="week-label">

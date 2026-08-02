@@ -3,6 +3,8 @@ import { Link, useParams } from "react-router-dom";
 import { api } from "../api";
 import { useLanguage } from "../LanguageContext.jsx";
 import { formatSets } from "../matchUtils.js";
+import EmptyState from "../EmptyState.jsx";
+import { PersonIcon } from "../Icons.jsx";
 
 export default function HeadToHead() {
   const { opponentId } = useParams();
@@ -52,7 +54,11 @@ export default function HeadToHead() {
 
         <div className="flat-section">
           <h2>{t("היסטוריית משחקים")}</h2>
-          {data.matches.length === 0 && <p className="muted">{t("עדיין לא שיחקתם אחד נגד השני.")}</p>}
+          {data.matches.length === 0 && (
+            <EmptyState icon={<PersonIcon aria-hidden="true" />}>
+              {t("עדיין לא שיחקתם אחד נגד השני.")}
+            </EmptyState>
+          )}
           <ul className="match-list">
             {data.matches.map((m) => {
               const iWon = m.my_score > m.opponent_score;
