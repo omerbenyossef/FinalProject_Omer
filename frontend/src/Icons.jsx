@@ -70,6 +70,16 @@ export function CloseIcon(props) {
   );
 }
 
+export function RankingIcon(props) {
+  return (
+    <svg {...common} {...props}>
+      <line x1="6" y1="20" x2="6" y2="13" />
+      <line x1="12" y1="20" x2="12" y2="9" />
+      <line x1="18" y1="20" x2="18" y2="4" />
+    </svg>
+  );
+}
+
 export function BellIcon(props) {
   return (
     <svg {...common} {...props}>
