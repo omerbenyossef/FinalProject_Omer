@@ -187,7 +187,7 @@ const PAIRS = [
   ["התקן", "Install"],
   ["סגור", "Close"],
   ["צור ליגה או הצטרף לאחת", "Create a league or join one"],
-  ["התחילו ליגה עם החברים שלכם, או הצטרפו לליגה קיימת עם קוד הזמנה.", "Start a league with your friends, or join an existing one with an invite code."],
+  ["התחילו ליגה עם החברים שלכם, או הצטרפו לליגה קיימת עם שחקנים מהאזור.", "Start a league with your friends, or join an existing one with players from your area."],
   ["אתגרו שחקנים ודווחו תוצאות", "Challenge players and report scores"],
   ["בחרו יריב, שחקו, ותדווחו את התוצאה בסיום המשחק.", "Pick an opponent, play, and report the result when you're done."],
   ["עקבו אחרי המשחקים שלכם", "Track your matches"],
