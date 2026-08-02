@@ -70,6 +70,15 @@ export function CloseIcon(props) {
   );
 }
 
+export function BellIcon(props) {
+  return (
+    <svg {...common} {...props}>
+      <path d="M6 17h12l-1.5-2.5V10a4.5 4.5 0 0 0-9 0v4.5L6 17z" />
+      <path d="M10 20a2 2 0 0 0 4 0" />
+    </svg>
+  );
+}
+
 export function SettingsIcon(props) {
   return (
     <svg {...common} {...props}>

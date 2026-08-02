@@ -1,0 +1,79 @@
+import { useState } from "react";
+import { useLanguage } from "./LanguageContext.jsx";
+import { TrophyIcon, UserPlusIcon, CalendarIcon, BellIcon } from "./Icons.jsx";
+
+const SEEN_KEY = "onboardingSeen";
+
+const STEPS = [
+  {
+    Icon: TrophyIcon,
+    title: "צור ליגה או הצטרף לאחת",
+    text: "התחילו ליגה עם החברים שלכם, או הצטרפו לליגה קיימת עם קוד הזמנה.",
+  },
+  {
+    Icon: UserPlusIcon,
+    title: "אתגרו שחקנים ודווחו תוצאות",
+    text: "בחרו יריב, שחקו, ותדווחו את התוצאה בסיום המשחק.",
+  },
+  {
+    Icon: CalendarIcon,
+    title: "עקבו אחרי המשחקים שלכם",
+    text: "כל שבוע תראו את המשחק הבא שלכם ואת הדירוג העדכני בליגה.",
+  },
+  {
+    Icon: BellIcon,
+    title: "קבלו התראות",
+    text: "הפעילו התראות בהגדרות כדי לדעת מיד כשמדווחים תוצאה או נוצר לוח משחקים חדש.",
+  },
+];
+
+function hasSeenOnboarding() {
+  return !!localStorage.getItem(SEEN_KEY);
+}
+
+export default function Onboarding() {
+  const { t } = useLanguage();
+  const [dismissed, setDismissed] = useState(hasSeenOnboarding());
+  const [step, setStep] = useState(0);
+
+  if (dismissed) return null;
+
+  function finish() {
+    localStorage.setItem(SEEN_KEY, "1");
+    setDismissed(true);
+  }
+
+  function next() {
+    if (step === STEPS.length - 1) finish();
+    else setStep((s) => s + 1);
+  }
+
+  const { Icon, title, text } = STEPS[step];
+  const isLast = step === STEPS.length - 1;
+
+  return (
+    <div className="onboarding-overlay">
+      <div className="onboarding-card">
+        <button type="button" className="onboarding-skip" onClick={finish}>
+          {t("דלג")}
+        </button>
+
+        <div className="onboarding-icon">
+          <Icon aria-hidden="true" />
+        </div>
+        <h2 className="onboarding-title">{t(title)}</h2>
+        <p className="onboarding-text">{t(text)}</p>
+
+        <div className="onboarding-dots">
+          {STEPS.map((_, i) => (
+            <span key={i} className={`onboarding-dot${i === step ? " active" : ""}`} />
+          ))}
+        </div>
+
+        <button type="button" className="btn-primary onboarding-next" onClick={next}>
+          {isLast ? t("בואו נתחיל") : t("הבא")}
+        </button>
+      </div>
+    </div>
+  );
+}

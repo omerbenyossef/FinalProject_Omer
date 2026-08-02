@@ -4,6 +4,7 @@ import { useSport } from "./SportContext.jsx";
 import { useLanguage } from "./LanguageContext.jsx";
 import { PersonIcon, SettingsIcon, TrophyIcon } from "./Icons.jsx";
 import InstallPrompt from "./InstallPrompt.jsx";
+import Onboarding from "./Onboarding.jsx";
 
 function BrandMark() {
   return (
@@ -62,6 +63,7 @@ export default function Layout({ children }) {
           )}
         </nav>
       </header>
+      {user && <Onboarding />}
       {user && <InstallPrompt />}
       <main className="content">{children}</main>
       {user && (
