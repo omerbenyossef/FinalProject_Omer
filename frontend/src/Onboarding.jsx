@@ -1,29 +1,29 @@
 import { useState } from "react";
 import { useLanguage } from "./LanguageContext.jsx";
-import { TrophyIcon, CalendarIcon, RankingIcon, BellIcon } from "./Icons.jsx";
+import { TrophyIcon, UserPlusIcon, CalendarIcon, BellIcon } from "./Icons.jsx";
 
 const SEEN_KEY = "onboardingSeen";
 
 const STEPS = [
   {
     Icon: TrophyIcon,
-    title: "בחרו את הזירה שלכם",
-    text: "ליגה סודית עם החברים, או ליגה ציבורית עם יריבים חדשים - הבחירה שלכם.",
+    title: "צור ליגה או הצטרף לאחת",
+    text: "התחילו ליגה עם החברים שלכם, או הצטרפו לליגה קיימת עם קוד הזמנה.",
+  },
+  {
+    Icon: UserPlusIcon,
+    title: "אתגרו שחקנים ודווחו תוצאות",
+    text: "בחרו יריב, שחקו, ותדווחו את התוצאה בסיום המשחק.",
   },
   {
     Icon: CalendarIcon,
-    title: "שחקו. דווחו. תתקדמו.",
-    text: "לוח משחקים חדש נוצר לבד כל שבוע - אתם רק צריכים לנצח.",
-  },
-  {
-    Icon: RankingIcon,
-    title: "כל ניצחון סופר",
-    text: "טפסו בטבלת הדירוג ותראו מי המלך האמיתי של הליגה.",
+    title: "עקבו אחרי המשחקים שלכם",
+    text: "כל שבוע תראו את המשחק הבא שלכם ואת הדירוג העדכני בליגה.",
   },
   {
     Icon: BellIcon,
-    title: "אל תפספסו כלום",
-    text: "קבלו התראה מיידית על כל תוצאה, ולוח משחקים חדש.",
+    title: "קבלו התראות",
+    text: "הפעילו התראות בהגדרות כדי לדעת מיד כשמדווחים תוצאה או נוצר לוח משחקים חדש.",
   },
 ];
 
