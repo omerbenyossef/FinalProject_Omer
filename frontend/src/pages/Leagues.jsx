@@ -79,6 +79,7 @@ export default function Leagues() {
         <div className="page-title-row">
           <h1>{t("ליגות פעילות")}</h1>
           <PageHelp
+            pageKey="leagues"
             title="עמוד הליגות"
             text="כאן תוכלו לראות את הליגות שאתם חברים בהן, לעיין בליגות ציבוריות פתוחות, וליצור ליגה חדשה."
           />

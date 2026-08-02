@@ -61,6 +61,7 @@ export default function HeadToHead() {
           <div className="page-title-row">
             <h1>{data.opponent.name}</h1>
             <PageHelp
+              pageKey="headToHead"
               title="ראש בראש"
               text="כאן תוכלו לראות את ההשוואה בינך לבין השחקן הזה - כמה ניצחתם, הפסדתם, ואת כל היסטוריית המשחקים ביניכם."
             />

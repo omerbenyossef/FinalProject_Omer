@@ -89,6 +89,7 @@ export default function Profile() {
       <div className="page-title-row">
         <h1>{t("היי, {name}", { name: user.name })}</h1>
         <PageHelp
+          pageKey="profile"
           title="עמוד הפרופיל"
           text="כאן תראו את אחוז הניצחונות שלכם, את המשחק הבא שלכם השבוע, ואת רשימת הליגות שאתם חברים בהן."
         />

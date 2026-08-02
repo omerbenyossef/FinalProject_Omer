@@ -236,6 +236,7 @@ export default function LeagueDetail() {
           <div className="page-title-row">
             <h1>{league.name}</h1>
             <PageHelp
+              pageKey="leagueDetail"
               title="עמוד הליגה"
               text="כאן תראו את טבלת הדירוג, את המשחקים שלכם ושל שאר חברי הליגה, ואת הסטטיסטיקה האישית שלכם בליגה הזו."
             />
