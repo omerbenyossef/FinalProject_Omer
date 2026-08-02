@@ -5,6 +5,7 @@ import { useLanguage } from "../LanguageContext.jsx";
 import { formatSets } from "../matchUtils.js";
 import EmptyState from "../EmptyState.jsx";
 import { PersonIcon } from "../Icons.jsx";
+import { SkeletonBar, SkeletonStatRow, SkeletonMatchRow } from "../Skeleton.jsx";
 
 export default function HeadToHead() {
   const { opponentId } = useParams();
@@ -20,7 +21,33 @@ export default function HeadToHead() {
   }, [opponentId]);
 
   if (error) return <p className="error">{t(error)}</p>;
-  if (!data) return <p className="muted">{t("טוען...")}</p>;
+  if (!data) {
+    return (
+      <div>
+        <Link to="/leagues" className="link-btn" style={{ display: "inline-block", marginBottom: 12 }}>
+          {t("חזרה לליגות")}
+        </Link>
+        <div className="page-header">
+          <div>
+            <span className="eyebrow">{t("ראש בראש")}</span>
+            <SkeletonBar width={140} height={26} style={{ marginTop: 6 }} />
+          </div>
+        </div>
+        <div className="flat-sections">
+          <div className="flat-section">
+            <SkeletonStatRow />
+          </div>
+          <div className="flat-section">
+            <h2>{t("היסטוריית משחקים")}</h2>
+            <ul className="match-list">
+              <SkeletonMatchRow />
+              <SkeletonMatchRow />
+            </ul>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>

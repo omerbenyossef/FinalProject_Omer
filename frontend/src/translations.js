@@ -180,6 +180,12 @@ const PAIRS = [
   ["כבה", "Disable"],
   ["ההתראות חסומות בדפדפן, יש לאשר אותן בהגדרות הדפדפן", "Notifications are blocked in the browser, allow them in browser settings"],
   ["צריך לאשר התראות כדי להפעיל אותן", "You need to allow notifications to enable them"],
+  ["התקן/י את Rally למסך הבית", "Install Rally on your home screen"],
+  ["כדי לקבל התראות: לחצו על שיתוף", "To get notifications: tap Share"],
+  ['ואז "הוסף למסך הבית"', 'then "Add to Home Screen"'],
+  ["גישה מהירה והתראות על משחקים חדשים", "Quick access and notifications for new matches"],
+  ["התקן", "Install"],
+  ["סגור", "Close"],
   ["שפה: עברית", "Language: Hebrew"],
   ["שפה: English", "Language: English"],
 

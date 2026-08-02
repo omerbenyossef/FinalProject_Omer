@@ -51,6 +51,25 @@ export function CalendarIcon(props) {
   );
 }
 
+export function ShareIcon(props) {
+  return (
+    <svg {...common} {...props}>
+      <path d="M12 15V4" />
+      <path d="M8 8l4-4 4 4" />
+      <rect x="4.5" y="10.5" width="15" height="9.5" rx="2.5" />
+    </svg>
+  );
+}
+
+export function CloseIcon(props) {
+  return (
+    <svg {...common} {...props}>
+      <line x1="6" y1="6" x2="18" y2="18" />
+      <line x1="18" y1="6" x2="6" y2="18" />
+    </svg>
+  );
+}
+
 export function SettingsIcon(props) {
   return (
     <svg {...common} {...props}>

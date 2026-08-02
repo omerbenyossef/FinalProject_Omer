@@ -1,7 +1,6 @@
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import Layout from "./Layout.jsx";
 import { useAuth } from "./AuthContext.jsx";
-import { useLanguage } from "./LanguageContext.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
@@ -11,12 +10,19 @@ import LeagueDetail from "./pages/LeagueDetail.jsx";
 import Profile from "./pages/Profile.jsx";
 import Settings from "./pages/Settings.jsx";
 import HeadToHead from "./pages/HeadToHead.jsx";
+import { SkeletonPageHeader, SkeletonHeroStat } from "./Skeleton.jsx";
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
-  const { t } = useLanguage();
   const location = useLocation();
-  if (loading) return <p className="muted">{t("טוען...")}</p>;
+  if (loading) {
+    return (
+      <div>
+        <SkeletonPageHeader />
+        <SkeletonHeroStat />
+      </div>
+    );
+  }
   if (!user) {
     const redirectTo = encodeURIComponent(location.pathname + location.search);
     return <Navigate to={`/login?redirect=${redirectTo}`} replace />;

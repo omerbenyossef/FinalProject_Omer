@@ -9,6 +9,7 @@ import CircularGauge from "../CircularGauge.jsx";
 import { UserPlusIcon, CalendarIcon } from "../Icons.jsx";
 import EmptyState from "../EmptyState.jsx";
 import { formatSets, formatWeekLabel } from "../matchUtils.js";
+import { SkeletonPageHeader, SkeletonHeroStat, SkeletonStandingsTable } from "../Skeleton.jsx";
 
 function groupMatchesByRound(matches) {
   const groups = new Map();
@@ -204,7 +205,20 @@ export default function LeagueDetail() {
     }
   }
 
-  if (!league) return <p className="muted">{t("טוען...")}</p>;
+  if (!league) {
+    return (
+      <div>
+        <SkeletonPageHeader />
+        <div className="section-tabs">
+          <span className="section-tab active">{t("טבלת דירוג")}</span>
+        </div>
+        <SkeletonHeroStat />
+        <div style={{ marginTop: 20 }}>
+          <SkeletonStandingsTable />
+        </div>
+      </div>
+    );
+  }
 
   const isCreator = league.created_by === user?.id;
   const myNextMatch = matches

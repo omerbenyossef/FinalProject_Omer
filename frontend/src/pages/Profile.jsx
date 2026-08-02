@@ -10,6 +10,7 @@ import { UserPlusIcon, CalendarIcon, TrophyIcon } from "../Icons.jsx";
 import { formatWeekLabel } from "../matchUtils.js";
 import EmptyState from "../EmptyState.jsx";
 import { Link } from "react-router-dom";
+import { SkeletonHeroStat, SkeletonMatchRow } from "../Skeleton.jsx";
 
 export default function Profile() {
   const { user } = useAuth();
@@ -20,6 +21,7 @@ export default function Profile() {
   const [myLeagues, setMyLeagues] = useState([]);
   const [showMyLeagues, setShowMyLeagues] = useState(false);
   const [nextMatches, setNextMatches] = useState([]);
+  const [matchesLoading, setMatchesLoading] = useState(true);
   const [busy, setBusy] = useState(false);
 
   function handleInviteToApp() {
@@ -32,7 +34,8 @@ export default function Profile() {
     api
       .myNextMatches()
       .then(setNextMatches)
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setMatchesLoading(false));
   }
 
   useEffect(() => {
@@ -87,6 +90,7 @@ export default function Profile() {
       <div className="flat-sections">
         <div className="flat-section">
           {error && <p className="error">{t(error)}</p>}
+          {!stats && !error && <SkeletonHeroStat />}
           {stats && (
             <div className="hero-stat">
               <CircularGauge
@@ -124,7 +128,11 @@ export default function Profile() {
                 return weekLabel ? <span className="week-label-inline"> - {weekLabel}</span> : null;
               })()}
           </h2>
-          {nextMatchesForSport.length === 0 ? (
+          {matchesLoading ? (
+            <ul className="match-list">
+              <SkeletonMatchRow />
+            </ul>
+          ) : nextMatchesForSport.length === 0 ? (
             <EmptyState
               icon={<CalendarIcon aria-hidden="true" />}
               action={

@@ -7,6 +7,7 @@ import { useLanguage } from "../LanguageContext.jsx";
 import LeagueCard from "../LeagueCard.jsx";
 import EmptyState from "../EmptyState.jsx";
 import { TrophyIcon } from "../Icons.jsx";
+import { SkeletonLeagueCard } from "../Skeleton.jsx";
 
 export default function Leagues() {
   const [leagues, setLeagues] = useState([]);
@@ -125,8 +126,6 @@ export default function Leagues() {
 
       {error && !showForm && <p className="error">{t(error)}</p>}
 
-      {loading && <p className="muted">{t("טוען...")}</p>}
-
       <div className="flat-sections">
         {user && (
           <div className="flat-section">
@@ -141,9 +140,14 @@ export default function Leagues() {
 
             {showMyLeagues && (
               <div className="league-grid" style={{ marginTop: 14 }}>
-                {myLeaguesForSport.map((league) => (
-                  <LeagueCard league={league} key={league.id} />
-                ))}
+                {loading ? (
+                  <>
+                    <SkeletonLeagueCard />
+                    <SkeletonLeagueCard />
+                  </>
+                ) : (
+                  myLeaguesForSport.map((league) => <LeagueCard league={league} key={league.id} />)
+                )}
                 {!loading && myLeaguesForSport.length === 0 && (
                   <EmptyState icon={<TrophyIcon aria-hidden="true" />}>
                     {t("עדיין לא הצטרפת לאף ליגה בענף הזה.")}
@@ -166,9 +170,16 @@ export default function Leagues() {
 
           {showOpenLeagues && (
             <div className="league-grid" style={{ marginTop: 14 }}>
-              {openLeagues.map((league) => (
-                <LeagueCard league={league} key={league.id} isMember={myLeagueIds.has(league.id)} />
-              ))}
+              {loading ? (
+                <>
+                  <SkeletonLeagueCard />
+                  <SkeletonLeagueCard />
+                </>
+              ) : (
+                openLeagues.map((league) => (
+                  <LeagueCard league={league} key={league.id} isMember={myLeagueIds.has(league.id)} />
+                ))
+              )}
               {!loading && openLeagues.length === 0 && (
                 <EmptyState icon={<TrophyIcon aria-hidden="true" />}>
                   {t("אין כרגע ליגות פתוחות.")}

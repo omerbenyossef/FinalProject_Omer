@@ -3,6 +3,7 @@ import { useAuth } from "./AuthContext.jsx";
 import { useSport } from "./SportContext.jsx";
 import { useLanguage } from "./LanguageContext.jsx";
 import { PersonIcon, SettingsIcon, TrophyIcon } from "./Icons.jsx";
+import InstallPrompt from "./InstallPrompt.jsx";
 
 function BrandMark() {
   return (
@@ -61,6 +62,7 @@ export default function Layout({ children }) {
           )}
         </nav>
       </header>
+      {user && <InstallPrompt />}
       <main className="content">{children}</main>
       {user && (
         <nav className="tabbar">
