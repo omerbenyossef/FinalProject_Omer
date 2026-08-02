@@ -688,11 +688,11 @@ a { color: var(--court); text-decoration: none; }
 
 .page-help-btn {
   background: var(--card-alt);
-  color: var(--muted);
+  color: var(--ink);
   border: none;
   border-radius: 50%;
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -701,8 +701,8 @@ a { color: var(--court); text-decoration: none; }
 }
 
 .page-help-btn svg {
-  width: 13px;
-  height: 13px;
+  width: 16px;
+  height: 16px;
 }
 
 .page-help-btn:hover {

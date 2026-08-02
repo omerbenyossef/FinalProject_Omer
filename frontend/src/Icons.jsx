@@ -72,10 +72,9 @@ export function CloseIcon(props) {
 
 export function QuestionIcon(props) {
   return (
-    <svg {...common} {...props}>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M9.2 9.6a2.8 2.8 0 1 1 4.6 2.1c-.9.7-1.4 1.2-1.4 2.3" />
-      <circle cx="12" cy="16.5" r="0.6" fill="currentColor" stroke="none" />
+    <svg {...common} strokeWidth={2.4} {...props}>
+      <path d="M8.5 8.8a3.5 3.5 0 1 1 5.5 2.9c-1.1.8-1.5 1.4-1.5 2.6" />
+      <circle cx="12" cy="18" r="0.9" fill="currentColor" stroke="none" />
     </svg>
   );
 }
