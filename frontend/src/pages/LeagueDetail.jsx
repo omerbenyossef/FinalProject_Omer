@@ -43,8 +43,8 @@ export default function LeagueDetail() {
   const [standings, setStandings] = useState([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [showMatches, setShowMatches] = useState(false);
-  const [showAllMatches, setShowAllMatches] = useState(false);
+  const [showMatches, setShowMatches] = useState(true);
+  const [showAllMatches, setShowAllMatches] = useState(true);
   const [inviteCode, setInviteCode] = useState(null);
   const [inviteError, setInviteError] = useState("");
   const [inviteLoading, setInviteLoading] = useState(false);

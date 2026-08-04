@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
+import AuthShell from "../AuthShell.jsx";
 
 export default function Register() {
   const [name, setName] = useState("");
@@ -32,44 +33,46 @@ export default function Register() {
   }
 
   return (
-    <div className="card form-card">
-      <h1>{t("הרשמה")}</h1>
-      <form onSubmit={handleSubmit}>
-        <label>
-          {t("שם מלא")}
-          <input value={name} onChange={(e) => setName(e.target.value)} required />
-        </label>
-        <label>
-          {t("אימייל")}
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        </label>
-        <label>
-          {t("סיסמה")}
-          <input
-            type="password"
-            minLength={6}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </label>
-        {error && <p className="error">{t(error)}</p>}
-        <button type="submit" className="btn-primary" disabled={submitting}>
-          {submitting ? t("נרשם...") : t("הרשמה")}
-        </button>
-      </form>
-      <p className="muted">
-        {t("כבר יש לך חשבון?")}{" "}
-        <Link
-          to={
-            searchParams.get("redirect")
-              ? `/login?redirect=${encodeURIComponent(searchParams.get("redirect"))}`
-              : "/login"
-          }
-        >
-          {t("כניסה")}
-        </Link>
-      </p>
-    </div>
+    <AuthShell>
+      <div className="card form-card">
+        <h1>{t("הרשמה")}</h1>
+        <form onSubmit={handleSubmit}>
+          <label>
+            {t("שם מלא")}
+            <input value={name} onChange={(e) => setName(e.target.value)} required />
+          </label>
+          <label>
+            {t("אימייל")}
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          </label>
+          <label>
+            {t("סיסמה")}
+            <input
+              type="password"
+              minLength={6}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </label>
+          {error && <p className="error">{t(error)}</p>}
+          <button type="submit" className="btn-primary" disabled={submitting}>
+            {submitting ? t("נרשם...") : t("הרשמה")}
+          </button>
+        </form>
+        <p className="muted">
+          {t("כבר יש לך חשבון?")}{" "}
+          <Link
+            to={
+              searchParams.get("redirect")
+                ? `/login?redirect=${encodeURIComponent(searchParams.get("redirect"))}`
+                : "/login"
+            }
+          >
+            {t("כניסה")}
+          </Link>
+        </p>
+      </div>
+    </AuthShell>
   );
 }

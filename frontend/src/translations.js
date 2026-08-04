@@ -18,6 +18,7 @@ const PAIRS = [
   ["שחמט", "Chess"],
 
   // Login / Register / Forgot / Reset password
+  ["ליגות ספורט עם החברים שלך", "Sports leagues with your friends"],
   ["כניסה", "Login"],
   ["אימייל", "Email"],
   ["סיסמה", "Password"],

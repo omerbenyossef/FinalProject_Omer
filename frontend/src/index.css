@@ -780,7 +780,37 @@ a { color: var(--court); text-decoration: none; }
 
 .form-card {
   max-width: 380px;
-  margin: 28px auto;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.auth-shell {
+  min-height: 68vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+}
+
+.auth-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.auth-wordmark {
+  font-family: var(--display);
+  font-weight: 900;
+  font-size: 28px;
+  letter-spacing: -0.02em;
+}
+
+.auth-tagline {
+  color: var(--muted);
+  font-size: 14px;
+  margin: 0;
 }
 
 .form-card form {

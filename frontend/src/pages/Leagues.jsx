@@ -16,8 +16,8 @@ export default function Leagues() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
-  const [showMyLeagues, setShowMyLeagues] = useState(false);
-  const [showOpenLeagues, setShowOpenLeagues] = useState(false);
+  const [showMyLeagues, setShowMyLeagues] = useState(true);
+  const [showOpenLeagues, setShowOpenLeagues] = useState(true);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [isOpen, setIsOpen] = useState(false);

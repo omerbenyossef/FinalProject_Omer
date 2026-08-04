@@ -20,7 +20,7 @@ export default function Profile() {
   const [stats, setStats] = useState(null);
   const [error, setError] = useState("");
   const [myLeagues, setMyLeagues] = useState([]);
-  const [showMyLeagues, setShowMyLeagues] = useState(false);
+  const [showMyLeagues, setShowMyLeagues] = useState(true);
   const [nextMatches, setNextMatches] = useState([]);
   const [matchesLoading, setMatchesLoading] = useState(true);
   const [busy, setBusy] = useState(false);
