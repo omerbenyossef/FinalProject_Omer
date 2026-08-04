@@ -93,7 +93,7 @@
     --paper: #10141f;
     --card: #171d2c;
     --card-alt: #212840;
-    --line: rgba(148, 163, 184, 0.16);
+    --line: rgba(148, 163, 184, 0.24);
     --muted: #8b93a6;
     --glass: rgba(12, 14, 20, 0.78);
     --court: #c6e838;
@@ -123,7 +123,7 @@
   --paper: #10141f;
   --card: #171d2c;
   --card-alt: #212840;
-  --line: rgba(148, 163, 184, 0.16);
+  --line: rgba(148, 163, 184, 0.24);
   --muted: #8b93a6;
   --glass: rgba(12, 14, 20, 0.78);
   --court: #c6e838;
@@ -1024,11 +1024,43 @@ button:active { transform: translateY(1px); }
   transform: translateY(-1px);
 }
 
+.league-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.league-card-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--court-tint);
+  color: var(--court);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.league-card-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
 .member-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   font-size: 12.5px;
   color: var(--muted);
   margin-top: 10px;
   font-variant-numeric: tabular-nums;
+}
+
+.member-count-icon {
+  width: 13px;
+  height: 13px;
 }
 
 .table-wrap {
