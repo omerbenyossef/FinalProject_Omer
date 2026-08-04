@@ -7,6 +7,7 @@ import EmptyState from "../EmptyState.jsx";
 import { PersonIcon } from "../Icons.jsx";
 import { SkeletonBar, SkeletonStatRow, SkeletonMatchRow } from "../Skeleton.jsx";
 import PageHelp from "../PageHelp.jsx";
+import Avatar from "../Avatar.jsx";
 
 export default function HeadToHead() {
   const { opponentId } = useParams();
@@ -59,6 +60,7 @@ export default function HeadToHead() {
         <div>
           <span className="eyebrow">{t("ראש בראש")}</span>
           <div className="page-title-row">
+            <Avatar name={data.opponent.name} size={36} />
             <h1>{data.opponent.name}</h1>
             <PageHelp
               pageKey="headToHead"

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import SetScoreForm from "./SetScoreForm.jsx";
 import { useLanguage } from "./LanguageContext.jsx";
 import { formatSets, formatDayMonth } from "./matchUtils.js";
+import Avatar from "./Avatar.jsx";
 
 export default function NextMatchRow({
   match,
@@ -62,7 +63,8 @@ export default function NextMatchRow({
           )}
           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
             <span className="vs-label">vs</span>
-            <Link to={`/head-to-head/${opponent.id}`}>
+            <Link to={`/head-to-head/${opponent.id}`} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <Avatar name={opponent.name} size={22} />
               <strong>{opponent.name}</strong>
             </Link>
           </div>

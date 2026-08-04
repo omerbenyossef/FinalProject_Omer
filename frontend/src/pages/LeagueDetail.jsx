@@ -11,6 +11,7 @@ import EmptyState from "../EmptyState.jsx";
 import { formatSets, formatWeekLabel } from "../matchUtils.js";
 import { SkeletonPageHeader, SkeletonHeroStat, SkeletonStandingsTable } from "../Skeleton.jsx";
 import PageHelp from "../PageHelp.jsx";
+import Avatar from "../Avatar.jsx";
 
 function groupMatchesByRound(matches) {
   const groups = new Map();
@@ -375,7 +376,10 @@ export default function LeagueDetail() {
                         <span className={`rank-badge${rank <= 3 ? ` rank-${rank}` : ""}`}>{rank}</span>
                       </td>
                       <td className="player-col">
-                        <span className="player-cell">{row.user.name}</span>
+                        <span className="player-cell">
+                          <Avatar name={row.user.name} size={24} />
+                          {row.user.name}
+                        </span>
                       </td>
                       <td>{row.played}</td>
                       <td>{row.wins}</td>
@@ -567,7 +571,8 @@ function MatchRow({ match, currentUserId, onReport, onCancel, busy }) {
       <div className="match-players" style={{ justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <span className="vs-label">vs</span>
-          <Link to={`/head-to-head/${opponent.id}`}>
+          <Link to={`/head-to-head/${opponent.id}`} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <Avatar name={opponent.name} size={22} />
             <strong>{opponent.name}</strong>
           </Link>
         </div>
