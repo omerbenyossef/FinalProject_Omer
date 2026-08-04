@@ -15,7 +15,16 @@ function describeArc(cx, cy, r, startAngle, endAngle) {
   return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArcFlag} 1 ${end.x} ${end.y}`;
 }
 
-export default function CircularGauge({ value, max, size = 104, strokeWidth = 10, children }) {
+export default function CircularGauge({
+  value,
+  max,
+  size = 104,
+  strokeWidth = 10,
+  children,
+  trackColor = "var(--card-alt)",
+  tickColor = "var(--muted)",
+  fillColor = "var(--court)",
+}) {
   const radius = (size - strokeWidth) / 2;
   const cx = size / 2;
   const cy = size / 2;
@@ -28,18 +37,18 @@ export default function CircularGauge({ value, max, size = 104, strokeWidth = 10
   return (
     <div className="gauge-wrap" style={{ width: size, height: size }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        <path d={trackArc} fill="none" stroke="var(--card-alt)" strokeWidth={strokeWidth} strokeLinecap="round" />
+        <path d={trackArc} fill="none" stroke={trackColor} strokeWidth={strokeWidth} strokeLinecap="round" />
         <path
           d={trackArc}
           fill="none"
-          stroke="var(--muted)"
+          stroke={tickColor}
           strokeWidth={tickWidth}
           strokeLinecap="butt"
           strokeDasharray={tickDash}
         />
         {fillArc && (
           <>
-            <path d={fillArc} fill="none" stroke="var(--court)" strokeWidth={strokeWidth} strokeLinecap="round" />
+            <path d={fillArc} fill="none" stroke={fillColor} strokeWidth={strokeWidth} strokeLinecap="round" />
             <path
               d={fillArc}
               fill="none"
