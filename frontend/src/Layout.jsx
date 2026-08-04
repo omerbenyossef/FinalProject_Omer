@@ -5,6 +5,7 @@ import { useLanguage } from "./LanguageContext.jsx";
 import { PersonIcon, SettingsIcon, TrophyIcon } from "./Icons.jsx";
 import InstallPrompt from "./InstallPrompt.jsx";
 import Onboarding from "./Onboarding.jsx";
+import { getSportIcon } from "./sportIcons.js";
 
 function BrandMark() {
   return (
@@ -36,19 +37,27 @@ export default function Layout({ children }) {
           Rally
         </Link>
 
-        {sports.length > 0 && (
-          <select
-            className="sport-switcher"
-            value={selectedSportId ?? ""}
-            onChange={(e) => setSelectedSportId(Number(e.target.value))}
-          >
-            {sports.map((sport) => (
-              <option key={sport.id} value={sport.id}>
-                {t(sport.name)}
-              </option>
-            ))}
-          </select>
-        )}
+        {sports.length > 0 &&
+          (() => {
+            const selectedSport = sports.find((s) => s.id === selectedSportId);
+            const SportIcon = getSportIcon(selectedSport?.name);
+            return (
+              <div className="sport-switcher-wrap">
+                <SportIcon className="sport-switcher-icon" aria-hidden="true" />
+                <select
+                  className="sport-switcher"
+                  value={selectedSportId ?? ""}
+                  onChange={(e) => setSelectedSportId(Number(e.target.value))}
+                >
+                  {sports.map((sport) => (
+                    <option key={sport.id} value={sport.id}>
+                      {t(sport.name)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            );
+          })()}
 
         <nav>
           {user ? (

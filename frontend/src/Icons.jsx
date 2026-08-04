@@ -98,6 +98,67 @@ export function BellIcon(props) {
   );
 }
 
+export function TennisIcon(props) {
+  return (
+    <svg {...common} {...props}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M5.5 6.5c3 2 3 9 0 11" />
+      <path d="M18.5 6.5c-3 2-3 9 0 11" />
+    </svg>
+  );
+}
+
+export function PadelIcon(props) {
+  return (
+    <svg {...common} {...props}>
+      <ellipse cx="12" cy="9.5" rx="6.5" ry="7" />
+      <line x1="12" y1="16.5" x2="12" y2="21" />
+    </svg>
+  );
+}
+
+export function FootballIcon(props) {
+  return (
+    <svg {...common} {...props}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 8l3.2 2.3-1.2 3.7h-4l-1.2-3.7z" />
+    </svg>
+  );
+}
+
+export function BasketballIcon(props) {
+  return (
+    <svg {...common} {...props}>
+      <circle cx="12" cy="12" r="8.5" />
+      <line x1="12" y1="3.5" x2="12" y2="20.5" />
+      <path d="M3.5 12h17" />
+      <path d="M5.3 6.3c2.6 2.2 2.6 9.2 0 11.4" />
+      <path d="M18.7 6.3c-2.6 2.2-2.6 9.2 0 11.4" />
+    </svg>
+  );
+}
+
+export function VolleyballIcon(props) {
+  return (
+    <svg {...common} {...props}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 3.5c3 2.5 3 7 0 8.5" />
+      <path d="M12 12c3 1.5 5 4 5 8.2" />
+      <path d="M12 12c-4.5 0-7.5 2-8.7 5.5" />
+    </svg>
+  );
+}
+
+export function ChessIcon(props) {
+  return (
+    <svg {...common} {...props}>
+      <circle cx="12" cy="7" r="2.6" />
+      <path d="M9 12h6l1.5 8h-9z" />
+      <line x1="7.5" y1="20" x2="16.5" y2="20" />
+    </svg>
+  );
+}
+
 export function SettingsIcon(props) {
   return (
     <svg {...common} {...props}>
