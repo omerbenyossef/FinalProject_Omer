@@ -71,6 +71,12 @@ const PAIRS = [
   ["הסתר", "Hide"],
   ["הצג", "Show"],
   ["רק המנהל יכול ליצור ליגה פתוחה", "Only the admin can create an open league"],
+  ["מוכנים להתחיל?", "Ready to start?"],
+  ["בנו את הליגה שלכם", "Build your league"],
+  ["צור ליגה חדשה", "Create a new league"],
+  ["התחילו ליגה והזמינו חברים", "Start a league and invite friends"],
+  ["הצטרפו לליגה ציבורית", "Join a public league"],
+  ["התחרו מול שחקנים חדשים", "Compete against new players"],
 
   // League card
   ["את/ה חבר/ה", "You're a member"],

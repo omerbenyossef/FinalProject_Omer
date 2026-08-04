@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
@@ -6,7 +6,7 @@ import { useSport } from "../SportContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import LeagueCard from "../LeagueCard.jsx";
 import EmptyState from "../EmptyState.jsx";
-import { TrophyIcon } from "../Icons.jsx";
+import { TrophyIcon, ChevronIcon } from "../Icons.jsx";
 import { SkeletonLeagueCard } from "../Skeleton.jsx";
 import PageHelp from "../PageHelp.jsx";
 
@@ -25,6 +25,7 @@ export default function Leagues() {
   const { user } = useAuth();
   const { selectedSportId } = useSport();
   const { t, dir } = useLanguage();
+  const openLeaguesRef = useRef(null);
 
   async function loadData() {
     setLoading(true);
@@ -73,6 +74,11 @@ export default function Leagues() {
   const myLeaguesForSport = myLeagues.filter(bySelectedSport);
   const myLeagueIds = new Set(myLeaguesForSport.map((l) => l.id));
 
+  function goToOpenLeagues() {
+    setShowOpenLeagues(true);
+    openLeaguesRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   return (
     <div>
       <div className="page-header">
@@ -84,12 +90,30 @@ export default function Leagues() {
             text="כאן תוכלו לראות את הליגות שאתם חברים בהן, לעיין בליגות ציבוריות פתוחות, וליצור ליגה חדשה."
           />
         </div>
-        {user && (
-          <button className="btn-primary" onClick={() => setShowForm((v) => !v)}>
-            {showForm ? t("ביטול") : `+ ${t("יצירת ליגה")}`}
-          </button>
-        )}
       </div>
+
+      {user && (
+        <div className="leagues-hero">
+          <span className="leagues-hero-eyebrow">{t("מוכנים להתחיל?")}</span>
+          <h2 className="leagues-hero-title">{t("בנו את הליגה שלכם")}</h2>
+          <div className="leagues-hero-actions">
+            <button type="button" className="leagues-hero-row" onClick={() => setShowForm((v) => !v)}>
+              <span>
+                <span className="leagues-hero-row-title">{t("צור ליגה חדשה")}</span>
+                <span className="leagues-hero-row-subtitle">{t("התחילו ליגה והזמינו חברים")}</span>
+              </span>
+              <ChevronIcon className="leagues-hero-row-chevron" aria-hidden="true" />
+            </button>
+            <button type="button" className="leagues-hero-row" onClick={goToOpenLeagues}>
+              <span>
+                <span className="leagues-hero-row-title">{t("הצטרפו לליגה ציבורית")}</span>
+                <span className="leagues-hero-row-subtitle">{t("התחרו מול שחקנים חדשים")}</span>
+              </span>
+              <ChevronIcon className="leagues-hero-row-chevron" aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {!user && (
         <EmptyState
@@ -126,9 +150,14 @@ export default function Leagues() {
             </label>
           )}
           {error && <p className="error">{t(error)}</p>}
-          <button type="submit" className="btn-primary" disabled={submitting}>
-            {submitting ? t("יוצר...") : t("צור ליגה")}
-          </button>
+          <div className="inline-form">
+            <button type="submit" className="btn-primary" disabled={submitting}>
+              {submitting ? t("יוצר...") : t("צור ליגה")}
+            </button>
+            <button type="button" className="link-btn" onClick={() => setShowForm(false)}>
+              {t("ביטול")}
+            </button>
+          </div>
         </form>
       )}
 
@@ -166,7 +195,7 @@ export default function Leagues() {
           </div>
         )}
 
-        <div className="flat-section">
+        <div className="flat-section" ref={openLeaguesRef}>
           <button
             type="button"
             className="settings-row collapsible-toggle"

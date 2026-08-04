@@ -159,6 +159,14 @@ export function ChessIcon(props) {
   );
 }
 
+export function ChevronIcon(props) {
+  return (
+    <svg {...common} {...props}>
+      <polyline points="15 6 9 12 15 18" />
+    </svg>
+  );
+}
+
 export function SettingsIcon(props) {
   return (
     <svg {...common} {...props}>
