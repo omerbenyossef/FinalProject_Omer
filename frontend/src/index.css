@@ -1111,6 +1111,10 @@ button:active { transform: translateY(1px); }
 }
 
 .league-card {
+  display: flex;
+  align-items: stretch;
+  padding: 0;
+  overflow: hidden;
   text-decoration: none;
   transition: border-color 0.15s, transform 0.1s;
 }
@@ -1120,28 +1124,28 @@ button:active { transform: translateY(1px); }
   transform: translateY(-1px);
 }
 
-.league-card-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
-}
-
-.league-card-icon {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: var(--court-tint);
-  color: var(--court);
+.league-card-icon-block {
+  flex: none;
+  width: 76px;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: none;
+  color: #ffffff;
 }
 
-.league-card-icon svg {
-  width: 18px;
-  height: 18px;
+.league-card-icon-block svg {
+  width: 30px;
+  height: 30px;
+}
+
+.league-card-body {
+  flex: 1;
+  min-width: 0;
+  padding: 16px;
+}
+
+.league-card-body .pill-pending {
+  margin-bottom: 8px;
 }
 
 .member-count {
