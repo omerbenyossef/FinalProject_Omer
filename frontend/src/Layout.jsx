@@ -1,4 +1,4 @@
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { useAuth } from "./AuthContext.jsx";
 import { useSport } from "./SportContext.jsx";
 import { useLanguage } from "./LanguageContext.jsx";
@@ -19,15 +19,9 @@ function BrandMark() {
 }
 
 export default function Layout({ children }) {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { sports, selectedSportId, setSelectedSportId } = useSport();
   const { t } = useLanguage();
-  const navigate = useNavigate();
-
-  function handleLogout() {
-    logout();
-    navigate("/login");
-  }
 
   return (
     <div className="app-shell">
@@ -61,14 +55,9 @@ export default function Layout({ children }) {
 
         <nav>
           {user ? (
-            <>
-              <Link to="/settings" className="topbar-icon-btn" aria-label={t("הגדרות")}>
-                <SettingsIcon aria-hidden="true" />
-              </Link>
-              <button className="link-btn" onClick={handleLogout}>
-                {t("התנתקות")}
-              </button>
-            </>
+            <Link to="/settings" className="topbar-icon-btn" aria-label={t("הגדרות")}>
+              <SettingsIcon aria-hidden="true" />
+            </Link>
           ) : (
             <>
               <Link to="/login">{t("כניסה")}</Link>
