@@ -286,6 +286,27 @@ a { color: var(--court); text-decoration: none; }
 
 .topbar nav a:hover { color: var(--court); }
 
+.topbar-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  color: var(--ink);
+  flex: none;
+}
+
+.topbar-icon-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.topbar-icon-btn:hover {
+  background: var(--card-alt);
+  color: var(--court);
+}
+
 .link-btn {
   background: none;
   border: none;

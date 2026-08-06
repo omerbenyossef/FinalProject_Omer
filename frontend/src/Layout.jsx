@@ -61,9 +61,14 @@ export default function Layout({ children }) {
 
         <nav>
           {user ? (
-            <button className="link-btn" onClick={handleLogout}>
-              {t("התנתקות")}
-            </button>
+            <>
+              <Link to="/settings" className="topbar-icon-btn" aria-label={t("הגדרות")}>
+                <SettingsIcon aria-hidden="true" />
+              </Link>
+              <button className="link-btn" onClick={handleLogout}>
+                {t("התנתקות")}
+              </button>
+            </>
           ) : (
             <>
               <Link to="/login">{t("כניסה")}</Link>
@@ -91,13 +96,6 @@ export default function Layout({ children }) {
               aria-label={t("פרופיל")}
             >
               <PersonIcon className="tab-icon" aria-hidden="true" />
-            </NavLink>
-            <NavLink
-              to="/settings"
-              className={({ isActive }) => `tab${isActive ? " active" : ""}`}
-              aria-label={t("הגדרות")}
-            >
-              <SettingsIcon className="tab-icon" aria-hidden="true" />
             </NavLink>
           </div>
         </nav>
