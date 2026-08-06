@@ -1132,81 +1132,112 @@ button:active { transform: translateY(1px); }
 }
 
 .league-card {
-  display: flex;
-  align-items: stretch;
-  padding: 0;
+  position: relative;
   overflow: hidden;
+  padding: 20px 20px 18px;
+  background: linear-gradient(155deg, #141a24 0%, #1c2431 55%, #202a3a 100%);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  color: #f3f5fa;
   text-decoration: none;
-  transition: border-color 0.15s, transform 0.1s;
+  transition: transform 0.15s, box-shadow 0.15s;
 }
 
-.league-card:hover {
-  border-color: var(--court);
-  transform: translateY(-1px);
-}
-
-.league-card-accent {
-  flex: none;
-  width: 6px;
+.league-card::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0;
+  width: 100%;
+  height: 3px;
   background: var(--court);
 }
 
-.league-card-body {
-  flex: 1;
-  min-width: 0;
-  padding: 15px 16px;
+.league-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+}
+
+.league-card-watermark {
+  position: absolute;
+  inset-inline-end: -14px;
+  bottom: -18px;
+  width: 108px;
+  height: 108px;
+  color: #ffffff;
+  opacity: 0.06;
+  pointer-events: none;
+}
+
+.league-card-top {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-}
-
-.league-card-main {
-  min-width: 0;
-  flex: 1;
+  gap: 10px;
 }
 
 .league-card-name {
   font-family: var(--display);
-  font-size: 17px;
+  font-size: 19px;
   font-weight: 800;
   letter-spacing: -0.01em;
   margin: 0;
-}
-
-.league-card-body .pill-pending {
-  margin-top: 8px;
-}
-
-.league-card-side {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: none;
+  color: #ffffff;
 }
 
 .league-card-chevron {
-  width: 15px;
-  height: 15px;
-  color: var(--muted);
-  opacity: 0.6;
+  width: 16px;
+  height: 16px;
+  color: rgba(255, 255, 255, 0.4);
+  flex: none;
+}
+
+.league-card-desc {
+  position: relative;
+  margin: 6px 0 0;
+  font-size: 13.5px;
+  color: rgba(240, 242, 250, 0.6);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.league-card-foot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
 }
 
 .member-count {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   font-family: "JetBrains Mono", var(--mono);
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 700;
-  color: var(--muted);
-  flex: none;
+  color: var(--court);
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  padding: 4px 10px;
   font-variant-numeric: tabular-nums;
 }
 
 .member-count-icon {
-  width: 13px;
-  height: 13px;
+  width: 12px;
+  height: 12px;
+}
+
+.league-card-pill {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px dashed rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+  padding: 4px 10px;
 }
 
 .table-wrap {
