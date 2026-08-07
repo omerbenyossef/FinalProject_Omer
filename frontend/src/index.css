@@ -1321,7 +1321,7 @@ button:active { transform: translateY(1px); }
   font-weight: 600;
   color: rgba(255, 255, 255, 0.55);
   font-variant-numeric: tabular-nums;
-  margin-top: 8px;
+  margin-top: 2px;
 }
 
 .league-card-rank-wrap {
@@ -1350,7 +1350,7 @@ button:active { transform: translateY(1px); }
 .league-card-divider {
   height: 1px;
   background: rgba(255, 255, 255, 0.1);
-  margin: 14px 0 10px;
+  margin: 12px 0 9px;
 }
 
 .league-card-next {
