@@ -25,7 +25,7 @@ function MyLeagueCard({ league }) {
           <h3 className="league-card-mine-title">{league.name}</h3>
           <span className="league-card-record">
             {played > 0 ? (
-              <bdi>{`${league.my_wins}-${league.my_losses} · ${league.my_win_rate}%`}</bdi>
+              <bdi>{`${league.my_wins}W-${league.my_losses}L · ${league.my_win_rate}%`}</bdi>
             ) : (
               t("עדיין לא שיחקת/ה")
             )}
