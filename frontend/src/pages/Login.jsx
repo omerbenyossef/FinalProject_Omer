@@ -10,6 +10,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [slow, setSlow] = useState(false);
   const { loginWithToken } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
@@ -19,6 +20,8 @@ export default function Login() {
     e.preventDefault();
     setError("");
     setSubmitting(true);
+    setSlow(false);
+    const slowTimer = setTimeout(() => setSlow(true), 4000);
     try {
       const data = await api.login({ email, password });
       loginWithToken(data.access_token, data.user);
@@ -27,7 +30,9 @@ export default function Login() {
     } catch (err) {
       setError(err.message);
     } finally {
+      clearTimeout(slowTimer);
       setSubmitting(false);
+      setSlow(false);
     }
   }
 
@@ -53,6 +58,7 @@ export default function Login() {
           <button type="submit" className="btn-primary" disabled={submitting}>
             {submitting ? t("מתחבר...") : t("כניסה")}
           </button>
+          {slow && <p className="muted">{t("השרת מתעורר, זה עשוי לקחת עד דקה בפעם הראשונה...")}</p>}
         </form>
         <p className="muted" style={{ marginTop: 10 }}>
           <Link to="/forgot-password">{t("שכחתי סיסמה")}</Link>

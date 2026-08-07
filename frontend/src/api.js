@@ -11,11 +11,25 @@ async function request(path, { method = "GET", body, auth = true } = {}) {
     if (token) headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${API_BASE}${path}`, {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 45000);
+
+  let res;
+  try {
+    res = await fetch(`${API_BASE}${path}`, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+      signal: controller.signal,
+    });
+  } catch (err) {
+    if (err.name === "AbortError") {
+      throw new Error("השרת לא הגיב בזמן. נסו שוב בעוד רגע.");
+    }
+    throw new Error("לא ניתן להתחבר לשרת. בדקו את החיבור לאינטרנט ונסו שוב.");
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!res.ok) {
     let detail = res.statusText;

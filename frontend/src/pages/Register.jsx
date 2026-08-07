@@ -11,6 +11,7 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [slow, setSlow] = useState(false);
   const { loginWithToken } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
@@ -20,6 +21,8 @@ export default function Register() {
     e.preventDefault();
     setError("");
     setSubmitting(true);
+    setSlow(false);
+    const slowTimer = setTimeout(() => setSlow(true), 4000);
     try {
       const data = await api.register({ name, email, password });
       loginWithToken(data.access_token, data.user);
@@ -28,7 +31,9 @@ export default function Register() {
     } catch (err) {
       setError(err.message);
     } finally {
+      clearTimeout(slowTimer);
       setSubmitting(false);
+      setSlow(false);
     }
   }
 
@@ -59,6 +64,7 @@ export default function Register() {
           <button type="submit" className="btn-primary" disabled={submitting}>
             {submitting ? t("נרשם...") : t("הרשמה")}
           </button>
+          {slow && <p className="muted">{t("השרת מתעורר, זה עשוי לקחת עד דקה בפעם הראשונה...")}</p>}
         </form>
         <p className="muted">
           {t("כבר יש לך חשבון?")}{" "}
