@@ -1,9 +1,59 @@
 import { Link } from "react-router-dom";
 import { useLanguage } from "./LanguageContext.jsx";
 import { PersonIcon, ChevronIcon } from "./Icons.jsx";
+import { getSportColor } from "./sportIcons.js";
+import { formatWeekLabel } from "./matchUtils.js";
+
+function MyLeagueCard({ league }) {
+  const { t } = useLanguage();
+  const played = (league.my_wins ?? 0) + (league.my_losses ?? 0);
+  const weekLabel = league.my_next_match
+    ? formatWeekLabel(league.schedule_started_at, league.my_next_match.round_number, t)
+    : "";
+
+  return (
+    <Link to={`/leagues/${league.id}`} className="card league-card-mine">
+      <div className="league-card-eyebrow">
+        <span
+          className="league-card-eyebrow-dot"
+          style={{ background: getSportColor(league.sport?.name) }}
+        />
+        {t(league.sport?.name)}
+      </div>
+      <h3 className="league-card-mine-title">{league.name}</h3>
+      <div className="league-card-mine-row">
+        <span className="league-card-record">
+          {played > 0 ? `${league.my_wins}-${league.my_losses} · ${league.my_win_rate}%` : t("עדיין לא שיחקת/ה")}
+        </span>
+        {league.my_rank != null && (
+          <span className="league-card-rank-wrap">
+            <span className="league-card-rank">#{league.my_rank}</span>
+            <span className="league-card-rank-total">/{league.my_members_total}</span>
+          </span>
+        )}
+      </div>
+      <div className="league-card-divider" />
+      <div className="league-card-next">
+        <span>
+          {league.my_next_match
+            ? t("נגד {name}{week}", {
+                name: league.my_next_match.opponent_name,
+                week: weekLabel ? ` · ${weekLabel}` : "",
+              })
+            : t("אין משחק קרוב")}
+        </span>
+        <ChevronIcon className="league-card-chevron" aria-hidden="true" />
+      </div>
+    </Link>
+  );
+}
 
 export default function LeagueCard({ league, isMember }) {
   const { t } = useLanguage();
+
+  if (league.my_rank != null) {
+    return <MyLeagueCard league={league} />;
+  }
 
   return (
     <Link to={`/leagues/${league.id}`} className="card league-card">

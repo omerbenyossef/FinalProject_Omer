@@ -21,10 +21,74 @@ def _generate_join_code(db: Session) -> str:
             return code
 
 
-def _to_league_out(league: models.League) -> schemas.LeagueOut:
+def _compute_my_standing(league: models.League, user_id: int, matches: list[models.Match]):
+    stats = {m.user_id: {"wins": 0, "losses": 0, "points": 0} for m in league.memberships}
+    for match in matches:
+        p1, p2 = stats.get(match.player1_id), stats.get(match.player2_id)
+        if not p1 or not p2:
+            continue
+        if match.player1_score > match.player2_score:
+            p1["wins"] += 1
+            p1["points"] += 3
+            p2["losses"] += 1
+        elif match.player2_score > match.player1_score:
+            p2["wins"] += 1
+            p2["points"] += 3
+            p1["losses"] += 1
+
+    ordered = sorted(stats.items(), key=lambda kv: (-kv[1]["points"], -kv[1]["wins"]))
+    rank = next((i + 1 for i, (uid, _) in enumerate(ordered) if uid == user_id), None)
+    if rank is None:
+        return None
+
+    my = stats[user_id]
+    played = my["wins"] + my["losses"]
+    win_rate = round(my["wins"] / played * 100) if played else None
+    return rank, len(ordered), my["wins"], my["losses"], win_rate
+
+
+def _compute_my_next_match(db: Session, league: models.League, user_id: int):
+    my_match_filter = or_(models.Match.player1_id == user_id, models.Match.player2_id == user_id)
+    match = (
+        db.query(models.Match)
+        .options(joinedload(models.Match.player1), joinedload(models.Match.player2))
+        .filter(
+            models.Match.league_id == league.id,
+            models.Match.status == models.MatchStatus.pending,
+            my_match_filter,
+        )
+        .order_by(models.Match.created_at.asc())
+        .first()
+    )
+    if not match:
+        return None
+    opponent = match.player2 if match.player1_id == user_id else match.player1
+    return schemas.MyNextMatchSummary(opponent_name=opponent.name, round_number=match.round_number)
+
+
+def _to_league_out(
+    league: models.League,
+    db: Session | None = None,
+    current_user_id: int | None = None,
+) -> schemas.LeagueOut:
     out = schemas.LeagueOut.model_validate(league)
     out.member_count = len(league.memberships)
     out.is_open = league.join_code is None
+
+    if db is not None and current_user_id is not None:
+        matches = (
+            db.query(models.Match)
+            .filter(
+                models.Match.league_id == league.id,
+                models.Match.status == models.MatchStatus.completed,
+            )
+            .all()
+        )
+        standing = _compute_my_standing(league, current_user_id, matches)
+        if standing:
+            out.my_rank, out.my_members_total, out.my_wins, out.my_losses, out.my_win_rate = standing
+        out.my_next_match = _compute_my_next_match(db, league, current_user_id)
+
     return out
 
 
@@ -52,7 +116,7 @@ def list_my_leagues(
         .order_by(models.League.created_at.desc())
         .all()
     )
-    return [_to_league_out(l) for l in leagues]
+    return [_to_league_out(l, db, current_user.id) for l in leagues]
 
 
 @router.get("/mine/next-matches", response_model=list[schemas.NextMatchEntry])

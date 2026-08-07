@@ -83,6 +83,11 @@ class LeagueCreate(BaseModel):
     is_open: bool = False
 
 
+class MyNextMatchSummary(BaseModel):
+    opponent_name: str
+    round_number: Optional[int] = None
+
+
 class LeagueOut(BaseModel):
     id: int
     name: str
@@ -92,6 +97,12 @@ class LeagueOut(BaseModel):
     created_by: int
     schedule_started_at: Optional[datetime] = None
     is_open: bool = False
+    my_rank: Optional[int] = None
+    my_members_total: Optional[int] = None
+    my_wins: Optional[int] = None
+    my_losses: Optional[int] = None
+    my_win_rate: Optional[int] = None
+    my_next_match: Optional[MyNextMatchSummary] = None
 
     class Config:
         from_attributes = True
