@@ -167,6 +167,24 @@ export function ChevronIcon(props) {
   );
 }
 
+export function TrendDownIcon(props) {
+  return (
+    <svg {...common} {...props}>
+      <polyline points="6 7 18 17" />
+      <polyline points="18 9 18 17 10 17" />
+    </svg>
+  );
+}
+
+export function TrendUpIcon(props) {
+  return (
+    <svg {...common} {...props}>
+      <polyline points="6 17 18 7" />
+      <polyline points="10 7 18 7 18 15" />
+    </svg>
+  );
+}
+
 export function SettingsIcon(props) {
   return (
     <svg {...common} {...props}>

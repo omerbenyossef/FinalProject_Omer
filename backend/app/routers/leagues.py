@@ -1,5 +1,6 @@
 import random
 import string
+from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import or_
@@ -11,6 +12,25 @@ from ..database import get_db
 from ..push_utils import notify_user
 
 router = APIRouter(prefix="/leagues", tags=["leagues"])
+
+
+def _week_end_saturday(dt: datetime) -> datetime:
+    # Matches the frontend's formatWeekLabel week-boundary convention
+    # (JS Date.getDay(): Sunday=0 ... Saturday=6).
+    js_day = (dt.weekday() + 1) % 7
+    days_until_saturday = (6 - js_day + 7) % 7
+    return dt + timedelta(days=days_until_saturday)
+
+
+def _current_round_number(schedule_started_at, now: datetime | None = None):
+    if schedule_started_at is None:
+        return None
+    now = now or datetime.utcnow()
+    round1_end = _week_end_saturday(schedule_started_at)
+    if now.date() <= round1_end.date():
+        return 1
+    offset_days = (now.date() - round1_end.date()).days
+    return 2 + (offset_days - 1) // 7
 
 
 def _generate_join_code(db: Session) -> str:
@@ -87,6 +107,14 @@ def _to_league_out(
         standing = _compute_my_standing(league, current_user_id, matches)
         if standing:
             out.my_rank, out.my_members_total, out.my_wins, out.my_losses, out.my_win_rate = standing
+
+            current_round = _current_round_number(league.schedule_started_at)
+            if current_round and current_round > 1:
+                prior_matches = [m for m in matches if (m.round_number or 0) < current_round]
+                prior_standing = _compute_my_standing(league, current_user_id, prior_matches)
+                if prior_standing:
+                    out.my_rank_trend = prior_standing[0] - out.my_rank
+
         out.my_next_match = _compute_my_next_match(db, league, current_user_id)
 
     return out

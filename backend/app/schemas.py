@@ -102,6 +102,7 @@ class LeagueOut(BaseModel):
     my_wins: Optional[int] = None
     my_losses: Optional[int] = None
     my_win_rate: Optional[int] = None
+    my_rank_trend: Optional[int] = None
     my_next_match: Optional[MyNextMatchSummary] = None
 
     class Config:

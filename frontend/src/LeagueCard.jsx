@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useLanguage } from "./LanguageContext.jsx";
-import { PersonIcon, ChevronIcon } from "./Icons.jsx";
+import { PersonIcon, ChevronIcon, TrendDownIcon, TrendUpIcon } from "./Icons.jsx";
 import { getSportColor } from "./sportIcons.js";
 import { formatWeekLabel } from "./matchUtils.js";
 
@@ -28,6 +28,19 @@ function MyLeagueCard({ league }) {
               <bdi>{`${league.my_wins}W-${league.my_losses}L · ${league.my_win_rate}%`}</bdi>
             ) : (
               t("עדיין לא שיחקת/ה")
+            )}
+            {!!league.my_rank_trend && (
+              <span className={`league-card-trend ${league.my_rank_trend < 0 ? "down" : "up"}`}>
+                <span className="league-card-trend-value">
+                  {league.my_rank_trend < 0 ? (
+                    <TrendDownIcon aria-hidden="true" />
+                  ) : (
+                    <TrendUpIcon aria-hidden="true" />
+                  )}
+                  {`${league.my_rank_trend > 0 ? "+" : ""}${league.my_rank_trend}`}
+                </span>{" "}
+                {t("השבוע")}
+              </span>
             )}
           </span>
         </div>

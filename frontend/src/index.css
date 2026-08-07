@@ -1335,6 +1335,33 @@ button:active { transform: translateY(1px); }
   margin-top: 2px;
 }
 
+.league-card-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-inline-start: 6px;
+}
+
+.league-card-trend-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  direction: ltr;
+}
+
+.league-card-trend-value svg {
+  width: 12px;
+  height: 12px;
+}
+
+.league-card-trend.down {
+  color: #a57f7b;
+}
+
+.league-card-trend.up {
+  color: #c6f135;
+}
+
 .league-card-rank-wrap {
   display: flex;
   align-items: baseline;
