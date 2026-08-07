@@ -52,6 +52,46 @@
   src: url("/fonts/jetbrainsmono-800.woff2") format("woff2");
 }
 
+@font-face {
+  font-family: "Oswald";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/oswald-700.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/ibm-plex-mono-500.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/ibm-plex-mono-600.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/inter-600.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("/fonts/inter-800.woff2") format("woff2");
+}
+
 :root {
   --ink: #0b0b0c;
   --paper: #f2f2f7;
@@ -1226,13 +1266,25 @@ button:active { transform: translateY(1px); }
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.3);
 }
 
+.league-card-mine-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.league-card-mine-info {
+  min-width: 0;
+  flex: 1;
+}
+
 .league-card-eyebrow {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-family: "JetBrains Mono", var(--mono);
+  font-family: "IBM Plex Mono", var(--mono);
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.55);
@@ -1246,51 +1298,45 @@ button:active { transform: translateY(1px); }
 }
 
 .league-card-mine-title {
-  font-family: var(--display);
-  font-weight: 900;
-  font-size: 21px;
+  font-family: "Inter", var(--display);
+  font-weight: 800;
+  font-size: 20px;
   letter-spacing: -0.01em;
   color: #ffffff;
-  margin: 4px 0 0;
-}
-
-.league-card-mine-row {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 10px;
-  margin-top: 12px;
+  margin: 5px 0 0;
 }
 
 .league-card-record {
-  font-family: "JetBrains Mono", var(--mono);
+  display: block;
+  font-family: "IBM Plex Mono", var(--mono);
   font-size: 13px;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.6);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.55);
   font-variant-numeric: tabular-nums;
-  direction: ltr;
+  margin-top: 8px;
 }
 
 .league-card-rank-wrap {
   display: flex;
   align-items: baseline;
   gap: 2px;
+  flex: none;
   direction: ltr;
 }
 
 .league-card-rank {
-  font-family: var(--display);
-  font-weight: 900;
-  font-size: 32px;
+  font-family: "Oswald", var(--display);
+  font-weight: 700;
+  font-size: 38px;
   line-height: 1;
   color: #c6f135;
 }
 
 .league-card-rank-total {
-  font-family: "JetBrains Mono", var(--mono);
+  font-family: "IBM Plex Mono", var(--mono);
   font-size: 13px;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.4);
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.55);
 }
 
 .league-card-divider {
@@ -1304,6 +1350,7 @@ button:active { transform: translateY(1px); }
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  font-family: "Inter", var(--sans);
   font-size: 13.5px;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.85);

@@ -13,18 +13,24 @@ function MyLeagueCard({ league }) {
 
   return (
     <Link to={`/leagues/${league.id}`} className="card league-card-mine">
-      <div className="league-card-eyebrow">
-        <span
-          className="league-card-eyebrow-dot"
-          style={{ background: getSportColor(league.sport?.name) }}
-        />
-        {t(league.sport?.name)}
-      </div>
-      <h3 className="league-card-mine-title">{league.name}</h3>
-      <div className="league-card-mine-row">
-        <span className="league-card-record">
-          {played > 0 ? `${league.my_wins}-${league.my_losses} · ${league.my_win_rate}%` : t("עדיין לא שיחקת/ה")}
-        </span>
+      <div className="league-card-mine-top">
+        <div className="league-card-mine-info">
+          <div className="league-card-eyebrow">
+            <span
+              className="league-card-eyebrow-dot"
+              style={{ background: getSportColor(league.sport?.name) }}
+            />
+            {t(league.sport?.name)}
+          </div>
+          <h3 className="league-card-mine-title">{league.name}</h3>
+          <span className="league-card-record">
+            {played > 0 ? (
+              <bdi>{`${league.my_wins}-${league.my_losses} · ${league.my_win_rate}%`}</bdi>
+            ) : (
+              t("עדיין לא שיחקת/ה")
+            )}
+          </span>
+        </div>
         {league.my_rank != null && (
           <span className="league-card-rank-wrap">
             <span className="league-card-rank">#{league.my_rank}</span>

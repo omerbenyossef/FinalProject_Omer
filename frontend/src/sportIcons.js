@@ -22,7 +22,7 @@ export function getSportIcon(name) {
 }
 
 const SPORT_COLORS = {
-  טניס: "#eab308",
+  טניס: "#d9be74",
   פאדל: "#22abbb",
   כדורגל: "#22c55e",
   כדורסל: "#f97316",
