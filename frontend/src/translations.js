@@ -84,6 +84,9 @@ const PAIRS = [
   // League card
   ["את/ה חבר/ה", "You're a member"],
   ["שחקנים", "players"],
+  ["עדיין לא שיחקת/ה", "Haven't played yet"],
+  ["אין משחק קרוב", "No upcoming match"],
+  ["נגד {name}{week}", "vs {name}{week}"],
 
   // League detail
   ["הצטרפות לליגה", "Join league"],
