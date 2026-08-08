@@ -45,8 +45,8 @@ export default function NextMatchRow({
           )}
         </div>
         <div className="match-row-result">
-          <div className="sets-breakdown">{formatSets(mySets)}</div>
-          <span className={`status-dot ${iWon ? "dot-win" : "dot-loss"}`} />
+          <div className={`sets-breakdown ${iWon ? "win" : "loss"}`}>{formatSets(mySets)}</div>
+          <span className={`match-result-badge ${iWon ? "win" : "loss"}`}>{iWon ? "W" : "L"}</span>
         </div>
       </li>
     );

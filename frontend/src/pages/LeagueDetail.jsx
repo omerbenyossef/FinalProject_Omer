@@ -625,12 +625,12 @@ function MatchRow({ match, currentUserId, onReport, onCancel, busy }) {
       ) : (
         <>
           <div className="score-row">
-            <span className={`status-dot ${iWon ? "dot-win" : "dot-loss"}`} />
+            <span className={`match-result-badge ${iWon ? "win" : "loss"}`}>{iWon ? "W" : "L"}</span>
             <div className="match-score">
               {myScore} - {opponentScore}
             </div>
           </div>
-          <div className="sets-breakdown">{formatSets(mySets)}</div>
+          <div className={`sets-breakdown ${iWon ? "win" : "loss"}`}>{formatSets(mySets)}</div>
           <button
             type="button"
             className="link-btn"

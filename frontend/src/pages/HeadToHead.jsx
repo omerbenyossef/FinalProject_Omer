@@ -107,12 +107,12 @@ export default function HeadToHead() {
                     </Link>
                   </div>
                   <div className="score-row">
-                    <span className={`status-dot ${iWon ? "dot-win" : "dot-loss"}`} />
+                    <span className={`match-result-badge ${iWon ? "win" : "loss"}`}>{iWon ? "W" : "L"}</span>
                     <div className="match-score">
                       {m.my_score} - {m.opponent_score}
                     </div>
                   </div>
-                  <div className="sets-breakdown">{formatSets(m.sets)}</div>
+                  <div className={`sets-breakdown ${iWon ? "win" : "loss"}`}>{formatSets(m.sets)}</div>
                 </li>
               );
             })}
