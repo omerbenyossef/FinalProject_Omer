@@ -4,6 +4,7 @@ import SetScoreForm from "./SetScoreForm.jsx";
 import { useLanguage } from "./LanguageContext.jsx";
 import { formatSets, formatDayMonth } from "./matchUtils.js";
 import Avatar from "./Avatar.jsx";
+import { ChevronIcon } from "./Icons.jsx";
 
 export default function NextMatchRow({
   match,
@@ -31,7 +32,7 @@ export default function NextMatchRow({
       <li className="match-row match-row-completed">
         <div className="match-row-info">
           <div className="match-row-title">
-            <strong className="name">{myName}</strong> <strong>&amp;</strong>{" "}
+            <strong className="name">{myName}</strong> <span className="vs-label">vs</span>{" "}
             <Link to={`/head-to-head/${opponent.id}`}>
               <strong className="name">{opponent.name}</strong>
             </Link>
@@ -44,10 +45,11 @@ export default function NextMatchRow({
             </Link>
           )}
         </div>
-        <div className="match-row-result">
+        <Link to={`/head-to-head/${opponent.id}`} className="match-row-result">
           <div className={`sets-breakdown ${iWon ? "win" : "loss"}`}>{formatSets(mySets)}</div>
           <span className={`match-result-badge ${iWon ? "win" : "loss"}`}>{iWon ? "W" : "L"}</span>
-        </div>
+          <ChevronIcon className="match-row-chevron" aria-hidden="true" />
+        </Link>
       </li>
     );
   }

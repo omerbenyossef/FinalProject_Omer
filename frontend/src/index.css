@@ -1585,6 +1585,16 @@ button:active { transform: translateY(1px); }
   align-items: center;
   gap: 8px;
   flex: none;
+  text-decoration: none;
+  color: inherit;
+}
+
+.match-row-chevron {
+  width: 15px;
+  height: 15px;
+  color: var(--muted);
+  opacity: 0.6;
+  flex: none;
 }
 
 .match-score {
