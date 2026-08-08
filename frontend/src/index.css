@@ -1405,12 +1405,6 @@ button:active { transform: translateY(1px); }
 .standings-table .player-col {
   text-align: start;
   font-variant-numeric: initial;
-}
-
-.player-cell {
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
   font-weight: 600;
 }
 

@@ -375,12 +375,7 @@ export default function LeagueDetail() {
                       <td>
                         <span className={`rank-badge${rank <= 3 ? ` rank-${rank}` : ""}`}>{rank}</span>
                       </td>
-                      <td className="player-col">
-                        <span className="player-cell">
-                          <Avatar name={row.user.name} size={24} />
-                          {row.user.name}
-                        </span>
-                      </td>
+                      <td className="player-col">{row.user.name}</td>
                       <td>{row.played}</td>
                       <td>{row.wins}</td>
                       <td>{row.losses}</td>
