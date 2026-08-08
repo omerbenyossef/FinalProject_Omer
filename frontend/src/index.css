@@ -1237,7 +1237,7 @@ button:active { transform: translateY(1px); }
 
 .league-card-mine {
   display: block;
-  background: #181d19;
+  background: #1a1a1a;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
   padding: 18px;
