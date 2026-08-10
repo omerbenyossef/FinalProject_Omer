@@ -159,9 +159,9 @@ export function ChessIcon(props) {
   );
 }
 
-export function ChevronIcon(props) {
+export function ChevronIcon({ className = "", ...rest }) {
   return (
-    <svg {...common} {...props}>
+    <svg {...common} className={`chevron-icon ${className}`.trim()} {...rest}>
       <polyline points="15 6 9 12 15 18" />
     </svg>
   );
