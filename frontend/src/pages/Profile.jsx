@@ -96,7 +96,7 @@ export default function Profile() {
       </div>
 
       <div className="flat-sections">
-        <div className="flat-section">
+        <div className={stats ? "profile-hero" : "flat-section"}>
           {error && <p className="error">{t(error)}</p>}
           {!stats && !error && <SkeletonHeroStat />}
           {stats && (
@@ -106,6 +106,8 @@ export default function Profile() {
                 max={Math.max(stats.matches_played, 1)}
                 size={104}
                 strokeWidth={9}
+                trackColor="rgba(255, 255, 255, 0.12)"
+                tickColor="rgba(255, 255, 255, 0.35)"
               >
                 <div className="gauge-value">{winRate !== null ? `${winRate}%` : "–"}</div>
                 <div className="gauge-caption">{t("ניצחונות")}</div>

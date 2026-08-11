@@ -1105,6 +1105,47 @@ button:active { transform: translateY(1px); }
   font: inherit;
 }
 
+.profile-hero {
+  position: relative;
+  overflow: hidden;
+  background: #1c1c1c;
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.profile-hero::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0;
+  width: 100%;
+  height: 3px;
+  background: var(--court);
+}
+
+.profile-hero .eyebrow {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.profile-hero .hero-copy p {
+  color: #ffffff;
+}
+
+.profile-hero .gauge-value {
+  color: #ffffff;
+}
+
+.profile-hero .gauge-caption {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.profile-hero .chip {
+  color: rgba(255, 255, 255, 0.85);
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+}
+
 .leagues-hero-row-title {
   display: block;
   font-weight: 800;
