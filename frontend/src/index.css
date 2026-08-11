@@ -103,11 +103,11 @@
   --line: rgba(60, 60, 67, 0.16);
   --muted: #6c6c70;
   --glass: rgba(255, 255, 255, 0.72);
-  --court: #0e8f52;
-  --court-deep: #0b7443;
+  --court: #b8901f;
+  --court-deep: #96741a;
   --court-contrast: #ffffff;
-  --court-tint: rgba(14, 143, 82, 0.1);
-  --court-tint-strong: rgba(14, 143, 82, 0.18);
+  --court-tint: rgba(184, 144, 31, 0.1);
+  --court-tint-strong: rgba(184, 144, 31, 0.18);
   --gold: #b9812a;
   --gold-tint: rgba(185, 129, 42, 0.14);
   --silver: #46536b;
@@ -139,11 +139,11 @@
     --line: rgba(148, 163, 184, 0.24);
     --muted: #8b93a6;
     --glass: rgba(12, 14, 20, 0.78);
-    --court: #c6e838;
-    --court-deep: #b0d020;
+    --court: #d4af37;
+    --court-deep: #a9861f;
     --court-contrast: #14150f;
-    --court-tint: rgba(198, 232, 56, 0.12);
-    --court-tint-strong: rgba(198, 232, 56, 0.2);
+    --court-tint: rgba(212, 175, 55, 0.12);
+    --court-tint-strong: rgba(212, 175, 55, 0.2);
     --gold: #e2ac54;
     --gold-tint: rgba(226, 172, 84, 0.16);
     --silver: #c3cbdb;
@@ -169,11 +169,11 @@
   --line: rgba(148, 163, 184, 0.24);
   --muted: #8b93a6;
   --glass: rgba(12, 14, 20, 0.78);
-  --court: #c6e838;
-  --court-deep: #b0d020;
+  --court: #d4af37;
+  --court-deep: #a9861f;
   --court-contrast: #14150f;
-  --court-tint: rgba(198, 232, 56, 0.12);
-  --court-tint-strong: rgba(198, 232, 56, 0.2);
+  --court-tint: rgba(212, 175, 55, 0.12);
+  --court-tint-strong: rgba(212, 175, 55, 0.2);
   --gold: #e2ac54;
   --gold-tint: rgba(226, 172, 84, 0.16);
   --silver: #c3cbdb;
@@ -1343,7 +1343,7 @@ button:active { transform: translateY(1px); }
 }
 
 .league-card-trend.up {
-  color: #c6f135;
+  color: #d4af37;
 }
 
 .league-card-rank-wrap {
@@ -1359,7 +1359,7 @@ button:active { transform: translateY(1px); }
   font-weight: 700;
   font-size: 38px;
   line-height: 1;
-  color: #c6f135;
+  color: #d4af37;
 }
 
 .league-card-rank-total {
