@@ -134,8 +134,8 @@
   :root:not([data-theme="light"]) {
     --ink: #eef1f7;
     --paper: #10141f;
-    --card: #262b33;
-    --card-alt: #2d323c;
+    --card: #232a3a;
+    --card-alt: #2a3348;
     --line: rgba(148, 163, 184, 0.24);
     --muted: #8b93a6;
     --glass: rgba(12, 14, 20, 0.78);
@@ -164,8 +164,8 @@
   color-scheme: dark;
   --ink: #eef1f7;
   --paper: #10141f;
-  --card: #262b33;
-  --card-alt: #2d323c;
+  --card: #232a3a;
+  --card-alt: #2a3348;
   --line: rgba(148, 163, 184, 0.24);
   --muted: #8b93a6;
   --glass: rgba(12, 14, 20, 0.78);
