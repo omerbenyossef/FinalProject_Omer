@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import { useLanguage } from "./LanguageContext.jsx";
 import { PersonIcon, ChevronIcon, TrendDownIcon, TrendUpIcon } from "./Icons.jsx";
-import { getSportColor } from "./sportIcons.js";
 import { formatWeekLabel } from "./matchUtils.js";
 
 function MyLeagueCard({ league }) {
@@ -16,10 +15,7 @@ function MyLeagueCard({ league }) {
       <div className="league-card-mine-top">
         <div className="league-card-mine-info">
           <div className="league-card-eyebrow">
-            <span
-              className="league-card-eyebrow-dot"
-              style={{ background: getSportColor(league.sport?.name) }}
-            />
+            <span className="league-card-eyebrow-dot" />
             {t(league.sport?.name)}
           </div>
           <h3 className="league-card-mine-title">{league.name}</h3>

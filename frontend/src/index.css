@@ -1296,6 +1296,7 @@ button:active { transform: translateY(1px); }
   width: 7px;
   height: 7px;
   border-radius: 50%;
+  background: var(--court);
   flex: none;
 }
 
