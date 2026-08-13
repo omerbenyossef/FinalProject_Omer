@@ -1,17 +1,20 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import { useSport } from "../SportContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
-import CircularGauge from "../CircularGauge.jsx";
-import LeagueCard from "../LeagueCard.jsx";
 import NextMatchRow from "../NextMatchRow.jsx";
-import { UserPlusIcon, CalendarIcon, TrophyIcon } from "../Icons.jsx";
-import { formatWeekLabel } from "../matchUtils.js";
+import { CalendarIcon, TrophyIcon, TrendDownIcon, TrendUpIcon } from "../Icons.jsx";
+import { formatWeekShort } from "../matchUtils.js";
 import EmptyState from "../EmptyState.jsx";
-import { Link } from "react-router-dom";
 import { SkeletonHeroStat, SkeletonMatchRow } from "../Skeleton.jsx";
 import PageHelp from "../PageHelp.jsx";
+
+function formatMySets(sets) {
+  if (!sets || sets.length === 0) return "";
+  return sets.map((s) => `${s.player1_games}-${s.player2_games}`).join(" ");
+}
 
 export default function Profile() {
   const { user } = useAuth();
@@ -20,16 +23,9 @@ export default function Profile() {
   const [stats, setStats] = useState(null);
   const [error, setError] = useState("");
   const [myLeagues, setMyLeagues] = useState([]);
-  const [showMyLeagues, setShowMyLeagues] = useState(true);
   const [nextMatches, setNextMatches] = useState([]);
   const [matchesLoading, setMatchesLoading] = useState(true);
   const [busy, setBusy] = useState(false);
-
-  function handleInviteToApp() {
-    const url = `${window.location.origin}/login`;
-    const message = t("בוא/י תצטרף/י ל-Rally, אפליקציית ניהול הליגות שלנו!\n{url}", { url });
-    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
-  }
 
   function loadNextMatches() {
     api
@@ -76,18 +72,15 @@ export default function Profile() {
   const winRate =
     stats && stats.matches_played > 0 ? Math.round((stats.wins / stats.matches_played) * 100) : null;
 
-  let blurb = t("עדיין לא שיחקת אף משחק. השבוע זה הזמן להתחיל!");
-  if (winRate !== null) {
-    blurb =
-      winRate >= 50
-        ? t("ניצחת ב-{rate}% מהמשחקים שלך. תמשיך ככה!", { rate: winRate })
-        : t("ניצחת ב-{rate}% מהמשחקים שלך. עוד יש לאן להשתפר.", { rate: winRate });
-  }
+  const formStrip = stats ? stats.recent_matches.slice(0, 8) : [];
+  const recentResults = stats ? stats.recent_matches.slice(0, 2) : [];
 
   return (
-    <div>
-      <div className="page-title-row">
-        <h1>{t("היי, {name}", { name: user.name })}</h1>
+    <div className="profile-scoreboard">
+      <div className="profile-season-row">
+        <span className="profile-season-eyebrow">
+          {t("{name} · {season}", { name: user.name, season: t("העונה") })}
+        </span>
         <PageHelp
           pageKey="profile"
           title="עמוד הפרופיל"
@@ -95,95 +88,69 @@ export default function Profile() {
         />
       </div>
 
-      <div className="flat-sections">
-        <div className={stats ? "profile-hero" : "flat-section"}>
-          {error && <p className="error">{t(error)}</p>}
-          {!stats && !error && <SkeletonHeroStat />}
-          {stats && (
-            <div className="hero-stat">
-              <CircularGauge
-                value={stats.wins}
-                max={Math.max(stats.matches_played, 1)}
-                size={104}
-                strokeWidth={9}
-                trackColor="rgba(255, 255, 255, 0.12)"
-                tickColor="rgba(255, 255, 255, 0.35)"
-              >
-                <div className="gauge-value">{winRate !== null ? `${winRate}%` : "–"}</div>
-                <div className="gauge-caption">{t("ניצחונות")}</div>
-              </CircularGauge>
-              <div className="hero-copy">
-                <span className="eyebrow">{t("סטטיסטיקה")}</span>
-                <p>{blurb}</p>
-                <div className="chip-row">
-                  <span className="chip">
-                    {stats.leagues} {t("ליגות")}
-                  </span>
-                  <span className="chip">
-                    {stats.matches_played} {t("משחקים")}
-                  </span>
+      {error && <p className="error">{t(error)}</p>}
+      {!stats && !error && <SkeletonHeroStat />}
+
+      {stats && (
+        <>
+          <div className="profile-season-block">
+            <div className="profile-winrate-row">
+              <div className="profile-winrate-value" dir="ltr">
+                <span className="profile-winrate-number">{winRate !== null ? winRate : "–"}</span>
+                <span className="profile-winrate-percent">%</span>
+              </div>
+              <div className="profile-winrate-label">
+                <div className="profile-winrate-title">{t("אחוז ניצחונות")}</div>
+                <div className="profile-winrate-record" dir="ltr">
+                  {stats.wins}W · {stats.losses}L
                 </div>
               </div>
             </div>
-          )}
-        </div>
 
-        <div className="flat-section">
-          <h2>
-            {t("המשחקים שלי השבוע")}
-            {nextMatchesForSport.length > 0 &&
-              (() => {
-                const first = nextMatchesForSport[0];
-                const weekLabel = formatWeekLabel(first.schedule_started_at, first.match.round_number, t);
-                return weekLabel ? <span className="week-label-inline"> - {weekLabel}</span> : null;
-              })()}
-          </h2>
-          {matchesLoading ? (
-            <ul className="match-list">
-              <SkeletonMatchRow />
-            </ul>
-          ) : nextMatchesForSport.length === 0 ? (
-            <EmptyState
-              icon={<CalendarIcon aria-hidden="true" />}
-              action={
-                <Link to="/leagues" className="btn-secondary btn-small">
-                  {t("עיין בליגות")}
-                </Link>
-              }
-            >
-              {t("אין לך ליגות עם לוח משחקים עדיין.")}
-            </EmptyState>
-          ) : (
-            <ul className="match-list">
-              {nextMatchesForSport.map((entry) => (
-                <NextMatchRow
-                  key={entry.match.id}
-                  match={entry.match}
-                  currentUserId={user.id}
-                  leagueName={entry.league_name}
-                  leagueId={entry.league_id}
-                  busy={busy}
-                  onSubmit={(sets) => handleReportScore(entry.league_id, entry.match.id, sets)}
-                />
-              ))}
-            </ul>
-          )}
-        </div>
+            {formStrip.length > 0 && (
+              <>
+                <div className="profile-form-strip">
+                  {formStrip.map((m, i) => (
+                    <span key={i} className={`profile-form-bar${m.won ? " win" : ""}`} />
+                  ))}
+                </div>
+                <div className="profile-form-caption">
+                  {formStrip.length} {t("המשחקים האחרונים")}
+                </div>
+              </>
+            )}
+          </div>
 
-        <div className="flat-section">
-          <button
-            type="button"
-            className="settings-row collapsible-toggle"
-            onClick={() => setShowMyLeagues((v) => !v)}
-          >
-            <h2>{t("הליגות שלי")} ({myLeaguesForSport.length})</h2>
-            <span className="muted">{showMyLeagues ? t("הסתר") : t("הצג")}</span>
-          </button>
-
-          {showMyLeagues && (
-            <div className="league-grid" style={{ marginTop: 14 }}>
+          <div className="profile-section">
+            <div className="profile-section-header">
+              <span>{t("הליגות שלי")}</span>
+              <span>{t("דירוג")}</span>
+            </div>
+            <div className="rank-row-list">
               {myLeaguesForSport.map((league) => (
-                <LeagueCard league={league} key={league.id} />
+                <Link to={`/leagues/${league.id}`} key={league.id} className="rank-row">
+                  <span className={`rank-row-number${league.my_rank <= 3 ? " top" : ""}`} dir="ltr">
+                    #{league.my_rank}
+                  </span>
+                  <div className="rank-row-body">
+                    <div className="rank-row-name">{league.name}</div>
+                    <div className="rank-row-record" dir="ltr">
+                      {league.my_wins}W-{league.my_losses}L / {league.my_members_total} players
+                    </div>
+                  </div>
+                  {league.my_rank_trend ? (
+                    <span className={`rank-row-trend ${league.my_rank_trend < 0 ? "down" : "up"}`} dir="ltr">
+                      {league.my_rank_trend < 0 ? (
+                        <TrendDownIcon aria-hidden="true" />
+                      ) : (
+                        <TrendUpIcon aria-hidden="true" />
+                      )}
+                      {Math.abs(league.my_rank_trend)}
+                    </span>
+                  ) : (
+                    <span className="rank-row-trend flat">—</span>
+                  )}
+                </Link>
               ))}
               {myLeaguesForSport.length === 0 && (
                 <EmptyState
@@ -198,14 +165,60 @@ export default function Profile() {
                 </EmptyState>
               )}
             </div>
-          )}
-        </div>
-      </div>
+          </div>
+        </>
+      )}
 
-      <button type="button" className="invite-fab" onClick={handleInviteToApp}>
-        <UserPlusIcon aria-hidden="true" />
-        {t("הזמן חבר")}
-      </button>
+      {matchesLoading ? (
+        <ul className="match-list">
+          <SkeletonMatchRow />
+        </ul>
+      ) : nextMatchesForSport.length === 0 ? (
+        <EmptyState
+          icon={<CalendarIcon aria-hidden="true" />}
+          action={
+            <Link to="/leagues" className="btn-secondary btn-small">
+              {t("עיין בליגות")}
+            </Link>
+          }
+        >
+          {t("אין לך ליגות עם לוח משחקים עדיין.")}
+        </EmptyState>
+      ) : (
+        <ul className="match-list">
+          {nextMatchesForSport.map((entry) => (
+            <NextMatchRow
+              key={entry.match.id}
+              match={entry.match}
+              currentUserId={user.id}
+              leagueName={entry.league_name}
+              leagueId={entry.league_id}
+              weekLabel={formatWeekShort(entry.match.round_number, t)}
+              busy={busy}
+              onSubmit={(sets) => handleReportScore(entry.league_id, entry.match.id, sets)}
+            />
+          ))}
+        </ul>
+      )}
+
+      {stats && recentResults.length > 0 && (
+        <div className="profile-section">
+          <div className="profile-section-header">
+            <span>{t("תוצאות אחרונות")}</span>
+          </div>
+          <div className="recent-result-list">
+            {recentResults.map((m, i) => (
+              <div className="recent-result-row" key={i}>
+                <span className={`match-result-badge ${m.won ? "win" : "loss"}`}>{m.won ? "W" : "L"}</span>
+                <span className="recent-result-name">{t("מול {name}", { name: m.opponent_name })}</span>
+                <span className={`recent-result-score${m.won ? " win" : ""}`} dir="ltr">
+                  {formatMySets(m.my_sets)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { useLanguage } from "../LanguageContext.jsx";
 import { getTheme, setTheme } from "../theme.js";
 import { getExistingSubscription, isPushSupported, subscribeToPush, unsubscribeFromPush } from "../push.js";
 import PageHelp from "../PageHelp.jsx";
+import Toggle from "../Toggle.jsx";
 
 const THEME_ORDER = ["system", "light", "dark"];
 const THEME_LABELS = { system: "אוטומטי", light: "בהיר", dark: "כהה" };
@@ -22,42 +23,53 @@ export default function Settings() {
 
   return (
     <div>
-      <div className="page-header">
-        <div className="page-title-row">
-          <h1>{t("הגדרות")}</h1>
-          <PageHelp
-            pageKey="settings"
-            title="עמוד ההגדרות"
-            text="כאן תוכלו לערוך את הפרופיל שלכם, לשנות סיסמה או אימייל, להפעיל התראות, ולשנות שפה או מראה."
-          />
-        </div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <ThemeToggleButton />
-          <LanguageToggleButton />
-        </div>
+      <div className="page-title-row">
+        <h1>{t("הגדרות")}</h1>
+        <PageHelp
+          pageKey="settings"
+          title="עמוד ההגדרות"
+          text="כאן תוכלו לערוך את הפרופיל שלכם, לשנות סיסמה או אימייל, להפעיל התראות, ולשנות שפה או מראה."
+        />
       </div>
-      <div className="flat-sections">
-        <EditProfileCard user={user} updateUser={updateUser} />
-        <ChangeEmailCard user={user} updateUser={updateUser} />
-        <ChangePasswordCard />
-        <NotificationsCard />
-        <div className="flat-section">
-          <div className="settings-row">
-            <div>
-              <h2>{t("יציאה מהחשבון")}</h2>
-              <p className="muted">{user?.email}</p>
+      <div className="settings-chips">
+        <ThemeChip />
+        <LanguageChip />
+      </div>
+
+      <div className="settings-section">
+        <div className="profile-section-header" style={{ justifyContent: "flex-start" }}>
+          <span>{t("חשבון")}</span>
+        </div>
+        <EditProfileRow user={user} updateUser={updateUser} />
+        <ChangeEmailRow user={user} updateUser={updateUser} />
+        <ChangePasswordRow />
+      </div>
+
+      <div className="settings-section">
+        <div className="profile-section-header" style={{ justifyContent: "flex-start" }}>
+          <span>{t("התראות")}</span>
+        </div>
+        <NotificationsRow />
+      </div>
+
+      <div className="settings-section">
+        <div className="settings-detail-row">
+          <div>
+            <div className="settings-detail-title">{t("יציאה מהחשבון")}</div>
+            <div className="settings-detail-value mono" dir="ltr">
+              {user?.email}
             </div>
-            <button type="button" className="link-btn" style={{ color: "var(--danger)" }} onClick={handleLogout}>
-              {t("התנתקות")}
-            </button>
           </div>
+          <button type="button" className="settings-detail-action danger" onClick={handleLogout}>
+            {t("התנתקות")}
+          </button>
         </div>
       </div>
     </div>
   );
 }
 
-function ThemeToggleButton() {
+function ThemeChip() {
   const [theme, setThemeState] = useState(getTheme());
   const { t } = useLanguage();
 
@@ -68,13 +80,13 @@ function ThemeToggleButton() {
   }
 
   return (
-    <button type="button" className="btn-secondary btn-small" onClick={cycle}>
+    <button type="button" className="settings-chip" onClick={cycle}>
       {t("תצוגה: " + THEME_LABELS[theme])}
     </button>
   );
 }
 
-function LanguageToggleButton() {
+function LanguageChip() {
   const { language, setLanguage } = useLanguage();
 
   function cycle() {
@@ -82,13 +94,13 @@ function LanguageToggleButton() {
   }
 
   return (
-    <button type="button" className="btn-secondary btn-small" onClick={cycle}>
+    <button type="button" className="settings-chip" onClick={cycle}>
       {language === "en" ? "Language: English" : "שפה: עברית"}
     </button>
   );
 }
 
-function EditProfileCard({ user, updateUser }) {
+function EditProfileRow({ user, updateUser }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(user?.name || "");
   const [age, setAge] = useState(user?.age ?? "");
@@ -123,14 +135,17 @@ function EditProfileCard({ user, updateUser }) {
   }
 
   return (
-    <div className="flat-section">
-      <div className="settings-row">
+    <div className="settings-detail-row" style={{ flexDirection: "column", alignItems: "stretch" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
         <div>
-          <h2>{t("פרופיל")}</h2>
-          <p className="muted">{user?.name}</p>
+          <div className="settings-detail-title">{t("פרופיל")}</div>
+          <div className="settings-detail-value">
+            {user?.name}
+            {user?.age ? ` · ${t("גיל {age}", { age: user.age })}` : ""}
+          </div>
         </div>
         {!editing && (
-          <button type="button" className="link-btn" onClick={openEditor}>
+          <button type="button" className="settings-detail-action" onClick={openEditor}>
             {t("ערוך")}
           </button>
         )}
@@ -168,7 +183,7 @@ function EditProfileCard({ user, updateUser }) {
   );
 }
 
-function ChangeEmailCard({ user, updateUser }) {
+function ChangeEmailRow({ user, updateUser }) {
   const [editing, setEditing] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newEmail, setNewEmail] = useState("");
@@ -203,14 +218,16 @@ function ChangeEmailCard({ user, updateUser }) {
   }
 
   return (
-    <div className="flat-section">
-      <div className="settings-row">
+    <div className="settings-detail-row" style={{ flexDirection: "column", alignItems: "stretch" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
         <div>
-          <h2>{t("אימייל")}</h2>
-          <p className="muted">{user?.email}</p>
+          <div className="settings-detail-title">{t("אימייל")}</div>
+          <div className="settings-detail-value mono" dir="ltr">
+            {user?.email}
+          </div>
         </div>
         {!editing && (
-          <button type="button" className="link-btn" onClick={openEditor}>
+          <button type="button" className="settings-detail-action" onClick={openEditor}>
             {t("שנה אימייל")}
           </button>
         )}
@@ -252,7 +269,7 @@ function ChangeEmailCard({ user, updateUser }) {
   );
 }
 
-function NotificationsCard() {
+function NotificationsRow() {
   const { t } = useLanguage();
   const [supported, setSupported] = useState(true);
   const [subscribed, setSubscribed] = useState(false);
@@ -299,30 +316,22 @@ function NotificationsCard() {
   }
 
   return (
-    <div className="flat-section">
-      <div className="settings-row">
-        <div>
-          <h2>{t("התראות")}</h2>
-          <p className="muted">
-            {!supported
-              ? t("לא נתמך בדפדפן הזה")
-              : subscribed
-              ? t("מופעלות")
-              : t("כבויות")}
-          </p>
+    <div className="settings-detail-row">
+      <div>
+        <div className="settings-detail-title">{t("התראות במכשיר")}</div>
+        <div className="settings-detail-value">
+          {!supported ? t("לא נתמך בדפדפן הזה") : subscribed ? t("מופעלות") : t("כבויות")}
         </div>
-        {supported && !loading && (
-          <button type="button" className="link-btn" onClick={handleToggle} disabled={submitting}>
-            {subscribed ? t("כבה") : t("הפעל")}
-          </button>
-        )}
+        {error && <p className="error">{t(error)}</p>}
       </div>
-      {error && <p className="error">{t(error)}</p>}
+      {supported && !loading && (
+        <Toggle checked={subscribed} onChange={handleToggle} disabled={submitting} label={t("התראות במכשיר")} />
+      )}
     </div>
   );
 }
 
-function ChangePasswordCard() {
+function ChangePasswordRow() {
   const [editing, setEditing] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -356,15 +365,15 @@ function ChangePasswordCard() {
   }
 
   return (
-    <div className="flat-section">
-      <div className="settings-row">
+    <div className="settings-detail-row" style={{ flexDirection: "column", alignItems: "stretch" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
         <div>
-          <h2>{t("שינוי סיסמה")}</h2>
-          <p className="muted">••••••••</p>
+          <div className="settings-detail-title">{t("סיסמה")}</div>
+          <div className="settings-detail-value mono">••••••••</div>
         </div>
         {!editing && (
-          <button type="button" className="link-btn" onClick={openEditor}>
-            {t("שנה סיסמה")}
+          <button type="button" className="settings-detail-action" onClick={openEditor}>
+            {t("שנה")}
           </button>
         )}
       </div>

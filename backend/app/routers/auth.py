@@ -88,7 +88,7 @@ def my_stats(
         matches_query = matches_query.join(models.League).filter(
             models.League.sport_id == sport_id
         )
-    matches = matches_query.all()
+    matches = matches_query.order_by(models.Match.played_at.desc()).all()
 
     wins = 0
     for match in matches:
@@ -96,8 +96,41 @@ def my_stats(
             wins += 1
         elif match.player2_id == current_user.id and match.player2_score > match.player1_score:
             wins += 1
+    losses = len(matches) - wins
 
-    return schemas.UserStats(leagues=leagues_count, matches_played=len(matches), wins=wins)
+    recent_matches = []
+    for match in matches[:8]:
+        i_am_player1 = match.player1_id == current_user.id
+        opponent = match.player2 if i_am_player1 else match.player1
+        won = (
+            match.player1_score > match.player2_score
+            if i_am_player1
+            else match.player2_score > match.player1_score
+        )
+        my_sets = [
+            schemas.SetScore(
+                player1_games=s["player1_games"] if i_am_player1 else s["player2_games"],
+                player2_games=s["player2_games"] if i_am_player1 else s["player1_games"],
+            )
+            for s in (match.sets or [])
+        ]
+        recent_matches.append(
+            schemas.RecentMatchEntry(
+                opponent_name=opponent.name,
+                my_sets=my_sets,
+                won=won,
+                league_name=match.league.name,
+                played_at=match.played_at,
+            )
+        )
+
+    return schemas.UserStats(
+        leagues=leagues_count,
+        matches_played=len(matches),
+        wins=wins,
+        losses=losses,
+        recent_matches=recent_matches,
+    )
 
 
 @router.post("/change-password", response_model=schemas.MessageOut)

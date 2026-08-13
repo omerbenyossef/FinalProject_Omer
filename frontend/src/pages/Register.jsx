@@ -39,8 +39,7 @@ export default function Register() {
 
   return (
     <AuthShell>
-      <div className="card form-card">
-        <h1>{t("הרשמה")}</h1>
+      <div className="form-card">
         <form onSubmit={handleSubmit}>
           <label>
             {t("שם מלא")}
@@ -48,12 +47,13 @@ export default function Register() {
           </label>
           <label>
             {t("אימייל")}
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <input type="email" dir="ltr" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </label>
           <label>
             {t("סיסמה")}
             <input
               type="password"
+              dir="ltr"
               minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -66,7 +66,7 @@ export default function Register() {
           </button>
           {slow && <p className="muted">{t("השרת מתעורר, זה עשוי לקחת עד דקה בפעם הראשונה...")}</p>}
         </form>
-        <p className="muted">
+        <p className="muted" style={{ textAlign: "center" }}>
           {t("כבר יש לך חשבון?")}{" "}
           <Link
             to={

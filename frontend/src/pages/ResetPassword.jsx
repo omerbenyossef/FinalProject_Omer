@@ -31,7 +31,7 @@ export default function ResetPassword() {
   if (!token) {
     return (
       <AuthShell>
-        <div className="card form-card">
+        <div className="form-card">
           <h1>{t("קישור לא תקין")}</h1>
           <p className="muted">
             {t("הקישור חסר או שגוי. אפשר לבקש קישור חדש")} <Link to="/forgot-password">{t("כאן")}</Link>.
@@ -44,7 +44,7 @@ export default function ResetPassword() {
   if (done) {
     return (
       <AuthShell>
-        <div className="card form-card">
+        <div className="form-card">
           <h1>{t("הסיסמה עודכנה")}</h1>
           <p className="muted" style={{ marginBottom: 14 }}>
             {t("אפשר עכשיו להתחבר עם הסיסמה החדשה.")}
@@ -64,7 +64,7 @@ export default function ResetPassword() {
 
   return (
     <AuthShell>
-      <div className="card form-card">
+      <div className="form-card">
         <h1>{t("איפוס סיסמה")}</h1>
         <form onSubmit={handleSubmit}>
           <label>

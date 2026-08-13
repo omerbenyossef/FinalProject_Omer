@@ -1,6 +1,6 @@
 export function formatSets(sets) {
   if (!sets || sets.length === 0) return "";
-  return sets.map((s) => `${s.player1_games}-${s.player2_games}`).join(", ");
+  return sets.map((s) => `${s.player1_games}-${s.player2_games}`).join(" ");
 }
 
 function weekEndSaturday(date) {
@@ -31,4 +31,27 @@ export function formatWeekLabel(scheduleStartedAt, roundNumber, t) {
   }
 
   return `${t("שבוע {n}", { n: roundNumber })} (${formatDayMonth(start)} - ${formatDayMonth(end)})`;
+}
+
+export function formatWeekShort(roundNumber, t) {
+  if (!roundNumber) return "";
+  return t("שבוע {n}", { n: roundNumber });
+}
+
+export function roundDueDate(scheduleStartedAt, roundNumber) {
+  if (!scheduleStartedAt || !roundNumber) return "";
+  const anchor = new Date(scheduleStartedAt);
+  const round1End = weekEndSaturday(anchor);
+  const end = new Date(round1End);
+  if (roundNumber > 1) end.setDate(end.getDate() + 7 * (roundNumber - 1));
+  return formatDayMonth(end);
+}
+
+export function currentRoundNumber(scheduleStartedAt, now = new Date()) {
+  if (!scheduleStartedAt) return null;
+  const anchor = new Date(scheduleStartedAt);
+  const round1End = weekEndSaturday(anchor);
+  if (now <= round1End) return 1;
+  const offsetDays = Math.floor((now - round1End) / 86400000);
+  return 2 + Math.floor((offsetDays - 1) / 7);
 }

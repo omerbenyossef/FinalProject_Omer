@@ -12,6 +12,7 @@ export default function NextMatchRow({
   busy,
   leagueName,
   leagueId,
+  weekLabel,
 }) {
   const [reporting, setReporting] = useState(false);
   const { t } = useLanguage();
@@ -53,25 +54,25 @@ export default function NextMatchRow({
     );
   }
 
+  const eyebrowParts = [leagueName, t("המשחק הבא"), weekLabel].filter(Boolean);
+
   return (
-    <li className="match-row">
-      <div className="match-players" style={{ justifyContent: "space-between", alignItems: "flex-start" }}>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 6 }}>
-          {leagueName && (
-            <Link to={`/leagues/${leagueId}`} className="sport-tag" style={{ marginBottom: 0 }}>
-              {leagueName}
-            </Link>
-          )}
-          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-            <span className="vs-label">vs</span>
-            <Link to={`/head-to-head/${opponent.id}`}>
-              <strong>{opponent.name}</strong>
-            </Link>
-          </div>
+    <li className="next-match-card">
+      <div className="next-match-top">
+        <div className="next-match-info">
+          <div className="next-match-eyebrow">{eyebrowParts.join(" · ")}</div>
+          <Link to={`/head-to-head/${opponent.id}`} className="next-match-name">
+            {t("מול {name}", { name: opponent.name })}
+          </Link>
         </div>
+        {!reporting && (
+          <button type="button" className="btn-gold-pill" onClick={() => setReporting(true)}>
+            {t("דווח")}
+          </button>
+        )}
       </div>
 
-      {reporting ? (
+      {reporting && (
         <SetScoreForm
           player1Name={match.player1.name}
           player2Name={match.player2.name}
@@ -82,15 +83,6 @@ export default function NextMatchRow({
           onCancel={() => setReporting(false)}
           busy={busy}
         />
-      ) : (
-        <button
-          type="button"
-          className="btn-secondary"
-          style={{ alignSelf: "flex-start" }}
-          onClick={() => setReporting(true)}
-        >
-          {t("דווח תוצאה")}
-        </button>
       )}
     </li>
   );

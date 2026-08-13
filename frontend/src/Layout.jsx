@@ -1,70 +1,68 @@
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "./AuthContext.jsx";
 import { useSport } from "./SportContext.jsx";
 import { useLanguage } from "./LanguageContext.jsx";
 import { PersonIcon, SettingsIcon, TrophyIcon } from "./Icons.jsx";
 import InstallPrompt from "./InstallPrompt.jsx";
 import Onboarding from "./Onboarding.jsx";
-import { getSportIcon } from "./sportIcons.js";
+import { translate } from "./translations.js";
 
-function BrandMark() {
-  return (
-    <svg width="24" height="24" viewBox="0 0 48 48" aria-hidden="true">
-      <rect width="48" height="48" rx="12" fill="#16a34a" />
-      <circle cx="24" cy="24" r="15" fill="#f5f7d4" stroke="#0b1220" strokeWidth="1.4" />
-      <path d="M10 15 C 18 22, 18 26, 10 33" stroke="#0b1220" strokeWidth="1.6" fill="none" strokeLinecap="round" />
-      <path d="M38 15 C 30 22, 30 26, 38 33" stroke="#0b1220" strokeWidth="1.6" fill="none" strokeLinecap="round" />
-    </svg>
-  );
-}
+const AUTH_PATHS = ["/login", "/register", "/forgot-password", "/reset-password"];
 
 export default function Layout({ children }) {
   const { user } = useAuth();
   const { sports, selectedSportId, setSelectedSportId } = useSport();
   const { t } = useLanguage();
+  const location = useLocation();
+  const isAuthRoute = AUTH_PATHS.includes(location.pathname);
+
+  if (isAuthRoute) {
+    return <main className="content auth-content">{children}</main>;
+  }
+
+  const selectedSport = sports.find((s) => s.id === selectedSportId);
 
   return (
     <div className="app-shell">
       <header className="topbar">
-        <Link to="/leagues" className="brand">
-          <BrandMark />
-          Rally
-        </Link>
-
-        {sports.length > 0 &&
-          (() => {
-            const selectedSport = sports.find((s) => s.id === selectedSportId);
-            const SportIcon = getSportIcon(selectedSport?.name);
-            return (
-              <div className="sport-switcher-wrap">
-                <SportIcon className="sport-switcher-icon" aria-hidden="true" />
-                <select
-                  className="sport-switcher"
-                  value={selectedSportId ?? ""}
-                  onChange={(e) => setSelectedSportId(Number(e.target.value))}
-                >
-                  {sports.map((sport) => (
-                    <option key={sport.id} value={sport.id}>
-                      {t(sport.name)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            );
-          })()}
-
-        <nav>
-          {user ? (
+        {user ? (
+          <>
             <Link to="/settings" className="topbar-icon-btn" aria-label={t("הגדרות")}>
               <SettingsIcon aria-hidden="true" />
             </Link>
-          ) : (
-            <>
+            <div className="wordmark-cluster">
+              <span className="wordmark-rally">RALLY</span>
+              <span className="wordmark-dot" />
+              {sports.length > 0 && selectedSport && (
+                <span className="wordmark-sport-wrap">
+                  <span className="wordmark-sport">{translate(selectedSport.name, "en")}</span>
+                  <select
+                    className="wordmark-sport-select"
+                    aria-label={t("בחר ענף")}
+                    value={selectedSportId ?? ""}
+                    onChange={(e) => setSelectedSportId(Number(e.target.value))}
+                  >
+                    {sports.map((sport) => (
+                      <option key={sport.id} value={sport.id}>
+                        {t(sport.name)}
+                      </option>
+                    ))}
+                  </select>
+                </span>
+              )}
+            </div>
+          </>
+        ) : (
+          <>
+            <Link to="/leagues" className="brand">
+              Rally
+            </Link>
+            <nav>
               <Link to="/login">{t("כניסה")}</Link>
               <Link to="/register">{t("הרשמה")}</Link>
-            </>
-          )}
-        </nav>
+            </nav>
+          </>
+        )}
       </header>
       {user && <Onboarding />}
       {user && <InstallPrompt />}

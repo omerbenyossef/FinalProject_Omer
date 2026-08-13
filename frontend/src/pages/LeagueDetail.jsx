@@ -6,9 +6,9 @@ import { useLanguage } from "../LanguageContext.jsx";
 import SetScoreForm from "../SetScoreForm.jsx";
 import NextMatchRow from "../NextMatchRow.jsx";
 import CircularGauge from "../CircularGauge.jsx";
-import { UserPlusIcon, CalendarIcon } from "../Icons.jsx";
+import { UserPlusIcon, CalendarIcon, ChevronIcon } from "../Icons.jsx";
 import EmptyState from "../EmptyState.jsx";
-import { formatSets, formatWeekLabel } from "../matchUtils.js";
+import { formatSets, formatWeekShort, currentRoundNumber, roundDueDate } from "../matchUtils.js";
 import { SkeletonPageHeader, SkeletonHeroStat, SkeletonStandingsTable } from "../Skeleton.jsx";
 import PageHelp from "../PageHelp.jsx";
 
@@ -42,8 +42,6 @@ export default function LeagueDetail() {
   const [standings, setStandings] = useState([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [showMatches, setShowMatches] = useState(true);
-  const [showAllMatches, setShowAllMatches] = useState(true);
   const [inviteCode, setInviteCode] = useState(null);
   const [inviteError, setInviteError] = useState("");
   const [inviteLoading, setInviteLoading] = useState(false);
@@ -228,27 +226,35 @@ export default function LeagueDetail() {
   const myStanding = standings.find((row) => row.user.id === user?.id);
   const myWinRate =
     myStanding && myStanding.played > 0 ? Math.round((myStanding.wins / myStanding.played) * 100) : null;
+  const round = currentRoundNumber(league.schedule_started_at);
 
   return (
     <div>
-      <div className="page-header">
-        <div>
-          <div className="page-title-row">
-            <h1>{league.name}</h1>
-            <PageHelp
-              pageKey="leagueDetail"
-              title="עמוד הליגה"
-              text="כאן תראו את טבלת הדירוג, את המשחקים שלכם ושל שאר חברי הליגה, ואת הסטטיסטיקה האישית שלכם בליגה הזו."
-            />
-          </div>
-          {league.description && <p className="muted">{league.description}</p>}
-        </div>
+      <Link to="/leagues" className="back-link">
+        <ChevronIcon aria-hidden="true" />
+        {t("חזרה לליגות")}
+      </Link>
+
+      <div className="page-title-row">
+        <h1>{league.name}</h1>
+        <PageHelp
+          pageKey="leagueDetail"
+          title="עמוד הליגה"
+          text="כאן תראו את טבלת הדירוג, את המשחקים שלכם ושל שאר חברי הליגה, ואת הסטטיסטיקה האישית שלכם בליגה הזו."
+        />
+      </div>
+      <div className="league-detail-meta">
+        {[t(league.sport?.name), `${members.length} ${t("שחקנים")}`, round ? formatWeekShort(round, t) : null]
+          .filter(Boolean)
+          .join(" · ")}
+      </div>
+      {league.description && <p className="muted">{league.description}</p>}
+
+      <div className="league-detail-actions">
         {!isMember && user && (league.is_open || codeFromLink) && (
-          <div className="inline-form">
-            <button className="btn-primary" onClick={() => handleJoin()} disabled={busy}>
-              {busy ? t("מצטרף...") : t("הצטרפות לליגה")}
-            </button>
-          </div>
+          <button className="btn-primary" onClick={() => handleJoin()} disabled={busy}>
+            {busy ? t("מצטרף...") : t("הצטרפות לליגה")}
+          </button>
         )}
         {!isMember && user && !league.is_open && !codeFromLink && (
           <p className="muted" style={{ fontSize: 14 }}>
@@ -388,119 +394,51 @@ export default function LeagueDetail() {
         )}
 
         {activeTab === "matches" && (
-          <>
-            {isMember && (
-              <div style={{ marginBottom: 20 }}>
-                <button
-                  type="button"
-                  className="settings-row collapsible-toggle"
-                  onClick={() => setShowMatches((v) => !v)}
-                >
-                  <h2>{t("המשחקים שלי")}</h2>
-                  <span className="muted">{showMatches ? t("הסתר") : t("הצג")}</span>
-                </button>
-
-                {showMatches && (
-                  <>
-                    {matches.length === 0 && (
-                      <EmptyState icon={<CalendarIcon aria-hidden="true" />}>
-                        {t("עדיין אין משחקים.")}
-                      </EmptyState>
-                    )}
-                    {groupMatchesByRound(matches).map(({ round, matches: roundMatches }) => (
-                      <div key={round} style={{ marginTop: 16 }}>
-                        <h3 className="week-label">
-                          {round === "none"
-                            ? t("משחקים נוספים")
-                            : formatWeekLabel(league.schedule_started_at, round, t)}
-                        </h3>
-                        <ul className="match-list" style={{ marginTop: 8 }}>
-                          {roundMatches.map((match) => (
-                            <MatchRow
-                              key={match.id}
-                              match={match}
-                              currentUserId={user.id}
-                              onReport={handleReportScore}
-                              onCancel={handleCancelMatch}
-                              busy={busy}
-                            />
-                          ))}
-                        </ul>
-                      </div>
-                    ))}
-                  </>
-                )}
+          <div className="league-matches-tab">
+            {isMember && myNextMatch && (
+              <div>
+                <div className="profile-section-header" style={{ justifyContent: "flex-start" }}>
+                  <span>
+                    {[t("המשחק שלי"), round ? formatWeekShort(round, t) : null].filter(Boolean).join(" · ")}
+                  </span>
+                </div>
+                <MyMatchCard
+                  match={myNextMatch}
+                  currentUserId={user.id}
+                  dueDate={round ? roundDueDate(league.schedule_started_at, round) : ""}
+                  onSubmit={(sets) => handleReportScore(myNextMatch.id, sets)}
+                  onCancel={() => handleCancelMatch(myNextMatch.id)}
+                  busy={busy}
+                />
               </div>
             )}
 
-            <div>
-              <button
-                type="button"
-                className="settings-row collapsible-toggle"
-                onClick={() => setShowAllMatches((v) => !v)}
-              >
-                <h2>{t("כל המשחקים בליגה")}</h2>
-                <span className="muted">{showAllMatches ? t("הסתר") : t("הצג")}</span>
-              </button>
-
-              {showAllMatches && (
-                <>
-                  {allMatches.length === 0 && (
-                    <EmptyState icon={<CalendarIcon aria-hidden="true" />}>
-                      {t("עדיין אין משחקים בליגה.")}
-                    </EmptyState>
-                  )}
-                  {groupMatchesByRound(allMatches).map(({ round, matches: roundMatches }) => (
-                    <div key={round} style={{ marginTop: 16 }}>
-                      <h3 className="week-label">
-                        {round === "none"
-                          ? t("משחקים נוספים")
-                          : formatWeekLabel(league.schedule_started_at, round, t)}
-                      </h3>
-                      <ul className="match-list" style={{ marginTop: 8 }}>
-                        {roundMatches.map((match) => {
-                          const isCompleted = match.status === "completed";
-                          const p1Won = isCompleted && match.player1_score > match.player2_score;
-                          const p2Won = isCompleted && match.player2_score > match.player1_score;
-                          return (
-                            <li className="match-row" key={match.id}>
-                              <div className="match-players">
-                                {isCompleted ? (
-                                  <span className={p1Won ? "match-winner-name" : "match-loser-name"}>
-                                    {match.player1.name}
-                                  </span>
-                                ) : (
-                                  <strong>{match.player1.name}</strong>
-                                )}{" "}
-                                <span className="vs-label">vs</span>{" "}
-                                {isCompleted ? (
-                                  <span className={p2Won ? "match-winner-name" : "match-loser-name"}>
-                                    {match.player2.name}
-                                  </span>
-                                ) : (
-                                  <strong>{match.player2.name}</strong>
-                                )}
-                              </div>
-                              {!isCompleted ? (
-                                <span className="pill-pending">{t("ממתין לתוצאה")}</span>
-                              ) : (
-                                <div>
-                                  <div className="match-score">
-                                    {match.player1_score} - {match.player2_score}
-                                  </div>
-                                  <div className="sets-breakdown">{formatSets(match.sets)}</div>
-                                </div>
-                              )}
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </div>
+            {allMatches.length === 0 && (
+              <EmptyState icon={<CalendarIcon aria-hidden="true" />}>
+                {t("עדיין אין משחקים בליגה.")}
+              </EmptyState>
+            )}
+            {groupMatchesByRound(allMatches).map(({ round: r, matches: roundMatches }) => (
+              <div key={r}>
+                <div className="profile-section-header" style={{ justifyContent: "flex-start" }}>
+                  <span>
+                    {[t("כל המשחקים"), r === "none" ? null : formatWeekShort(r, t)].filter(Boolean).join(" · ")}
+                  </span>
+                </div>
+                <div className="all-matches-list">
+                  {roundMatches.map((match) => (
+                    <AllMatchesRow
+                      key={match.id}
+                      match={match}
+                      currentUserId={user.id}
+                      onReport={handleReportScore}
+                      busy={busy}
+                    />
                   ))}
-                </>
-              )}
-            </div>
-          </>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
 
@@ -540,100 +478,85 @@ export default function LeagueDetail() {
 }
 
 
-function MatchRow({ match, currentUserId, onReport, onCancel, busy }) {
-  const [reporting, setReporting] = useState(false);
-  const [editing, setEditing] = useState(false);
+function MyMatchCard({ match, currentUserId, dueDate, onSubmit, onCancel, busy }) {
   const { t } = useLanguage();
-  const isPending = match.status === "pending";
   const iAmPlayer1 = match.player1.id === currentUserId;
   const opponent = iAmPlayer1 ? match.player2 : match.player1;
-  const myScore = iAmPlayer1 ? match.player1_score : match.player2_score;
-  const opponentScore = iAmPlayer1 ? match.player2_score : match.player1_score;
-  const iWon = !isPending && myScore > opponentScore;
+
+  return (
+    <div className="my-match-card">
+      <div className="my-match-top">
+        <Link to={`/head-to-head/${opponent.id}`} className="my-match-name">
+          {t("מול {name}", { name: opponent.name })}
+        </Link>
+        {dueDate && <span className="my-match-due">{t("עד {date}", { date: dueDate })}</span>}
+      </div>
+      <SetScoreForm
+        player1Name={match.player1.name}
+        player2Name={match.player2.name}
+        onSubmit={onSubmit}
+        onCancel={onCancel}
+        busy={busy}
+      />
+    </div>
+  );
+}
+
+function AllMatchesRow({ match, currentUserId, onReport, busy }) {
+  const [editing, setEditing] = useState(false);
+  const { t } = useLanguage();
+  const isCompleted = match.status === "completed";
+  const p1Won = isCompleted && match.player1_score > match.player2_score;
+  const iAmPlayer1 = match.player1.id === currentUserId;
+  const isMine = match.player1.id === currentUserId || match.player2.id === currentUserId;
+  const iWon = isCompleted && (iAmPlayer1 ? p1Won : !p1Won);
   const mySets = iAmPlayer1
     ? match.sets
     : match.sets?.map((s) => ({ player1_games: s.player2_games, player2_games: s.player1_games }));
 
-  function submit(sets) {
-    onReport(match.id, sets);
-    setReporting(false);
-    setEditing(false);
-  }
-
-  return (
-    <li className="match-row">
-      <div className="match-players" style={{ justifyContent: "space-between" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span className="vs-label">vs</span>
-          <Link to={`/head-to-head/${opponent.id}`}>
-            <strong>{opponent.name}</strong>
-          </Link>
-        </div>
-        {!isPending && !editing && (
-          <span style={{ color: iWon ? "var(--court)" : "var(--muted)", fontWeight: 700 }}>
-            {iWon ? t("ניצחון") : t("הפסד")}
-          </span>
-        )}
-      </div>
-      {isPending ? (
-        reporting ? (
-          <SetScoreForm
-            player1Name={match.player1.name}
-            player2Name={match.player2.name}
-            onSubmit={submit}
-            onCancel={() => setReporting(false)}
-            busy={busy}
-          />
-        ) : (
-          <>
-            <button
-              type="button"
-              className="btn-secondary"
-              style={{ alignSelf: "flex-start" }}
-              onClick={() => setReporting(true)}
-            >
-              {t("דווח תוצאה")}
-            </button>
-            <button
-              type="button"
-              className="link-btn"
-              style={{ alignSelf: "flex-start", color: "var(--danger)" }}
-              disabled={busy}
-              onClick={() => onCancel(match.id)}
-            >
-              {t("ביטול אתגר")}
-            </button>
-          </>
-        )
-      ) : editing ? (
+  if (editing) {
+    return (
+      <div className="all-matches-row all-matches-row-editing">
         <SetScoreForm
           player1Name={match.player1.name}
           player2Name={match.player2.name}
           initialSets={match.sets}
-          onSubmit={submit}
+          onSubmit={(sets) => {
+            onReport(match.id, sets);
+            setEditing(false);
+          }}
           onCancel={() => setEditing(false)}
           busy={busy}
           submitLabel="עדכן תוצאה"
         />
+      </div>
+    );
+  }
+
+  const row = (
+    <>
+      <span className="all-matches-names">
+        <span className={isCompleted ? (p1Won ? "winner" : "loser") : "strong"}>{match.player1.name}</span>{" "}
+        <span className="vs-label">vs</span>{" "}
+        <span className={isCompleted ? (p1Won ? "loser" : "winner") : "strong"}>{match.player2.name}</span>
+      </span>
+      {!isCompleted ? (
+        <span className="pill-pending">{t("ממתין")}</span>
       ) : (
-        <>
-          <div className="score-row">
-            <span className={`match-result-badge ${iWon ? "win" : "loss"}`}>{iWon ? "W" : "L"}</span>
-            <div className="match-score">
-              {myScore} - {opponentScore}
-            </div>
-          </div>
-          <div className={`sets-breakdown ${iWon ? "win" : "loss"}`}>{formatSets(mySets)}</div>
-          <button
-            type="button"
-            className="link-btn"
-            style={{ alignSelf: "flex-start" }}
-            onClick={() => setEditing(true)}
-          >
-            {t("ערוך תוצאה")}
-          </button>
-        </>
+        <span className={`all-matches-score${iWon ? " win" : ""}`} dir="ltr">
+          {formatSets(mySets)}
+        </span>
       )}
-    </li>
+    </>
   );
+
+  if (isCompleted && isMine) {
+    return (
+      <button type="button" className="all-matches-row all-matches-row-editable" onClick={() => setEditing(true)}>
+        {row}
+      </button>
+    );
+  }
+
+  return <div className="all-matches-row">{row}</div>;
 }

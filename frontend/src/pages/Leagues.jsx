@@ -1,12 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import { useSport } from "../SportContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
-import LeagueCard from "../LeagueCard.jsx";
 import EmptyState from "../EmptyState.jsx";
-import { TrophyIcon, ChevronIcon } from "../Icons.jsx";
+import { TrophyIcon, ChevronIcon, TrendDownIcon, TrendUpIcon } from "../Icons.jsx";
 import { SkeletonLeagueCard } from "../Skeleton.jsx";
 import PageHelp from "../PageHelp.jsx";
 
@@ -16,8 +15,6 @@ export default function Leagues() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
-  const [showMyLeagues, setShowMyLeagues] = useState(true);
-  const [showOpenLeagues, setShowOpenLeagues] = useState(true);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -25,7 +22,6 @@ export default function Leagues() {
   const { user } = useAuth();
   const { selectedSportId } = useSport();
   const { t, dir } = useLanguage();
-  const openLeaguesRef = useRef(null);
 
   async function loadData() {
     setLoading(true);
@@ -72,50 +68,36 @@ export default function Leagues() {
   const bySelectedSport = (l) => l.sport.id === selectedSportId;
   const openLeagues = leagues.filter((l) => l.is_open && bySelectedSport(l));
   const myLeaguesForSport = myLeagues.filter(bySelectedSport);
-  const myLeagueIds = new Set(myLeaguesForSport.map((l) => l.id));
-
-  function goToOpenLeagues() {
-    setShowOpenLeagues(true);
-    openLeaguesRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
 
   return (
     <div>
-      <div className="page-header">
-        <div className="page-title-row">
-          <h1>{t("ליגות פעילות")}</h1>
-          <PageHelp
-            pageKey="leagues"
-            title="עמוד הליגות"
-            text="כאן תוכלו לראות את הליגות שאתם חברים בהן, לעיין בליגות ציבוריות פתוחות, וליצור ליגה חדשה."
-          />
-        </div>
+      <div className="page-title-row">
+        <h1>{t("ליגות")}</h1>
+        <PageHelp
+          pageKey="leagues"
+          title="עמוד הליגות"
+          text="כאן תוכלו לראות את הליגות שאתם חברים בהן, לעיין בליגות ציבוריות פתוחות, וליצור ליגה חדשה."
+        />
       </div>
 
-      {user && (
-        <div className="leagues-hero">
-          <span className="leagues-hero-eyebrow">{t("מוכנים להתחיל?")}</span>
-          <h2 className="leagues-hero-title">{t("בנו את הליגה שלכם")}</h2>
-          <div className="leagues-hero-actions">
-            <button type="button" className="leagues-hero-row" onClick={() => setShowForm((v) => !v)}>
-              <span>
-                <span className="leagues-hero-row-title">{t("צור ליגה חדשה")}</span>
-                <span className="leagues-hero-row-subtitle">{t("התחילו ליגה והזמינו חברים")}</span>
-              </span>
-              <ChevronIcon className="leagues-hero-row-chevron" aria-hidden="true" />
-            </button>
-            <button type="button" className="leagues-hero-row" onClick={goToOpenLeagues}>
-              <span>
-                <span className="leagues-hero-row-title">{t("הצטרפו לליגה ציבורית")}</span>
-                <span className="leagues-hero-row-subtitle">{t("התחרו מול שחקנים חדשים")}</span>
-              </span>
-              <ChevronIcon className="leagues-hero-row-chevron" aria-hidden="true" />
-            </button>
-          </div>
+      {user ? (
+        <div className="league-action-list">
+          <button type="button" className="league-action-row" onClick={() => setShowForm((v) => !v)}>
+            <span>
+              <span className="league-action-title">{t("צור ליגה חדשה")}</span>
+              <span className="league-action-subtitle">{t("התחילו ליגה והזמינו חברים")}</span>
+            </span>
+            <span className="league-action-plus">+</span>
+          </button>
+          <Link to="#open-leagues" className="league-action-row">
+            <span>
+              <span className="league-action-title">{t("הצטרפו לליגה ציבורית")}</span>
+              <span className="league-action-subtitle">{t("התחרו מול שחקנים חדשים")}</span>
+            </span>
+            <ChevronIcon className="league-action-chevron" aria-hidden="true" />
+          </Link>
         </div>
-      )}
-
-      {!user && (
+      ) : (
         <EmptyState
           icon={<TrophyIcon aria-hidden="true" />}
           action={
@@ -163,66 +145,77 @@ export default function Leagues() {
 
       {error && !showForm && <p className="error">{t(error)}</p>}
 
-      <div className="flat-sections">
-        {user && (
-          <div className="flat-section">
-            <button
-              type="button"
-              className="settings-row collapsible-toggle"
-              onClick={() => setShowMyLeagues((v) => !v)}
-            >
-              <h2>{t("הליגות שלי")} ({myLeaguesForSport.length})</h2>
-              <span className="muted">{showMyLeagues ? t("הסתר") : t("הצג")}</span>
-            </button>
-
-            {showMyLeagues && (
-              <div className="league-grid" style={{ marginTop: 14 }}>
-                {loading ? (
-                  <>
-                    <SkeletonLeagueCard />
-                    <SkeletonLeagueCard />
-                  </>
-                ) : (
-                  myLeaguesForSport.map((league) => <LeagueCard league={league} key={league.id} />)
-                )}
-                {!loading && myLeaguesForSport.length === 0 && (
-                  <EmptyState icon={<TrophyIcon aria-hidden="true" />}>
-                    {t("עדיין לא הצטרפת לאף ליגה בענף הזה.")}
-                  </EmptyState>
-                )}
-              </div>
+      {user && (
+        <div className="profile-section">
+          <div className="profile-section-header">
+            <span>
+              {t("הליגות שלי")} ({myLeaguesForSport.length})
+            </span>
+            <span>{t("דירוג")}</span>
+          </div>
+          <div className="rank-row-list">
+            {loading ? (
+              <SkeletonLeagueCard />
+            ) : (
+              myLeaguesForSport.map((league) => (
+                <Link to={`/leagues/${league.id}`} key={league.id} className="rank-row">
+                  <span className={`rank-row-number${league.my_rank <= 3 ? " top" : ""}`} dir="ltr">
+                    #{league.my_rank}
+                  </span>
+                  <div className="rank-row-body">
+                    <div className="rank-row-name">{league.name}</div>
+                    <div className="rank-row-record" dir="ltr">
+                      {league.my_wins}W-{league.my_losses}L / {league.my_members_total}
+                    </div>
+                  </div>
+                  {league.my_rank_trend ? (
+                    <span className={`rank-row-trend ${league.my_rank_trend < 0 ? "down" : "up"}`} dir="ltr">
+                      {league.my_rank_trend < 0 ? (
+                        <TrendDownIcon aria-hidden="true" />
+                      ) : (
+                        <TrendUpIcon aria-hidden="true" />
+                      )}
+                      {Math.abs(league.my_rank_trend)}
+                    </span>
+                  ) : (
+                    <span className="rank-row-trend flat">—</span>
+                  )}
+                </Link>
+              ))
+            )}
+            {!loading && myLeaguesForSport.length === 0 && (
+              <EmptyState icon={<TrophyIcon aria-hidden="true" />}>
+                {t("עדיין לא הצטרפת לאף ליגה בענף הזה.")}
+              </EmptyState>
             )}
           </div>
-        )}
+        </div>
+      )}
 
-        <div className="flat-section" ref={openLeaguesRef}>
-          <button
-            type="button"
-            className="settings-row collapsible-toggle"
-            onClick={() => setShowOpenLeagues((v) => !v)}
-          >
-            <h2>{t("ליגות פתוחות")} ({openLeagues.length})</h2>
-            <span className="muted">{showOpenLeagues ? t("הסתר") : t("הצג")}</span>
-          </button>
-
-          {showOpenLeagues && (
-            <div className="league-grid" style={{ marginTop: 14 }}>
-              {loading ? (
-                <>
-                  <SkeletonLeagueCard />
-                  <SkeletonLeagueCard />
-                </>
-              ) : (
-                openLeagues.map((league) => (
-                  <LeagueCard league={league} key={league.id} isMember={myLeagueIds.has(league.id)} />
-                ))
-              )}
-              {!loading && openLeagues.length === 0 && (
-                <EmptyState icon={<TrophyIcon aria-hidden="true" />}>
-                  {t("אין כרגע ליגות פתוחות.")}
-                </EmptyState>
-              )}
-            </div>
+      <div className="profile-section" id="open-leagues">
+        <div className="profile-section-header">
+          <span>
+            {t("ליגות פתוחות")} ({openLeagues.length})
+          </span>
+        </div>
+        <div className="open-league-list">
+          {loading ? (
+            <SkeletonLeagueCard />
+          ) : (
+            openLeagues.map((league) => (
+              <Link to={`/leagues/${league.id}`} key={league.id} className="open-league-row">
+                <div className="open-league-body">
+                  <div className="open-league-name">{league.name}</div>
+                  <div className="open-league-meta">
+                    {league.member_count} {t("שחקנים")} · {t("פתוחה")}
+                  </div>
+                </div>
+                <span className="open-league-join">{t("הצטרף")}</span>
+              </Link>
+            ))
+          )}
+          {!loading && openLeagues.length === 0 && (
+            <EmptyState icon={<TrophyIcon aria-hidden="true" />}>{t("אין כרגע ליגות פתוחות.")}</EmptyState>
           )}
         </div>
       </div>

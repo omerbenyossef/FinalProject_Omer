@@ -38,17 +38,17 @@ export default function Login() {
 
   return (
     <AuthShell>
-      <div className="card form-card">
-        <h1>{t("כניסה")}</h1>
+      <div className="form-card">
         <form onSubmit={handleSubmit}>
           <label>
             {t("אימייל")}
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <input type="email" dir="ltr" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </label>
           <label>
             {t("סיסמה")}
             <input
               type="password"
+              dir="ltr"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -60,10 +60,10 @@ export default function Login() {
           </button>
           {slow && <p className="muted">{t("השרת מתעורר, זה עשוי לקחת עד דקה בפעם הראשונה...")}</p>}
         </form>
-        <p className="muted" style={{ marginTop: 10 }}>
+        <p className="muted" style={{ marginTop: 10, textAlign: "center" }}>
           <Link to="/forgot-password">{t("שכחתי סיסמה")}</Link>
         </p>
-        <p className="muted">
+        <p className="muted" style={{ textAlign: "center" }}>
           {t("אין לך חשבון?")}{" "}
           <Link
             to={

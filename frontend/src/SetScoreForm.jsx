@@ -45,7 +45,7 @@ export default function SetScoreForm({
     <form onSubmit={handleSubmit} className="set-score-form">
       {rows.map((row, index) => (
         <div className="set-score-row" key={index}>
-          <span className="muted set-score-label">{t("סט {n}", { n: index + 1 })}</span>
+          <span className="set-score-label">{t("מערכה {n}", { n: index + 1 })}</span>
           <input
             type="number"
             min="0"
@@ -54,7 +54,7 @@ export default function SetScoreForm({
             onChange={(e) => updateRow(index, "p1", e.target.value)}
             required
           />
-          <span>:</span>
+          <span className="set-score-colon">:</span>
           <input
             type="number"
             min="0"
@@ -80,11 +80,14 @@ export default function SetScoreForm({
         <button type="button" className="link-btn" onClick={addRow}>
           {t("+ הוסף סט")}
         </button>
-        <button type="submit" className="btn-secondary" disabled={busy}>
+      </div>
+
+      <div className="set-score-actions">
+        <button type="submit" className="btn-score-save" disabled={busy}>
           {t(submitLabel)}
         </button>
         {onCancel && (
-          <button type="button" className="link-btn" onClick={onCancel}>
+          <button type="button" className="btn-score-cancel" onClick={onCancel}>
             {t("ביטול")}
           </button>
         )}

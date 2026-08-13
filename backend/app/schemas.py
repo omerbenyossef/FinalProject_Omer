@@ -45,10 +45,25 @@ class UpdateProfileRequest(BaseModel):
     age: Optional[int] = None
 
 
+class SetScore(BaseModel):
+    player1_games: int
+    player2_games: int
+
+
+class RecentMatchEntry(BaseModel):
+    opponent_name: str
+    my_sets: list[SetScore]
+    won: bool
+    league_name: str
+    played_at: Optional[datetime] = None
+
+
 class UserStats(BaseModel):
     leagues: int
     matches_played: int
     wins: int
+    losses: int = 0
+    recent_matches: list[RecentMatchEntry] = []
 
 
 class UserOut(BaseModel):
@@ -141,11 +156,6 @@ class PushSubscriptionIn(BaseModel):
 
 class PushUnsubscribeIn(BaseModel):
     endpoint: str
-
-
-class SetScore(BaseModel):
-    player1_games: int
-    player2_games: int
 
 
 class MatchScoreUpdate(BaseModel):

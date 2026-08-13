@@ -19,7 +19,7 @@ function colorForName(name) {
   return PALETTE[Math.abs(hash) % PALETTE.length];
 }
 
-export default function Avatar({ name, size = 28 }) {
+export default function Avatar({ name, size = 28, background, color }) {
   const initial = name?.trim()?.[0]?.toUpperCase() || "?";
 
   return (
@@ -29,7 +29,8 @@ export default function Avatar({ name, size = 28 }) {
         width: size,
         height: size,
         fontSize: Math.round(size * 0.42),
-        background: colorForName(name || ""),
+        background: background || colorForName(name || ""),
+        color: color || "#fff",
       }}
     >
       {initial}

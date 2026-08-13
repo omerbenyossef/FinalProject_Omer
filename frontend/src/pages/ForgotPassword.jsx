@@ -27,7 +27,7 @@ export default function ForgotPassword() {
 
   return (
     <AuthShell>
-      <div className="card form-card">
+      <div className="form-card">
         <h1>{t("שכחתי סיסמה")}</h1>
         <p className="muted" style={{ marginBottom: 14 }}>
           {t("הזינו את כתובת האימייל שלכם ונשלח אליכם קישור לאיפוס הסיסמה")}
