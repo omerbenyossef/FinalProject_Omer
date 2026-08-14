@@ -5,7 +5,14 @@ import SetScoreForm from "./SetScoreForm.jsx";
 import { formatRelativeTime, formatDayMonth } from "./matchUtils.js";
 import { api } from "./api.js";
 
-export default function WaitingConfirmationCard({ match, currentUserId, leagueId, onSubmit, onReminderSent }) {
+export default function WaitingConfirmationCard({
+  match,
+  currentUserId,
+  leagueId,
+  onSubmit,
+  onReminderSent,
+  maxSets,
+}) {
   const { t } = useLanguage();
   const [editing, setEditing] = useState(false);
   const [reminding, setReminding] = useState(false);
@@ -43,6 +50,7 @@ export default function WaitingConfirmationCard({ match, currentUserId, leagueId
             setEditing(false);
           }}
           onCancel={() => setEditing(false)}
+          maxSets={maxSets}
           submitLabel="עדכן תוצאה"
         />
       </div>

@@ -64,6 +64,8 @@ class League(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     schedule_started_at = Column(DateTime, nullable=True)
     join_code = Column(String, nullable=True)
+    best_of = Column(Integer, nullable=True, default=3)
+    round_length_days = Column(Integer, nullable=True, default=7)
 
     sport = relationship("Sport", back_populates="leagues")
     memberships = relationship("LeagueMembership", back_populates="league")

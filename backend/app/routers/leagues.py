@@ -23,7 +23,7 @@ def _week_end_saturday(dt: datetime) -> datetime:
     return dt + timedelta(days=days_until_saturday)
 
 
-def _current_round_number(schedule_started_at, now: datetime | None = None):
+def _current_round_number(schedule_started_at, round_length_days: int = 7, now: datetime | None = None):
     if schedule_started_at is None:
         return None
     now = now or datetime.utcnow()
@@ -31,7 +31,18 @@ def _current_round_number(schedule_started_at, now: datetime | None = None):
     if now.date() <= round1_end.date():
         return 1
     offset_days = (now.date() - round1_end.date()).days
-    return 2 + (offset_days - 1) // 7
+    return 2 + (offset_days - 1) // round_length_days
+
+
+VALID_BEST_OF = (1, 3, 5)
+VALID_ROUND_LENGTH_DAYS = (7, 14)
+
+
+def _validate_rules(best_of: int | None, round_length_days: int | None) -> None:
+    if best_of is not None and best_of not in VALID_BEST_OF:
+        raise HTTPException(status_code=400, detail="מספר הסטים למשחק חייב להיות 1, 3 או 5")
+    if round_length_days is not None and round_length_days not in VALID_ROUND_LENGTH_DAYS:
+        raise HTTPException(status_code=400, detail="תדירות לוח המשחקים חייבת להיות שבועית או דו-שבועית")
 
 
 def _generate_join_code(db: Session) -> str:
@@ -95,6 +106,8 @@ def _to_league_out(
     out = schemas.LeagueOut.model_validate(league)
     out.member_count = len(league.memberships)
     out.is_open = league.join_code is None
+    out.best_of = league.best_of or 3
+    out.round_length_days = league.round_length_days or 7
 
     if db is not None and current_user_id is not None:
         matches = (
@@ -109,7 +122,7 @@ def _to_league_out(
         if standing:
             out.my_rank, out.my_members_total, out.my_wins, out.my_losses, out.my_win_rate = standing
 
-            current_round = _current_round_number(league.schedule_started_at)
+            current_round = _current_round_number(league.schedule_started_at, league.round_length_days or 7)
             if current_round and current_round > 1:
                 prior_matches = [m for m in matches if (m.round_number or 0) < current_round]
                 prior_standing = _compute_my_standing(league, current_user_id, prior_matches)
@@ -198,6 +211,7 @@ def my_next_matches(
                     league_id=league.id,
                     league_name=league.name,
                     schedule_started_at=league.schedule_started_at,
+                    best_of=league.best_of or 3,
                     match=match,
                 )
             )
@@ -218,12 +232,16 @@ def create_league(
     if league_in.is_open and not current_user.is_admin:
         raise HTTPException(status_code=403, detail="רק המנהל יכול ליצור ליגה פתוחה")
 
+    _validate_rules(league_in.best_of, league_in.round_length_days)
+
     league = models.League(
         name=league_in.name,
         description=league_in.description,
         sport_id=league_in.sport_id,
         created_by=current_user.id,
         join_code=None if league_in.is_open else _generate_join_code(db),
+        best_of=league_in.best_of or 3,
+        round_length_days=league_in.round_length_days or 7,
     )
     db.add(league)
     db.commit()
@@ -247,6 +265,29 @@ def _get_league_or_404(db: Session, league_id: int) -> models.League:
     if not league:
         raise HTTPException(status_code=404, detail="League not found")
     return league
+
+
+@router.patch("/{league_id}/rules", response_model=schemas.LeagueOut)
+def update_league_rules(
+    league_id: int,
+    rules_in: schemas.LeagueRulesUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    league = _get_league_or_404(db, league_id)
+    if league.created_by != current_user.id:
+        raise HTTPException(status_code=403, detail="רק יוצר הליגה יכול לשנות את חוקי הליגה")
+
+    _validate_rules(rules_in.best_of, rules_in.round_length_days)
+
+    if rules_in.best_of is not None:
+        league.best_of = rules_in.best_of
+    if rules_in.round_length_days is not None:
+        league.round_length_days = rules_in.round_length_days
+
+    db.commit()
+    db.refresh(league)
+    return _to_league_out(league, db, current_user.id)
 
 
 @router.get("/{league_id}", response_model=schemas.LeagueOut)

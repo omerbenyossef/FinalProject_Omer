@@ -217,6 +217,9 @@ def report_score(
         raise HTTPException(status_code=403, detail="Not a participant in this match")
     if not score_in.sets:
         raise HTTPException(status_code=400, detail="צריך לדווח לפחות סט אחד")
+    best_of = match.league.best_of or 3
+    if len(score_in.sets) > best_of:
+        raise HTTPException(status_code=400, detail=f"אפשר לדווח עד {best_of} סטים בליגה הזו")
 
     was_reported = match.status != models.MatchStatus.pending
     match.sets = [s.model_dump() for s in score_in.sets]

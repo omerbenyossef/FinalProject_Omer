@@ -14,7 +14,7 @@ export function formatDayMonth(date) {
   return `${date.getDate()}.${date.getMonth() + 1}`;
 }
 
-export function formatWeekLabel(scheduleStartedAt, roundNumber, t) {
+export function formatWeekLabel(scheduleStartedAt, roundNumber, t, roundLengthDays = 7) {
   if (!scheduleStartedAt || !roundNumber) return "";
   const anchor = new Date(scheduleStartedAt);
   const round1End = weekEndSaturday(anchor);
@@ -25,9 +25,9 @@ export function formatWeekLabel(scheduleStartedAt, roundNumber, t) {
     end = round1End;
   } else {
     start = new Date(round1End);
-    start.setDate(start.getDate() + 7 * (roundNumber - 2) + 1);
+    start.setDate(start.getDate() + roundLengthDays * (roundNumber - 2) + 1);
     end = new Date(round1End);
-    end.setDate(end.getDate() + 7 * (roundNumber - 1));
+    end.setDate(end.getDate() + roundLengthDays * (roundNumber - 1));
   }
 
   return `${t("שבוע {n}", { n: roundNumber })} (${formatDayMonth(start)} - ${formatDayMonth(end)})`;
@@ -49,25 +49,25 @@ export function formatRelativeTime(date, t) {
   return t("לפני {n} ימים", { n: days });
 }
 
-export function roundDueDateObj(scheduleStartedAt, roundNumber) {
+export function roundDueDateObj(scheduleStartedAt, roundNumber, roundLengthDays = 7) {
   if (!scheduleStartedAt || !roundNumber) return null;
   const anchor = new Date(scheduleStartedAt);
   const round1End = weekEndSaturday(anchor);
   const end = new Date(round1End);
-  if (roundNumber > 1) end.setDate(end.getDate() + 7 * (roundNumber - 1));
+  if (roundNumber > 1) end.setDate(end.getDate() + roundLengthDays * (roundNumber - 1));
   return end;
 }
 
-export function roundDueDate(scheduleStartedAt, roundNumber) {
-  const end = roundDueDateObj(scheduleStartedAt, roundNumber);
+export function roundDueDate(scheduleStartedAt, roundNumber, roundLengthDays = 7) {
+  const end = roundDueDateObj(scheduleStartedAt, roundNumber, roundLengthDays);
   return end ? formatDayMonth(end) : "";
 }
 
-export function currentRoundNumber(scheduleStartedAt, now = new Date()) {
+export function currentRoundNumber(scheduleStartedAt, roundLengthDays = 7, now = new Date()) {
   if (!scheduleStartedAt) return null;
   const anchor = new Date(scheduleStartedAt);
   const round1End = weekEndSaturday(anchor);
   if (now <= round1End) return 1;
   const offsetDays = Math.floor((now - round1End) / 86400000);
-  return 2 + Math.floor((offsetDays - 1) / 7);
+  return 2 + Math.floor((offsetDays - 1) / roundLengthDays);
 }

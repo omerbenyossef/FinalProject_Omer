@@ -18,6 +18,8 @@ export default function Leagues() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [isOpen, setIsOpen] = useState(false);
+  const [bestOf, setBestOf] = useState(3);
+  const [roundLengthDays, setRoundLengthDays] = useState(7);
   const [submitting, setSubmitting] = useState(false);
   const { user } = useAuth();
   const { selectedSportId } = useSport();
@@ -52,10 +54,19 @@ export default function Leagues() {
     setError("");
     setSubmitting(true);
     try {
-      await api.createLeague({ name, description, sport_id: selectedSportId, is_open: isOpen });
+      await api.createLeague({
+        name,
+        description,
+        sport_id: selectedSportId,
+        is_open: isOpen,
+        best_of: bestOf,
+        round_length_days: roundLengthDays,
+      });
       setName("");
       setDescription("");
       setIsOpen(false);
+      setBestOf(3);
+      setRoundLengthDays(7);
       setShowForm(false);
       await loadData();
     } catch (err) {
@@ -125,6 +136,21 @@ export default function Leagues() {
           <label>
             {t("תיאור (אופציונלי)")}
             <input value={description} onChange={(e) => setDescription(e.target.value)} />
+          </label>
+          <label>
+            {t("פורמט משחק")}
+            <select value={bestOf} onChange={(e) => setBestOf(Number(e.target.value))}>
+              <option value={1}>{t("עד סט אחד")}</option>
+              <option value={3}>{t("עד 3 סטים")}</option>
+              <option value={5}>{t("עד 5 סטים")}</option>
+            </select>
+          </label>
+          <label>
+            {t("תדירות לוח משחקים")}
+            <select value={roundLengthDays} onChange={(e) => setRoundLengthDays(Number(e.target.value))}>
+              <option value={7}>{t("שבועי")}</option>
+              <option value={14}>{t("דו-שבועי")}</option>
+            </select>
           </label>
           {user?.is_admin && (
             <label style={{ flexDirection: dir === "rtl" ? "row-reverse" : "row", justifyContent: "flex-end", gap: 8 }}>

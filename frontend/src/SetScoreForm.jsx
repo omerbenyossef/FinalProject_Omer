@@ -16,6 +16,7 @@ export default function SetScoreForm({
   onCancel,
   busy,
   submitLabel = "דווח תוצאה",
+  maxSets,
 }) {
   const [rows, setRows] = useState(() => initialRows(initialSets));
   const { t } = useLanguage();
@@ -25,7 +26,7 @@ export default function SetScoreForm({
   }
 
   function addRow() {
-    setRows((prev) => [...prev, { p1: "", p2: "" }]);
+    setRows((prev) => (maxSets && prev.length >= maxSets ? prev : [...prev, { p1: "", p2: "" }]));
   }
 
   function removeRow(index) {
@@ -76,11 +77,13 @@ export default function SetScoreForm({
         </div>
       ))}
 
-      <div className="inline-form">
-        <button type="button" className="link-btn" onClick={addRow}>
-          {t("+ הוסף סט")}
-        </button>
-      </div>
+      {(!maxSets || rows.length < maxSets) && (
+        <div className="inline-form">
+          <button type="button" className="link-btn" onClick={addRow}>
+            {t("+ הוסף סט")}
+          </button>
+        </div>
+      )}
 
       <div className="set-score-actions">
         <button type="submit" className="btn-score-save" disabled={busy}>

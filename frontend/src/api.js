@@ -82,6 +82,7 @@ export const api = {
   leaveLeague: (id) => request(`/leagues/${id}/leave`, { method: "POST" }),
   getInviteCode: (id) => request(`/leagues/${id}/invite-code`),
   deleteLeague: (id) => request(`/leagues/${id}`, { method: "DELETE" }),
+  updateLeagueRules: (id, data) => request(`/leagues/${id}/rules`, { method: "PATCH", body: data }),
 
   headToHead: (opponentId) => request(`/players/${opponentId}/head-to-head`),
   listMembers: (id) => request(`/leagues/${id}/members`, { auth: false }),

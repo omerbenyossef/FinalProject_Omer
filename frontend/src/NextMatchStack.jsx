@@ -105,6 +105,7 @@ export default function NextMatchStack({ matches, currentUserId, busy, onSubmit 
             setReporting(false);
           }}
           onCancel={() => setReporting(false)}
+          maxSets={frontEntry.best_of}
         />
       )}
     </div>

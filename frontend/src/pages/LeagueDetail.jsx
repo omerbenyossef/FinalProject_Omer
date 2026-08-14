@@ -186,6 +186,11 @@ export default function LeagueDetail() {
     }
   }
 
+  async function handleUpdateRules(rules) {
+    await api.updateLeagueRules(leagueId, rules);
+    await loadAll();
+  }
+
   async function handleCancelMatch(matchId) {
     setBusy(true);
     setError("");
@@ -259,7 +264,7 @@ export default function LeagueDetail() {
   const myStanding = standings.find((row) => row.user.id === user?.id);
   const myWinRate =
     myStanding && myStanding.played > 0 ? Math.round((myStanding.wins / myStanding.played) * 100) : null;
-  const round = currentRoundNumber(league.schedule_started_at);
+  const round = currentRoundNumber(league.schedule_started_at, league.round_length_days);
 
   return (
     <div>
@@ -284,6 +289,8 @@ export default function LeagueDetail() {
         </div>
         {league.description && <p className="muted">{league.description}</p>}
       </header>
+
+      <LeagueRules league={league} isCreator={isCreator} onUpdate={handleUpdateRules} t={t} />
 
       <div className="league-detail-actions">
         {!isMember && user && (league.is_open || codeFromLink) && (
@@ -359,6 +366,7 @@ export default function LeagueDetail() {
                     currentUserId={user.id}
                     onSubmit={(sets) => handleReportScore(myNextMatch.id, sets)}
                     busy={busy}
+                    maxSets={league.best_of}
                   />
                 </ul>
               </div>
@@ -465,10 +473,11 @@ export default function LeagueDetail() {
                   <MyMatchCard
                     match={myNextMatch}
                     currentUserId={user.id}
-                    dueDate={round ? roundDueDate(league.schedule_started_at, round) : ""}
+                    dueDate={round ? roundDueDate(league.schedule_started_at, round, league.round_length_days) : ""}
                     onSubmit={(sets) => handleReportScore(myNextMatch.id, sets)}
                     onCancel={() => handleCancelMatch(myNextMatch.id)}
                     busy={busy}
+                    maxSets={league.best_of}
                   />
                 ) : iAmReporter ? (
                   <WaitingConfirmationCard
@@ -476,6 +485,7 @@ export default function LeagueDetail() {
                     currentUserId={user.id}
                     leagueId={leagueId}
                     onSubmit={(sets) => handleReportScore(myPendingConfirmationMatch.id, sets)}
+                    maxSets={league.best_of}
                   />
                 ) : (
                   <button
@@ -517,6 +527,7 @@ export default function LeagueDetail() {
                       onReport={handleReportScore}
                       onNeedsConfirm={() => setConfirmSheetMatch(match)}
                       busy={busy}
+                      maxSets={league.best_of}
                     />
                   ))}
                 </div>
@@ -566,6 +577,7 @@ export default function LeagueDetail() {
           onConfirm={() => handleConfirmScore(confirmSheetMatch.id)}
           onDispute={(sets) => handleDisputeScore(confirmSheetMatch.id, sets)}
           onClose={() => setConfirmSheetMatch(null)}
+          maxSets={league.best_of}
         />
       )}
     </div>
@@ -573,7 +585,89 @@ export default function LeagueDetail() {
 }
 
 
-function MyMatchCard({ match, currentUserId, dueDate, onSubmit, onCancel, busy }) {
+function LeagueRules({ league, isCreator, onUpdate, t }) {
+  const [editing, setEditing] = useState(false);
+  const [bestOf, setBestOf] = useState(league.best_of);
+  const [roundLengthDays, setRoundLengthDays] = useState(league.round_length_days);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  function openEditor() {
+    setBestOf(league.best_of);
+    setRoundLengthDays(league.round_length_days);
+    setError("");
+    setEditing(true);
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setSubmitting(true);
+    setError("");
+    try {
+      await onUpdate({ best_of: bestOf, round_length_days: roundLengthDays });
+      setEditing(false);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  const bestOfLabels = { 1: t("עד סט אחד"), 3: t("עד 3 סטים"), 5: t("עד 5 סטים") };
+  const bestOfLabel = bestOfLabels[league.best_of] || bestOfLabels[3];
+  const frequencyLabel = league.round_length_days === 14 ? t("דו-שבועי") : t("שבועי");
+
+  if (!editing) {
+    return (
+      <div className="league-rules">
+        <div className="league-rules-row">
+          <span className="league-rules-label">{t("פורמט משחק")}</span>
+          <span className="league-rules-value">{bestOfLabel}</span>
+        </div>
+        <div className="league-rules-row">
+          <span className="league-rules-label">{t("תדירות לוח משחקים")}</span>
+          <span className="league-rules-value">{frequencyLabel}</span>
+        </div>
+        {isCreator && (
+          <button type="button" className="league-rules-edit" onClick={openEditor}>
+            {t("ערוך חוקים")}
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <form className="league-rules-form" onSubmit={handleSubmit}>
+      <label>
+        {t("פורמט משחק")}
+        <select value={bestOf} onChange={(e) => setBestOf(Number(e.target.value))}>
+          <option value={1}>{t("עד סט אחד")}</option>
+          <option value={3}>{t("עד 3 סטים")}</option>
+          <option value={5}>{t("עד 5 סטים")}</option>
+        </select>
+      </label>
+      <label>
+        {t("תדירות לוח משחקים")}
+        <select value={roundLengthDays} onChange={(e) => setRoundLengthDays(Number(e.target.value))}>
+          <option value={7}>{t("שבועי")}</option>
+          <option value={14}>{t("דו-שבועי")}</option>
+        </select>
+      </label>
+      {error && <p className="error">{t(error)}</p>}
+      <div className="inline-form">
+        <button type="submit" className="btn-primary" disabled={submitting}>
+          {submitting ? t("שומר...") : t("שמור")}
+        </button>
+        <button type="button" className="link-btn" onClick={() => setEditing(false)}>
+          {t("ביטול")}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function MyMatchCard({ match, currentUserId, dueDate, onSubmit, onCancel, busy, maxSets }) {
   const { t } = useLanguage();
   const iAmPlayer1 = match.player1.id === currentUserId;
   const opponent = iAmPlayer1 ? match.player2 : match.player1;
@@ -592,12 +686,13 @@ function MyMatchCard({ match, currentUserId, dueDate, onSubmit, onCancel, busy }
         onSubmit={onSubmit}
         onCancel={onCancel}
         busy={busy}
+        maxSets={maxSets}
       />
     </div>
   );
 }
 
-function AllMatchesRow({ match, currentUserId, onReport, onNeedsConfirm, busy }) {
+function AllMatchesRow({ match, currentUserId, onReport, onNeedsConfirm, busy, maxSets }) {
   const [editing, setEditing] = useState(false);
   const { t } = useLanguage();
   const isCompleted = match.status === "completed";
@@ -624,6 +719,7 @@ function AllMatchesRow({ match, currentUserId, onReport, onNeedsConfirm, busy })
           }}
           onCancel={() => setEditing(false)}
           busy={busy}
+          maxSets={maxSets}
           submitLabel="עדכן תוצאה"
         />
       </div>

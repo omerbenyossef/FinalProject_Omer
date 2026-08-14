@@ -4,7 +4,15 @@ import Avatar from "./Avatar.jsx";
 import SetScoreForm from "./SetScoreForm.jsx";
 import { formatDayMonth } from "./matchUtils.js";
 
-export default function ConfirmScoreSheet({ match, currentUserId, onConfirm, onDispute, onClose, busy }) {
+export default function ConfirmScoreSheet({
+  match,
+  currentUserId,
+  onConfirm,
+  onDispute,
+  onClose,
+  busy,
+  maxSets,
+}) {
   const { t } = useLanguage();
   const [disputing, setDisputing] = useState(false);
 
@@ -37,6 +45,7 @@ export default function ConfirmScoreSheet({ match, currentUserId, onConfirm, onD
             onSubmit={(sets) => onDispute(sets)}
             onCancel={() => setDisputing(false)}
             busy={busy}
+            maxSets={maxSets}
             submitLabel="עדכן תוצאה"
           />
         ) : (

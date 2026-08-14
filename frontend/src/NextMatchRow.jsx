@@ -13,6 +13,7 @@ export default function NextMatchRow({
   leagueName,
   leagueId,
   weekLabel,
+  maxSets,
 }) {
   const [reporting, setReporting] = useState(false);
   const { t } = useLanguage();
@@ -82,6 +83,7 @@ export default function NextMatchRow({
           }}
           onCancel={() => setReporting(false)}
           busy={busy}
+          maxSets={maxSets}
         />
       )}
     </li>

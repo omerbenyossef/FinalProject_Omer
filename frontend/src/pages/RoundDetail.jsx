@@ -93,7 +93,7 @@ export default function RoundDetail() {
 
   const played = roundMatches.filter((m) => m.status !== "pending");
   const notPlayed = roundMatches.filter((m) => m.status === "pending");
-  const dueDateObj = roundDueDateObj(league.schedule_started_at, roundNumber);
+  const dueDateObj = roundDueDateObj(league.schedule_started_at, roundNumber, league.round_length_days);
   const dueDate = dueDateObj ? formatDayMonth(dueDateObj) : "";
   const daysRemaining = dueDateObj
     ? Math.max(0, Math.ceil((dueDateObj - new Date()) / 86400000))
@@ -155,6 +155,7 @@ export default function RoundDetail() {
             player2Name={myMatch.player2.name}
             onSubmit={handleReportScore}
             busy={busy}
+            maxSets={league.best_of}
           />
         </div>
       )}

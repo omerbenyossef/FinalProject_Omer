@@ -97,6 +97,13 @@ class LeagueCreate(BaseModel):
     description: Optional[str] = None
     sport_id: int
     is_open: bool = False
+    best_of: Optional[int] = None
+    round_length_days: Optional[int] = None
+
+
+class LeagueRulesUpdate(BaseModel):
+    best_of: Optional[int] = None
+    round_length_days: Optional[int] = None
 
 
 class MyNextMatchSummary(BaseModel):
@@ -113,6 +120,8 @@ class LeagueOut(BaseModel):
     created_by: int
     schedule_started_at: Optional[datetime] = None
     is_open: bool = False
+    best_of: Optional[int] = None
+    round_length_days: Optional[int] = None
     my_rank: Optional[int] = None
     my_members_total: Optional[int] = None
     my_wins: Optional[int] = None
@@ -188,6 +197,7 @@ class NextMatchEntry(BaseModel):
     league_id: int
     league_name: str
     schedule_started_at: Optional[datetime] = None
+    best_of: int = 3
     match: MatchOut
 
 
