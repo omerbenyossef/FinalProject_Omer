@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session, joinedload
 from .. import models, schemas
 from ..auth import get_current_user
 from ..database import get_db
+from .matches import _auto_confirm_overdue
 
 router = APIRouter(prefix="/players", tags=["players"])
 
@@ -15,6 +16,7 @@ def head_to_head(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
+    _auto_confirm_overdue(db)
     opponent = db.query(models.User).filter(models.User.id == opponent_id).first()
     if not opponent:
         raise HTTPException(status_code=404, detail="Player not found")

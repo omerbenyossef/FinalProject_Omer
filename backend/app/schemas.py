@@ -51,6 +51,7 @@ class SetScore(BaseModel):
 
 
 class RecentMatchEntry(BaseModel):
+    opponent_id: int
     opponent_name: str
     my_sets: list[SetScore]
     won: bool
@@ -174,6 +175,10 @@ class MatchOut(BaseModel):
     status: MatchStatus
     created_at: datetime
     played_at: Optional[datetime]
+    reported_by: Optional[int] = None
+    confirmed_by: Optional[int] = None
+    confirmed_at: Optional[datetime] = None
+    auto_confirm_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True

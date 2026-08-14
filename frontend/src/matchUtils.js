@@ -38,13 +38,29 @@ export function formatWeekShort(roundNumber, t) {
   return t("שבוע {n}", { n: roundNumber });
 }
 
-export function roundDueDate(scheduleStartedAt, roundNumber) {
-  if (!scheduleStartedAt || !roundNumber) return "";
+export function formatRelativeTime(date, t) {
+  const diffMs = Date.now() - date.getTime();
+  const minutes = Math.round(diffMs / 60000);
+  if (minutes < 1) return t("עכשיו");
+  if (minutes < 60) return t("לפני {n} דקות", { n: minutes });
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return t("לפני {n} שעות", { n: hours });
+  const days = Math.round(hours / 24);
+  return t("לפני {n} ימים", { n: days });
+}
+
+export function roundDueDateObj(scheduleStartedAt, roundNumber) {
+  if (!scheduleStartedAt || !roundNumber) return null;
   const anchor = new Date(scheduleStartedAt);
   const round1End = weekEndSaturday(anchor);
   const end = new Date(round1End);
   if (roundNumber > 1) end.setDate(end.getDate() + 7 * (roundNumber - 1));
-  return formatDayMonth(end);
+  return end;
+}
+
+export function roundDueDate(scheduleStartedAt, roundNumber) {
+  const end = roundDueDateObj(scheduleStartedAt, roundNumber);
+  return end ? formatDayMonth(end) : "";
 }
 
 export function currentRoundNumber(scheduleStartedAt, now = new Date()) {

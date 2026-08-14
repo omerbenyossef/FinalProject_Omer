@@ -10,6 +10,7 @@ from .. import models, schemas
 from ..auth import get_current_user
 from ..database import get_db
 from ..push_utils import notify_user
+from .matches import _auto_confirm_overdue
 
 router = APIRouter(prefix="/leagues", tags=["leagues"])
 
@@ -122,6 +123,7 @@ def _to_league_out(
 
 @router.get("/", response_model=list[schemas.LeagueOut])
 def list_leagues(db: Session = Depends(get_db)):
+    _auto_confirm_overdue(db)
     leagues = (
         db.query(models.League)
         .options(joinedload(models.League.sport), joinedload(models.League.memberships))
@@ -136,6 +138,7 @@ def list_my_leagues(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
+    _auto_confirm_overdue(db)
     leagues = (
         db.query(models.League)
         .join(models.LeagueMembership)
@@ -152,6 +155,7 @@ def my_next_matches(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
+    _auto_confirm_overdue(db)
     my_leagues = (
         db.query(models.League)
         .join(models.LeagueMembership)
@@ -371,6 +375,7 @@ def list_members(league_id: int, db: Session = Depends(get_db)):
 
 @router.get("/{league_id}/standings", response_model=list[schemas.StandingRow])
 def get_standings(league_id: int, db: Session = Depends(get_db)):
+    _auto_confirm_overdue(db)
     league = _get_league_or_404(db, league_id)
 
     stats = {

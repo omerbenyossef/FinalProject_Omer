@@ -6,6 +6,8 @@ import { useLanguage } from "../LanguageContext.jsx";
 import SetScoreForm from "../SetScoreForm.jsx";
 import NextMatchRow from "../NextMatchRow.jsx";
 import CircularGauge from "../CircularGauge.jsx";
+import WaitingConfirmationCard from "../WaitingConfirmationCard.jsx";
+import ConfirmScoreSheet from "../ConfirmScoreSheet.jsx";
 import { UserPlusIcon, CalendarIcon, ChevronIcon } from "../Icons.jsx";
 import EmptyState from "../EmptyState.jsx";
 import { formatSets, formatWeekShort, currentRoundNumber, roundDueDate } from "../matchUtils.js";
@@ -46,6 +48,7 @@ export default function LeagueDetail() {
   const [inviteError, setInviteError] = useState("");
   const [inviteLoading, setInviteLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("standings");
+  const [confirmSheetMatch, setConfirmSheetMatch] = useState(null);
   const autoJoinAttempted = useRef(false);
   const initialTabSet = useRef(false);
 
@@ -155,6 +158,34 @@ export default function LeagueDetail() {
     }
   }
 
+  async function handleConfirmScore(matchId) {
+    setBusy(true);
+    setError("");
+    try {
+      await api.confirmScore(leagueId, matchId);
+      setConfirmSheetMatch(null);
+      await loadAll();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleDisputeScore(matchId, sets) {
+    setBusy(true);
+    setError("");
+    try {
+      await api.reportScore(leagueId, matchId, sets);
+      setConfirmSheetMatch(null);
+      await loadAll();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function handleCancelMatch(matchId) {
     setBusy(true);
     setError("");
@@ -223,6 +254,8 @@ export default function LeagueDetail() {
   const myNextMatch = matches
     .filter((m) => m.status === "pending")
     .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))[0];
+  const myPendingConfirmationMatch = matches.find((m) => m.status === "pending_confirmation");
+  const iAmReporter = myPendingConfirmationMatch?.reported_by === user?.id;
   const myStanding = standings.find((row) => row.user.id === user?.id);
   const myWinRate =
     myStanding && myStanding.played > 0 ? Math.round((myStanding.wins / myStanding.played) * 100) : null;
@@ -395,21 +428,40 @@ export default function LeagueDetail() {
 
         {activeTab === "matches" && (
           <div className="league-matches-tab">
-            {isMember && myNextMatch && (
+            {isMember && (myNextMatch || myPendingConfirmationMatch) && (
               <div>
                 <div className="profile-section-header" style={{ justifyContent: "flex-start" }}>
                   <span>
                     {[t("המשחק שלי"), round ? formatWeekShort(round, t) : null].filter(Boolean).join(" · ")}
                   </span>
                 </div>
-                <MyMatchCard
-                  match={myNextMatch}
-                  currentUserId={user.id}
-                  dueDate={round ? roundDueDate(league.schedule_started_at, round) : ""}
-                  onSubmit={(sets) => handleReportScore(myNextMatch.id, sets)}
-                  onCancel={() => handleCancelMatch(myNextMatch.id)}
-                  busy={busy}
-                />
+                {myNextMatch ? (
+                  <MyMatchCard
+                    match={myNextMatch}
+                    currentUserId={user.id}
+                    dueDate={round ? roundDueDate(league.schedule_started_at, round) : ""}
+                    onSubmit={(sets) => handleReportScore(myNextMatch.id, sets)}
+                    onCancel={() => handleCancelMatch(myNextMatch.id)}
+                    busy={busy}
+                  />
+                ) : iAmReporter ? (
+                  <WaitingConfirmationCard
+                    match={myPendingConfirmationMatch}
+                    currentUserId={user.id}
+                    leagueId={leagueId}
+                    onSubmit={(sets) => handleReportScore(myPendingConfirmationMatch.id, sets)}
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    className="needs-confirm-banner"
+                    onClick={() => setConfirmSheetMatch(myPendingConfirmationMatch)}
+                  >
+                    <span className="needs-confirm-dot" />
+                    <span className="needs-confirm-text">{t("יש לך תוצאה לאישור")}</span>
+                    <ChevronIcon aria-hidden="true" />
+                  </button>
+                )}
               </div>
             )}
 
@@ -421,9 +473,14 @@ export default function LeagueDetail() {
             {groupMatchesByRound(allMatches).map(({ round: r, matches: roundMatches }) => (
               <div key={r}>
                 <div className="profile-section-header" style={{ justifyContent: "flex-start" }}>
-                  <span>
-                    {[t("כל המשחקים"), r === "none" ? null : formatWeekShort(r, t)].filter(Boolean).join(" · ")}
-                  </span>
+                  {r === "none" ? (
+                    <span>{t("כל המשחקים")}</span>
+                  ) : (
+                    <Link to={`/leagues/${leagueId}/rounds/${r}`} className="round-header-link">
+                      {[t("כל המשחקים"), formatWeekShort(r, t)].join(" · ")}
+                      <ChevronIcon aria-hidden="true" />
+                    </Link>
+                  )}
                 </div>
                 <div className="all-matches-list">
                   {roundMatches.map((match) => (
@@ -432,6 +489,7 @@ export default function LeagueDetail() {
                       match={match}
                       currentUserId={user.id}
                       onReport={handleReportScore}
+                      onNeedsConfirm={() => setConfirmSheetMatch(match)}
                       busy={busy}
                     />
                   ))}
@@ -473,6 +531,17 @@ export default function LeagueDetail() {
           </button>
         </div>
       )}
+
+      {confirmSheetMatch && user && (
+        <ConfirmScoreSheet
+          match={confirmSheetMatch}
+          currentUserId={user.id}
+          busy={busy}
+          onConfirm={() => handleConfirmScore(confirmSheetMatch.id)}
+          onDispute={(sets) => handleDisputeScore(confirmSheetMatch.id, sets)}
+          onClose={() => setConfirmSheetMatch(null)}
+        />
+      )}
     </div>
   );
 }
@@ -502,13 +571,15 @@ function MyMatchCard({ match, currentUserId, dueDate, onSubmit, onCancel, busy }
   );
 }
 
-function AllMatchesRow({ match, currentUserId, onReport, busy }) {
+function AllMatchesRow({ match, currentUserId, onReport, onNeedsConfirm, busy }) {
   const [editing, setEditing] = useState(false);
   const { t } = useLanguage();
   const isCompleted = match.status === "completed";
+  const isPendingConfirmation = match.status === "pending_confirmation";
   const p1Won = isCompleted && match.player1_score > match.player2_score;
   const iAmPlayer1 = match.player1.id === currentUserId;
   const isMine = match.player1.id === currentUserId || match.player2.id === currentUserId;
+  const iNeedToConfirm = isPendingConfirmation && isMine && match.reported_by !== currentUserId;
   const iWon = isCompleted && (iAmPlayer1 ? p1Won : !p1Won);
   const mySets = iAmPlayer1
     ? match.sets
@@ -540,7 +611,11 @@ function AllMatchesRow({ match, currentUserId, onReport, busy }) {
         <span className="vs-label">vs</span>{" "}
         <span className={isCompleted ? (p1Won ? "loser" : "winner") : "strong"}>{match.player2.name}</span>
       </span>
-      {!isCompleted ? (
+      {isPendingConfirmation ? (
+        <span className={`pill-pending${iNeedToConfirm ? " needs-confirm" : ""}`}>
+          {iNeedToConfirm ? t("לאישור") : t("ממתין")}
+        </span>
+      ) : !isCompleted ? (
         <span className="pill-pending">{t("ממתין")}</span>
       ) : (
         <span className={`all-matches-score${iWon ? " win" : ""}`} dir="ltr">
@@ -549,6 +624,14 @@ function AllMatchesRow({ match, currentUserId, onReport, busy }) {
       )}
     </>
   );
+
+  if (iNeedToConfirm) {
+    return (
+      <button type="button" className="all-matches-row all-matches-row-editable" onClick={onNeedsConfirm}>
+        {row}
+      </button>
+    );
+  }
 
   if (isCompleted && isMine) {
     return (

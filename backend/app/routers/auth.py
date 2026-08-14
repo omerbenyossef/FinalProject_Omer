@@ -9,6 +9,7 @@ from .. import models, schemas
 from ..auth import create_access_token, hash_password, verify_password, get_current_user
 from ..database import get_db
 from ..email_utils import send_reset_email
+from .matches import _auto_confirm_overdue
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -68,6 +69,7 @@ def my_stats(
     current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    _auto_confirm_overdue(db)
     membership_query = db.query(models.LeagueMembership).filter(
         models.LeagueMembership.user_id == current_user.id
     )
@@ -116,6 +118,7 @@ def my_stats(
         ]
         recent_matches.append(
             schemas.RecentMatchEntry(
+                opponent_id=opponent.id,
                 opponent_name=opponent.name,
                 my_sets=my_sets,
                 won=won,

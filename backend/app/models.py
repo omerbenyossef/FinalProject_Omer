@@ -19,6 +19,7 @@ from .database import Base
 
 class MatchStatus(str, enum.Enum):
     pending = "pending"
+    pending_confirmation = "pending_confirmation"
     completed = "completed"
 
 
@@ -96,6 +97,10 @@ class Match(Base):
     status = Column(Enum(MatchStatus), default=MatchStatus.pending, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     played_at = Column(DateTime, nullable=True)
+    reported_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    confirmed_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    confirmed_at = Column(DateTime, nullable=True)
+    auto_confirm_at = Column(DateTime, nullable=True)
 
     league = relationship("League", back_populates="matches")
     player1 = relationship("User", foreign_keys=[player1_id])

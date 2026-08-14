@@ -6,7 +6,7 @@ import { useSport } from "../SportContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import NextMatchRow from "../NextMatchRow.jsx";
 import { CalendarIcon, TrophyIcon, TrendDownIcon, TrendUpIcon } from "../Icons.jsx";
-import { formatWeekShort } from "../matchUtils.js";
+import { formatWeekShort, formatDayMonth } from "../matchUtils.js";
 import EmptyState from "../EmptyState.jsx";
 import { SkeletonHeroStat, SkeletonMatchRow } from "../Skeleton.jsx";
 import PageHelp from "../PageHelp.jsx";
@@ -73,7 +73,8 @@ export default function Profile() {
     stats && stats.matches_played > 0 ? Math.round((stats.wins / stats.matches_played) * 100) : null;
 
   const formStrip = stats ? stats.recent_matches.slice(0, 8) : [];
-  const recentResults = stats ? stats.recent_matches.slice(0, 2) : [];
+  const recentResults = stats ? stats.recent_matches.slice(0, 3) : [];
+  const myLeaguesPreview = myLeaguesForSport.slice(0, 2);
 
   return (
     <div className="profile-scoreboard">
@@ -124,10 +125,16 @@ export default function Profile() {
           <div className="profile-section">
             <div className="profile-section-header">
               <span>{t("הליגות שלי")}</span>
-              <span>{t("דירוג")}</span>
+              {myLeaguesForSport.length > myLeaguesPreview.length ? (
+                <Link to="/leagues" className="profile-section-header-link">
+                  {t("כל ה-{n}", { n: myLeaguesForSport.length })}
+                </Link>
+              ) : (
+                <span>{t("דירוג")}</span>
+              )}
             </div>
             <div className="rank-row-list">
-              {myLeaguesForSport.map((league) => (
+              {myLeaguesPreview.map((league) => (
                 <Link to={`/leagues/${league.id}`} key={league.id} className="rank-row">
                   <span className={`rank-row-number${league.my_rank <= 3 ? " top" : ""}`} dir="ltr">
                     #{league.my_rank}
@@ -203,18 +210,31 @@ export default function Profile() {
 
       {stats && recentResults.length > 0 && (
         <div className="profile-section">
-          <div className="profile-section-header">
+          <div className="profile-section-header" style={{ justifyContent: "flex-start" }}>
             <span>{t("תוצאות אחרונות")}</span>
           </div>
-          <div className="recent-result-list">
+          <div className="recent-result-card-list">
             {recentResults.map((m, i) => (
-              <div className="recent-result-row" key={i}>
-                <span className={`match-result-badge ${m.won ? "win" : "loss"}`}>{m.won ? "W" : "L"}</span>
-                <span className="recent-result-name">{t("מול {name}", { name: m.opponent_name })}</span>
-                <span className={`recent-result-score${m.won ? " win" : ""}`} dir="ltr">
-                  {formatMySets(m.my_sets)}
-                </span>
-              </div>
+              <Link
+                to={`/head-to-head/${m.opponent_id}`}
+                className={`recent-result-card${m.won ? " win" : ""}`}
+                key={i}
+              >
+                <div className="recent-result-card-body">
+                  <div className="recent-result-card-name">{m.opponent_name}</div>
+                  <div className="recent-result-card-meta">
+                    {[m.league_name, m.played_at ? formatDayMonth(new Date(m.played_at)) : null]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </div>
+                </div>
+                <div className="recent-result-card-side">
+                  <span className={`recent-result-card-score${m.won ? " win" : ""}`} dir="ltr">
+                    {formatMySets(m.my_sets)}
+                  </span>
+                  <span className={`recent-result-card-dot${m.won ? " win" : ""}`} />
+                </div>
+              </Link>
             ))}
           </div>
         </div>

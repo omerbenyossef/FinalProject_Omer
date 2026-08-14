@@ -1,5 +1,5 @@
 import random
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import or_
@@ -11,6 +11,30 @@ from ..database import get_db
 from ..push_utils import notify_user
 
 router = APIRouter(prefix="/leagues/{league_id}/matches", tags=["matches"])
+
+CONFIRMATION_WINDOW = timedelta(hours=48)
+
+
+def _auto_confirm_overdue(db: Session) -> None:
+    """Opportunistic sweep run on every match read: there's no background
+    scheduler, so a match past its auto_confirm_at is finalized lazily the
+    next time anyone looks at match data, instead of on a timer."""
+    now = datetime.utcnow()
+    overdue = (
+        db.query(models.Match)
+        .filter(
+            models.Match.status == models.MatchStatus.pending_confirmation,
+            models.Match.auto_confirm_at.isnot(None),
+            models.Match.auto_confirm_at <= now,
+        )
+        .all()
+    )
+    for match in overdue:
+        match.status = models.MatchStatus.completed
+        match.confirmed_by = None
+        match.confirmed_at = now
+    if overdue:
+        db.commit()
 
 
 def _round_robin_rounds(player_ids: list[int]) -> list[list[tuple[int, int]]]:
@@ -53,6 +77,7 @@ def list_matches(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
+    _auto_confirm_overdue(db)
     matches = (
         db.query(models.Match)
         .options(joinedload(models.Match.player1), joinedload(models.Match.player2))
@@ -71,6 +96,7 @@ def list_matches(
 
 @router.get("/all", response_model=list[schemas.MatchOut])
 def list_all_matches(league_id: int, db: Session = Depends(get_db)):
+    _auto_confirm_overdue(db)
     matches = (
         db.query(models.Match)
         .options(joinedload(models.Match.player1), joinedload(models.Match.player2))
@@ -179,6 +205,7 @@ def report_score(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
+    _auto_confirm_overdue(db)
     match = (
         db.query(models.Match)
         .filter(models.Match.id == match_id, models.Match.league_id == league_id)
@@ -191,25 +218,97 @@ def report_score(
     if not score_in.sets:
         raise HTTPException(status_code=400, detail="צריך לדווח לפחות סט אחד")
 
+    was_reported = match.status != models.MatchStatus.pending
     match.sets = [s.model_dump() for s in score_in.sets]
     match.player1_score = sum(1 for s in score_in.sets if s.player1_games > s.player2_games)
     match.player2_score = sum(1 for s in score_in.sets if s.player2_games > s.player1_games)
-    was_completed = match.status == models.MatchStatus.completed
-    if not was_completed:
+    if not was_reported:
         match.played_at = datetime.utcnow()
-    match.status = models.MatchStatus.completed
+    match.status = models.MatchStatus.pending_confirmation
+    match.reported_by = current_user.id
+    match.confirmed_by = None
+    match.confirmed_at = None
+    match.auto_confirm_at = datetime.utcnow() + CONFIRMATION_WINDOW
     db.commit()
     db.refresh(match)
 
-    if not was_completed:
-        opponent_id = match.player2_id if current_user.id == match.player1_id else match.player1_id
+    opponent_id = match.player2_id if current_user.id == match.player1_id else match.player1_id
+    notify_user(
+        db,
+        opponent_id,
+        "יש תוצאה לאישור",
+        f"{current_user.name} דיווח תוצאה למשחק שלכם, ומחכה לאישור שלך",
+        f"/leagues/{league_id}",
+    )
+
+    return match
+
+
+@router.post("/{match_id}/confirm", response_model=schemas.MatchOut)
+def confirm_score(
+    league_id: int,
+    match_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    _auto_confirm_overdue(db)
+    match = (
+        db.query(models.Match)
+        .filter(models.Match.id == match_id, models.Match.league_id == league_id)
+        .first()
+    )
+    if not match:
+        raise HTTPException(status_code=404, detail="Match not found")
+    if current_user.id not in (match.player1_id, match.player2_id):
+        raise HTTPException(status_code=403, detail="Not a participant in this match")
+    if match.status != models.MatchStatus.pending_confirmation:
+        raise HTTPException(status_code=400, detail="אין תוצאה שממתינה לאישור עבור המשחק הזה")
+    if match.reported_by == current_user.id:
+        raise HTTPException(status_code=400, detail="לא ניתן לאשר תוצאה שדיווחת בעצמך")
+
+    match.status = models.MatchStatus.completed
+    match.confirmed_by = current_user.id
+    match.confirmed_at = datetime.utcnow()
+    db.commit()
+    db.refresh(match)
+
+    if match.reported_by is not None:
         notify_user(
             db,
-            opponent_id,
-            "תוצאה חדשה דווחה",
-            f"{current_user.name} דיווח תוצאה למשחק שלכם",
+            match.reported_by,
+            "התוצאה שלך אושרה",
+            f"{current_user.name} אישר/ה את התוצאה שדיווחת",
             f"/leagues/{league_id}",
         )
+
+    return match
+
+
+@router.post("/{match_id}/remind", status_code=status.HTTP_204_NO_CONTENT)
+def remind_score(
+    league_id: int,
+    match_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    match = (
+        db.query(models.Match)
+        .filter(models.Match.id == match_id, models.Match.league_id == league_id)
+        .first()
+    )
+    if not match:
+        raise HTTPException(status_code=404, detail="Match not found")
+    if current_user.id not in (match.player1_id, match.player2_id):
+        raise HTTPException(status_code=403, detail="Not a participant in this match")
+    if match.status not in (models.MatchStatus.pending, models.MatchStatus.pending_confirmation):
+        raise HTTPException(status_code=400, detail="אין מה להזכיר במשחק הזה")
+
+    opponent_id = match.player2_id if current_user.id == match.player1_id else match.player1_id
+    if match.status == models.MatchStatus.pending_confirmation:
+        title, body = "תזכורת: יש תוצאה לאישור", f"{current_user.name} מזכיר/ה לך לאשר את התוצאה שדווחה"
+    else:
+        title, body = "תזכורת למשחק", f"{current_user.name} מזכיר/ה לך לשחק ולדווח את המשחק שלכם"
+    notify_user(db, opponent_id, title, body, f"/leagues/{league_id}")
 
     return match
 

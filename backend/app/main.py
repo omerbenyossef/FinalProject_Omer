@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import inspect, text
+from sqlalchemy import Enum, inspect, text
 
 from . import models
 from .database import Base, engine, SessionLocal
@@ -28,6 +28,42 @@ def add_missing_columns() -> None:
 
 
 add_missing_columns()
+
+
+def add_missing_enum_values() -> None:
+    """Postgres enum columns don't pick up new Python enum.Enum members on
+    their own (SQLite has no such constraint, so this only matters in
+    production) — ALTER TYPE ... ADD VALUE for anything the model defines
+    that the DB type doesn't have yet."""
+    if engine.dialect.name != "postgresql":
+        return
+    for table in Base.metadata.sorted_tables:
+        for column in table.columns:
+            if not isinstance(column.type, Enum):
+                continue
+            enum_name = column.type.name
+            python_values = (
+                [e.value for e in column.type.enum_class] if column.type.enum_class else column.type.enums
+            )
+            with engine.begin() as conn:
+                existing = (
+                    conn.execute(
+                        text(
+                            "SELECT enumlabel FROM pg_enum "
+                            "JOIN pg_type ON pg_enum.enumtypid = pg_type.oid "
+                            "WHERE pg_type.typname = :name"
+                        ),
+                        {"name": enum_name},
+                    )
+                    .scalars()
+                    .all()
+                )
+                for value in python_values:
+                    if value not in existing:
+                        conn.execute(text(f'ALTER TYPE "{enum_name}" ADD VALUE IF NOT EXISTS \'{value}\''))
+
+
+add_missing_enum_values()
 
 DEFAULT_SPORTS = ["טניס", "פאדל", "כדורגל", "כדורסל", "כדורעף", "שחמט"]
 
