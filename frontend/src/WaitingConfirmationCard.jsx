@@ -53,7 +53,7 @@ export default function WaitingConfirmationCard({ match, currentUserId, leagueId
     <div className="waiting-card">
       <div className="waiting-compare">
         <div className="waiting-side">
-          <Avatar name={me.name} size={44} background="var(--court)" color="var(--court-contrast)" />
+          <Avatar name={me.name} size={44} color="var(--court)" />
           <span className="waiting-side-name">{me.name}</span>
         </div>
         <div className="waiting-sets" dir="ltr">

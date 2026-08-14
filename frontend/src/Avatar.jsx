@@ -19,8 +19,9 @@ function colorForName(name) {
   return PALETTE[Math.abs(hash) % PALETTE.length];
 }
 
-export default function Avatar({ name, size = 28, background, color }) {
+export default function Avatar({ name, size = 28, color }) {
   const initial = name?.trim()?.[0]?.toUpperCase() || "?";
+  const base = color || colorForName(name || "");
 
   return (
     <span
@@ -29,8 +30,9 @@ export default function Avatar({ name, size = 28, background, color }) {
         width: size,
         height: size,
         fontSize: Math.round(size * 0.42),
-        background: background || colorForName(name || ""),
-        color: color || "#fff",
+        background: `color-mix(in oklch, ${base} 16%, transparent)`,
+        borderColor: `color-mix(in oklch, ${base} 85%, transparent)`,
+        color: `color-mix(in oklch, ${base} 55%, white)`,
       }}
     >
       {initial}

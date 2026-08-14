@@ -106,6 +106,8 @@ const PAIRS = [
   ["משחקים", "games"],
   ["אין עדיין", "Not yet"],
   ["טבלת דירוג", "Standings"],
+  ["פודיום", "Podium"],
+  ["אזור הירידה", "Relegation zone"],
   ["שחקן", "Player"],
   ["נצחונות", "Wins"],
   ["הזמן חבר לליגה", "Invite to league"],
@@ -166,11 +168,9 @@ const PAIRS = [
 
   // Settings
   ["הגדרות", "Settings"],
-  ["תצוגה: אוטומטי", "Theme: Auto"],
-  ["תצוגה: בהיר", "Theme: Light"],
-  ["תצוגה: כהה", "Theme: Dark"],
   ["פרופיל", "Profile"],
   ["ערוך", "Edit"],
+  ["שנה", "Change"],
   ["גיל", "Age"],
   ["שומר...", "Saving..."],
   ["שמור", "Save"],

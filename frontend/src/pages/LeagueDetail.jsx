@@ -290,7 +290,7 @@ export default function LeagueDetail() {
           </button>
         )}
         {!isMember && user && !league.is_open && !codeFromLink && (
-          <p className="muted" style={{ fontSize: 14 }}>
+          <p className="muted">
             {t("הליגה סגורה. כדי להצטרף צריך קישור הזמנה מאחד מחברי הליגה.")}
           </p>
         )}
@@ -405,10 +405,33 @@ export default function LeagueDetail() {
                 </tr>
               </thead>
               <tbody>
-                {standings.map((row, index) => {
+                {standings.flatMap((row, index) => {
                   const rank = index + 1;
                   const isMe = row.user.id === user?.id;
-                  return (
+                  const rows = [];
+                  if (index === 3 && standings.length > 3) {
+                    rows.push(
+                      <tr key="zone-podium" className="standings-zone-row podium">
+                        <td colSpan={6}>
+                          <div className="standings-zone-divider">
+                            <span className="standings-zone-label">{t("פודיום")}</span>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  }
+                  if (standings.length >= 6 && index === standings.length - 2) {
+                    rows.push(
+                      <tr key="zone-relegation" className="standings-zone-row relegation">
+                        <td colSpan={6}>
+                          <div className="standings-zone-divider">
+                            <span className="standings-zone-label">{t("אזור הירידה")}</span>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  }
+                  rows.push(
                     <tr key={row.user.id} className={isMe ? "me-row" : undefined}>
                       <td>
                         <span className={`rank-badge${rank <= 3 ? ` rank-${rank}` : ""}`}>{rank}</span>
@@ -420,6 +443,7 @@ export default function LeagueDetail() {
                       <td>{row.points}</td>
                     </tr>
                   );
+                  return rows;
                 })}
               </tbody>
             </table>

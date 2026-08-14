@@ -54,7 +54,7 @@ export default function ConfirmScoreSheet({ match, currentUserId, onConfirm, onD
               <div className="confirm-sheet-divider" />
               <div className="confirm-sheet-row">
                 <div className="confirm-sheet-player">
-                  <Avatar name={me.name} size={34} background="var(--court)" color="var(--court-contrast)" />
+                  <Avatar name={me.name} size={34} color="var(--court)" />
                   <span>{t("{name} (את/ה)", { name: me.name })}</span>
                 </div>
                 <span className="confirm-sheet-score win" dir="ltr">

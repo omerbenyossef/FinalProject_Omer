@@ -69,7 +69,7 @@ export default function HeadToHead() {
 
       <div className="h2h-compare">
         <div className="h2h-side">
-          <Avatar name={user?.name} size={52} background="var(--court)" color="var(--court-contrast)" />
+          <Avatar name={user?.name} size={52} color="var(--court)" />
           <span className="h2h-side-name">{user?.name}</span>
         </div>
         <div className="h2h-score" dir="ltr">

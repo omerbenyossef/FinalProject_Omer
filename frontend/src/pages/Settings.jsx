@@ -3,13 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
-import { getTheme, setTheme } from "../theme.js";
 import { getExistingSubscription, isPushSupported, subscribeToPush, unsubscribeFromPush } from "../push.js";
 import PageHelp from "../PageHelp.jsx";
 import Toggle from "../Toggle.jsx";
-
-const THEME_ORDER = ["system", "light", "dark"];
-const THEME_LABELS = { system: "אוטומטי", light: "בהיר", dark: "כהה" };
 
 export default function Settings() {
   const { user, updateUser, logout } = useAuth();
@@ -32,7 +28,6 @@ export default function Settings() {
         />
       </div>
       <div className="settings-chips">
-        <ThemeChip />
         <LanguageChip />
       </div>
 
@@ -66,23 +61,6 @@ export default function Settings() {
         </div>
       </div>
     </div>
-  );
-}
-
-function ThemeChip() {
-  const [theme, setThemeState] = useState(getTheme());
-  const { t } = useLanguage();
-
-  function cycle() {
-    const next = THEME_ORDER[(THEME_ORDER.indexOf(theme) + 1) % THEME_ORDER.length];
-    setTheme(next);
-    setThemeState(next);
-  }
-
-  return (
-    <button type="button" className="settings-chip" onClick={cycle}>
-      {t("תצוגה: " + THEME_LABELS[theme])}
-    </button>
   );
 }
 
