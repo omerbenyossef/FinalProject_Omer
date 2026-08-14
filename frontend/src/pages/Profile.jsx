@@ -4,10 +4,10 @@ import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import { useSport } from "../SportContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
-import NextMatchRow from "../NextMatchRow.jsx";
+import NextMatchStack from "../NextMatchStack.jsx";
 import Avatar from "../Avatar.jsx";
 import { CalendarIcon, TrophyIcon, TrendDownIcon, TrendUpIcon, ChevronIcon } from "../Icons.jsx";
-import { formatWeekShort, formatDayMonth } from "../matchUtils.js";
+import { formatDayMonth } from "../matchUtils.js";
 import EmptyState from "../EmptyState.jsx";
 import { SkeletonHeroStat, SkeletonMatchRow } from "../Skeleton.jsx";
 import PageHelp from "../PageHelp.jsx";
@@ -127,62 +127,6 @@ export default function Profile() {
         )}
       </header>
 
-      {stats && (
-        <>
-          <div className="profile-section">
-            <div className="profile-section-header">
-              <span>{t("הליגות שלי")}</span>
-              {myLeaguesForSport.length > myLeaguesPreview.length ? (
-                <Link to="/leagues" className="profile-section-header-link">
-                  {t("כל ה-{n}", { n: myLeaguesForSport.length })}
-                </Link>
-              ) : (
-                <span>{t("דירוג")}</span>
-              )}
-            </div>
-            <div className="rank-row-list">
-              {myLeaguesPreview.map((league) => (
-                <Link to={`/leagues/${league.id}`} key={league.id} className="rank-row">
-                  <span className={`rank-row-number${league.my_rank <= 3 ? " top" : ""}`} dir="ltr">
-                    #{league.my_rank}
-                  </span>
-                  <div className="rank-row-body">
-                    <div className="rank-row-name">{league.name}</div>
-                    <div className="rank-row-record" dir="ltr">
-                      {league.my_wins}W-{league.my_losses}L / {league.my_members_total} players
-                    </div>
-                  </div>
-                  {league.my_rank_trend ? (
-                    <span className={`rank-row-trend ${league.my_rank_trend < 0 ? "down" : "up"}`} dir="ltr">
-                      {league.my_rank_trend < 0 ? (
-                        <TrendDownIcon aria-hidden="true" />
-                      ) : (
-                        <TrendUpIcon aria-hidden="true" />
-                      )}
-                      {Math.abs(league.my_rank_trend)}
-                    </span>
-                  ) : (
-                    <span className="rank-row-trend flat">—</span>
-                  )}
-                </Link>
-              ))}
-              {myLeaguesForSport.length === 0 && (
-                <EmptyState
-                  icon={<TrophyIcon aria-hidden="true" />}
-                  action={
-                    <Link to="/leagues" className="btn-secondary btn-small">
-                      {t("עיין בליגות")}
-                    </Link>
-                  }
-                >
-                  {t("עדיין לא הצטרפת לאף ליגה בענף הזה.")}
-                </EmptyState>
-              )}
-            </div>
-          </div>
-        </>
-      )}
-
       {matchesLoading ? (
         <ul className="match-list">
           <SkeletonMatchRow />
@@ -199,20 +143,66 @@ export default function Profile() {
           {t("אין לך ליגות עם לוח משחקים עדיין.")}
         </EmptyState>
       ) : (
-        <ul className="match-list">
-          {nextMatchesForSport.map((entry) => (
-            <NextMatchRow
-              key={entry.match.id}
-              match={entry.match}
-              currentUserId={user.id}
-              leagueName={entry.league_name}
-              leagueId={entry.league_id}
-              weekLabel={formatWeekShort(entry.match.round_number, t)}
-              busy={busy}
-              onSubmit={(sets) => handleReportScore(entry.league_id, entry.match.id, sets)}
-            />
-          ))}
-        </ul>
+        <NextMatchStack
+          matches={nextMatchesForSport}
+          currentUserId={user.id}
+          busy={busy}
+          onSubmit={handleReportScore}
+        />
+      )}
+
+      {stats && (
+        <div className="profile-section">
+          <div className="profile-section-header">
+            <span>{t("הליגות שלי")}</span>
+            {myLeaguesForSport.length > myLeaguesPreview.length ? (
+              <Link to="/leagues" className="profile-section-header-link">
+                {t("כל ה-{n}", { n: myLeaguesForSport.length })}
+              </Link>
+            ) : (
+              <span>{t("דירוג")}</span>
+            )}
+          </div>
+          <div className="rank-row-list">
+            {myLeaguesPreview.map((league) => (
+              <Link to={`/leagues/${league.id}`} key={league.id} className="rank-row">
+                <span className={`rank-row-number${league.my_rank <= 3 ? " top" : ""}`} dir="ltr">
+                  #{league.my_rank}
+                </span>
+                <div className="rank-row-body">
+                  <div className="rank-row-name">{league.name}</div>
+                  <div className="rank-row-record" dir="ltr">
+                    {league.my_wins}W-{league.my_losses}L / {league.my_members_total} players
+                  </div>
+                </div>
+                {league.my_rank_trend ? (
+                  <span className={`rank-row-trend ${league.my_rank_trend < 0 ? "down" : "up"}`} dir="ltr">
+                    {league.my_rank_trend < 0 ? (
+                      <TrendDownIcon aria-hidden="true" />
+                    ) : (
+                      <TrendUpIcon aria-hidden="true" />
+                    )}
+                    {Math.abs(league.my_rank_trend)}
+                  </span>
+                ) : (
+                  <span className="rank-row-trend flat">—</span>
+                )}
+              </Link>
+            ))}
+            {myLeaguesForSport.length === 0 && (
+              <EmptyState
+                icon={<TrophyIcon aria-hidden="true" />}
+                action={
+                  <Link to="/leagues" className="btn-secondary btn-small">
+                    {t("עיין בליגות")}
+                  </Link>
+                }
+              >
+                {t("עדיין לא הצטרפת לאף ליגה בענף הזה.")}
+              </EmptyState>
+            )}
+          </div>
+        </div>
       )}
 
       {stats && recentResults.length > 0 && (

@@ -2632,6 +2632,126 @@ button:active { transform: translateY(1px); }
   cursor: pointer;
 }
 
+.next-match-section {
+  margin-bottom: 18px;
+}
+
+.next-match-stack-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-family: "IBM Plex Mono", var(--mono);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--court);
+}
+
+.next-match-stack-header .count {
+  color: var(--muted);
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 500;
+}
+
+.next-match-stack {
+  position: relative;
+  height: 104px;
+  cursor: pointer;
+}
+
+.next-match-stack-card {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 104px;
+  border-radius: 14px;
+  transform-origin: 100% 50%;
+  transition: transform 0.42s cubic-bezier(0.22, 0.7, 0.24, 1), opacity 0.3s ease;
+  overflow: hidden;
+}
+
+.next-match-stack-card[data-offset="0"] {
+  z-index: 3;
+  background: #161b22;
+  border: 1px solid rgba(198, 242, 78, 0.45);
+}
+
+.next-match-stack-card[data-offset="1"] {
+  z-index: 2;
+  background: #1c232d;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  transform: translateX(-22px) scaleY(0.93);
+}
+
+.next-match-stack-card[data-offset="2"] {
+  z-index: 1;
+  background: #20272f;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  transform: translateX(-42px) scaleY(0.86);
+}
+
+[dir="ltr"] .next-match-stack-card {
+  transform-origin: 0% 50%;
+}
+
+[dir="ltr"] .next-match-stack-card[data-offset="1"] {
+  transform: translateX(22px) scaleY(0.93);
+}
+
+[dir="ltr"] .next-match-stack-card[data-offset="2"] {
+  transform: translateX(42px) scaleY(0.86);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .next-match-stack-card {
+    transition: none;
+  }
+}
+
+.next-match-stack-front {
+  height: 100%;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.next-match-stack-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.next-match-stack-text {
+  min-width: 0;
+}
+
+.next-match-stack-name {
+  display: block;
+  font-family: var(--display);
+  font-weight: 900;
+  font-size: 17px;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.next-match-stack-meta {
+  font-family: "IBM Plex Mono", var(--mono);
+  font-weight: 500;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .match-row-completed {
   flex-direction: row;
   align-items: center;
