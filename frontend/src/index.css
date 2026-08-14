@@ -2213,10 +2213,6 @@ button:active { transform: translateY(1px); }
   transform: translateX(4px);
 }
 
-.recent-result-card.win {
-  border-color: rgba(198, 242, 78, 0.55);
-}
-
 .recent-result-card-body {
   flex: 1;
   min-width: 0;
