@@ -1860,6 +1860,7 @@ button:active { transform: translateY(1px); }
 .profile-season-block {
   display: flex;
   flex-direction: column;
+  margin-top: 14px;
 }
 
 .profile-winrate-row {
