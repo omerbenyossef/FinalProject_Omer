@@ -68,7 +68,9 @@ export default function Profile() {
 
   const myLeaguesForSport = myLeagues.filter((l) => l.sport.id === selectedSportId);
   const myLeagueIdsForSport = new Set(myLeaguesForSport.map((l) => l.id));
-  const nextMatchesForSport = nextMatches.filter((entry) => myLeagueIdsForSport.has(entry.league_id));
+  const nextMatchesForSport = nextMatches.filter(
+    (entry) => myLeagueIdsForSport.has(entry.league_id) && entry.match.status !== "completed"
+  );
 
   const winRate =
     stats && stats.matches_played > 0 ? Math.round((stats.wins / stats.matches_played) * 100) : null;
