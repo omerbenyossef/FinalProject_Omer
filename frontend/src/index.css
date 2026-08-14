@@ -1872,7 +1872,7 @@ button:active { transform: translateY(1px); }
 .profile-winrate-value {
   display: flex;
   align-items: baseline;
-  gap: 6px;
+  gap: 12px;
 }
 
 .profile-winrate-number {
