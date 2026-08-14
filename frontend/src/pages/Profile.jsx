@@ -5,7 +5,8 @@ import { useAuth } from "../AuthContext.jsx";
 import { useSport } from "../SportContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import NextMatchRow from "../NextMatchRow.jsx";
-import { CalendarIcon, TrophyIcon, TrendDownIcon, TrendUpIcon } from "../Icons.jsx";
+import Avatar from "../Avatar.jsx";
+import { CalendarIcon, TrophyIcon, TrendDownIcon, TrendUpIcon, ChevronIcon } from "../Icons.jsx";
 import { formatWeekShort, formatDayMonth } from "../matchUtils.js";
 import EmptyState from "../EmptyState.jsx";
 import { SkeletonHeroStat, SkeletonMatchRow } from "../Skeleton.jsx";
@@ -78,22 +79,22 @@ export default function Profile() {
 
   return (
     <div className="profile-scoreboard">
-      <div className="profile-season-row">
-        <span className="profile-season-eyebrow">
-          {t("{name} · {season}", { name: user.name, season: t("העונה") })}
-        </span>
-        <PageHelp
-          pageKey="profile"
-          title="עמוד הפרופיל"
-          text="כאן תראו את אחוז הניצחונות שלכם, את המשחק הבא שלכם השבוע, ואת רשימת הליגות שאתם חברים בהן."
-        />
-      </div>
+      <header className="page-head">
+        <div className="profile-season-row">
+          <span className="profile-season-eyebrow">
+            {t("{name} · {season}", { name: user.name, season: t("העונה") })}
+          </span>
+          <PageHelp
+            pageKey="profile"
+            title="עמוד הפרופיל"
+            text="כאן תראו את אחוז הניצחונות שלכם, את המשחק הבא שלכם השבוע, ואת רשימת הליגות שאתם חברים בהן."
+          />
+        </div>
 
-      {error && <p className="error">{t(error)}</p>}
-      {!stats && !error && <SkeletonHeroStat />}
+        {error && <p className="error">{t(error)}</p>}
+        {!stats && !error && <SkeletonHeroStat />}
 
-      {stats && (
-        <>
+        {stats && (
           <div className="profile-season-block">
             <div className="profile-winrate-row">
               <div className="profile-winrate-value" dir="ltr">
@@ -121,7 +122,11 @@ export default function Profile() {
               </>
             )}
           </div>
+        )}
+      </header>
 
+      {stats && (
+        <>
           <div className="profile-section">
             <div className="profile-section-header">
               <span>{t("הליגות שלי")}</span>
@@ -220,6 +225,7 @@ export default function Profile() {
                 className={`recent-result-card${m.won ? " win" : ""}`}
                 key={i}
               >
+                <Avatar name={m.opponent_name} size={32} />
                 <div className="recent-result-card-body">
                   <div className="recent-result-card-name">{m.opponent_name}</div>
                   <div className="recent-result-card-meta">
@@ -232,7 +238,10 @@ export default function Profile() {
                   <span className={`recent-result-card-score${m.won ? " win" : ""}`} dir="ltr">
                     {formatMySets(m.my_sets)}
                   </span>
-                  <span className={`recent-result-card-dot${m.won ? " win" : ""}`} />
+                  <span className={`match-result-badge ${m.won ? "win" : "loss"}`}>
+                    {m.won ? "W" : "L"}
+                  </span>
+                  <ChevronIcon className="recent-result-card-chevron chevron-icon" aria-hidden="true" />
                 </div>
               </Link>
             ))}

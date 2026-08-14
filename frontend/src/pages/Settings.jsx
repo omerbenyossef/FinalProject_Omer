@@ -19,17 +19,19 @@ export default function Settings() {
 
   return (
     <div>
-      <div className="page-title-row">
-        <h1>{t("הגדרות")}</h1>
-        <PageHelp
-          pageKey="settings"
-          title="עמוד ההגדרות"
-          text="כאן תוכלו לערוך את הפרופיל שלכם, לשנות סיסמה או אימייל, להפעיל התראות, ולשנות שפה או מראה."
-        />
-      </div>
-      <div className="settings-chips">
-        <LanguageChip />
-      </div>
+      <header className="page-head">
+        <div className="page-title-row">
+          <h1>{t("הגדרות")}</h1>
+          <PageHelp
+            pageKey="settings"
+            title="עמוד ההגדרות"
+            text="כאן תוכלו לערוך את הפרופיל שלכם, לשנות סיסמה או אימייל, להפעיל התראות, ולשנות שפה או מראה."
+          />
+        </div>
+        <div className="settings-chips">
+          <LanguageChip />
+        </div>
+      </header>
 
       <div className="settings-section">
         <div className="profile-section-header" style={{ justifyContent: "flex-start" }}>

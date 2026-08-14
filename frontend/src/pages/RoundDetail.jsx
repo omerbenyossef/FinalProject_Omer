@@ -101,21 +101,23 @@ export default function RoundDetail() {
 
   return (
     <div>
-      <Link to={`/leagues/${leagueId}`} className="back-link">
-        <ChevronIcon aria-hidden="true" />
-        {league.name}
-      </Link>
+      <header className="page-head">
+        <Link to={`/leagues/${leagueId}`} className="back-link">
+          <ChevronIcon aria-hidden="true" />
+          {league.name}
+        </Link>
 
-      <div className="round-title-row">
-        <span className="round-title-label">{t("מחזור")}</span>
-        <span className="round-title-number">{roundNumber}</span>
-      </div>
-      {dueDate && (
-        <div className="league-detail-meta">
-          {t("נסגר ב-{date}", { date: dueDate })}
-          {daysRemaining !== null && ` · ${t("עוד {n} ימים", { n: daysRemaining })}`}
+        <div className="round-title-row">
+          <span className="round-title-label">{t("מחזור")}</span>
+          <span className="round-title-number">{roundNumber}</span>
         </div>
-      )}
+        {dueDate && (
+          <div className="league-detail-meta">
+            {t("נסגר ב-{date}", { date: dueDate })}
+            {daysRemaining !== null && ` · ${t("עוד {n} ימים", { n: daysRemaining })}`}
+          </div>
+        )}
+      </header>
 
       {error && <p className="error">{t(error)}</p>}
 

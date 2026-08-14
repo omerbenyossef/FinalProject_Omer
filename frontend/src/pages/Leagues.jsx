@@ -71,30 +71,36 @@ export default function Leagues() {
 
   return (
     <div>
-      <div className="page-title-row">
-        <h1>{t("ליגות")}</h1>
-        <PageHelp
-          pageKey="leagues"
-          title="עמוד הליגות"
-          text="כאן תוכלו לראות את הליגות שאתם חברים בהן, לעיין בליגות ציבוריות פתוחות, וליצור ליגה חדשה."
-        />
-      </div>
+      <header className="page-head">
+        <div className="page-title-row">
+          <h1>{t("ליגות")}</h1>
+          <PageHelp
+            pageKey="leagues"
+            title="עמוד הליגות"
+            text="כאן תוכלו לראות את הליגות שאתם חברים בהן, לעיין בליגות ציבוריות פתוחות, וליצור ליגה חדשה."
+          />
+        </div>
+      </header>
 
       {user ? (
         <div className="league-action-list">
           <button type="button" className="league-action-row" onClick={() => setShowForm((v) => !v)}>
             <span>
-              <span className="league-action-title">{t("צור ליגה חדשה")}</span>
+              <span className="league-action-title emphasis">{t("צור ליגה חדשה")}</span>
               <span className="league-action-subtitle">{t("התחילו ליגה והזמינו חברים")}</span>
             </span>
-            <span className="league-action-plus">+</span>
+            <span className="league-action-icon">
+              <ChevronIcon className="league-action-chevron" aria-hidden="true" />
+            </span>
           </button>
           <Link to="#open-leagues" className="league-action-row">
             <span>
               <span className="league-action-title">{t("הצטרפו לליגה ציבורית")}</span>
               <span className="league-action-subtitle">{t("התחרו מול שחקנים חדשים")}</span>
             </span>
-            <ChevronIcon className="league-action-chevron" aria-hidden="true" />
+            <span className="league-action-icon">
+              <ChevronIcon className="league-action-chevron" aria-hidden="true" />
+            </span>
           </Link>
         </div>
       ) : (

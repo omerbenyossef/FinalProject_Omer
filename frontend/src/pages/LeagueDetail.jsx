@@ -263,25 +263,27 @@ export default function LeagueDetail() {
 
   return (
     <div>
-      <Link to="/leagues" className="back-link">
-        <ChevronIcon aria-hidden="true" />
-        {t("חזרה לליגות")}
-      </Link>
+      <header className="page-head">
+        <Link to="/leagues" className="back-link">
+          <ChevronIcon aria-hidden="true" />
+          {t("חזרה לליגות")}
+        </Link>
 
-      <div className="page-title-row">
-        <h1>{league.name}</h1>
-        <PageHelp
-          pageKey="leagueDetail"
-          title="עמוד הליגה"
-          text="כאן תראו את טבלת הדירוג, את המשחקים שלכם ושל שאר חברי הליגה, ואת הסטטיסטיקה האישית שלכם בליגה הזו."
-        />
-      </div>
-      <div className="league-detail-meta">
-        {[t(league.sport?.name), `${members.length} ${t("שחקנים")}`, round ? formatWeekShort(round, t) : null]
-          .filter(Boolean)
-          .join(" · ")}
-      </div>
-      {league.description && <p className="muted">{league.description}</p>}
+        <div className="page-title-row">
+          <h1>{league.name}</h1>
+          <PageHelp
+            pageKey="leagueDetail"
+            title="עמוד הליגה"
+            text="כאן תראו את טבלת הדירוג, את המשחקים שלכם ושל שאר חברי הליגה, ואת הסטטיסטיקה האישית שלכם בליגה הזו."
+          />
+        </div>
+        <div className="league-detail-meta">
+          {[t(league.sport?.name), `${members.length} ${t("שחקנים")}`, round ? formatWeekShort(round, t) : null]
+            .filter(Boolean)
+            .join(" · ")}
+        </div>
+        {league.description && <p className="muted">{league.description}</p>}
+      </header>
 
       <div className="league-detail-actions">
         {!isMember && user && (league.is_open || codeFromLink) && (

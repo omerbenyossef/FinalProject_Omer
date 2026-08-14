@@ -54,18 +54,20 @@ export default function HeadToHead() {
 
   return (
     <div>
-      <Link to="/leagues" className="back-link">
-        <ChevronIcon aria-hidden="true" />
-        {t("חזרה")}
-      </Link>
-      <div className="page-title-row" style={{ marginTop: 14 }}>
-        <span className="league-detail-meta">{t("ראש בראש")}</span>
-        <PageHelp
-          pageKey="headToHead"
-          title="ראש בראש"
-          text="כאן תוכלו לראות את ההשוואה בינך לבין השחקן הזה - כמה ניצחתם, הפסדתם, ואת כל היסטוריית המשחקים ביניכם."
-        />
-      </div>
+      <header className="page-head">
+        <Link to="/leagues" className="back-link">
+          <ChevronIcon aria-hidden="true" />
+          {t("חזרה")}
+        </Link>
+        <div className="page-title-row" style={{ marginTop: 14 }}>
+          <span className="league-detail-meta">{t("ראש בראש")}</span>
+          <PageHelp
+            pageKey="headToHead"
+            title="ראש בראש"
+            text="כאן תוכלו לראות את ההשוואה בינך לבין השחקן הזה - כמה ניצחתם, הפסדתם, ואת כל היסטוריית המשחקים ביניכם."
+          />
+        </div>
+      </header>
 
       <div className="h2h-compare">
         <div className="h2h-side">
