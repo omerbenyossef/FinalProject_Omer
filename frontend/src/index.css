@@ -1289,6 +1289,11 @@ a { color: var(--court); text-decoration: none; }
   margin-top: 8px;
 }
 
+.round-my-match-report-btn {
+  flex: none;
+  margin-inline-start: auto;
+}
+
 .round-my-match-info {
   min-width: 0;
 }

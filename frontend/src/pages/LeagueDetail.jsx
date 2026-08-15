@@ -56,6 +56,7 @@ export default function LeagueDetail() {
   const [confirmSheetMatch, setConfirmSheetMatch] = useState(null);
   const [showAddRoundConfirm, setShowAddRoundConfirm] = useState(false);
   const [myH2h, setMyH2h] = useState(null);
+  const [reportingMyMatch, setReportingMyMatch] = useState(false);
   const autoJoinAttempted = useRef(false);
   const initialTabSet = useRef(false);
 
@@ -617,14 +618,29 @@ export default function LeagueDetail() {
                           </div>
                         )}
                       </div>
+                      {!reportingMyMatch && (
+                        <button
+                          type="button"
+                          className="btn-gold-pill round-my-match-report-btn"
+                          onClick={() => setReportingMyMatch(true)}
+                        >
+                          {t("דווח")}
+                        </button>
+                      )}
                     </div>
-                    <SetScoreForm
-                      player1Name={myNextMatch.player1.name}
-                      player2Name={myNextMatch.player2.name}
-                      onSubmit={(sets) => handleReportScore(myNextMatch.id, sets)}
-                      busy={busy}
-                      maxSets={league.best_of}
-                    />
+                    {reportingMyMatch && (
+                      <SetScoreForm
+                        player1Name={myNextMatch.player1.name}
+                        player2Name={myNextMatch.player2.name}
+                        onSubmit={(sets) => {
+                          handleReportScore(myNextMatch.id, sets);
+                          setReportingMyMatch(false);
+                        }}
+                        onCancel={() => setReportingMyMatch(false)}
+                        busy={busy}
+                        maxSets={league.best_of}
+                      />
+                    )}
                     <button
                       type="button"
                       className="link-btn cancel-match-link"
