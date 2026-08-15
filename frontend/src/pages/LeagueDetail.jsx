@@ -4,7 +4,7 @@ import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import SetScoreForm from "../SetScoreForm.jsx";
-import MatchCard from "../MatchCard.jsx";
+import Avatar from "../Avatar.jsx";
 import WaitingConfirmationCard from "../WaitingConfirmationCard.jsx";
 import ConfirmScoreSheet from "../ConfirmScoreSheet.jsx";
 import { UserPlusIcon, CalendarIcon, ChevronIcon, GearIcon, PlusIcon } from "../Icons.jsx";
@@ -55,6 +55,7 @@ export default function LeagueDetail() {
   const [activeTab, setActiveTab] = useState("standings");
   const [confirmSheetMatch, setConfirmSheetMatch] = useState(null);
   const [showAddRoundConfirm, setShowAddRoundConfirm] = useState(false);
+  const [myH2h, setMyH2h] = useState(null);
   const autoJoinAttempted = useRef(false);
   const initialTabSet = useRef(false);
 
@@ -230,6 +231,27 @@ export default function LeagueDetail() {
     }
   }
 
+  const myNextMatchForH2h = matches
+    .filter((m) => m.status === "pending")
+    .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))[0];
+  const myOpponent = myNextMatchForH2h
+    ? myNextMatchForH2h.player1.id === user?.id
+      ? myNextMatchForH2h.player2
+      : myNextMatchForH2h.player1
+    : null;
+
+  useEffect(() => {
+    if (!myOpponent) {
+      setMyH2h(null);
+      return;
+    }
+    api
+      .headToHead(myOpponent.id)
+      .then(setMyH2h)
+      .catch(() => setMyH2h(null));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [myOpponent?.id]);
+
   if (!league) {
     return (
       <div>
@@ -246,9 +268,7 @@ export default function LeagueDetail() {
   }
 
   const isCreator = league.created_by === user?.id;
-  const myNextMatch = matches
-    .filter((m) => m.status === "pending")
-    .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))[0];
+  const myNextMatch = myNextMatchForH2h;
   const myPendingConfirmationMatch = matches.find((m) => m.status === "pending_confirmation");
   const iAmReporter = myPendingConfirmationMatch?.reported_by === user?.id;
   const myStanding = standings.find((row) => row.user.id === user?.id);
@@ -269,12 +289,6 @@ export default function LeagueDetail() {
     });
   const round = currentRoundNumber(league.schedule_started_at, league.round_length_days);
   const ruleLabels = leagueRuleLabels(league, t);
-  const myMatchDueDate = round
-    ? roundDueDate(league.schedule_started_at, round, league.round_length_days)
-    : "";
-  const myMatchMeta = [formatWeekShort(round, t), myMatchDueDate ? t("עד {date}", { date: myMatchDueDate }) : null]
-    .filter(Boolean)
-    .join(" · ");
   const hasSchedule = allMatches.length > 0;
   const roundsCount = new Set(allMatches.map((m) => m.round_number).filter(Boolean)).size;
   const nextRound = roundsCount + 1;
@@ -287,11 +301,16 @@ export default function LeagueDetail() {
   );
   const groupedRounds = groupMatchesByRound(allMatches);
   const existingRoundNumbers = groupedRounds.map((g) => g.round).filter((r) => r !== "none");
-  const currentRoundToShow = existingRoundNumbers.includes(round)
-    ? round
-    : existingRoundNumbers.length > 0
-    ? Math.max(...existingRoundNumbers)
-    : null;
+  const currentRoundToShow = existingRoundNumbers.length > 0 ? Math.max(...existingRoundNumbers) : null;
+  const currentRoundMatches =
+    groupedRounds.find((g) => g.round === currentRoundToShow)?.matches || [];
+  const currentRoundPlayed = currentRoundMatches.filter((m) => m.status !== "pending");
+  const currentRoundCloses = currentRoundToShow
+    ? roundDueDate(league.schedule_started_at, currentRoundToShow, league.round_length_days)
+    : "";
+  const pastRoundNumbers = existingRoundNumbers.filter((r) => r !== currentRoundToShow);
+  const pastGames = allMatches.filter((m) => pastRoundNumbers.includes(m.round_number)).length;
+  const legacyMatches = allMatches.filter((m) => !m.round_number);
 
   return (
     <div>
@@ -522,51 +541,6 @@ export default function LeagueDetail() {
               </div>
             )}
 
-            {isMember && (myNextMatch || myPendingConfirmationMatch) && (
-              <div>
-                <div className="profile-section-header" style={{ justifyContent: "flex-start" }}>
-                  <span>{t("המשחק שלי השבוע")}</span>
-                </div>
-                {myNextMatch ? (
-                  <>
-                    <MatchCard
-                      match={myNextMatch}
-                      currentUserId={user.id}
-                      meta={myMatchMeta}
-                      onSubmit={(sets) => handleReportScore(myNextMatch.id, sets)}
-                      busy={busy}
-                      maxSets={league.best_of}
-                    />
-                    <button
-                      type="button"
-                      className="link-btn cancel-match-link"
-                      onClick={() => handleCancelMatch(myNextMatch.id)}
-                    >
-                      {t("בטל משחק")}
-                    </button>
-                  </>
-                ) : iAmReporter ? (
-                  <WaitingConfirmationCard
-                    match={myPendingConfirmationMatch}
-                    currentUserId={user.id}
-                    leagueId={leagueId}
-                    onSubmit={(sets) => handleReportScore(myPendingConfirmationMatch.id, sets)}
-                    maxSets={league.best_of}
-                  />
-                ) : (
-                  <button
-                    type="button"
-                    className="needs-confirm-banner"
-                    onClick={() => setConfirmSheetMatch(myPendingConfirmationMatch)}
-                  >
-                    <span className="needs-confirm-dot" />
-                    <span className="needs-confirm-text">{t("יש לך תוצאה לאישור")}</span>
-                    <ChevronIcon aria-hidden="true" />
-                  </button>
-                )}
-              </div>
-            )}
-
             {!hasSchedule && (
               <div className="schedule-empty">
                 <CalendarIcon className="schedule-empty-icon" aria-hidden="true" />
@@ -598,29 +572,135 @@ export default function LeagueDetail() {
                 )}
               </>
             )}
-            {groupedRounds.map(({ round: r, matches: roundMatches }) => {
-              const isCurrent = r === "none" || r === currentRoundToShow;
-              return (
-                <div key={r}>
-                  <div className="profile-section-header" style={{ justifyContent: "flex-start" }}>
-                    {r === "none" ? (
-                      <span>{t("כל המשחקים")}</span>
+
+            {hasSchedule && currentRoundToShow !== null && (
+              <>
+                <div className="matches-round-header">
+                  <div className="round-title-row" style={{ marginTop: 0 }}>
+                    <span className="round-title-label">{t("מחזור")}</span>
+                    <span className="round-title-number">{currentRoundToShow}</span>
+                  </div>
+                  {currentRoundCloses && (
+                    <span className="matches-round-closes">
+                      {t("נסגר ב-{date}", { date: currentRoundCloses })}
+                    </span>
+                  )}
+                </div>
+
+                <div className="round-progress">
+                  <div className="round-progress-header">
+                    <span>{t("התקדמות המחזור")}</span>
+                    <span className="round-progress-count" dir="ltr">
+                      <span className="lit">{currentRoundPlayed.length}</span>
+                      <span className="dim">/{currentRoundMatches.length}</span>
+                    </span>
+                  </div>
+                  <div className="profile-form-strip">
+                    {currentRoundMatches.map((m, i) => (
+                      <span key={i} className={`profile-form-bar${m.status !== "pending" ? " win" : ""}`} />
+                    ))}
+                  </div>
+                </div>
+
+                {isMember && myNextMatch && (
+                  <div className="round-my-match">
+                    <div className="round-my-match-eyebrow">{t("המשחק שלי")}</div>
+                    <div className="round-my-match-top">
+                      <Avatar name={myOpponent.name} size={36} />
+                      <div className="round-my-match-info">
+                        <div className="round-my-match-name">
+                          {t("מול {name}", { name: myOpponent.name })}
+                        </div>
+                        {myH2h && (
+                          <div className="round-my-match-h2h" dir="ltr">
+                            H2H {myH2h.wins}-{myH2h.losses}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <SetScoreForm
+                      player1Name={myNextMatch.player1.name}
+                      player2Name={myNextMatch.player2.name}
+                      onSubmit={(sets) => handleReportScore(myNextMatch.id, sets)}
+                      busy={busy}
+                      maxSets={league.best_of}
+                    />
+                    <button
+                      type="button"
+                      className="link-btn cancel-match-link"
+                      onClick={() => handleCancelMatch(myNextMatch.id)}
+                    >
+                      {t("בטל משחק")}
+                    </button>
+                  </div>
+                )}
+
+                {isMember && !myNextMatch && myPendingConfirmationMatch && (
+                  <div>
+                    <div className="profile-section-header" style={{ justifyContent: "flex-start" }}>
+                      <span>{t("המשחק שלי")}</span>
+                    </div>
+                    {iAmReporter ? (
+                      <WaitingConfirmationCard
+                        match={myPendingConfirmationMatch}
+                        currentUserId={user.id}
+                        leagueId={leagueId}
+                        onSubmit={(sets) => handleReportScore(myPendingConfirmationMatch.id, sets)}
+                        maxSets={league.best_of}
+                      />
                     ) : (
-                      <Link to={`/leagues/${leagueId}/rounds/${r}`} className="round-header-link">
-                        {[
-                          t("כל המשחקים"),
-                          formatWeekShort(r, t),
-                          r === currentRoundToShow ? t("(נוכחי)") : null,
-                        ]
-                          .filter(Boolean)
-                          .join(" · ")}
+                      <button
+                        type="button"
+                        className="needs-confirm-banner"
+                        onClick={() => setConfirmSheetMatch(myPendingConfirmationMatch)}
+                      >
+                        <span className="needs-confirm-dot" />
+                        <span className="needs-confirm-text">{t("יש לך תוצאה לאישור")}</span>
                         <ChevronIcon aria-hidden="true" />
-                      </Link>
+                      </button>
                     )}
                   </div>
-                  {isCurrent && (
+                )}
+
+                <div className="profile-section-header" style={{ justifyContent: "flex-start" }}>
+                  <span>{t("כל המשחקים")}</span>
+                </div>
+                <div className="all-matches-list">
+                  {currentRoundMatches.map((match) => (
+                    <AllMatchesRow
+                      key={match.id}
+                      match={match}
+                      currentUserId={user.id}
+                      onReport={handleReportScore}
+                      onNeedsConfirm={() => setConfirmSheetMatch(match)}
+                      busy={busy}
+                      maxSets={league.best_of}
+                    />
+                  ))}
+                </div>
+
+                {pastRoundNumbers.length > 0 && (
+                  <Link to={`/leagues/${leagueId}/rounds`} className="league-action-row">
+                    <div>
+                      <span className="league-action-title">{t("מחזורים קודמים")}</span>
+                      <span className="league-action-subtitle">
+                        {t("{rounds} מחזורים · {games} משחקים", {
+                          rounds: pastRoundNumbers.length,
+                          games: pastGames,
+                        })}
+                      </span>
+                    </div>
+                    <ChevronIcon className="league-action-chevron chevron-icon" aria-hidden="true" />
+                  </Link>
+                )}
+
+                {legacyMatches.length > 0 && (
+                  <div>
+                    <div className="profile-section-header" style={{ justifyContent: "flex-start" }}>
+                      <span>{t("משחקים ללא מחזור")}</span>
+                    </div>
                     <div className="all-matches-list">
-                      {roundMatches.map((match) => (
+                      {legacyMatches.map((match) => (
                         <AllMatchesRow
                           key={match.id}
                           match={match}
@@ -632,10 +712,10 @@ export default function LeagueDetail() {
                         />
                       ))}
                     </div>
-                  )}
-                </div>
-              );
-            })}
+                  </div>
+                )}
+              </>
+            )}
           </div>
         )}
       </div>

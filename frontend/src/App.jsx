@@ -9,6 +9,7 @@ import Leagues from "./pages/Leagues.jsx";
 import LeagueDetail from "./pages/LeagueDetail.jsx";
 import LeagueManage from "./pages/LeagueManage.jsx";
 import RoundDetail from "./pages/RoundDetail.jsx";
+import LeagueRounds from "./pages/LeagueRounds.jsx";
 import Profile from "./pages/Profile.jsx";
 import Settings from "./pages/Settings.jsx";
 import HeadToHead from "./pages/HeadToHead.jsx";
@@ -47,6 +48,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <LeagueDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/leagues/:leagueId/rounds"
+          element={
+            <ProtectedRoute>
+              <LeagueRounds />
             </ProtectedRoute>
           }
         />

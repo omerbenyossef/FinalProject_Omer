@@ -133,11 +133,10 @@ export default function Profile() {
                 <div className="confirmation-banner-body">
                   <div className="confirmation-banner-title">{t("יש לך תוצאה לאישור")}</div>
                   <div className="confirmation-banner-subtitle">
-                    {t("{reporter} דיווח {sets} · {league}", {
-                      reporter: reporter.name,
-                      sets: formatMySets(mySets),
-                      league: entry.league_name,
-                    })}
+                    <span className="confirmation-banner-who">
+                      {t("{reporter} דיווח {sets}", { reporter: reporter.name, sets: formatMySets(mySets) })}
+                    </span>
+                    <span className="confirmation-banner-league">· {entry.league_name}</span>
                   </div>
                 </div>
                 <ChevronIcon className="confirmation-banner-chevron chevron-icon" aria-hidden="true" />

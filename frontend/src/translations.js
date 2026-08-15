@@ -253,7 +253,8 @@ const PAIRS = [
   ["המשחק שלי", "My match"],
   ["המשחק שלי השבוע", "My match this week"],
   ["כל המשחקים", "All matches"],
-  ["(נוכחי)", "(current)"],
+  ["מחזורים קודמים", "Previous rounds"],
+  ["משחקים ללא מחזור", "Matches without a round"],
   ["ממתין", "Pending"],
   ["גיל {age}", "age {age}"],
   ["כל ה-{n}", "All {n}"],
@@ -273,6 +274,11 @@ const PAIRS = [
   ["{name} (את/ה)", "{name} (you)"],
   ["יש לך תוצאה לאישור", "You have a result to confirm"],
   ["מחזור", "Round"],
+  ["מחזורים", "Rounds"],
+  ["פעיל עכשיו", "Active now"],
+  ["לשחק", "To play"],
+  ["הקשה על מחזור פותחת את כל המשחקים שלו", "Tap a round to see all its matches"],
+  ["{n} מחזורים · {m} משחקים", "{n} rounds · {m} games"],
   ["נסגר ב-{date}", "Closes {date}"],
   ["עוד {n} ימים", "{n} days left"],
   ["התקדמות המחזור", "Round progress"],
@@ -310,7 +316,7 @@ const PAIRS = [
   ["מחק את הליגה", "Delete the league"],
 
   // Home confirmation banner + standings head-to-head link
-  ["{reporter} דיווח {sets} · {league}", "{reporter} reported {sets} · {league}"],
+  ["{reporter} דיווח {sets}", "{reporter} reported {sets}"],
   ["הקשה על שחקן פותחת ראש בראש מולו", "Tap a player to open their head-to-head record"],
 
   // Shared MatchCard

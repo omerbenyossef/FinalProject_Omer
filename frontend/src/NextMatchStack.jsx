@@ -54,9 +54,8 @@ export default function NextMatchStack({ matches, currentUserId, busy, onSubmit 
                   className="match-card-stack-front"
                   match={entry.match}
                   currentUserId={currentUserId}
-                  meta={[entry.league_name, formatWeekShort(entry.match.round_number, t)]
-                    .filter(Boolean)
-                    .join(" · ")}
+                  metaMain={entry.league_name}
+                  metaTail={formatWeekShort(entry.match.round_number, t)}
                   busy={busy}
                   maxSets={entry.best_of}
                   onSubmit={(sets) => onSubmit(entry.league_id, entry.match.id, sets)}

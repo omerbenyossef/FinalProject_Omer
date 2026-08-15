@@ -4,7 +4,16 @@ import Avatar from "./Avatar.jsx";
 import SetScoreForm from "./SetScoreForm.jsx";
 import { useLanguage } from "./LanguageContext.jsx";
 
-export default function MatchCard({ match, currentUserId, meta, busy, onSubmit, maxSets, className }) {
+export default function MatchCard({
+  match,
+  currentUserId,
+  metaMain,
+  metaTail,
+  busy,
+  onSubmit,
+  maxSets,
+  className,
+}) {
   const { t } = useLanguage();
   const [reporting, setReporting] = useState(false);
   const opponent = match.player1.id === currentUserId ? match.player2 : match.player1;
@@ -22,7 +31,10 @@ export default function MatchCard({ match, currentUserId, meta, busy, onSubmit, 
             >
               {t("מול {name}", { name: opponent.name })}
             </Link>
-            <div className="match-card-meta">{meta}</div>
+            <div className="match-card-meta">
+              <span className="match-card-meta-main">{metaMain}</span>
+              {metaTail && <span className="match-card-meta-tail">· {metaTail}</span>}
+            </div>
           </div>
         </div>
         {!reporting && (
