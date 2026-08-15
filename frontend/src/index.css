@@ -2725,10 +2725,12 @@ button:active { transform: translateY(1px); }
 
 .standings-table tr.me-row td:first-child {
   border-radius: 0 10px 10px 0;
+  padding-right: 12px;
 }
 
 .standings-table tr.me-row td:last-child {
   border-radius: 10px 0 0 10px;
+  padding-left: 12px;
 }
 
 .standings-table tbody tr:not(.me-row):active {
@@ -2741,10 +2743,12 @@ button:active { transform: translateY(1px); }
 
 .standings-table tbody tr:not(.me-row):active td:first-child {
   border-radius: 0 10px 10px 0;
+  padding-right: 12px;
 }
 
 .standings-table tbody tr:not(.me-row):active td:last-child {
   border-radius: 10px 0 0 10px;
+  padding-left: 12px;
 }
 
 .standings-zone-row td {
