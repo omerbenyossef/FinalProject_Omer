@@ -352,7 +352,7 @@ export default function LeagueDetail() {
               onClick={handleLeaveLeague}
               disabled={busy}
             >
-              {t("יציאה")}
+              {t("עזיבת ליגה")}
             </button>
           )}
         </div>

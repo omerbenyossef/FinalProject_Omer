@@ -104,7 +104,7 @@ const PAIRS = [
   ["הליגה סגורה. כדי להצטרף צריך קישור הזמנה מאחד מחברי הליגה.",
     "This league is closed. You need an invite link from one of its members to join."],
   ["צור לוח משחקים", "Generate schedule"],
-  ["יציאה", "Exit"],
+  ["עזיבת ליגה", "Leave league"],
   ["לעזוב את הליגה", "Leave the league"],
   ["המשחק הבא שלך", "Your next match"],
   ["הסטטיסטיקה שלי בליגה", "My stats in this league"],
