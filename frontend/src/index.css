@@ -1868,28 +1868,36 @@ button:active { transform: translateY(1px); }
 
 .section-tabs {
   display: flex;
-  gap: 6px;
-  background: var(--card-alt);
-  border-radius: 999px;
-  padding: 4px;
+  gap: 22px;
+  border-bottom: 1px solid var(--line);
   margin-bottom: 16px;
 }
 
 .section-tab {
-  flex: 1;
+  flex: none;
   background: none;
   border: none;
-  border-radius: 999px;
-  padding: 9px 0;
-  font-weight: 700;
-  font-size: 13.5px;
+  padding: 0 0 11px;
+  font-family: var(--display);
+  font-weight: 900;
+  font-size: 15.5px;
   color: var(--muted);
   text-transform: capitalize;
+  position: relative;
 }
 
 .section-tab.active {
+  color: var(--ink);
+}
+
+.section-tab.active::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  inset-inline: 0;
+  height: 3px;
+  border-radius: 2px;
   background: var(--court);
-  color: var(--court-contrast);
 }
 
 .invite-fab {
