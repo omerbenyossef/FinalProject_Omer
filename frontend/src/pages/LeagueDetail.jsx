@@ -342,21 +342,21 @@ export default function LeagueDetail() {
             .join(" · ")}
         </div>
         <div className="league-rules-line">
-          {ruleLabels.bestOfLabel} · {ruleLabels.frequencyLabel}
-        </div>
-        {league.description && <p className="muted">{league.description}</p>}
-        {isMember && !isCreator && (
-          <div className="league-header-actions">
+          <span>
+            {ruleLabels.bestOfLabel} · {ruleLabels.frequencyLabel}
+          </span>
+          {isMember && !isCreator && (
             <button
               type="button"
-              className="danger-zone-btn"
+              className="danger-zone-btn league-rules-line-exit"
               onClick={handleLeaveLeague}
               disabled={busy}
             >
               {t("יציאה")}
             </button>
-          </div>
-        )}
+          )}
+        </div>
+        {league.description && <p className="muted">{league.description}</p>}
       </header>
 
       <div className="league-detail-actions">
