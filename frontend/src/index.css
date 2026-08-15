@@ -1081,7 +1081,8 @@ a { color: var(--court); text-decoration: none; }
 
 .league-rules-line-exit {
   flex: none;
-  padding: 6px 14px;
+  padding: 5px 12px;
+  font-size: 12px;
 }
 
 .league-rules-form {
