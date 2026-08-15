@@ -187,12 +187,24 @@ def my_next_matches(
             .options(joinedload(models.Match.player1), joinedload(models.Match.player2))
             .filter(
                 models.Match.league_id == league.id,
-                models.Match.status == models.MatchStatus.pending,
+                models.Match.status == models.MatchStatus.pending_confirmation,
                 my_match_filter,
             )
             .order_by(models.Match.created_at.asc())
             .first()
         )
+        if not match:
+            match = (
+                db.query(models.Match)
+                .options(joinedload(models.Match.player1), joinedload(models.Match.player2))
+                .filter(
+                    models.Match.league_id == league.id,
+                    models.Match.status == models.MatchStatus.pending,
+                    my_match_filter,
+                )
+                .order_by(models.Match.created_at.asc())
+                .first()
+            )
         if not match:
             match = (
                 db.query(models.Match)
@@ -398,10 +410,10 @@ def delete_league(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    if not current_user.is_admin:
-        raise HTTPException(status_code=403, detail="רק מנהל יכול למחוק ליגה")
-
     league = _get_league_or_404(db, league_id)
+    if league.created_by != current_user.id and not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="רק יוצר הליגה יכול למחוק אותה")
+
     db.query(models.Match).filter(models.Match.league_id == league_id).delete()
     db.query(models.LeagueMembership).filter(models.LeagueMembership.league_id == league_id).delete()
     db.delete(league)

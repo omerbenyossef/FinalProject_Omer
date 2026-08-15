@@ -118,6 +118,7 @@ class LeagueOut(BaseModel):
     sport: SportOut
     member_count: int = 0
     created_by: int
+    created_at: Optional[datetime] = None
     schedule_started_at: Optional[datetime] = None
     is_open: bool = False
     best_of: Optional[int] = None

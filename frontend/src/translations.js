@@ -70,7 +70,8 @@ const PAIRS = [
   ["תדירות לוח משחקים", "Schedule frequency"],
   ["שבועי", "Weekly"],
   ["דו-שבועי", "Biweekly"],
-  ["ערוך חוקים", "Edit rules"],
+  ["מחזור שבועי", "Weekly cycle"],
+  ["מחזור דו-שבועי", "Biweekly cycle"],
   ["יוצר...", "Creating..."],
   ["צור ליגה", "Create league"],
   ["טוען...", "Loading..."],
@@ -124,7 +125,6 @@ const PAIRS = [
   ["עדיין אין משחקים.", "No matches yet."],
   ["משחקים נוספים", "More matches"],
   ["כל המשחקים בליגה", "All league matches"],
-  ["עדיין אין משחקים בליגה.", "There are no matches in this league yet."],
   ["ממתין לתוצאה", "Awaiting result"],
   ["ניצחון", "Win"],
   ["הפסד", "Loss"],
@@ -292,6 +292,39 @@ const PAIRS = [
 
   // WhatsApp invite messages
   ['בוא/י תצטרף/י ל-Rally, אפליקציית ניהול הליגות שלנו!\n{url}', "Come join Rally, our league management app!\n{url}"],
+
+  // League management page
+  ["ניהול הליגה", "Manage league"],
+  ["חזרה לליגה", "Back to league"],
+  ["{name} · הקמת אותה ב-{date}", "{name} · created on {date}"],
+  ["חוקי הליגה", "League rules"],
+  ["שחקנים", "Players"],
+  ["{n} שחקנים · הזמנה בקישור", "{n} players · invite via link"],
+  ["שתף קישור הזמנה", "Share invite link"],
+  ["לוח משחקים", "Schedule"],
+  ["{rounds} מחזורים · {games} משחקים", "{rounds} rounds · {games} games"],
+  ["אזור מסוכן", "Danger zone"],
+  ["מחיקת הליגה תסיר לצמיתות את {n} המשחקים ואת כל החברויות בה. לא ניתן לשחזר.", "Deleting the league permanently removes its {n} matches and every membership in it. This can't be undone."],
+  ["מחק את הליגה", "Delete the league"],
+
+  // Home confirmation banner + standings head-to-head link
+  ["{reporter} דיווח {sets} · {league}", "{reporter} reported {sets} · {league}"],
+  ["הקשה על שחקן פותחת ראש בראש מולו", "Tap a player to open their head-to-head record"],
+
+  // Shared MatchCard
+  ["בטל משחק", "Cancel match"],
+
+  // Schedule button states + add-round confirm sheet
+  ["עדיין אין לוח משחקים. {n} השחקנים בליגה מחכים לשיבוץ.", "No schedule yet. {n} players in the league are waiting to be matched up."],
+  ["ייווצר מחזור {n} · {count} משחקים", "Round {n} will be created · {count} games"],
+  ["ייווצרו {rounds} מחזורים · {count} משחקים", "{rounds} rounds will be created · {count} games"],
+  ["+ מחזור {n}", "+ Round {n}"],
+  ["+ {n} מחזורים", "+ {n} rounds"],
+  ["להוסיף מחזור {n}?", "Add round {n}?"],
+  ["להוסיף {n} מחזורים?", "Add {n} rounds?"],
+  ["{count} משחקים · לשחק עד {date}", "{count} games · play by {date}"],
+  ["הוסף מחזור", "Add round"],
+  ["מוסיף...", "Adding..."],
 ];
 
 const heToEn = {};

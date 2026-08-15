@@ -68,7 +68,7 @@ class League(Base):
     round_length_days = Column(Integer, nullable=True, default=7)
 
     sport = relationship("Sport", back_populates="leagues")
-    memberships = relationship("LeagueMembership", back_populates="league")
+    memberships = relationship("LeagueMembership", back_populates="league", order_by="LeagueMembership.id")
     matches = relationship("Match", back_populates="league")
 
 

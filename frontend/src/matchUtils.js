@@ -63,6 +63,13 @@ export function roundDueDate(scheduleStartedAt, roundNumber, roundLengthDays = 7
   return end ? formatDayMonth(end) : "";
 }
 
+export function leagueRuleLabels(league, t) {
+  const bestOfLabels = { 1: t("עד סט אחד"), 3: t("עד 3 סטים"), 5: t("עד 5 סטים") };
+  const bestOfLabel = bestOfLabels[league.best_of] || bestOfLabels[3];
+  const frequencyLabel = league.round_length_days === 14 ? t("מחזור דו-שבועי") : t("מחזור שבועי");
+  return { bestOfLabel, frequencyLabel };
+}
+
 export function currentRoundNumber(scheduleStartedAt, roundLengthDays = 7, now = new Date()) {
   if (!scheduleStartedAt) return null;
   const anchor = new Date(scheduleStartedAt);
@@ -70,4 +77,50 @@ export function currentRoundNumber(scheduleStartedAt, roundLengthDays = 7, now =
   if (now <= round1End) return 1;
   const offsetDays = Math.floor((now - round1End) / 86400000);
   return 2 + Math.floor((offsetDays - 1) / roundLengthDays);
+}
+
+// Mirrors the backend's circle-method round robin in matches.py (_round_robin_rounds),
+// so the client can preview exactly which pairs the next schedule generation call will create.
+function roundRobinRounds(memberIds) {
+  const players = [...memberIds];
+  if (players.length % 2 === 1) players.push(null);
+  const n = players.length;
+  const rounds = [];
+  let current = players;
+  for (let i = 0; i < n - 1; i++) {
+    const pairs = [];
+    for (let j = 0; j < n / 2; j++) {
+      const p1 = current[j];
+      const p2 = current[n - 1 - j];
+      if (p1 !== null && p2 !== null) pairs.push([p1, p2]);
+    }
+    rounds.push(pairs);
+    current = [current[0], current[current.length - 1], ...current.slice(1, -1)];
+  }
+  return rounds;
+}
+
+function pairKey(a, b) {
+  return a < b ? `${a}-${b}` : `${b}-${a}`;
+}
+
+// members must be in league-join order (matches the server's LeagueMembership.id order).
+// Mirrors generate_schedule's full loop: a single call walks every ideal round and creates
+// whatever pairs are still missing there, so one click can span more than one round_number
+// (e.g. a full first cycle, or catch-up pairs for someone who joined late).
+export function nextSchedulePreview(members, allMatches) {
+  const memberIds = members.map((m) => m.id);
+  const existingPairs = new Set(allMatches.map((m) => pairKey(m.player1.id, m.player2.id)));
+  const idealRounds = roundRobinRounds(memberIds);
+  const byId = new Map(members.map((m) => [m.id, m]));
+
+  const pairs = [];
+  let roundsToCreate = 0;
+  for (const roundPairs of idealRounds) {
+    const newPairs = roundPairs.filter(([a, b]) => !existingPairs.has(pairKey(a, b)));
+    if (newPairs.length === 0) continue;
+    roundsToCreate += 1;
+    for (const [a, b] of newPairs) pairs.push([byId.get(a), byId.get(b)]);
+  }
+  return { pairs, roundsToCreate };
 }

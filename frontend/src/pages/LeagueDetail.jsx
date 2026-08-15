@@ -4,13 +4,18 @@ import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import SetScoreForm from "../SetScoreForm.jsx";
-import NextMatchRow from "../NextMatchRow.jsx";
-import CircularGauge from "../CircularGauge.jsx";
+import MatchCard from "../MatchCard.jsx";
 import WaitingConfirmationCard from "../WaitingConfirmationCard.jsx";
 import ConfirmScoreSheet from "../ConfirmScoreSheet.jsx";
-import { UserPlusIcon, CalendarIcon, ChevronIcon } from "../Icons.jsx";
-import EmptyState from "../EmptyState.jsx";
-import { formatSets, formatWeekShort, currentRoundNumber, roundDueDate } from "../matchUtils.js";
+import { UserPlusIcon, CalendarIcon, ChevronIcon, GearIcon, PlusIcon } from "../Icons.jsx";
+import {
+  formatSets,
+  formatWeekShort,
+  currentRoundNumber,
+  roundDueDate,
+  leagueRuleLabels,
+  nextSchedulePreview,
+} from "../matchUtils.js";
 import { SkeletonPageHeader, SkeletonHeroStat, SkeletonStandingsTable } from "../Skeleton.jsx";
 import PageHelp from "../PageHelp.jsx";
 
@@ -49,6 +54,7 @@ export default function LeagueDetail() {
   const [inviteLoading, setInviteLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("standings");
   const [confirmSheetMatch, setConfirmSheetMatch] = useState(null);
+  const [showAddRoundConfirm, setShowAddRoundConfirm] = useState(false);
   const autoJoinAttempted = useRef(false);
   const initialTabSet = useRef(false);
 
@@ -58,7 +64,12 @@ export default function LeagueDetail() {
     if (!league) return;
     if (!initialTabSet.current) {
       initialTabSet.current = true;
-      if (isMember) setActiveTab("stats");
+      const tabFromLink = searchParams.get("tab");
+      if (tabFromLink === "matches" || tabFromLink === "standings") {
+        setActiveTab(tabFromLink);
+      } else if (isMember) {
+        setActiveTab("stats");
+      }
       return;
     }
     if (!isMember && activeTab === "stats") setActiveTab("standings");
@@ -145,6 +156,11 @@ export default function LeagueDetail() {
     }
   }
 
+  async function handleAddRound() {
+    await handleGenerateSchedule();
+    setShowAddRoundConfirm(false);
+  }
+
   async function handleReportScore(matchId, sets) {
     setBusy(true);
     setError("");
@@ -186,11 +202,6 @@ export default function LeagueDetail() {
     }
   }
 
-  async function handleUpdateRules(rules) {
-    await api.updateLeagueRules(leagueId, rules);
-    await loadAll();
-  }
-
   async function handleCancelMatch(matchId) {
     setBusy(true);
     setError("");
@@ -200,27 +211,6 @@ export default function LeagueDetail() {
     } catch (err) {
       setError(err.message);
     } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleDeleteLeague() {
-    if (
-      !window.confirm(
-        t('למחוק את הליגה "{name}"? הפעולה תמחק גם את כל המשחקים והחברויות בה, ולא ניתנת לביטול.', {
-          name: league.name,
-        })
-      )
-    ) {
-      return;
-    }
-    setBusy(true);
-    setError("");
-    try {
-      await api.deleteLeague(leagueId);
-      navigate("/leagues");
-    } catch (err) {
-      setError(err.message);
       setBusy(false);
     }
   }
@@ -264,7 +254,37 @@ export default function LeagueDetail() {
   const myStanding = standings.find((row) => row.user.id === user?.id);
   const myWinRate =
     myStanding && myStanding.played > 0 ? Math.round((myStanding.wins / myStanding.played) * 100) : null;
+  const myRankIndex = standings.findIndex((row) => row.user.id === user?.id);
+  const myRank = myRankIndex >= 0 ? myRankIndex + 1 : null;
+  const leagueFormStrip = matches
+    .filter((m) => m.status === "completed")
+    .slice()
+    .sort((a, b) => new Date(b.played_at || b.created_at) - new Date(a.played_at || a.created_at))
+    .slice(0, 8)
+    .map((m) => {
+      const iAmPlayer1 = m.player1.id === user?.id;
+      const myScore = iAmPlayer1 ? m.player1_score : m.player2_score;
+      const opponentScore = iAmPlayer1 ? m.player2_score : m.player1_score;
+      return { won: myScore > opponentScore };
+    });
   const round = currentRoundNumber(league.schedule_started_at, league.round_length_days);
+  const ruleLabels = leagueRuleLabels(league, t);
+  const myMatchDueDate = round
+    ? roundDueDate(league.schedule_started_at, round, league.round_length_days)
+    : "";
+  const myMatchMeta = [formatWeekShort(round, t), myMatchDueDate ? t("עד {date}", { date: myMatchDueDate }) : null]
+    .filter(Boolean)
+    .join(" · ");
+  const hasSchedule = allMatches.length > 0;
+  const roundsCount = new Set(allMatches.map((m) => m.round_number).filter(Boolean)).size;
+  const nextRound = roundsCount + 1;
+  const { pairs: nextPairs, roundsToCreate } = nextSchedulePreview(members, allMatches);
+  const lastNewRound = nextRound + Math.max(roundsToCreate, 1) - 1;
+  const nextRoundDueDate = roundDueDate(
+    league.schedule_started_at || new Date().toISOString(),
+    lastNewRound,
+    league.round_length_days
+  );
 
   return (
     <div>
@@ -276,21 +296,29 @@ export default function LeagueDetail() {
 
         <div className="page-title-row">
           <h1>{league.name}</h1>
-          <PageHelp
-            pageKey="leagueDetail"
-            title="עמוד הליגה"
-            text="כאן תראו את טבלת הדירוג, את המשחקים שלכם ושל שאר חברי הליגה, ואת הסטטיסטיקה האישית שלכם בליגה הזו."
-          />
+          <div className="page-title-actions">
+            <PageHelp
+              pageKey="leagueDetail"
+              title="עמוד הליגה"
+              text="כאן תראו את טבלת הדירוג, את המשחקים שלכם ושל שאר חברי הליגה, ואת הסטטיסטיקה האישית שלכם בליגה הזו."
+            />
+            {isCreator && (
+              <Link to={`/leagues/${leagueId}/manage`} className="manage-league-btn" aria-label={t("ניהול הליגה")}>
+                <GearIcon aria-hidden="true" />
+              </Link>
+            )}
+          </div>
         </div>
         <div className="league-detail-meta">
           {[t(league.sport?.name), `${members.length} ${t("שחקנים")}`, round ? formatWeekShort(round, t) : null]
             .filter(Boolean)
             .join(" · ")}
         </div>
+        <div className="league-rules-line">
+          {ruleLabels.bestOfLabel} · {ruleLabels.frequencyLabel}
+        </div>
         {league.description && <p className="muted">{league.description}</p>}
       </header>
-
-      <LeagueRules league={league} isCreator={isCreator} onUpdate={handleUpdateRules} t={t} />
 
       <div className="league-detail-actions">
         {!isMember && user && (league.is_open || codeFromLink) && (
@@ -302,16 +330,6 @@ export default function LeagueDetail() {
           <p className="muted">
             {t("הליגה סגורה. כדי להצטרף צריך קישור הזמנה מאחד מחברי הליגה.")}
           </p>
-        )}
-        {isCreator && (
-          <button
-            type="button"
-            className="btn-secondary btn-small"
-            onClick={handleGenerateSchedule}
-            disabled={busy}
-          >
-            {busy ? t("יוצר...") : t("צור לוח משחקים")}
-          </button>
         )}
         {isMember && !isCreator && (
           <button
@@ -355,50 +373,51 @@ export default function LeagueDetail() {
       </div>
 
       <div>
-        {activeTab === "stats" && isMember && (
-          <>
-            {myNextMatch && (
-              <div style={{ marginBottom: myStanding ? 24 : 0 }}>
-                <h2>{t("המשחק הבא שלך")}</h2>
-                <ul className="match-list">
-                  <NextMatchRow
-                    match={myNextMatch}
-                    currentUserId={user.id}
-                    onSubmit={(sets) => handleReportScore(myNextMatch.id, sets)}
-                    busy={busy}
-                    maxSets={league.best_of}
-                  />
-                </ul>
+        {activeTab === "stats" && isMember && myStanding && (
+          <div className="league-stats-summary">
+            <div className="profile-winrate-row">
+              <div className="profile-winrate-value" dir="ltr">
+                <span className="profile-winrate-number">{myWinRate !== null ? myWinRate : "–"}</span>
+                <span className="profile-winrate-percent">%</span>
               </div>
-            )}
-            {myStanding && (
-              <div className="hero-stat">
-                <CircularGauge
-                  value={myStanding.wins}
-                  max={Math.max(myStanding.played, 1)}
-                  size={92}
-                  strokeWidth={8}
-                >
-                  <div className="gauge-value">{myWinRate !== null ? `${myWinRate}%` : "–"}</div>
-                  <div className="gauge-caption">{t("ניצחונות")}</div>
-                </CircularGauge>
-                <div className="hero-copy">
-                  <span className="eyebrow">{t("הסטטיסטיקה שלי בליגה")}</span>
-                  <div className="chip-row">
-                    <span className="chip">
-                      {myStanding.points} {t("נקודות")}
-                    </span>
-                    <span className="chip">
-                      {myStanding.losses} {t("הפסדים")}
-                    </span>
-                    <span className="chip">
-                      {myStanding.played} {t("משחקים")}
-                    </span>
-                  </div>
+              <div className="profile-winrate-label">
+                <div className="profile-winrate-title">{t("אחוז ניצחונות")}</div>
+                <div className="profile-winrate-record" dir="ltr">
+                  {myStanding.wins}W · {myStanding.losses}L
                 </div>
               </div>
+            </div>
+
+            {leagueFormStrip.length > 0 && (
+              <>
+                <div className="profile-form-strip">
+                  {leagueFormStrip.map((m, i) => (
+                    <span key={i} className={`profile-form-bar${m.won ? " win" : ""}`} />
+                  ))}
+                </div>
+                <div className="profile-form-caption">
+                  {leagueFormStrip.length} {t("המשחקים האחרונים")}
+                </div>
+              </>
             )}
-          </>
+
+            <div className="league-stat-tiles">
+              <div className="league-stat-tile rank">
+                <div className="league-stat-tile-label">{t("דירוג")}</div>
+                <div className="league-stat-tile-value" dir="ltr">
+                  {myRank !== null ? `#${myRank}` : "–"}
+                </div>
+              </div>
+              <div className="league-stat-tile">
+                <div className="league-stat-tile-label">{t("נקודות")}</div>
+                <div className="league-stat-tile-value">{myStanding.points}</div>
+              </div>
+              <div className="league-stat-tile">
+                <div className="league-stat-tile-label">{t("משחקים")}</div>
+                <div className="league-stat-tile-value">{myStanding.played}</div>
+              </div>
+            </div>
+          </div>
         )}
 
         {activeTab === "standings" && (
@@ -446,7 +465,16 @@ export default function LeagueDetail() {
                       <td>
                         <span className={`rank-badge${rank <= 3 ? ` rank-${rank}` : ""}`}>{rank}</span>
                       </td>
-                      <td className="player-col">{row.user.name}</td>
+                      <td className="player-col">
+                        {isMe ? (
+                          row.user.name
+                        ) : (
+                          <Link to={`/head-to-head/${row.user.id}`} className="standings-player-link">
+                            {row.user.name}
+                            <ChevronIcon className="standings-player-chevron chevron-icon" aria-hidden="true" />
+                          </Link>
+                        )}
+                      </td>
                       <td>{row.played}</td>
                       <td>{row.wins}</td>
                       <td>{row.losses}</td>
@@ -457,28 +485,59 @@ export default function LeagueDetail() {
                 })}
               </tbody>
             </table>
+            {standings.length > 0 && (
+              <p className="standings-hint">{t("הקשה על שחקן פותחת ראש בראש מולו")}</p>
+            )}
           </div>
         )}
 
         {activeTab === "matches" && (
           <div className="league-matches-tab">
+            {hasSchedule && (
+              <div className="schedule-status-card">
+                <div>
+                  <div className="schedule-status-label">{t("לוח משחקים")}</div>
+                  <div className="schedule-status-value">
+                    {t("{rounds} מחזורים · {games} משחקים", { rounds: roundsCount, games: allMatches.length })}
+                  </div>
+                </div>
+                {isCreator && nextPairs.length > 0 && (
+                  <button
+                    type="button"
+                    className="schedule-add-round-btn"
+                    onClick={() => setShowAddRoundConfirm(true)}
+                  >
+                    {roundsToCreate > 1
+                      ? t("+ {n} מחזורים", { n: roundsToCreate })
+                      : t("+ מחזור {n}", { n: nextRound })}
+                  </button>
+                )}
+              </div>
+            )}
+
             {isMember && (myNextMatch || myPendingConfirmationMatch) && (
               <div>
                 <div className="profile-section-header" style={{ justifyContent: "flex-start" }}>
-                  <span>
-                    {[t("המשחק שלי"), round ? formatWeekShort(round, t) : null].filter(Boolean).join(" · ")}
-                  </span>
+                  <span>{t("המשחק שלי")}</span>
                 </div>
                 {myNextMatch ? (
-                  <MyMatchCard
-                    match={myNextMatch}
-                    currentUserId={user.id}
-                    dueDate={round ? roundDueDate(league.schedule_started_at, round, league.round_length_days) : ""}
-                    onSubmit={(sets) => handleReportScore(myNextMatch.id, sets)}
-                    onCancel={() => handleCancelMatch(myNextMatch.id)}
-                    busy={busy}
-                    maxSets={league.best_of}
-                  />
+                  <>
+                    <MatchCard
+                      match={myNextMatch}
+                      currentUserId={user.id}
+                      meta={myMatchMeta}
+                      onSubmit={(sets) => handleReportScore(myNextMatch.id, sets)}
+                      busy={busy}
+                      maxSets={league.best_of}
+                    />
+                    <button
+                      type="button"
+                      className="link-btn cancel-match-link"
+                      onClick={() => handleCancelMatch(myNextMatch.id)}
+                    >
+                      {t("בטל משחק")}
+                    </button>
+                  </>
                 ) : iAmReporter ? (
                   <WaitingConfirmationCard
                     match={myPendingConfirmationMatch}
@@ -501,10 +560,36 @@ export default function LeagueDetail() {
               </div>
             )}
 
-            {allMatches.length === 0 && (
-              <EmptyState icon={<CalendarIcon aria-hidden="true" />}>
-                {t("עדיין אין משחקים בליגה.")}
-              </EmptyState>
+            {!hasSchedule && (
+              <div className="schedule-empty">
+                <CalendarIcon className="schedule-empty-icon" aria-hidden="true" />
+                <p className="schedule-empty-text">
+                  {t("עדיין אין לוח משחקים. {n} השחקנים בליגה מחכים לשיבוץ.", { n: members.length })}
+                </p>
+              </div>
+            )}
+            {!hasSchedule && isCreator && (
+              <>
+                <button
+                  type="button"
+                  className="btn-create-schedule"
+                  onClick={handleGenerateSchedule}
+                  disabled={busy || nextPairs.length === 0}
+                >
+                  <PlusIcon aria-hidden="true" />
+                  {busy ? t("יוצר...") : t("צור לוח משחקים")}
+                </button>
+                {nextPairs.length > 0 && (
+                  <p className="schedule-create-caption">
+                    {roundsToCreate > 1
+                      ? t("ייווצרו {rounds} מחזורים · {count} משחקים", {
+                          rounds: roundsToCreate,
+                          count: nextPairs.length,
+                        })
+                      : t("ייווצר מחזור {n} · {count} משחקים", { n: nextRound, count: nextPairs.length })}
+                  </p>
+                )}
+              </>
             )}
             {groupMatchesByRound(allMatches).map(({ round: r, matches: roundMatches }) => (
               <div key={r}>
@@ -551,24 +636,6 @@ export default function LeagueDetail() {
         </button>
       )}
 
-      {user?.is_admin && (
-        <div style={{ marginTop: 28, paddingTop: 20, borderTop: "1px solid var(--line)" }}>
-          <h2>{t("ניהול ליגה")}</h2>
-          <p className="muted" style={{ marginBottom: 12 }}>
-            {t("מחיקת הליגה תסיר לצמיתות את כל המשחקים והחברויות בה.")}
-          </p>
-          <button
-            type="button"
-            className="link-btn"
-            style={{ color: "var(--danger)" }}
-            onClick={handleDeleteLeague}
-            disabled={busy}
-          >
-            {t("מחק ליגה")}
-          </button>
-        </div>
-      )}
-
       {confirmSheetMatch && user && (
         <ConfirmScoreSheet
           match={confirmSheetMatch}
@@ -580,117 +647,61 @@ export default function LeagueDetail() {
           maxSets={league.best_of}
         />
       )}
+
+      {showAddRoundConfirm && (
+        <AddRoundConfirmSheet
+          nextRound={nextRound}
+          roundsToCreate={roundsToCreate}
+          pairs={nextPairs}
+          dueDate={nextRoundDueDate}
+          busy={busy}
+          onConfirm={handleAddRound}
+          onClose={() => setShowAddRoundConfirm(false)}
+        />
+      )}
     </div>
   );
 }
 
-
-function LeagueRules({ league, isCreator, onUpdate, t }) {
-  const [editing, setEditing] = useState(false);
-  const [bestOf, setBestOf] = useState(league.best_of);
-  const [roundLengthDays, setRoundLengthDays] = useState(league.round_length_days);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
-
-  function openEditor() {
-    setBestOf(league.best_of);
-    setRoundLengthDays(league.round_length_days);
-    setError("");
-    setEditing(true);
-  }
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setSubmitting(true);
-    setError("");
-    try {
-      await onUpdate({ best_of: bestOf, round_length_days: roundLengthDays });
-      setEditing(false);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  const bestOfLabels = { 1: t("עד סט אחד"), 3: t("עד 3 סטים"), 5: t("עד 5 סטים") };
-  const bestOfLabel = bestOfLabels[league.best_of] || bestOfLabels[3];
-  const frequencyLabel = league.round_length_days === 14 ? t("דו-שבועי") : t("שבועי");
-
-  if (!editing) {
-    return (
-      <div className="league-rules">
-        <div className="league-rules-row">
-          <span className="league-rules-label">{t("פורמט משחק")}</span>
-          <span className="league-rules-value">{bestOfLabel}</span>
-        </div>
-        <div className="league-rules-row">
-          <span className="league-rules-label">{t("תדירות לוח משחקים")}</span>
-          <span className="league-rules-value">{frequencyLabel}</span>
-        </div>
-        {isCreator && (
-          <button type="button" className="league-rules-edit" onClick={openEditor}>
-            {t("ערוך חוקים")}
-          </button>
-        )}
-      </div>
-    );
-  }
-
-  return (
-    <form className="league-rules-form" onSubmit={handleSubmit}>
-      <label>
-        {t("פורמט משחק")}
-        <select value={bestOf} onChange={(e) => setBestOf(Number(e.target.value))}>
-          <option value={1}>{t("עד סט אחד")}</option>
-          <option value={3}>{t("עד 3 סטים")}</option>
-          <option value={5}>{t("עד 5 סטים")}</option>
-        </select>
-      </label>
-      <label>
-        {t("תדירות לוח משחקים")}
-        <select value={roundLengthDays} onChange={(e) => setRoundLengthDays(Number(e.target.value))}>
-          <option value={7}>{t("שבועי")}</option>
-          <option value={14}>{t("דו-שבועי")}</option>
-        </select>
-      </label>
-      {error && <p className="error">{t(error)}</p>}
-      <div className="inline-form">
-        <button type="submit" className="btn-primary" disabled={submitting}>
-          {submitting ? t("שומר...") : t("שמור")}
-        </button>
-        <button type="button" className="link-btn" onClick={() => setEditing(false)}>
-          {t("ביטול")}
-        </button>
-      </div>
-    </form>
-  );
-}
-
-function MyMatchCard({ match, currentUserId, dueDate, onSubmit, onCancel, busy, maxSets }) {
+function AddRoundConfirmSheet({ nextRound, roundsToCreate, pairs, dueDate, busy, onConfirm, onClose }) {
   const { t } = useLanguage();
-  const iAmPlayer1 = match.player1.id === currentUserId;
-  const opponent = iAmPlayer1 ? match.player2 : match.player1;
 
   return (
-    <div className="my-match-card">
-      <div className="my-match-top">
-        <Link to={`/head-to-head/${opponent.id}`} className="my-match-name">
-          {t("מול {name}", { name: opponent.name })}
-        </Link>
-        {dueDate && <span className="my-match-due">{t("עד {date}", { date: dueDate })}</span>}
+    <div className="confirm-sheet-overlay" onClick={onClose}>
+      <div className="confirm-sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="confirm-sheet-handle" />
+        <div className="confirm-sheet-title">
+          {roundsToCreate > 1
+            ? t("להוסיף {n} מחזורים?", { n: roundsToCreate })
+            : t("להוסיף מחזור {n}?", { n: nextRound })}
+        </div>
+        <p className="add-round-subtitle">
+          {t("{count} משחקים · לשחק עד {date}", { count: pairs.length, date: dueDate })}
+        </p>
+
+        <div className="add-round-pairs">
+          {pairs.map(([p1, p2], i) => (
+            <div className="add-round-pair-row" key={i}>
+              <span>{p1.name}</span>
+              <span className="add-round-vs">vs</span>
+              <span>{p2.name}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="add-round-actions">
+          <button type="button" className="confirm-sheet-btn-confirm" onClick={onConfirm} disabled={busy}>
+            {busy ? t("מוסיף...") : t("הוסף מחזור")}
+          </button>
+          <button type="button" className="link-btn add-round-cancel" onClick={onClose}>
+            {t("ביטול")}
+          </button>
+        </div>
       </div>
-      <SetScoreForm
-        player1Name={match.player1.name}
-        player2Name={match.player2.name}
-        onSubmit={onSubmit}
-        onCancel={onCancel}
-        busy={busy}
-        maxSets={maxSets}
-      />
     </div>
   );
 }
+
 
 function AllMatchesRow({ match, currentUserId, onReport, onNeedsConfirm, busy, maxSets }) {
   const [editing, setEditing] = useState(false);

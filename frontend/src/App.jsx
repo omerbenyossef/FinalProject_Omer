@@ -7,6 +7,7 @@ import ForgotPassword from "./pages/ForgotPassword.jsx";
 import ResetPassword from "./pages/ResetPassword.jsx";
 import Leagues from "./pages/Leagues.jsx";
 import LeagueDetail from "./pages/LeagueDetail.jsx";
+import LeagueManage from "./pages/LeagueManage.jsx";
 import RoundDetail from "./pages/RoundDetail.jsx";
 import Profile from "./pages/Profile.jsx";
 import Settings from "./pages/Settings.jsx";
@@ -54,6 +55,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <RoundDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/leagues/:leagueId/manage"
+          element={
+            <ProtectedRoute>
+              <LeagueManage />
             </ProtectedRoute>
           }
         />

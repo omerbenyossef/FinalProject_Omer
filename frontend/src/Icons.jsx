@@ -40,6 +40,15 @@ export function UserPlusIcon(props) {
   );
 }
 
+export function PlusIcon(props) {
+  return (
+    <svg {...common} {...props}>
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
+  );
+}
+
 export function CalendarIcon(props) {
   return (
     <svg {...common} {...props}>
@@ -181,6 +190,15 @@ export function TrendUpIcon(props) {
     <svg {...common} {...props}>
       <polyline points="6 17 18 7" />
       <polyline points="10 7 18 7 18 15" />
+    </svg>
+  );
+}
+
+export function GearIcon(props) {
+  return (
+    <svg {...common} {...props}>
+      <circle cx="12" cy="12" r="3.2" />
+      <path d="M12 3.5v2.3M12 18.2v2.3M20.5 12h-2.3M5.8 12H3.5M17.7 6.3l-1.6 1.6M7.9 16.1l-1.6 1.6M17.7 17.7l-1.6-1.6M7.9 7.9 6.3 6.3" />
     </svg>
   );
 }

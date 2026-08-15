@@ -1,4 +1,3 @@
-import random
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -133,7 +132,6 @@ def generate_schedule(
     existing_pairs = {frozenset((m.player1_id, m.player2_id)) for m in existing_matches}
     max_existing_round = max((m.round_number or 0 for m in existing_matches), default=0)
 
-    random.shuffle(member_ids)
     ideal_rounds = _round_robin_rounds(member_ids)
 
     created = []
@@ -143,9 +141,8 @@ def generate_schedule(
         if not new_pairs:
             continue
         for p1, p2 in new_pairs:
-            a, b = (p1, p2) if random.random() < 0.5 else (p2, p1)
             match = models.Match(
-                league_id=league_id, player1_id=a, player2_id=b, round_number=next_round_number
+                league_id=league_id, player1_id=p1, player2_id=p2, round_number=next_round_number
             )
             db.add(match)
             created.append(match)

@@ -5,6 +5,7 @@ import { useAuth } from "../AuthContext.jsx";
 import { useSport } from "../SportContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import NextMatchStack from "../NextMatchStack.jsx";
+import ConfirmScoreSheet from "../ConfirmScoreSheet.jsx";
 import Avatar from "../Avatar.jsx";
 import { CalendarIcon, TrophyIcon, TrendDownIcon, TrendUpIcon, ChevronIcon } from "../Icons.jsx";
 import { formatDayMonth } from "../matchUtils.js";
@@ -27,6 +28,7 @@ export default function Profile() {
   const [nextMatches, setNextMatches] = useState([]);
   const [matchesLoading, setMatchesLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [confirmEntry, setConfirmEntry] = useState(null);
 
   function loadNextMatches() {
     api
@@ -64,13 +66,43 @@ export default function Profile() {
     }
   }
 
+  async function handleConfirmScore() {
+    if (!confirmEntry) return;
+    setBusy(true);
+    try {
+      await api.confirmScore(confirmEntry.league_id, confirmEntry.match.id);
+      setConfirmEntry(null);
+      loadNextMatches();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleDisputeScore(sets) {
+    if (!confirmEntry) return;
+    setBusy(true);
+    try {
+      await api.reportScore(confirmEntry.league_id, confirmEntry.match.id, sets);
+      setConfirmEntry(null);
+      loadNextMatches();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   if (!user) return null;
 
   const myLeaguesForSport = myLeagues.filter((l) => l.sport.id === selectedSportId);
   const myLeagueIdsForSport = new Set(myLeaguesForSport.map((l) => l.id));
-  const nextMatchesForSport = nextMatches.filter(
-    (entry) => myLeagueIdsForSport.has(entry.league_id) && entry.match.status !== "completed"
+  const myLeagueEntries = nextMatches.filter((entry) => myLeagueIdsForSport.has(entry.league_id));
+  const confirmationEntries = myLeagueEntries.filter(
+    (entry) => entry.match.status === "pending_confirmation" && entry.match.reported_by !== user.id
   );
+  const nextMatchesForSport = myLeagueEntries.filter((entry) => entry.match.status === "pending");
 
   const winRate =
     stats && stats.matches_played > 0 ? Math.round((stats.wins / stats.matches_played) * 100) : null;
@@ -81,6 +113,40 @@ export default function Profile() {
 
   return (
     <div className="profile-scoreboard">
+      {confirmationEntries.length > 0 && (
+        <div className="confirmation-banner-list">
+          {confirmationEntries.map((entry) => {
+            const m = entry.match;
+            const iAmPlayer1 = m.player1.id === user.id;
+            const reporter = m.reported_by === m.player1.id ? m.player1 : m.player2;
+            const mySets = iAmPlayer1
+              ? m.sets
+              : m.sets?.map((s) => ({ player1_games: s.player2_games, player2_games: s.player1_games }));
+            return (
+              <button
+                type="button"
+                key={m.id}
+                className="confirmation-banner"
+                onClick={() => setConfirmEntry(entry)}
+              >
+                <span className="confirmation-banner-dot" aria-hidden="true" />
+                <div className="confirmation-banner-body">
+                  <div className="confirmation-banner-title">{t("יש לך תוצאה לאישור")}</div>
+                  <div className="confirmation-banner-subtitle">
+                    {t("{reporter} דיווח {sets} · {league}", {
+                      reporter: reporter.name,
+                      sets: formatMySets(mySets),
+                      league: entry.league_name,
+                    })}
+                  </div>
+                </div>
+                <ChevronIcon className="confirmation-banner-chevron chevron-icon" aria-hidden="true" />
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       <header className="page-head">
         <div className="profile-season-row">
           <span className="profile-season-eyebrow">
@@ -239,6 +305,18 @@ export default function Profile() {
             ))}
           </div>
         </div>
+      )}
+
+      {confirmEntry && (
+        <ConfirmScoreSheet
+          match={confirmEntry.match}
+          currentUserId={user.id}
+          busy={busy}
+          maxSets={confirmEntry.best_of}
+          onConfirm={handleConfirmScore}
+          onDispute={handleDisputeScore}
+          onClose={() => setConfirmEntry(null)}
+        />
       )}
     </div>
   );
