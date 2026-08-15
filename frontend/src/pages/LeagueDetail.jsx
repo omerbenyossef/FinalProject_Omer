@@ -604,51 +604,55 @@ export default function LeagueDetail() {
                 </div>
 
                 {isMember && myNextMatch && (
-                  <div className="round-my-match">
-                    <div className="round-my-match-eyebrow">{t("המשחק שלי")}</div>
-                    <div className="round-my-match-top">
-                      <Avatar name={myOpponent.name} size={36} />
-                      <div className="round-my-match-info">
-                        <div className="round-my-match-name">
-                          {t("מול {name}", { name: myOpponent.name })}
-                        </div>
-                        {myH2h && (
-                          <div className="round-my-match-h2h" dir="ltr">
-                            H2H {myH2h.wins}-{myH2h.losses}
+                  <>
+                    <div className="profile-section-header" style={{ justifyContent: "flex-start" }}>
+                      <span>{t("המשחק שלי")}</span>
+                    </div>
+                    <div className="round-my-match">
+                      <div className="round-my-match-top">
+                        <Avatar name={myOpponent.name} size={36} />
+                        <div className="round-my-match-info">
+                          <div className="round-my-match-name">
+                            {t("מול {name}", { name: myOpponent.name })}
                           </div>
+                          {myH2h && (
+                            <div className="round-my-match-h2h" dir="ltr">
+                              H2H {myH2h.wins}-{myH2h.losses}
+                            </div>
+                          )}
+                        </div>
+                        {!reportingMyMatch && (
+                          <button
+                            type="button"
+                            className="btn-gold-pill round-my-match-report-btn"
+                            onClick={() => setReportingMyMatch(true)}
+                          >
+                            {t("דווח")}
+                          </button>
                         )}
                       </div>
-                      {!reportingMyMatch && (
-                        <button
-                          type="button"
-                          className="btn-gold-pill round-my-match-report-btn"
-                          onClick={() => setReportingMyMatch(true)}
-                        >
-                          {t("דווח")}
-                        </button>
+                      {reportingMyMatch && (
+                        <SetScoreForm
+                          player1Name={myNextMatch.player1.name}
+                          player2Name={myNextMatch.player2.name}
+                          onSubmit={(sets) => {
+                            handleReportScore(myNextMatch.id, sets);
+                            setReportingMyMatch(false);
+                          }}
+                          onCancel={() => setReportingMyMatch(false)}
+                          busy={busy}
+                          maxSets={league.best_of}
+                        />
                       )}
+                      <button
+                        type="button"
+                        className="link-btn cancel-match-link"
+                        onClick={() => handleCancelMatch(myNextMatch.id)}
+                      >
+                        {t("בטל משחק")}
+                      </button>
                     </div>
-                    {reportingMyMatch && (
-                      <SetScoreForm
-                        player1Name={myNextMatch.player1.name}
-                        player2Name={myNextMatch.player2.name}
-                        onSubmit={(sets) => {
-                          handleReportScore(myNextMatch.id, sets);
-                          setReportingMyMatch(false);
-                        }}
-                        onCancel={() => setReportingMyMatch(false)}
-                        busy={busy}
-                        maxSets={league.best_of}
-                      />
-                    )}
-                    <button
-                      type="button"
-                      className="link-btn cancel-match-link"
-                      onClick={() => handleCancelMatch(myNextMatch.id)}
-                    >
-                      {t("בטל משחק")}
-                    </button>
-                  </div>
+                  </>
                 )}
 
                 {isMember && !myNextMatch && myPendingConfirmationMatch && (
