@@ -493,7 +493,7 @@ export default function LeagueDetail() {
 
         {activeTab === "matches" && (
           <div className="league-matches-tab">
-            {hasSchedule && (
+            {hasSchedule && isCreator && (
               <div className="schedule-status-card">
                 <div>
                   <div className="schedule-status-label">{t("לוח משחקים")}</div>
@@ -501,7 +501,7 @@ export default function LeagueDetail() {
                     {t("{rounds} מחזורים · {games} משחקים", { rounds: roundsCount, games: allMatches.length })}
                   </div>
                 </div>
-                {isCreator && nextPairs.length > 0 && (
+                {nextPairs.length > 0 && (
                   <button
                     type="button"
                     className="schedule-add-round-btn"
