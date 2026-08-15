@@ -344,6 +344,18 @@ export default function LeagueDetail() {
         <div className="league-rules-line">
           {ruleLabels.bestOfLabel} · {ruleLabels.frequencyLabel}
         </div>
+        {isMember && !isCreator && (
+          <div className="league-header-actions">
+            <button
+              type="button"
+              className="danger-zone-btn"
+              onClick={handleLeaveLeague}
+              disabled={busy}
+            >
+              {t("יציאה")}
+            </button>
+          </div>
+        )}
         {league.description && <p className="muted">{league.description}</p>}
       </header>
 
@@ -357,17 +369,6 @@ export default function LeagueDetail() {
           <p className="muted">
             {t("הליגה סגורה. כדי להצטרף צריך קישור הזמנה מאחד מחברי הליגה.")}
           </p>
-        )}
-        {isMember && !isCreator && (
-          <button
-            type="button"
-            className="btn-secondary btn-small"
-            style={{ color: "var(--danger)" }}
-            onClick={handleLeaveLeague}
-            disabled={busy}
-          >
-            {t("עזיבת ליגה")}
-          </button>
         )}
       </div>
 
