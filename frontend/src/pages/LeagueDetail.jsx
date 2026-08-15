@@ -57,6 +57,7 @@ export default function LeagueDetail() {
   const [showAddRoundConfirm, setShowAddRoundConfirm] = useState(false);
   const [myH2h, setMyH2h] = useState(null);
   const [reportingMyMatch, setReportingMyMatch] = useState(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const autoJoinAttempted = useRef(false);
   const initialTabSet = useRef(false);
 
@@ -218,9 +219,6 @@ export default function LeagueDetail() {
   }
 
   async function handleLeaveLeague() {
-    if (!window.confirm(t('לעזוב את הליגה "{name}"?', { name: league.name }))) {
-      return;
-    }
     setBusy(true);
     setError("");
     try {
@@ -229,6 +227,7 @@ export default function LeagueDetail() {
     } catch (err) {
       setError(err.message);
       setBusy(false);
+      setShowLeaveConfirm(false);
     }
   }
 
@@ -342,17 +341,16 @@ export default function LeagueDetail() {
             .join(" · ")}
         </div>
         <div className="league-rules-line">
-          <span>
+          <span className="league-rules-line-text">
             {ruleLabels.bestOfLabel} · {ruleLabels.frequencyLabel}
           </span>
           {isMember && !isCreator && (
             <button
               type="button"
-              className="danger-zone-btn league-rules-line-exit"
-              onClick={handleLeaveLeague}
-              disabled={busy}
+              className="league-leave-chip"
+              onClick={() => setShowLeaveConfirm(true)}
             >
-              {t("עזיבת ליגה")}
+              {t("יציאה")}
             </button>
           )}
         </div>
@@ -778,6 +776,44 @@ export default function LeagueDetail() {
           onClose={() => setShowAddRoundConfirm(false)}
         />
       )}
+
+      {showLeaveConfirm && (
+        <LeaveLeagueConfirmSheet
+          busy={busy}
+          onConfirm={handleLeaveLeague}
+          onClose={() => setShowLeaveConfirm(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+function LeaveLeagueConfirmSheet({ busy, onConfirm, onClose }) {
+  const { t } = useLanguage();
+
+  return (
+    <div className="confirm-sheet-overlay" onClick={onClose}>
+      <div className="confirm-sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="confirm-sheet-handle" />
+        <div className="confirm-sheet-title">{t("לצאת מהליגה?")}</div>
+        <p className="add-round-subtitle">
+          {t("התוצאות שלך יישארו בטבלה עד סוף המחזור. כדי לחזור תצטרך הזמנה חדשה.")}
+        </p>
+
+        <div className="add-round-actions">
+          <button
+            type="button"
+            className="confirm-sheet-btn-confirm confirm-sheet-btn-danger"
+            onClick={onConfirm}
+            disabled={busy}
+          >
+            {busy ? t("יוצא...") : t("יציאה מהליגה")}
+          </button>
+          <button type="button" className="link-btn add-round-cancel" onClick={onClose}>
+            {t("ביטול")}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
