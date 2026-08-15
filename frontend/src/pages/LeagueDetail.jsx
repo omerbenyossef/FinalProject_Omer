@@ -285,6 +285,13 @@ export default function LeagueDetail() {
     lastNewRound,
     league.round_length_days
   );
+  const groupedRounds = groupMatchesByRound(allMatches);
+  const existingRoundNumbers = groupedRounds.map((g) => g.round).filter((r) => r !== "none");
+  const currentRoundToShow = existingRoundNumbers.includes(round)
+    ? round
+    : existingRoundNumbers.length > 0
+    ? Math.max(...existingRoundNumbers)
+    : null;
 
   return (
     <div>
@@ -591,33 +598,44 @@ export default function LeagueDetail() {
                 )}
               </>
             )}
-            {groupMatchesByRound(allMatches).map(({ round: r, matches: roundMatches }) => (
-              <div key={r}>
-                <div className="profile-section-header" style={{ justifyContent: "flex-start" }}>
-                  {r === "none" ? (
-                    <span>{t("כל המשחקים")}</span>
-                  ) : (
-                    <Link to={`/leagues/${leagueId}/rounds/${r}`} className="round-header-link">
-                      {[t("כל המשחקים"), formatWeekShort(r, t)].join(" · ")}
-                      <ChevronIcon aria-hidden="true" />
-                    </Link>
+            {groupedRounds.map(({ round: r, matches: roundMatches }) => {
+              const isCurrent = r === "none" || r === currentRoundToShow;
+              return (
+                <div key={r}>
+                  <div className="profile-section-header" style={{ justifyContent: "flex-start" }}>
+                    {r === "none" ? (
+                      <span>{t("כל המשחקים")}</span>
+                    ) : (
+                      <Link to={`/leagues/${leagueId}/rounds/${r}`} className="round-header-link">
+                        {[
+                          t("כל המשחקים"),
+                          formatWeekShort(r, t),
+                          r === currentRoundToShow ? t("(נוכחי)") : null,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
+                        <ChevronIcon aria-hidden="true" />
+                      </Link>
+                    )}
+                  </div>
+                  {isCurrent && (
+                    <div className="all-matches-list">
+                      {roundMatches.map((match) => (
+                        <AllMatchesRow
+                          key={match.id}
+                          match={match}
+                          currentUserId={user.id}
+                          onReport={handleReportScore}
+                          onNeedsConfirm={() => setConfirmSheetMatch(match)}
+                          busy={busy}
+                          maxSets={league.best_of}
+                        />
+                      ))}
+                    </div>
                   )}
                 </div>
-                <div className="all-matches-list">
-                  {roundMatches.map((match) => (
-                    <AllMatchesRow
-                      key={match.id}
-                      match={match}
-                      currentUserId={user.id}
-                      onReport={handleReportScore}
-                      onNeedsConfirm={() => setConfirmSheetMatch(match)}
-                      busy={busy}
-                      maxSets={league.best_of}
-                    />
-                  ))}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

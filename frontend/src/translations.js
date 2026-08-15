@@ -253,6 +253,7 @@ const PAIRS = [
   ["המשחק שלי", "My match"],
   ["המשחק שלי השבוע", "My match this week"],
   ["כל המשחקים", "All matches"],
+  ["(נוכחי)", "(current)"],
   ["ממתין", "Pending"],
   ["גיל {age}", "age {age}"],
   ["כל ה-{n}", "All {n}"],
