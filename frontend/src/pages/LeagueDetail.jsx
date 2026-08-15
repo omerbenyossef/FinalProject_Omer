@@ -518,7 +518,7 @@ export default function LeagueDetail() {
             {isMember && (myNextMatch || myPendingConfirmationMatch) && (
               <div>
                 <div className="profile-section-header" style={{ justifyContent: "flex-start" }}>
-                  <span>{t("המשחק שלי")}</span>
+                  <span>{t("המשחק שלי השבוע")}</span>
                 </div>
                 {myNextMatch ? (
                   <>
