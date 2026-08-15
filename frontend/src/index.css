@@ -1273,6 +1273,10 @@ a { color: var(--court); text-decoration: none; }
   margin-top: 16px;
 }
 
+.round-my-match-plain {
+  border-color: rgba(148, 163, 184, 0.16);
+}
+
 .round-my-match-eyebrow {
   font-family: "IBM Plex Mono", var(--mono);
   font-weight: 500;

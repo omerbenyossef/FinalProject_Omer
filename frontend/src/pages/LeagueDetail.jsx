@@ -608,7 +608,7 @@ export default function LeagueDetail() {
                     <div className="profile-section-header" style={{ justifyContent: "flex-start" }}>
                       <span>{t("המשחק שלי")}</span>
                     </div>
-                    <div className="round-my-match">
+                    <div className="round-my-match round-my-match-plain">
                       <div className="round-my-match-top">
                         <Avatar name={myOpponent.name} size={36} />
                         <div className="round-my-match-info">
