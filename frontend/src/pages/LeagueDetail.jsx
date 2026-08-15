@@ -350,7 +350,7 @@ export default function LeagueDetail() {
               className="league-leave-chip"
               onClick={() => setShowLeaveConfirm(true)}
             >
-              {t("יציאה")}
+              {t("יציאה מהליגה")}
             </button>
           )}
         </div>
