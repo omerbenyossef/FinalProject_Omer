@@ -344,6 +344,7 @@ export default function LeagueDetail() {
         <div className="league-rules-line">
           {ruleLabels.bestOfLabel} · {ruleLabels.frequencyLabel}
         </div>
+        {league.description && <p className="muted">{league.description}</p>}
         {isMember && !isCreator && (
           <div className="league-header-actions">
             <button
@@ -356,7 +357,6 @@ export default function LeagueDetail() {
             </button>
           </div>
         )}
-        {league.description && <p className="muted">{league.description}</p>}
       </header>
 
       <div className="league-detail-actions">
