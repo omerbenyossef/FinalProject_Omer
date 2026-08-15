@@ -1076,6 +1076,8 @@ a { color: var(--court); text-decoration: none; }
 }
 
 .league-header-actions {
+  display: flex;
+  justify-content: flex-end;
   margin-top: 14px;
   padding-top: 14px;
   border-top: 1px solid rgba(148, 163, 184, 0.14);
