@@ -77,7 +77,6 @@ const PAIRS = [
   ["טוען...", "Loading..."],
   ["הליגות שלי", "My Leagues"],
   ["עדיין לא הצטרפת לאף ליגה בענף הזה.", "You haven't joined any league in this sport yet."],
-  ["עיין בליגות", "Browse leagues"],
   ["ליגות פתוחות", "Open Leagues"],
   ["אין כרגע ליגות פתוחות.", "There are no open leagues right now."],
   ["הסתר", "Hide"],
@@ -174,10 +173,8 @@ const PAIRS = [
   ["ניצחת ב-{rate}% מהמשחקים שלך. תמשיך ככה!", "You've won {rate}% of your matches. Keep it up!"],
   ["ניצחת ב-{rate}% מהמשחקים שלך. עוד יש לאן להשתפר.", "You've won {rate}% of your matches. There's still room to improve."],
   ["המשחקים הבאים שלי", "My upcoming matches"],
-  ["המשחקים הבאים", "Upcoming matches"],
   ["{n} משחקים", "{n} matches"],
   ["המשחקים שלי השבוע", "My matches this week"],
-  ["אין לך ליגות עם לוח משחקים עדיין.", "You don't have any leagues with a schedule yet."],
 
   // Settings
   ["הגדרות", "Settings"],
@@ -249,7 +246,7 @@ const PAIRS = [
   ["הליגות שלי", "My leagues"],
   ["דירוג", "Rank"],
   ["עדיין לא שיחקת/ה אף משחק", "You haven't played any matches yet"],
-  ["העונה", "This season"],
+  ["העונה", "this season"],
   ["פתוחה", "open"],
   ["הצטרף", "Join"],
   ["עד {date}", "Due {date}"],
@@ -330,11 +327,19 @@ const PAIRS = [
   ["מחיקת הליגה תסיר לצמיתות את {n} המשחקים ואת כל החברויות בה. לא ניתן לשחזר.", "Deleting the league permanently removes its {n} matches and every membership in it. This can't be undone."],
   ["מחק את הליגה", "Delete the league"],
 
-  // Home confirmation banner + standings head-to-head link
-  ["{reporter} דיווח {sets}", "{reporter} reported {sets}"],
+  // Home screen
+  ["{n} ליגות", "{n} leagues"],
+  ["לשחק השבוע", "To play this week"],
+  ["{name} דיווח", "{name} reported"],
+  ["עוד {n}", "{n} more"],
+  ["הזמן שחקנים", "Invite players"],
+  ["עיין בליגות פתוחות", "Browse open leagues"],
+  [
+    "עדיין לא שובצו משחקים. מנהל הליגה קובע את לוח המשחקים, וברגע שהוא קיים המשחק שלך יופיע כאן.",
+    "No matches scheduled yet. The league creator sets the schedule — once it exists, your match shows up here.",
+  ],
   ["הקשה על שחקן פותחת ראש בראש מולו", "Tap a player to open their head-to-head record"],
 
-  // Shared MatchCard
   ["בטל משחק", "Cancel match"],
 
   // Schedule button states + add-round confirm sheet
