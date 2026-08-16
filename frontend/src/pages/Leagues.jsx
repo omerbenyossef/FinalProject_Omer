@@ -5,7 +5,7 @@ import { useAuth } from "../AuthContext.jsx";
 import { useSport } from "../SportContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import EmptyState from "../EmptyState.jsx";
-import { TrophyIcon, ChevronIcon, TrendDownIcon, TrendUpIcon } from "../Icons.jsx";
+import { TrophyIcon, ChevronIcon } from "../Icons.jsx";
 import { SkeletonLeagueCard } from "../Skeleton.jsx";
 import PageHelp from "../PageHelp.jsx";
 
@@ -190,28 +190,28 @@ export default function Leagues() {
               <SkeletonLeagueCard />
             ) : (
               myLeaguesForSport.map((league) => (
-                <Link to={`/leagues/${league.id}`} key={league.id} className="rank-row">
-                  <span className={`rank-row-number${league.my_rank <= 3 ? " top" : ""}`} dir="ltr">
-                    #{league.my_rank}
+                <Link to={`/leagues/${league.id}`} key={league.id} className="league-row">
+                  <span className={`league-row-rank${league.my_rank <= 3 ? " top" : ""}`} dir="ltr">
+                    {league.my_rank}
                   </span>
-                  <div className="rank-row-body">
-                    <div className="rank-row-name">{league.name}</div>
-                    <div className="rank-row-record" dir="ltr">
-                      {league.my_wins}W-{league.my_losses}L / {league.my_members_total}
+                  <div className="league-row-body">
+                    <div className="league-row-name">
+                      <span dir="auto">{league.name}</span>
+                    </div>
+                    <div className="league-row-sub" dir="ltr">
+                      {league.my_wins}W-{league.my_losses}L · {league.my_members_total} {t("שחקנים")}
                     </div>
                   </div>
                   {league.my_rank_trend ? (
-                    <span className={`rank-row-trend ${league.my_rank_trend < 0 ? "down" : "up"}`} dir="ltr">
-                      {league.my_rank_trend < 0 ? (
-                        <TrendDownIcon aria-hidden="true" />
-                      ) : (
-                        <TrendUpIcon aria-hidden="true" />
-                      )}
-                      {Math.abs(league.my_rank_trend)}
+                    <span className={`league-row-trend ${league.my_rank_trend > 0 ? "up" : "down"}`} dir="ltr">
+                      {league.my_rank_trend > 0
+                        ? `▲${league.my_rank_trend}`
+                        : `▼${Math.abs(league.my_rank_trend)}`}
                     </span>
                   ) : (
-                    <span className="rank-row-trend flat">—</span>
+                    <span className="league-row-trend" dir="ltr">—</span>
                   )}
+                  <ChevronIcon className="league-row-chevron chevron-icon" aria-hidden="true" />
                 </Link>
               ))
             )}

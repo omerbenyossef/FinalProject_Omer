@@ -7,7 +7,7 @@ import { useLanguage } from "../LanguageContext.jsx";
 import SetScoreForm from "../SetScoreForm.jsx";
 import ConfirmScoreSheet from "../ConfirmScoreSheet.jsx";
 import Avatar from "../Avatar.jsx";
-import { TrendDownIcon, TrendUpIcon, ChevronIcon, UserPlusIcon } from "../Icons.jsx";
+import { ChevronIcon, UserPlusIcon } from "../Icons.jsx";
 import { formatDayMonth, roundDueDateObj } from "../matchUtils.js";
 import { SkeletonMatchRow } from "../Skeleton.jsx";
 import PageHelp from "../PageHelp.jsx";
@@ -216,7 +216,9 @@ export default function Profile() {
                   <div className="home-match-body">
                     <div className="my-match-name">{opponent.name}</div>
                     <div className="home-match-meta">
-                      <span className="home-match-league">{entry.league_name}</span>
+                      <span className="home-match-league">
+                        <span dir="auto">{entry.league_name}</span>
+                      </span>
                       <span className="home-match-nums" dir="ltr">
                         · r{entry.match.round_number}
                         {daysLeft !== null && (
@@ -273,28 +275,26 @@ export default function Profile() {
       </div>
       <div className="rank-row-list">
         {myLeaguesPreview.map((league) => (
-          <Link to={`/leagues/${league.id}`} key={league.id} className="rank-row">
-            <span className={`rank-row-number${league.my_rank <= 3 ? " top" : ""}`} dir="ltr">
-              #{league.my_rank}
+          <Link to={`/leagues/${league.id}`} key={league.id} className="league-row">
+            <span className={`league-row-rank${league.my_rank <= 3 ? " top" : ""}`} dir="ltr">
+              {league.my_rank}
             </span>
-            <div className="rank-row-body">
-              <div className="rank-row-name">{league.name}</div>
-              <div className="rank-row-record" dir="ltr">
-                {league.my_wins}W-{league.my_losses}L / {league.my_members_total} players
+            <div className="league-row-body">
+              <div className="league-row-name">
+                <span dir="auto">{league.name}</span>
+              </div>
+              <div className="league-row-sub" dir="ltr">
+                {league.my_wins}W-{league.my_losses}L · {league.my_members_total} {t("שחקנים")}
               </div>
             </div>
             {league.my_rank_trend ? (
-              <span className={`rank-row-trend ${league.my_rank_trend < 0 ? "down" : "up"}`} dir="ltr">
-                {league.my_rank_trend < 0 ? (
-                  <TrendDownIcon aria-hidden="true" />
-                ) : (
-                  <TrendUpIcon aria-hidden="true" />
-                )}
-                {Math.abs(league.my_rank_trend)}
+              <span className={`league-row-trend ${league.my_rank_trend > 0 ? "up" : "down"}`} dir="ltr">
+                {league.my_rank_trend > 0 ? `▲${league.my_rank_trend}` : `▼${Math.abs(league.my_rank_trend)}`}
               </span>
             ) : (
-              <span className="rank-row-trend flat">—</span>
+              <span className="league-row-trend" dir="ltr">—</span>
             )}
+            <ChevronIcon className="league-row-chevron chevron-icon" aria-hidden="true" />
           </Link>
         ))}
         {myLeaguesForSport.length === 0 && (
@@ -323,9 +323,11 @@ export default function Profile() {
             {recentResults.map((m, i) => (
               <Link to={`/head-to-head/${m.opponent_id}`} className="home-result" key={i}>
                 <span className="home-result-who">
-                  {[m.opponent_name, m.league_name, m.played_at ? formatDayMonth(new Date(m.played_at)) : null]
-                    .filter(Boolean)
-                    .join(" · ")}
+                  <span dir="auto">
+                    {[m.opponent_name, m.league_name, m.played_at ? formatDayMonth(new Date(m.played_at)) : null]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </span>
                 </span>
                 <span className="home-result-score" dir="ltr">
                   {formatMySets(m.my_sets)}
