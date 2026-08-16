@@ -533,8 +533,9 @@ a { color: var(--court); text-decoration: none; }
 }
 
 .tab.active {
-  background: var(--court);
-  color: var(--court-contrast);
+  background: var(--surface-2);
+  border-radius: 16px;
+  color: var(--ink);
 }
 
 .eyebrow {
