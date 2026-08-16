@@ -101,6 +101,10 @@ export default function LeagueDetail() {
   }
 
   useEffect(() => {
+    if (!/^\d+$/.test(leagueId)) {
+      navigate("/leagues", { replace: true });
+      return;
+    }
     loadAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leagueId, user]);

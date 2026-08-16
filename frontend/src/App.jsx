@@ -6,7 +6,6 @@ import Register from "./pages/Register.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
 import ResetPassword from "./pages/ResetPassword.jsx";
 import Leagues from "./pages/Leagues.jsx";
-import LeagueCreate from "./pages/LeagueCreate.jsx";
 import LeagueDetail from "./pages/LeagueDetail.jsx";
 import LeagueManage from "./pages/LeagueManage.jsx";
 import RoundDetail from "./pages/RoundDetail.jsx";
@@ -44,14 +43,6 @@ export default function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/leagues" element={<Leagues />} />
-        <Route
-          path="/leagues/new"
-          element={
-            <ProtectedRoute>
-              <LeagueCreate />
-            </ProtectedRoute>
-          }
-        />
         <Route
           path="/leagues/:leagueId"
           element={
