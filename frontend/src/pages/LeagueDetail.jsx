@@ -10,8 +10,6 @@ import ConfirmScoreSheet from "../ConfirmScoreSheet.jsx";
 import { UserPlusIcon, CalendarIcon, ChevronIcon, GearIcon, PlusIcon } from "../Icons.jsx";
 import {
   formatSets,
-  formatWeekShort,
-  currentRoundNumber,
   roundDueDate,
   leagueRuleLabels,
   nextSchedulePreview,
@@ -58,6 +56,7 @@ export default function LeagueDetail() {
   const [myH2h, setMyH2h] = useState(null);
   const [reportingMyMatch, setReportingMyMatch] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [selectedRound, setSelectedRound] = useState(null);
   const autoJoinAttempted = useRef(false);
   const initialTabSet = useRef(false);
 
@@ -231,26 +230,28 @@ export default function LeagueDetail() {
     }
   }
 
-  const myNextMatchForH2h = matches
-    .filter((m) => m.status === "pending")
-    .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))[0];
-  const myOpponent = myNextMatchForH2h
-    ? myNextMatchForH2h.player1.id === user?.id
-      ? myNextMatchForH2h.player2
-      : myNextMatchForH2h.player1
+  const groupedRounds = groupMatchesByRound(allMatches);
+  const existingRoundNumbers = groupedRounds.map((g) => g.round).filter((r) => r !== "none");
+  const latestRound = existingRoundNumbers.length > 0 ? Math.max(...existingRoundNumbers) : null;
+  const shownRound = selectedRound ?? latestRound;
+  const myMatchInShownRound = matches.find((m) => m.round_number === shownRound);
+  const shownOpponent = myMatchInShownRound
+    ? myMatchInShownRound.player1.id === user?.id
+      ? myMatchInShownRound.player2
+      : myMatchInShownRound.player1
     : null;
 
   useEffect(() => {
-    if (!myOpponent) {
+    if (!shownOpponent) {
       setMyH2h(null);
       return;
     }
     api
-      .headToHead(myOpponent.id)
+      .headToHead(shownOpponent.id)
       .then(setMyH2h)
       .catch(() => setMyH2h(null));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [myOpponent?.id]);
+  }, [shownOpponent?.id]);
 
   if (!league) {
     return (
@@ -268,9 +269,19 @@ export default function LeagueDetail() {
   }
 
   const isCreator = league.created_by === user?.id;
-  const myNextMatch = myNextMatchForH2h;
-  const myPendingConfirmationMatch = matches.find((m) => m.status === "pending_confirmation");
+  const myPendingConfirmationMatch =
+    myMatchInShownRound?.status === "pending_confirmation" ? myMatchInShownRound : null;
   const iAmReporter = myPendingConfirmationMatch?.reported_by === user?.id;
+  const myShownMatchCompleted = myMatchInShownRound?.status === "completed" ? myMatchInShownRound : null;
+  const myShownIAmPlayer1 = myShownMatchCompleted && myShownMatchCompleted.player1.id === user?.id;
+  const myShownP1Won =
+    myShownMatchCompleted && myShownMatchCompleted.player1_score > myShownMatchCompleted.player2_score;
+  const myShownIWon = myShownMatchCompleted && (myShownIAmPlayer1 ? myShownP1Won : !myShownP1Won);
+  const myShownSets = myShownMatchCompleted
+    ? myShownIAmPlayer1
+      ? myShownMatchCompleted.sets
+      : myShownMatchCompleted.sets?.map((s) => ({ player1_games: s.player2_games, player2_games: s.player1_games }))
+    : null;
   const myStanding = standings.find((row) => row.user.id === user?.id);
   const myWinRate =
     myStanding && myStanding.played > 0 ? Math.round((myStanding.wins / myStanding.played) * 100) : null;
@@ -287,7 +298,6 @@ export default function LeagueDetail() {
       const opponentScore = iAmPlayer1 ? m.player2_score : m.player1_score;
       return { won: myScore > opponentScore };
     });
-  const round = currentRoundNumber(league.schedule_started_at, league.round_length_days);
   const ruleLabels = leagueRuleLabels(league, t);
   const hasSchedule = allMatches.length > 0;
   const roundsCount = new Set(allMatches.map((m) => m.round_number).filter(Boolean)).size;
@@ -299,17 +309,14 @@ export default function LeagueDetail() {
     lastNewRound,
     league.round_length_days
   );
-  const groupedRounds = groupMatchesByRound(allMatches);
-  const existingRoundNumbers = groupedRounds.map((g) => g.round).filter((r) => r !== "none");
-  const currentRoundToShow = existingRoundNumbers.length > 0 ? Math.max(...existingRoundNumbers) : null;
-  const currentRoundMatches =
-    groupedRounds.find((g) => g.round === currentRoundToShow)?.matches || [];
-  const currentRoundPlayed = currentRoundMatches.filter((m) => m.status !== "pending");
-  const currentRoundCloses = currentRoundToShow
-    ? roundDueDate(league.schedule_started_at, currentRoundToShow, league.round_length_days)
+  const isLatestRound = shownRound === latestRound;
+  const shownRoundMatches = groupedRounds.find((g) => g.round === shownRound)?.matches || [];
+  const shownRoundPlayed = shownRoundMatches.filter((m) => m.status !== "pending");
+  const shownRoundCloses = shownRound
+    ? roundDueDate(league.schedule_started_at, shownRound, league.round_length_days)
     : "";
-  const pastRoundNumbers = existingRoundNumbers.filter((r) => r !== currentRoundToShow);
-  const pastGames = allMatches.filter((m) => pastRoundNumbers.includes(m.round_number)).length;
+  const prevRound = existingRoundNumbers.filter((r) => r < shownRound).sort((a, b) => b - a)[0] ?? null;
+  const nextRoundNav = existingRoundNumbers.filter((r) => r > shownRound).sort((a, b) => a - b)[0] ?? null;
   const legacyMatches = allMatches.filter((m) => !m.round_number);
 
   return (
@@ -335,14 +342,16 @@ export default function LeagueDetail() {
             )}
           </div>
         </div>
-        <div className="league-detail-meta">
-          {[t(league.sport?.name), `${members.length} ${t("שחקנים")}`, round ? formatWeekShort(round, t) : null]
-            .filter(Boolean)
-            .join(" · ")}
-        </div>
-        <div className="league-rules-line">
-          <span className="league-rules-line-text">
-            {ruleLabels.bestOfLabel} · {ruleLabels.frequencyLabel}
+        <div className="league-detail-meta-row">
+          <span className="league-detail-meta-text">
+            {[
+              t(league.sport?.name),
+              `${members.length} ${t("שחקנים")}`,
+              ruleLabels.bestOfLabel,
+              ruleLabels.frequencyLabel,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
           </span>
           {isMember && !isCreator && (
             <button
@@ -354,7 +363,6 @@ export default function LeagueDetail() {
             </button>
           )}
         </div>
-        {league.description && <p className="muted">{league.description}</p>}
       </header>
 
       <div className="league-detail-actions">
@@ -573,92 +581,112 @@ export default function LeagueDetail() {
               </>
             )}
 
-            {hasSchedule && currentRoundToShow !== null && (
+            {hasSchedule && shownRound !== null && (
               <>
-                <div className="matches-round-header">
-                  <div className="round-title-row" style={{ marginTop: 0 }}>
-                    <span className="round-title-label">{t("מחזור")}</span>
-                    <span className="round-title-number">{currentRoundToShow}</span>
-                  </div>
-                  {currentRoundCloses && (
-                    <span className="matches-round-closes">
-                      {t("נסגר ב-{date}", { date: currentRoundCloses })}
-                    </span>
-                  )}
-                </div>
-
-                <div className="round-progress">
-                  <div className="round-progress-header">
-                    <span>{t("התקדמות המחזור")}</span>
-                    <span className="round-progress-count" dir="ltr">
-                      <span className="lit">{currentRoundPlayed.length}</span>
-                      <span className="dim">/{currentRoundMatches.length}</span>
-                    </span>
-                  </div>
-                  <div className="profile-form-strip">
-                    {currentRoundMatches.map((m, i) => (
-                      <span key={i} className={`profile-form-bar${m.status !== "pending" ? " win" : ""}`} />
-                    ))}
-                  </div>
-                </div>
-
-                {isMember && myNextMatch && (
-                  <>
-                    <div className="profile-section-header" style={{ justifyContent: "flex-start" }}>
-                      <span>{t("המשחק שלי")}</span>
+                <div className="round-nav">
+                  <div className="round-nav-text">
+                    <div className="round-nav-label">{t("מחזור")}</div>
+                    <div className="round-nav-sub" dir="ltr">
+                      <span className="num">
+                        {t("{played}/{total} שוחקו", {
+                          played: shownRoundPlayed.length,
+                          total: shownRoundMatches.length,
+                        })}
+                      </span>
+                      {shownRoundCloses && (
+                        <span className="num">
+                          {" "}
+                          ·{" "}
+                          {isLatestRound
+                            ? t("נסגר ב-{date}", { date: shownRoundCloses })
+                            : t("נסגר ב-{date} (עבר)", { date: shownRoundCloses })}
+                        </span>
+                      )}
                     </div>
-                    <div className="round-my-match round-my-match-plain">
-                      <div className="round-my-match-top">
-                        <Avatar name={myOpponent.name} size={36} />
-                        <div className="round-my-match-info">
-                          <div className="round-my-match-name">
-                            {t("מול {name}", { name: myOpponent.name })}
+                  </div>
+                  <div className="round-nav-controls">
+                    <button
+                      type="button"
+                      className="round-nav-arrow"
+                      disabled={prevRound === null}
+                      onClick={() => setSelectedRound(prevRound)}
+                      aria-label={t("מחזור קודם")}
+                    >
+                      <ChevronIcon aria-hidden="true" />
+                    </button>
+                    <span className={`round-nav-number${isLatestRound ? " active" : ""}`} dir="ltr">
+                      {shownRound}
+                    </span>
+                    <button
+                      type="button"
+                      className="round-nav-arrow next"
+                      disabled={nextRoundNav === null}
+                      onClick={() => setSelectedRound(nextRoundNav)}
+                      aria-label={t("מחזור הבא")}
+                    >
+                      <ChevronIcon aria-hidden="true" />
+                    </button>
+                  </div>
+                </div>
+                <div className="round-nav-bar">
+                  <div
+                    className={`round-nav-bar-fill${isLatestRound ? "" : " past"}`}
+                    style={{
+                      width: shownRoundMatches.length
+                        ? `${Math.max((shownRoundPlayed.length / shownRoundMatches.length) * 100, 2)}%`
+                        : "0%",
+                    }}
+                  />
+                </div>
+
+                {isMember && myMatchInShownRound && myMatchInShownRound.status === "pending" && (
+                  <>
+                    <div className="my-match-row">
+                      <Avatar name={shownOpponent.name} size={38} />
+                      <div className="my-match-body">
+                        <div className="my-match-name">{shownOpponent.name}</div>
+                        {myH2h && (
+                          <div className="my-match-h2h" dir="ltr">
+                            H2H {myH2h.wins}-{myH2h.losses}
                           </div>
-                          {myH2h && (
-                            <div className="round-my-match-h2h" dir="ltr">
-                              H2H {myH2h.wins}-{myH2h.losses}
-                            </div>
-                          )}
-                        </div>
-                        {!reportingMyMatch && (
-                          <button
-                            type="button"
-                            className="btn-gold-pill round-my-match-report-btn"
-                            onClick={() => setReportingMyMatch(true)}
-                          >
-                            {t("דווח")}
-                          </button>
                         )}
                       </div>
-                      {reportingMyMatch && (
-                        <SetScoreForm
-                          player1Name={myNextMatch.player1.name}
-                          player2Name={myNextMatch.player2.name}
-                          onSubmit={(sets) => {
-                            handleReportScore(myNextMatch.id, sets);
-                            setReportingMyMatch(false);
-                          }}
-                          onCancel={() => setReportingMyMatch(false)}
-                          busy={busy}
-                          maxSets={league.best_of}
-                        />
+                      {!reportingMyMatch && (
+                        <button
+                          type="button"
+                          className="my-match-report"
+                          onClick={() => setReportingMyMatch(true)}
+                        >
+                          <span className="my-match-dot" aria-hidden="true" />
+                          {t("דווח")}
+                        </button>
                       )}
-                      <button
-                        type="button"
-                        className="link-btn cancel-match-link"
-                        onClick={() => handleCancelMatch(myNextMatch.id)}
-                      >
-                        {t("בטל משחק")}
-                      </button>
                     </div>
+                    {reportingMyMatch && (
+                      <SetScoreForm
+                        player1Name={myMatchInShownRound.player1.name}
+                        player2Name={myMatchInShownRound.player2.name}
+                        onSubmit={(sets) => {
+                          handleReportScore(myMatchInShownRound.id, sets);
+                          setReportingMyMatch(false);
+                        }}
+                        onCancel={() => setReportingMyMatch(false)}
+                        busy={busy}
+                        maxSets={league.best_of}
+                      />
+                    )}
+                    <button
+                      type="button"
+                      className="link-btn my-match-cancel"
+                      onClick={() => handleCancelMatch(myMatchInShownRound.id)}
+                    >
+                      {t("בטל משחק")}
+                    </button>
                   </>
                 )}
 
-                {isMember && !myNextMatch && myPendingConfirmationMatch && (
-                  <div>
-                    <div className="profile-section-header" style={{ justifyContent: "flex-start" }}>
-                      <span>{t("המשחק שלי")}</span>
-                    </div>
+                {isMember && myPendingConfirmationMatch && (
+                  <div className="my-match-pending-wrap">
                     {iAmReporter ? (
                       <WaitingConfirmationCard
                         match={myPendingConfirmationMatch}
@@ -681,11 +709,45 @@ export default function LeagueDetail() {
                   </div>
                 )}
 
+                {isMember && myShownMatchCompleted && (
+                  <div className="my-match-row">
+                    <Avatar name={shownOpponent.name} size={38} />
+                    <div className="my-match-body">
+                      <div className="my-match-name">{shownOpponent.name}</div>
+                      {myH2h && (
+                        <div className="my-match-h2h" dir="ltr">
+                          H2H {myH2h.wins}-{myH2h.losses}
+                        </div>
+                      )}
+                    </div>
+                    <div className="my-match-result">
+                      <span dir="ltr">{formatSets(myShownSets)}</span>
+                      <span className={`match-result-badge ${myShownIWon ? "win" : "loss"}`}>
+                        {myShownIWon ? "W" : "L"}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {isMember && !myMatchInShownRound && (
+                  <div className="my-match-none">{t("אין לך משחק במחזור הזה")}</div>
+                )}
+
+                {!isLatestRound && (
+                  <button
+                    type="button"
+                    className="back-to-active-round"
+                    onClick={() => setSelectedRound(null)}
+                  >
+                    {t("חזרה למחזור {n} ›", { n: latestRound })}
+                  </button>
+                )}
+
                 <div className="profile-section-header" style={{ justifyContent: "flex-start" }}>
-                  <span>{t("כל המשחקים")}</span>
+                  <span>{t("כל המשחקים במחזור {n}", { n: shownRound })}</span>
                 </div>
                 <div className="all-matches-list">
-                  {currentRoundMatches.map((match) => (
+                  {shownRoundMatches.map((match) => (
                     <AllMatchesRow
                       key={match.id}
                       match={match}
@@ -698,14 +760,14 @@ export default function LeagueDetail() {
                   ))}
                 </div>
 
-                {pastRoundNumbers.length > 0 && (
+                {existingRoundNumbers.length > 0 && (
                   <Link to={`/leagues/${leagueId}/rounds`} className="league-action-row">
                     <div>
-                      <span className="league-action-title">{t("מחזורים קודמים")}</span>
+                      <span className="league-action-title">{t("כל המחזורים")}</span>
                       <span className="league-action-subtitle">
                         {t("{rounds} מחזורים · {games} משחקים", {
-                          rounds: pastRoundNumbers.length,
-                          games: pastGames,
+                          rounds: existingRoundNumbers.length,
+                          games: allMatches.length,
                         })}
                       </span>
                     </div>
@@ -872,9 +934,12 @@ function AllMatchesRow({ match, currentUserId, onReport, onNeedsConfirm, busy, m
     ? match.sets
     : match.sets?.map((s) => ({ player1_games: s.player2_games, player2_games: s.player1_games }));
 
+  const meIsPlayer1 = isMine && iAmPlayer1;
+  const meIsPlayer2 = isMine && !iAmPlayer1;
+
   if (editing) {
     return (
-      <div className="all-matches-row all-matches-row-editing">
+      <div className="match-row match-row-editing">
         <SetScoreForm
           player1Name={match.player1.name}
           player2Name={match.player2.name}
@@ -894,19 +959,21 @@ function AllMatchesRow({ match, currentUserId, onReport, onNeedsConfirm, busy, m
 
   const row = (
     <>
-      <span className="all-matches-names">
-        <span className={isCompleted ? (p1Won ? "winner" : "loser") : "strong"}>{match.player1.name}</span>{" "}
-        <span className="vs-label">vs</span>{" "}
-        <span className={isCompleted ? (p1Won ? "loser" : "winner") : "strong"}>{match.player2.name}</span>
+      <span className="match-row-names">
+        <span className={meIsPlayer1 ? "me" : undefined}>{match.player1.name}</span>
+        <span className="match-row-sep"> · </span>
+        <span className={meIsPlayer2 ? "me" : undefined}>{match.player2.name}</span>
       </span>
       {isPendingConfirmation ? (
-        <span className={`pill-pending${iNeedToConfirm ? " needs-confirm" : ""}`}>
-          {iNeedToConfirm ? t("לאישור") : t("ממתין")}
-        </span>
+        iNeedToConfirm ? (
+          <span className="match-row-confirm">{t("לאישור")}</span>
+        ) : (
+          <span className="match-row-dot" aria-label={t("ממתין")} />
+        )
       ) : !isCompleted ? (
-        <span className="pill-pending">{t("ממתין")}</span>
+        <span className="match-row-dot" aria-label={t("ממתין")} />
       ) : (
-        <span className={`all-matches-score${iWon ? " win" : ""}`} dir="ltr">
+        <span className={`match-row-score${iWon ? " win" : ""}`} dir="ltr">
           {formatSets(mySets)}
         </span>
       )}
@@ -915,7 +982,11 @@ function AllMatchesRow({ match, currentUserId, onReport, onNeedsConfirm, busy, m
 
   if (iNeedToConfirm) {
     return (
-      <button type="button" className="all-matches-row all-matches-row-editable" onClick={onNeedsConfirm}>
+      <button
+        type="button"
+        className={`match-row match-row-editable${isMine ? " mine" : ""}`}
+        onClick={onNeedsConfirm}
+      >
         {row}
       </button>
     );
@@ -923,11 +994,11 @@ function AllMatchesRow({ match, currentUserId, onReport, onNeedsConfirm, busy, m
 
   if (isCompleted && isMine) {
     return (
-      <button type="button" className="all-matches-row all-matches-row-editable" onClick={() => setEditing(true)}>
+      <button type="button" className="match-row match-row-editable mine" onClick={() => setEditing(true)}>
         {row}
       </button>
     );
   }
 
-  return <div className="all-matches-row">{row}</div>;
+  return <div className={`match-row${isMine ? " mine" : ""}`}>{row}</div>;
 }
