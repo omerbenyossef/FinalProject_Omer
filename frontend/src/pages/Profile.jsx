@@ -264,7 +264,7 @@ export default function Profile() {
       )}
 
       <div className="home-section-head">
-        <span>{t("הליגות שלי")}</span>
+        <span className="home-section-title">{t("הליגות שלי")}</span>
         {myLeaguesForSport.length > myLeaguesPreview.length ? (
           <Link to="/leagues" className="profile-section-header-link">
             {t("כל ה-{n}", { n: myLeaguesForSport.length })}
@@ -317,7 +317,7 @@ export default function Profile() {
       {stats && recentResults.length > 0 && (
         <>
           <div className="home-section-head">
-            <span>{t("תוצאות אחרונות")}</span>
+            <span className="home-section-title-archive">{t("תוצאות אחרונות")}</span>
           </div>
           <div>
             {recentResults.map((m, i) => (
