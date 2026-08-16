@@ -90,6 +90,12 @@ const PAIRS = [
   ["אורך מחזור", "Round length"],
   ["כל שבועיים", "Every 2 weeks"],
   ["אפשר לשנות את הפורמט אחר כך בהגדרות הליגה", "You can change the format later in league settings"],
+  ["מי יכול להצטרף", "Who can join"],
+  ["בהזמנה בלבד", "Invite only"],
+  ["פתוחה לכולם", "Open to all"],
+  ["רק מי שקיבל ממך קישור הזמנה יכול להצטרף.", "Only people you send an invite link can join."],
+  ["הליגה תופיע ברשימת הליגות הפתוחות וכל אחד יכול להצטרף בלי קוד.",
+   "The league appears in the open leagues list and anyone can join without a code."],
   ["מחזור {n}", "round {n}"],
 
   // League card

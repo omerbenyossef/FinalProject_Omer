@@ -19,6 +19,10 @@ const ROUND_LEN_OPTIONS = [
   [7, "שבועי"],
   [14, "כל שבועיים"],
 ];
+const OPEN_OPTIONS = [
+  [false, "בהזמנה בלבד"],
+  [true, "פתוחה לכולם"],
+];
 
 export default function Leagues() {
   const [leagues, setLeagues] = useState([]);
@@ -29,6 +33,7 @@ export default function Leagues() {
   const [name, setName] = useState("");
   const [bestOf, setBestOf] = useState(3);
   const [roundLen, setRoundLen] = useState(7);
+  const [isOpen, setIsOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [sheetError, setSheetError] = useState("");
   const inputRef = useRef(null);
@@ -69,6 +74,7 @@ export default function Leagues() {
     setName("");
     setBestOf(3);
     setRoundLen(7);
+    setIsOpen(false);
     setSheetError("");
     setShowSheet(true);
   }
@@ -86,7 +92,7 @@ export default function Leagues() {
         name: name.trim(),
         description: "",
         sport_id: selectedSportId,
-        is_open: false,
+        is_open: isOpen,
         best_of: bestOf,
         round_length_days: roundLen,
       });
@@ -258,6 +264,25 @@ export default function Leagues() {
                 </button>
               ))}
             </div>
+
+            <div className="sheet-label">{t("מי יכול להצטרף")}</div>
+            <div className="sheet-chips">
+              {OPEN_OPTIONS.map(([v, label]) => (
+                <button
+                  type="button"
+                  key={String(v)}
+                  onClick={() => setIsOpen(v)}
+                  className={`sheet-chip${isOpen === v ? " on" : ""}`}
+                >
+                  {t(label)}
+                </button>
+              ))}
+            </div>
+            <p className="sheet-sub">
+              {isOpen
+                ? t("הליגה תופיע ברשימת הליגות הפתוחות וכל אחד יכול להצטרף בלי קוד.")
+                : t("רק מי שקיבל ממך קישור הזמנה יכול להצטרף.")}
+            </p>
 
             {sheetError && <p className="error">{t(sheetError)}</p>}
 
