@@ -29,10 +29,6 @@ export default function SetScoreForm({
     setRows((prev) => (maxSets && prev.length >= maxSets ? prev : [...prev, { p1: "", p2: "" }]));
   }
 
-  function removeRow(index) {
-    setRows((prev) => prev.filter((_, i) => i !== index));
-  }
-
   function handleSubmit(e) {
     e.preventDefault();
     const sets = rows.map((row) => ({
@@ -42,55 +38,59 @@ export default function SetScoreForm({
     onSubmit(sets);
   }
 
+  const isValid = rows.every((row) => row.p1 !== "" && row.p2 !== "");
+
   return (
-    <form onSubmit={handleSubmit} className="set-score-form">
+    <form onSubmit={handleSubmit} className="score-form">
+      <div className="score-head">
+        <span className="score-head-spacer" />
+        <span className="score-head-name">
+          <span dir="auto">{player1Name}</span>
+        </span>
+        <span className="score-head-name">
+          <span dir="auto">{player2Name}</span>
+        </span>
+      </div>
+
       {rows.map((row, index) => (
-        <div className="set-score-row" key={index}>
-          <span className="set-score-label">{t("מערכה {n}", { n: index + 1 })}</span>
+        <div className="score-row" key={index}>
+          <span className="score-row-label">{t("סט {n}", { n: index + 1 })}</span>
           <input
-            type="number"
-            min="0"
-            placeholder={player1Name}
+            className="score-input"
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            maxLength={2}
             value={row.p1}
-            onChange={(e) => updateRow(index, "p1", e.target.value)}
-            required
+            placeholder="–"
+            onChange={(e) => updateRow(index, "p1", e.target.value.replace(/\D/g, ""))}
           />
-          <span className="set-score-colon">:</span>
           <input
-            type="number"
-            min="0"
-            placeholder={player2Name}
+            className="score-input"
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            maxLength={2}
             value={row.p2}
-            onChange={(e) => updateRow(index, "p2", e.target.value)}
-            required
+            placeholder="–"
+            onChange={(e) => updateRow(index, "p2", e.target.value.replace(/\D/g, ""))}
           />
-          {rows.length > 1 && (
-            <button
-              type="button"
-              className="link-btn"
-              style={{ color: "var(--danger)" }}
-              onClick={() => removeRow(index)}
-            >
-              {t("הסר")}
-            </button>
-          )}
         </div>
       ))}
 
       {(!maxSets || rows.length < maxSets) && (
-        <div className="inline-form">
-          <button type="button" className="link-btn" onClick={addRow}>
-            {t("+ הוסף סט")}
-          </button>
-        </div>
+        <button type="button" className="score-add" onClick={addRow}>
+          + {t("הוסף סט")}
+        </button>
       )}
 
-      <div className="set-score-actions">
-        <button type="submit" className="btn-score-save" disabled={busy}>
-          {t(submitLabel)}
+      <div className="score-actions">
+        <button type="submit" className="score-submit" disabled={!isValid || busy}>
+          <span className="score-submit-dot" aria-hidden="true" />
+          {busy ? t("שולח...") : t(submitLabel)}
         </button>
         {onCancel && (
-          <button type="button" className="btn-score-cancel" onClick={onCancel}>
+          <button type="button" className="score-cancel" onClick={onCancel}>
             {t("ביטול")}
           </button>
         )}
