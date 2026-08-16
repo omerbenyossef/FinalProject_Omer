@@ -640,7 +640,7 @@ export default function LeagueDetail() {
                 </div>
 
                 {isMember && myMatchInShownRound && myMatchInShownRound.status === "pending" && (
-                  <>
+                  <div className="my-match-block">
                     <div className="my-match-row">
                       <Avatar name={shownOpponent.name} size={38} />
                       <div className="my-match-body">
@@ -682,7 +682,7 @@ export default function LeagueDetail() {
                     >
                       {t("בטל משחק")}
                     </button>
-                  </>
+                  </div>
                 )}
 
                 {isMember && myPendingConfirmationMatch && (

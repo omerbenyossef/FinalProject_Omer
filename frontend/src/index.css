@@ -1420,11 +1420,15 @@ a { color: var(--court); text-decoration: none; }
   color: var(--muted);
 }
 
+.my-match-block {
+  display: flex;
+  flex-direction: column;
+}
+
 .my-match-row {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-top: 26px;
 }
 
 .my-match-body {
@@ -1489,10 +1493,6 @@ a { color: var(--court); text-decoration: none; }
   color: var(--muted);
 }
 
-.my-match-pending-wrap {
-  margin-top: 26px;
-}
-
 .my-match-result {
   flex: none;
   display: flex;
@@ -1508,7 +1508,6 @@ a { color: var(--court); text-decoration: none; }
 }
 
 .my-match-none {
-  margin-top: 24px;
   font-family: "IBM Plex Sans", var(--sans);
   font-weight: 500;
   font-size: 12px;
