@@ -208,6 +208,7 @@ class StandingRow(BaseModel):
     wins: int
     losses: int
     points: int
+    rank_delta: Optional[int] = None
 
 
 class HeadToHeadMatch(BaseModel):

@@ -287,6 +287,8 @@ export default function LeagueDetail() {
     myStanding && myStanding.played > 0 ? Math.round((myStanding.wins / myStanding.played) * 100) : null;
   const myRankIndex = standings.findIndex((row) => row.user.id === user?.id);
   const myRank = myRankIndex >= 0 ? myRankIndex + 1 : null;
+  const roundsClosed = existingRoundNumbers.length;
+  const showTrend = roundsClosed >= 2 && standings.some((row) => row.rank_delta != null);
   const leagueFormStrip = matches
     .filter((m) => m.status === "completed")
     .slice()
@@ -455,70 +457,68 @@ export default function LeagueDetail() {
         )}
 
         {activeTab === "standings" && (
-          <div className="table-wrap">
-            <table className="standings-table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th className="player-col">{t("שחקן")}</th>
-                  <th>{t("משחקים")}</th>
-                  <th>{t("נצחונות")}</th>
-                  <th>{t("הפסדים")}</th>
-                  <th>{t("נקודות")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {standings.flatMap((row, index) => {
-                  const rank = index + 1;
-                  const isMe = row.user.id === user?.id;
-                  const rows = [];
-                  if (index === 3 && standings.length > 3) {
-                    rows.push(
-                      <tr key="zone-podium" className="standings-zone-row podium">
-                        <td colSpan={6}>
-                          <div className="standings-zone-divider">
-                            <span className="standings-zone-label">{t("פודיום")}</span>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  }
-                  if (standings.length >= 6 && index === standings.length - 2) {
-                    rows.push(
-                      <tr key="zone-relegation" className="standings-zone-row relegation">
-                        <td colSpan={6}>
-                          <div className="standings-zone-divider">
-                            <span className="standings-zone-label">{t("אזור הירידה")}</span>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  }
-                  rows.push(
-                    <tr key={row.user.id} className={isMe ? "me-row" : undefined}>
-                      <td>
-                        <span className={`rank-badge${rank <= 3 ? ` rank-${rank}` : ""}`}>{rank}</span>
-                      </td>
-                      <td className="player-col">
-                        {isMe ? (
-                          row.user.name
-                        ) : (
-                          <Link to={`/head-to-head/${row.user.id}`} className="standings-player-link">
-                            {row.user.name}
-                            <ChevronIcon className="standings-player-chevron chevron-icon" aria-hidden="true" />
-                          </Link>
-                        )}
-                      </td>
-                      <td>{row.played}</td>
-                      <td>{row.wins}</td>
-                      <td>{row.losses}</td>
-                      <td>{row.points}</td>
-                    </tr>
-                  );
-                  return rows;
-                })}
-              </tbody>
-            </table>
+          <div className="standings-list">
+            {standings.length > 0 && (
+              <div className="standings-list-head">
+                <span>{latestRound ? t("אחרי מחזור {n}", { n: latestRound }) : ""}</span>
+                <span>{t("נק׳")}</span>
+              </div>
+            )}
+
+            {standings.map((row, index) => {
+              const rank = index + 1;
+              const isMe = row.user.id === user?.id;
+              const shortOfMatches = row.played < roundsClosed;
+              const body = (
+                <>
+                  <span className="standings-rank" dir="ltr">
+                    {rank}
+                  </span>
+                  <div className="standings-main">
+                    <div className="standings-name">
+                      {row.user.name}
+                      {isMe && <span className="standings-you"> · {t("אתה")}</span>}
+                    </div>
+                    <div className="standings-record" dir="ltr">
+                      {row.wins}W-{row.losses}L
+                      {shortOfMatches &&
+                        ` · ${t("{played} מתוך {total}", { played: row.played, total: roundsClosed })}`}
+                    </div>
+                  </div>
+                  {showTrend && (
+                    <span
+                      className={`standings-trend${
+                        row.rank_delta > 0 ? " up" : row.rank_delta < 0 ? " down" : ""
+                      }`}
+                      dir="ltr"
+                    >
+                      {row.rank_delta > 0
+                        ? `▲${row.rank_delta}`
+                        : row.rank_delta < 0
+                        ? `▼${Math.abs(row.rank_delta)}`
+                        : "—"}
+                    </span>
+                  )}
+                  <span className="standings-points">{row.points}</span>
+                </>
+              );
+
+              return isMe ? (
+                <div className={`standings-row mine${rank === 1 ? " leader" : ""}`} key={row.user.id}>
+                  {body}
+                </div>
+              ) : (
+                <Link
+                  to={`/head-to-head/${row.user.id}`}
+                  className={`standings-row${rank === 1 ? " leader" : ""}`}
+                  key={row.user.id}
+                >
+                  {body}
+                  <ChevronIcon className="standings-chevron chevron-icon" aria-hidden="true" />
+                </Link>
+              );
+            })}
+
             {standings.length > 0 && (
               <p className="standings-hint">{t("הקשה על שחקן פותחת ראש בראש מולו")}</p>
             )}
@@ -743,9 +743,7 @@ export default function LeagueDetail() {
                   </button>
                 )}
 
-                <div className="profile-section-header" style={{ justifyContent: "flex-start" }}>
-                  <span>{t("כל המשחקים במחזור {n}", { n: shownRound })}</span>
-                </div>
+                <div className="matches-list-heading">{t("כל המשחקים במחזור {n}", { n: shownRound })}</div>
                 <div className="all-matches-list">
                   {shownRoundMatches.map((match) => (
                     <AllMatchesRow
@@ -761,25 +759,14 @@ export default function LeagueDetail() {
                 </div>
 
                 {existingRoundNumbers.length > 0 && (
-                  <Link to={`/leagues/${leagueId}/rounds`} className="league-action-row">
-                    <div>
-                      <span className="league-action-title">{t("כל המחזורים")}</span>
-                      <span className="league-action-subtitle">
-                        {t("{rounds} מחזורים · {games} משחקים", {
-                          rounds: existingRoundNumbers.length,
-                          games: allMatches.length,
-                        })}
-                      </span>
-                    </div>
-                    <ChevronIcon className="league-action-chevron chevron-icon" aria-hidden="true" />
+                  <Link to={`/leagues/${leagueId}/rounds`} className="all-rounds-link">
+                    {t("כל המחזורים")} ›
                   </Link>
                 )}
 
                 {legacyMatches.length > 0 && (
                   <div>
-                    <div className="profile-section-header" style={{ justifyContent: "flex-start" }}>
-                      <span>{t("משחקים ללא מחזור")}</span>
-                    </div>
+                    <div className="matches-list-heading">{t("משחקים ללא מחזור")}</div>
                     <div className="all-matches-list">
                       {legacyMatches.map((match) => (
                         <AllMatchesRow
@@ -939,7 +926,7 @@ function AllMatchesRow({ match, currentUserId, onReport, onNeedsConfirm, busy, m
 
   if (editing) {
     return (
-      <div className="match-row match-row-editing">
+      <div className="games-row games-row-editing">
         <SetScoreForm
           player1Name={match.player1.name}
           player2Name={match.player2.name}
@@ -959,21 +946,21 @@ function AllMatchesRow({ match, currentUserId, onReport, onNeedsConfirm, busy, m
 
   const row = (
     <>
-      <span className="match-row-names">
+      <span className="games-row-names">
         <span className={meIsPlayer1 ? "me" : undefined}>{match.player1.name}</span>
-        <span className="match-row-sep"> · </span>
+        <span className="games-row-sep"> · </span>
         <span className={meIsPlayer2 ? "me" : undefined}>{match.player2.name}</span>
       </span>
       {isPendingConfirmation ? (
         iNeedToConfirm ? (
-          <span className="match-row-confirm">{t("לאישור")}</span>
+          <span className="games-row-confirm">{t("לאישור")}</span>
         ) : (
-          <span className="match-row-dot" aria-label={t("ממתין")} />
+          <span className="games-row-dot" aria-label={t("ממתין")} />
         )
       ) : !isCompleted ? (
-        <span className="match-row-dot" aria-label={t("ממתין")} />
+        <span className="games-row-dot" aria-label={t("ממתין")} />
       ) : (
-        <span className={`match-row-score${iWon ? " win" : ""}`} dir="ltr">
+        <span className={`games-row-score${iWon ? " win" : ""}`} dir="ltr">
           {formatSets(mySets)}
         </span>
       )}
@@ -984,7 +971,7 @@ function AllMatchesRow({ match, currentUserId, onReport, onNeedsConfirm, busy, m
     return (
       <button
         type="button"
-        className={`match-row match-row-editable${isMine ? " mine" : ""}`}
+        className={`games-row games-row-editable${isMine ? " mine" : ""}`}
         onClick={onNeedsConfirm}
       >
         {row}
@@ -994,11 +981,11 @@ function AllMatchesRow({ match, currentUserId, onReport, onNeedsConfirm, busy, m
 
   if (isCompleted && isMine) {
     return (
-      <button type="button" className="match-row match-row-editable mine" onClick={() => setEditing(true)}>
+      <button type="button" className="games-row games-row-editable mine" onClick={() => setEditing(true)}>
         {row}
       </button>
     );
   }
 
-  return <div className={`match-row${isMine ? " mine" : ""}`}>{row}</div>;
+  return <div className={`games-row${isMine ? " mine" : ""}`}>{row}</div>;
 }

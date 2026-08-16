@@ -426,25 +426,14 @@ def list_members(league_id: int, db: Session = Depends(get_db)):
     return [m.user for m in league.memberships]
 
 
-@router.get("/{league_id}/standings", response_model=list[schemas.StandingRow])
-def get_standings(league_id: int, db: Session = Depends(get_db)):
-    _auto_confirm_overdue(db)
-    league = _get_league_or_404(db, league_id)
-
-    stats = {
+def _empty_stats(league):
+    return {
         m.user.id: {"user": m.user, "played": 0, "wins": 0, "losses": 0, "points": 0}
         for m in league.memberships
     }
 
-    matches = (
-        db.query(models.Match)
-        .filter(
-            models.Match.league_id == league_id,
-            models.Match.status == models.MatchStatus.completed,
-        )
-        .all()
-    )
 
+def _accumulate_stats(stats, matches):
     for match in matches:
         p1, p2 = stats.get(match.player1_id), stats.get(match.player2_id)
         if not p1 or not p2:
@@ -460,5 +449,35 @@ def get_standings(league_id: int, db: Session = Depends(get_db)):
             p2["points"] += 3
             p1["losses"] += 1
 
+
+@router.get("/{league_id}/standings", response_model=list[schemas.StandingRow])
+def get_standings(league_id: int, db: Session = Depends(get_db)):
+    _auto_confirm_overdue(db)
+    league = _get_league_or_404(db, league_id)
+
+    all_matches = db.query(models.Match).filter(models.Match.league_id == league_id).all()
+    existing_rounds = sorted({m.round_number for m in all_matches if m.round_number})
+    latest_round = existing_rounds[-1] if existing_rounds else None
+    completed_matches = [m for m in all_matches if m.status == models.MatchStatus.completed]
+
+    stats = _empty_stats(league)
+    _accumulate_stats(stats, completed_matches)
     rows = sorted(stats.values(), key=lambda r: (-r["points"], -r["wins"]))
+
+    rank_delta_by_user = {}
+    if latest_round is not None and latest_round >= 2:
+        prev_matches = [
+            m for m in completed_matches if m.round_number is None or m.round_number < latest_round
+        ]
+        prev_stats = _empty_stats(league)
+        _accumulate_stats(prev_stats, prev_matches)
+        prev_rows = sorted(prev_stats.values(), key=lambda r: (-r["points"], -r["wins"]))
+        prev_rank_by_user = {row["user"].id: idx + 1 for idx, row in enumerate(prev_rows)}
+        current_rank_by_user = {row["user"].id: idx + 1 for idx, row in enumerate(rows)}
+        for user_id, prev_rank in prev_rank_by_user.items():
+            rank_delta_by_user[user_id] = prev_rank - current_rank_by_user[user_id]
+
+    for row in rows:
+        row["rank_delta"] = rank_delta_by_user.get(row["user"].id)
+
     return rows
