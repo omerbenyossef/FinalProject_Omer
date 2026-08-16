@@ -289,17 +289,35 @@ export default function LeagueDetail() {
   const myRank = myRankIndex >= 0 ? myRankIndex + 1 : null;
   const roundsClosed = existingRoundNumbers.length;
   const showTrend = roundsClosed >= 2 && standings.some((row) => row.rank_delta != null);
-  const leagueFormStrip = matches
-    .filter((m) => m.status === "completed")
-    .slice()
-    .sort((a, b) => new Date(b.played_at || b.created_at) - new Date(a.played_at || a.created_at))
-    .slice(0, 8)
+  const myRoundRows = allMatches
+    .filter((m) => m.player1.id === user?.id || m.player2.id === user?.id)
+    .filter((m) => m.round_number)
+    .sort((a, b) => a.round_number - b.round_number)
     .map((m) => {
       const iAmPlayer1 = m.player1.id === user?.id;
+      const opponent = iAmPlayer1 ? m.player2 : m.player1;
+      const mySets = iAmPlayer1
+        ? m.sets
+        : m.sets?.map((s) => ({ player1_games: s.player2_games, player2_games: s.player1_games }));
       const myScore = iAmPlayer1 ? m.player1_score : m.player2_score;
-      const opponentScore = iAmPlayer1 ? m.player2_score : m.player1_score;
-      return { won: myScore > opponentScore };
+      const theirScore = iAmPlayer1 ? m.player2_score : m.player1_score;
+      return {
+        round: m.round_number,
+        opponentName: opponent.name,
+        status: m.status,
+        mySets,
+        won: m.status === "completed" && myScore > theirScore,
+      };
     });
+  const myCompletedRounds = myRoundRows.filter((r) => r.status === "completed");
+  const myLastWon = myCompletedRounds.length ? myCompletedRounds[myCompletedRounds.length - 1].won : null;
+  let myStreak = 0;
+  for (let i = myCompletedRounds.length - 1; i >= 0 && myCompletedRounds[i].won === myLastWon; i--) {
+    myStreak++;
+  }
+  const myStreakLabel = myStreak ? `${myStreak}${myLastWon ? "W" : "L"}` : "—";
+  const myLeaderPoints = standings.length ? standings[0].points : 0;
+  const myWinsBehind = Math.ceil(Math.max(myLeaderPoints - (myStanding?.points ?? 0), 0) / 3);
   const ruleLabels = leagueRuleLabels(league, t);
   const hasSchedule = allMatches.length > 0;
   const roundsCount = new Set(allMatches.map((m) => m.round_number).filter(Boolean)).size;
@@ -409,50 +427,79 @@ export default function LeagueDetail() {
       </div>
 
       <div>
-        {activeTab === "stats" && isMember && myStanding && (
-          <div className="league-stats-summary">
-            <div className="profile-winrate-row">
-              <div className="profile-winrate-value" dir="ltr">
-                <span className="profile-winrate-number">{myWinRate !== null ? myWinRate : "–"}</span>
-                <span className="profile-winrate-percent">%</span>
+        {activeTab === "stats" && isMember && (
+          <div className="my-stats">
+            <div className="my-stats-hero">
+              <div className="my-stats-rate" dir="ltr">
+                <span className="my-stats-rate-num">{myWinRate !== null ? myWinRate : "–"}</span>
+                <span className="my-stats-rate-pct">%</span>
               </div>
-              <div className="profile-winrate-label">
-                <div className="profile-winrate-title">{t("אחוז ניצחונות")}</div>
-                <div className="profile-winrate-record" dir="ltr">
-                  {myStanding.wins}W · {myStanding.losses}L
+              <div className="my-stats-hero-text">
+                <div className="my-stats-hero-label">{t("אחוז ניצחונות בליגה הזו")}</div>
+                <div className="my-stats-hero-sub" dir="ltr">
+                  {myStanding?.wins ?? 0}W-{myStanding?.losses ?? 0}L ·{" "}
+                  {myRank !== null ? t("מקום {n}", { n: myRank }) : "–"} · {myStanding?.points ?? 0}{" "}
+                  {t("נק׳")}
                 </div>
               </div>
             </div>
 
-            {leagueFormStrip.length > 0 && (
-              <>
-                <div className="profile-form-strip">
-                  {leagueFormStrip.map((m, i) => (
-                    <span key={i} className={`profile-form-bar${m.won ? " win" : ""}`} />
-                  ))}
-                </div>
-                <div className="profile-form-caption">
-                  {leagueFormStrip.length} {t("המשחקים האחרונים")}
-                </div>
-              </>
+            <div className="my-stats-heading">{t("מחזור אחרי מחזור")}</div>
+            {myRoundRows.length > 0 ? (
+              <div className="my-stats-rounds">
+                {myRoundRows.map((r) => (
+                  <div className="my-stats-round" key={r.round}>
+                    <span className="my-stats-round-num" dir="ltr">
+                      {r.round}
+                    </span>
+                    <div className="my-stats-round-name">{r.opponentName}</div>
+                    {r.status === "completed" ? (
+                      <>
+                        <span className="my-stats-round-score" dir="ltr">
+                          {formatSets(r.mySets)}
+                        </span>
+                        <span className={`my-stats-round-badge${r.won ? " win" : ""}`}>
+                          {r.won ? "W" : "L"}
+                        </span>
+                      </>
+                    ) : r.status === "pending_confirmation" ? (
+                      <span className="my-stats-round-state">{t("ממתין לאישור")}</span>
+                    ) : (
+                      <span className="my-stats-round-state open">{t("לשחק")}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="muted">{t("עוד לא שובצו לך משחקים בליגה הזו")}</p>
             )}
 
-            <div className="league-stat-tiles">
-              <div className="league-stat-tile rank">
-                <div className="league-stat-tile-label">{t("דירוג")}</div>
-                <div className="league-stat-tile-value" dir="ltr">
-                  {myRank !== null ? `#${myRank}` : "–"}
+            {myStanding && (
+              <div className="my-stats-figures">
+                <div>
+                  <div className="my-stats-figure-label">{t("רצף נוכחי")}</div>
+                  <div className="my-stats-figure" dir="ltr">
+                    {myStreakLabel}
+                  </div>
+                </div>
+                <div>
+                  <div className="my-stats-figure-label">{t("פיגור מהמוביל")}</div>
+                  <div className="my-stats-figure" dir="ltr">
+                    {myWinsBehind === 0 ? (
+                      "—"
+                    ) : (
+                      <>
+                        {myWinsBehind}
+                        <span className="unit">
+                          {" "}
+                          {myWinsBehind === 1 ? t("ניצחון") : t("ניצחונות")}
+                        </span>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
-              <div className="league-stat-tile">
-                <div className="league-stat-tile-label">{t("נקודות")}</div>
-                <div className="league-stat-tile-value">{myStanding.points}</div>
-              </div>
-              <div className="league-stat-tile">
-                <div className="league-stat-tile-label">{t("משחקים")}</div>
-                <div className="league-stat-tile-value">{myStanding.played}</div>
-              </div>
-            </div>
+            )}
           </div>
         )}
 
