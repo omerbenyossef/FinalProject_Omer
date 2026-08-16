@@ -270,7 +270,7 @@ a { color: var(--court); text-decoration: none; }
 }
 
 .app-shell {
-  max-width: 720px;
+  max-width: 480px;
   margin: 0 auto;
   min-height: 100svh;
   display: flex;
