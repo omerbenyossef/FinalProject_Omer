@@ -4,7 +4,7 @@ import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import { ChevronIcon } from "../Icons.jsx";
-import { formatSets, roundDueDate } from "../matchUtils.js";
+import { formatSets, roundDueDateObj } from "../matchUtils.js";
 import { SkeletonPageHeader } from "../Skeleton.jsx";
 
 function groupMatchesByRound(matches) {
@@ -57,27 +57,43 @@ export default function LeagueRounds() {
   const roundNumbers = [...grouped.keys()].filter((r) => r !== "none").sort((a, b) => b - a);
   const activeRound = roundNumbers.length > 0 ? Math.max(...roundNumbers) : null;
 
+  const myCompleted = myMatches.filter((m) => m.status === "completed");
+  const myWins = myCompleted.filter((m) => {
+    const iAmPlayer1 = m.player1.id === user?.id;
+    return iAmPlayer1 ? m.player1_score > m.player2_score : m.player2_score > m.player1_score;
+  }).length;
+  const myRecord = myCompleted.length > 0 ? `${myWins}W-${myCompleted.length - myWins}L` : null;
+
   return (
     <div>
       <header className="page-head">
         <Link to={`/leagues/${leagueId}`} className="back-link">
           <ChevronIcon aria-hidden="true" />
-          {league.name}
+          <span dir="auto">{league.name}</span>
         </Link>
-        <div className="page-title-row">
-          <h1>{t("מחזורים")}</h1>
-        </div>
-        <div className="league-detail-meta">
-          {t("{n} מחזורים · {m} משחקים", { n: roundNumbers.length, m: allMatches.length })}
+        <h1 className="rounds-title">{t("מחזורים")}</h1>
+        <div className="rounds-summary">
+          <span className="num">{roundNumbers.length}</span> {t("מחזורים")} ·{" "}
+          <span className="num">{allMatches.length}</span> {t("משחקים")}
+          {myRecord && (
+            <>
+              {" "}
+              · {t("אתה")}{" "}
+              <span className="num" dir="ltr">
+                {myRecord}
+              </span>
+            </>
+          )}
         </div>
       </header>
 
       {error && <p className="error">{t(error)}</p>}
 
-      <div className="rank-row-list">
+      <div className="rounds-list">
         {roundNumbers.map((r) => {
-          const roundMatches = grouped.get(r);
           const isActive = r === activeRound;
+          const roundMatches = grouped.get(r);
+          const played = roundMatches.filter((m) => m.status !== "pending").length;
           const myMatch = myMatches.find((m) => m.round_number === r);
           const opponent = myMatch
             ? myMatch.player1.id === user?.id
@@ -86,68 +102,52 @@ export default function LeagueRounds() {
             : null;
           const iAmPlayer1 = myMatch && myMatch.player1.id === user?.id;
           const isCompleted = myMatch && myMatch.status === "completed";
-          const iWon = isCompleted && (iAmPlayer1 ? myMatch.player1_score > myMatch.player2_score : myMatch.player2_score > myMatch.player1_score);
+          const iWon =
+            isCompleted &&
+            (iAmPlayer1
+              ? myMatch.player1_score > myMatch.player2_score
+              : myMatch.player2_score > myMatch.player1_score);
           const mySets = myMatch
             ? iAmPlayer1
               ? myMatch.sets
               : myMatch.sets?.map((s) => ({ player1_games: s.player2_games, player2_games: s.player1_games }))
             : null;
-          const closesDate = isActive
-            ? roundDueDate(league.schedule_started_at, r, league.round_length_days)
-            : "";
+          const closesIn = isActive
+            ? (() => {
+                const due = roundDueDateObj(league.schedule_started_at, r, league.round_length_days);
+                return due ? Math.ceil((due.getTime() - Date.now()) / 86400000) : null;
+              })()
+            : null;
 
           return (
-            <Link to={`/leagues/${leagueId}/rounds/${r}`} key={r} className="rank-row round-list-row">
-              <span className={`rank-row-number${isActive ? " top" : ""}`} dir="ltr">
+            <Link to={`/leagues/${leagueId}/rounds/${r}`} key={r} className="round-row">
+              <span className={`round-row-num${isActive ? " active" : ""}`} dir="ltr">
                 {r}
               </span>
-              <div className="rank-row-body">
-                <div className="round-list-top">
-                  <div className="round-list-info">
-                    {isActive ? (
-                      <>
-                        <span className="round-list-label active">{t("פעיל עכשיו")}</span>
-                        {closesDate && (
-                          <span className="round-list-sub">
-                            {t("נסגר ב-{date}", { date: closesDate })}
-                          </span>
-                        )}
-                      </>
-                    ) : myMatch ? (
-                      <>
-                        <span className="round-list-label">{t("מול {name}", { name: opponent.name })}</span>
-                        {isCompleted && (
-                          <span className="round-list-sub" dir="ltr">
-                            {formatSets(mySets)}
-                          </span>
-                        )}
-                      </>
-                    ) : (
-                      <span className="round-list-label muted">
-                        {t("{n} משחקים", { n: roundMatches.length })}
-                      </span>
-                    )}
-                  </div>
-                  {isActive ? (
-                    <span className="round-list-badge">{t("לשחק")}</span>
-                  ) : isCompleted ? (
-                    <span className={`match-result-badge ${iWon ? "win" : "loss"}`}>{iWon ? "W" : "L"}</span>
-                  ) : null}
-                </div>
-                <div className="profile-form-strip round-list-strip">
-                  {roundMatches.map((m, i) => (
-                    <span key={i} className={`profile-form-bar${m.status !== "pending" ? " win" : ""}`} />
-                  ))}
+              <div className="round-row-body">
+                <div className="round-row-name">{opponent ? opponent.name : "—"}</div>
+                <div className="round-row-sub" dir="ltr">
+                  {played}/{roundMatches.length} {t("שוחקו")}
+                  {isActive && closesIn != null && ` · ${t("{n}d left", { n: closesIn })}`}
                 </div>
               </div>
+              {isActive ? (
+                <span className="round-row-state">{t("לשחק")}</span>
+              ) : isCompleted ? (
+                <>
+                  <span className="round-row-score" dir="ltr">
+                    {formatSets(mySets)}
+                  </span>
+                  <span className={`round-row-badge${iWon ? " win" : ""}`}>{iWon ? "W" : "L"}</span>
+                </>
+              ) : null}
+              <ChevronIcon className="round-row-chevron chevron-icon" aria-hidden="true" />
             </Link>
           );
         })}
       </div>
 
-      {roundNumbers.length > 0 && (
-        <p className="rounds-list-hint">{t("הקשה על מחזור פותחת את כל המשחקים שלו")}</p>
-      )}
+      {roundNumbers.length > 0 && <p className="rounds-hint">{t("הקשה על מחזור פותחת את כל המשחקים שלו")}</p>}
     </div>
   );
 }
