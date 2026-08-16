@@ -2300,16 +2300,6 @@ button:active { transform: translateY(1px); }
   color: var(--ink);
 }
 
-.section-tab.active::after {
-  content: "";
-  position: absolute;
-  bottom: -1px;
-  inset-inline: 0;
-  height: 3px;
-  border-radius: 2px;
-  background: var(--court);
-}
-
 .invite-fab {
   position: fixed;
   left: 16px;
