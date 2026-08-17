@@ -117,6 +117,30 @@ def backfill_league_levels() -> None:
 
 backfill_league_levels()
 
+
+def backfill_match_kind() -> None:
+    """Same gap as backfill_league_levels(): add_missing_columns() can't set
+    a default for rows that already existed, so matches created before the
+    friendly-match feature shipped have kind/requires_confirmation as NULL —
+    which fails MatchOut/NextMatchEntry validation on read since neither
+    field is optional. Backfill them to the values every pre-existing match
+    always implicitly had (it was a league match, and always required
+    confirmation)."""
+    db = SessionLocal()
+    try:
+        db.query(models.Match).filter(models.Match.kind.is_(None)).update(
+            {models.Match.kind: models.MatchKind.league}, synchronize_session=False
+        )
+        db.query(models.Match).filter(models.Match.requires_confirmation.is_(None)).update(
+            {models.Match.requires_confirmation: True}, synchronize_session=False
+        )
+        db.commit()
+    finally:
+        db.close()
+
+
+backfill_match_kind()
+
 app = FastAPI(title="Amateur Sports League API")
 
 app.add_middleware(
