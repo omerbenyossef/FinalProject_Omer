@@ -25,6 +25,17 @@ class MatchStatus(str, enum.Enum):
     completed = "completed"
 
 
+class MatchKind(str, enum.Enum):
+    league = "league"
+    friendly = "friendly"
+
+
+class FriendlyInviteStatus(str, enum.Enum):
+    pending = "pending"
+    accepted = "accepted"
+    declined = "declined"
+
+
 RATING_MIN = 1.5
 RATING_MAX = 5.5
 PROVISIONAL_MATCHES = 3
@@ -114,7 +125,11 @@ class Match(Base):
     __tablename__ = "matches"
 
     id = Column(Integer, primary_key=True, index=True)
-    league_id = Column(Integer, ForeignKey("leagues.id"), nullable=False)
+    league_id = Column(Integer, ForeignKey("leagues.id"), nullable=True)
+    sport_id = Column(Integer, ForeignKey("sports.id"), nullable=True)
+    kind = Column(Enum(MatchKind), default=MatchKind.league, nullable=False)
+    invite_status = Column(Enum(FriendlyInviteStatus), nullable=True)
+    requires_confirmation = Column(Boolean, default=True, nullable=False)
     player1_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     player2_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     player1_score = Column(Integer, nullable=True)
@@ -130,6 +145,7 @@ class Match(Base):
     auto_confirm_at = Column(DateTime, nullable=True)
 
     league = relationship("League", back_populates="matches")
+    sport = relationship("Sport")
     player1 = relationship("User", foreign_keys=[player1_id])
     player2 = relationship("User", foreign_keys=[player2_id])
 
@@ -146,3 +162,18 @@ class PushSubscription(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="push_subscriptions")
+
+
+class FriendlyInviteLink(Base):
+    __tablename__ = "friendly_invite_links"
+
+    id = Column(Integer, primary_key=True, index=True)
+    inviter_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    sport_id = Column(Integer, ForeignKey("sports.id"), nullable=False)
+    token = Column(String, unique=True, index=True, nullable=False)
+    used = Column(Boolean, default=False, nullable=False)
+    match_id = Column(Integer, ForeignKey("matches.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    inviter = relationship("User")
+    sport = relationship("Sport")

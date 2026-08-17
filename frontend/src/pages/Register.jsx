@@ -26,6 +26,14 @@ export default function Register() {
     try {
       const data = await api.register({ name, email, password });
       loginWithToken(data.access_token, data.user);
+      const friendlyToken = searchParams.get("friendly");
+      if (friendlyToken) {
+        try {
+          await api.redeemFriendlyInviteLink(friendlyToken);
+        } catch {
+          /* invite link may be invalid or already used — registration itself still succeeded */
+        }
+      }
       const redirect = searchParams.get("redirect");
       navigate(redirect || "/profile");
     } catch (err) {

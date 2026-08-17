@@ -4,7 +4,7 @@ from sqlalchemy import Enum, inspect, text
 
 from . import models
 from .database import Base, engine, SessionLocal
-from .routers import auth, leagues, matches, players, push, ratings, sports
+from .routers import auth, friendly, leagues, matches, players, push, ratings, sports
 
 Base.metadata.create_all(bind=engine)
 
@@ -65,6 +65,21 @@ def add_missing_enum_values() -> None:
 
 add_missing_enum_values()
 
+
+def relax_matches_league_id() -> None:
+    """matches.league_id was NOT NULL until friendly matches (which have no
+    league) shipped; add_missing_columns() only adds new columns, it can't
+    loosen an existing one, so drop the constraint by hand on Postgres. SQLite
+    (local dev) recreates the whole table from the model on a fresh file, so
+    nothing to do there."""
+    if engine.dialect.name != "postgresql":
+        return
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE matches ALTER COLUMN league_id DROP NOT NULL"))
+
+
+relax_matches_league_id()
+
 DEFAULT_SPORTS = ["טניס", "פאדל", "כדורגל", "כדורסל", "כדורעף", "שחמט"]
 
 
@@ -118,6 +133,7 @@ app.include_router(matches.router)
 app.include_router(players.router)
 app.include_router(push.router)
 app.include_router(ratings.router)
+app.include_router(friendly.router)
 
 
 @app.get("/health")

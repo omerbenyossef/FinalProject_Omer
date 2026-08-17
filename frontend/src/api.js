@@ -108,6 +108,23 @@ export const api = {
   submitRating: (leagueId, answers) =>
     request(`/leagues/${leagueId}/rate`, { method: "POST", body: answers }),
 
+  searchFriendlyPlayers: (sportId, q) =>
+    request(`/friendly/players/search?sport_id=${sportId}${q ? `&q=${encodeURIComponent(q)}` : ""}`),
+  createFriendlyInvite: (opponentId, sportId) =>
+    request("/friendly/matches", { method: "POST", body: { opponent_id: opponentId, sport_id: sportId } }),
+  acceptFriendlyInvite: (matchId) => request(`/friendly/matches/${matchId}/accept`, { method: "POST" }),
+  declineFriendlyInvite: (matchId) => request(`/friendly/matches/${matchId}/decline`, { method: "POST" }),
+  remindFriendly: (matchId) => request(`/friendly/matches/${matchId}/remind`, { method: "POST" }),
+  reportFriendlyScore: (matchId, sets, requireConfirmation) =>
+    request(`/friendly/matches/${matchId}/score`, {
+      method: "POST",
+      body: { sets, require_confirmation: requireConfirmation },
+    }),
+  confirmFriendlyScore: (matchId) => request(`/friendly/matches/${matchId}/confirm`, { method: "POST" }),
+  createFriendlyInviteLink: (sportId) =>
+    request("/friendly/invite-links", { method: "POST", body: { sport_id: sportId } }),
+  redeemFriendlyInviteLink: (token) => request(`/friendly/invite-links/${token}/redeem`, { method: "POST" }),
+
   getVapidKey: () => request("/push/vapid-public-key", { auth: false }),
   subscribePush: (subscription) => request("/push/subscribe", { method: "POST", body: subscription }),
   unsubscribePush: (endpoint) => request("/push/unsubscribe", { method: "POST", body: { endpoint } }),

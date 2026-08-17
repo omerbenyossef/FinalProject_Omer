@@ -17,6 +17,7 @@ export default function SetScoreForm({
   busy,
   submitLabel = "דווח תוצאה",
   maxSets,
+  friendlyConfirm,
 }) {
   const [rows, setRows] = useState(() => initialRows(initialSets));
   const { t } = useLanguage();
@@ -84,6 +85,17 @@ export default function SetScoreForm({
         </button>
       )}
 
+      {friendlyConfirm && (
+        <label className="friendly-confirm">
+          <input
+            type="checkbox"
+            checked={friendlyConfirm.checked}
+            onChange={(e) => friendlyConfirm.onChange(e.target.checked)}
+          />
+          {t("{name} מאשר את התוצאה לפני שהיא נשמרת", { name: friendlyConfirm.opponentName })}
+        </label>
+      )}
+
       <div className="score-actions">
         <button type="submit" className="score-submit" disabled={!isValid || busy}>
           <span className="score-submit-dot" aria-hidden="true" />
@@ -95,6 +107,14 @@ export default function SetScoreForm({
           </button>
         )}
       </div>
+
+      {friendlyConfirm && (
+        <p className="friendly-rating-note">
+          {t(
+            "המשחק נספר בדירוג האישי ובמאזן ה-W-L שלך. הוא לא חלק משום ליגה."
+          )}
+        </p>
+      )}
     </form>
   );
 }

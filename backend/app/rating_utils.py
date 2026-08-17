@@ -69,7 +69,7 @@ def update_ratings_for_match(db: Session, match: models.Match) -> None:
     if match.player1_score == match.player2_score:
         return
 
-    sport_id = match.league.sport_id
+    sport_id = match.league.sport_id if match.league_id else match.sport_id
     r1 = get_rating(db, match.player1_id, sport_id)
     r2 = get_rating(db, match.player2_id, sport_id)
     if not r1 or not r2:

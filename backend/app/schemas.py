@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel, EmailStr
 
-from .models import MatchStatus
+from .models import MatchStatus, MatchKind, FriendlyInviteStatus
 
 
 class UserCreate(BaseModel):
@@ -55,7 +55,8 @@ class RecentMatchEntry(BaseModel):
     opponent_name: str
     my_sets: list[SetScore]
     won: bool
-    league_name: str
+    kind: MatchKind = MatchKind.league
+    league_name: Optional[str] = None
     played_at: Optional[datetime] = None
 
 
@@ -181,7 +182,10 @@ class MatchScoreUpdate(BaseModel):
 
 class MatchOut(BaseModel):
     id: int
-    league_id: int
+    league_id: Optional[int] = None
+    kind: MatchKind = MatchKind.league
+    invite_status: Optional[FriendlyInviteStatus] = None
+    requires_confirmation: bool = True
     player1: MemberOut
     player2: MemberOut
     player1_score: Optional[int]
@@ -201,11 +205,41 @@ class MatchOut(BaseModel):
 
 
 class NextMatchEntry(BaseModel):
-    league_id: int
-    league_name: str
+    kind: MatchKind = MatchKind.league
+    sport_id: Optional[int] = None
+    league_id: Optional[int] = None
+    league_name: Optional[str] = None
     schedule_started_at: Optional[datetime] = None
     best_of: int = 3
+    invite_status: Optional[FriendlyInviteStatus] = None
     match: MatchOut
+
+
+class FriendlyInviteCreate(BaseModel):
+    opponent_id: int
+    sport_id: int
+
+
+class FriendlyScoreUpdate(BaseModel):
+    sets: list[SetScore]
+    require_confirmation: bool = True
+
+
+class FriendlyPlayerOut(BaseModel):
+    id: int
+    name: str
+    wins: int
+    losses: int
+    shared_leagues: int
+    last_played_at: Optional[datetime] = None
+
+
+class FriendlyInviteLinkCreate(BaseModel):
+    sport_id: int
+
+
+class FriendlyInviteLinkOut(BaseModel):
+    token: str
 
 
 class StandingRow(BaseModel):
@@ -221,8 +255,9 @@ class StandingRow(BaseModel):
 
 class HeadToHeadMatch(BaseModel):
     id: int
-    league_id: int
-    league_name: str
+    kind: MatchKind = MatchKind.league
+    league_id: Optional[int] = None
+    league_name: Optional[str] = None
     my_score: int
     opponent_score: int
     sets: Optional[list[SetScore]] = None

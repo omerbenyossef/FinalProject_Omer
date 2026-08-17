@@ -203,6 +203,15 @@ export function GearIcon(props) {
   );
 }
 
+export function SearchIcon(props) {
+  return (
+    <svg {...common} {...props}>
+      <circle cx="10.5" cy="10.5" r="6.5" />
+      <line x1="15.3" y1="15.3" x2="20.5" y2="20.5" />
+    </svg>
+  );
+}
+
 export function SettingsIcon(props) {
   return (
     <svg {...common} {...props}>

@@ -87,8 +87,11 @@ def my_stats(
         models.Match.status == models.MatchStatus.completed,
     )
     if sport_id is not None:
-        matches_query = matches_query.join(models.League).filter(
-            models.League.sport_id == sport_id
+        matches_query = matches_query.outerjoin(models.League).filter(
+            or_(
+                models.League.sport_id == sport_id,
+                models.Match.sport_id == sport_id,
+            )
         )
     matches = matches_query.order_by(models.Match.played_at.desc()).all()
 
@@ -122,7 +125,8 @@ def my_stats(
                 opponent_name=opponent.name,
                 my_sets=my_sets,
                 won=won,
-                league_name=match.league.name,
+                kind=match.kind,
+                league_name=match.league.name if match.league_id else None,
                 played_at=match.played_at,
             )
         )

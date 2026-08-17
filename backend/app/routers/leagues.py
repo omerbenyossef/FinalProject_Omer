@@ -233,6 +233,8 @@ def my_next_matches(
         if match:
             entries.append(
                 schemas.NextMatchEntry(
+                    kind=models.MatchKind.league,
+                    sport_id=league.sport_id,
                     league_id=league.id,
                     league_name=league.name,
                     schedule_started_at=league.schedule_started_at,
@@ -240,6 +242,32 @@ def my_next_matches(
                     match=match,
                 )
             )
+
+    friendly_matches = (
+        db.query(models.Match)
+        .options(joinedload(models.Match.player1), joinedload(models.Match.player2))
+        .filter(
+            models.Match.kind == models.MatchKind.friendly,
+            models.Match.invite_status != models.FriendlyInviteStatus.declined,
+            models.Match.status != models.MatchStatus.completed,
+            or_(
+                models.Match.player1_id == current_user.id,
+                models.Match.player2_id == current_user.id,
+            ),
+        )
+        .order_by(models.Match.created_at.desc())
+        .all()
+    )
+    for match in friendly_matches:
+        entries.append(
+            schemas.NextMatchEntry(
+                kind=models.MatchKind.friendly,
+                sport_id=match.sport_id,
+                best_of=3,
+                invite_status=match.invite_status,
+                match=match,
+            )
+        )
 
     return entries
 

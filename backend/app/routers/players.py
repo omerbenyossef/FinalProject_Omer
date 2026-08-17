@@ -64,8 +64,9 @@ def head_to_head(
         match_list.append(
             schemas.HeadToHeadMatch(
                 id=m.id,
+                kind=m.kind,
                 league_id=m.league_id,
-                league_name=m.league.name,
+                league_name=m.league.name if m.league_id else None,
                 my_score=my_score,
                 opponent_score=opponent_score,
                 sets=sets,

@@ -435,6 +435,30 @@ const PAIRS = [
   ["צריך למלא שאלון דירוג לענף הזה לפני ההצטרפות", "You need to fill out a level questionnaire for this sport before joining"],
   ["הדירוג שלך מחוץ לטווח הרמות של הליגה הזו", "Your rating is outside this league's level range"],
   ["לא מדורג", "Unrated"],
+
+  // Friendly match
+  ["משחק ידידותי", "Friendly match"],
+  ["משחק ידידותי חדש", "New friendly"],
+  ["נגד מי אתה משחק?", "Who are you playing?"],
+  ["משחק ידידותי נספר בדירוג האישי שלך. הוא לא משפיע על טבלאות הליגה.",
+   "A friendly counts toward your personal rating. It does not affect any league standings."],
+  ["חיפוש שחקנים", "Search players"],
+  ["שיחקתם בעבר", "Played before"],
+  ["{n} ליגות משותפות", "{n} leagues together"],
+  ["הזמן", "Invite"],
+  ["לא ב-Rally", "Not on Rally"],
+  ["הזמנה בקישור", "Invite by link"],
+  ["וואטסאפ, או העתקת הקישור", "WhatsApp, or copy the link"],
+  ["אושר", "accepted"],
+  ["הוזמן · ממתין לתשובה", "invited · waiting for reply"],
+  ["תזכורת", "Remind"],
+  ["אשר הזמנה", "Accept"],
+  ["דחה הזמנה", "Decline"],
+  ["{name} מאשר את התוצאה לפני שהיא נשמרת", "{name} confirms the score before it is saved"],
+  ["המשחק נספר בדירוג האישי ובמאזן ה-W-L שלך. הוא לא חלק משום ליגה.",
+   "This match counts toward your personal rating and your W-L record. It is not part of any league."],
+  ["לא נמצאו שחקנים", "No players found"],
+  ["עדיין לא שיחקת נגד אף אחד בענף הזה.", "You haven't played against anyone in this sport yet."],
 ];
 
 const heToEn = {};

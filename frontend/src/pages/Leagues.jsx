@@ -5,7 +5,7 @@ import { useAuth } from "../AuthContext.jsx";
 import { useSport } from "../SportContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import EmptyState from "../EmptyState.jsx";
-import { TrophyIcon, ChevronIcon } from "../Icons.jsx";
+import { TrophyIcon, ChevronIcon, PlusIcon } from "../Icons.jsx";
 import { SkeletonLeagueCard } from "../Skeleton.jsx";
 import { leagueRuleLabels } from "../matchUtils.js";
 import PageHelp from "../PageHelp.jsx";
@@ -134,6 +134,10 @@ export default function Leagues() {
           <button type="button" className="btn-create-league" onClick={openSheet}>
             {t("צור ליגה חדשה")}
           </button>
+          <Link to="/friendly/new" className="btn-friendly">
+            <PlusIcon aria-hidden="true" />
+            {t("משחק ידידותי")}
+          </Link>
         </div>
       ) : (
         <EmptyState

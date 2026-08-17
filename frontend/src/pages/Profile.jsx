@@ -43,6 +43,7 @@ export default function Profile() {
   const [reportingMatchId, setReportingMatchId] = useState(null);
   const [showAllNextMatches, setShowAllNextMatches] = useState(false);
   const [myRatings, setMyRatings] = useState([]);
+  const [friendlyRequireConfirm, setFriendlyRequireConfirm] = useState(true);
 
   function loadNextMatches() {
     api
@@ -72,10 +73,14 @@ export default function Profile() {
       .catch((err) => setError(err.message));
   }, [selectedSportId]);
 
-  async function handleReportScore(leagueId, matchId, sets) {
+  async function handleReportScore(entry, matchId, sets) {
     setBusy(true);
     try {
-      await api.reportScore(leagueId, matchId, sets);
+      if (entry.kind === "friendly") {
+        await api.reportFriendlyScore(matchId, sets, friendlyRequireConfirm);
+      } else {
+        await api.reportScore(entry.league_id, matchId, sets);
+      }
       setReportingMatchId(null);
       loadNextMatches();
     } catch (err) {
@@ -89,7 +94,11 @@ export default function Profile() {
     if (!confirmEntry) return;
     setBusy(true);
     try {
-      await api.confirmScore(confirmEntry.league_id, confirmEntry.match.id);
+      if (confirmEntry.kind === "friendly") {
+        await api.confirmFriendlyScore(confirmEntry.match.id);
+      } else {
+        await api.confirmScore(confirmEntry.league_id, confirmEntry.match.id);
+      }
       setConfirmEntry(null);
       loadNextMatches();
     } catch (err) {
@@ -103,7 +112,11 @@ export default function Profile() {
     if (!confirmEntry) return;
     setBusy(true);
     try {
-      await api.reportScore(confirmEntry.league_id, confirmEntry.match.id, sets);
+      if (confirmEntry.kind === "friendly") {
+        await api.reportFriendlyScore(confirmEntry.match.id, sets, confirmEntry.match.requires_confirmation);
+      } else {
+        await api.reportScore(confirmEntry.league_id, confirmEntry.match.id, sets);
+      }
       setConfirmEntry(null);
       loadNextMatches();
     } catch (err) {
@@ -113,20 +126,57 @@ export default function Profile() {
     }
   }
 
+  async function handleAcceptInvite(matchId) {
+    setBusy(true);
+    try {
+      await api.acceptFriendlyInvite(matchId);
+      loadNextMatches();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleDeclineInvite(matchId) {
+    setBusy(true);
+    try {
+      await api.declineFriendlyInvite(matchId);
+      loadNextMatches();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleRemindFriendly(matchId) {
+    try {
+      await api.remindFriendly(matchId);
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
   if (!user) return null;
 
   const myLeaguesForSport = myLeagues.filter((l) => l.sport.id === selectedSportId);
-  const myLeagueIdsForSport = new Set(myLeaguesForSport.map((l) => l.id));
   const roundLengthById = new Map(myLeagues.map((l) => [l.id, l.round_length_days]));
-  const myLeagueEntries = nextMatches.filter((entry) => myLeagueIdsForSport.has(entry.league_id));
-  const confirmationEntries = myLeagueEntries.filter(
+  const relevantEntries = nextMatches.filter((entry) => entry.sport_id === selectedSportId);
+  const confirmationEntries = relevantEntries.filter(
     (entry) => entry.match.status === "pending_confirmation" && entry.match.reported_by !== user.id
   );
-  const nextMatchesForSport = myLeagueEntries.filter((entry) => entry.match.status === "pending");
+  const leagueMatchesForSport = relevantEntries.filter(
+    (entry) => entry.kind !== "friendly" && entry.match.status === "pending"
+  );
+  const friendlyMatchesForSport = relevantEntries.filter(
+    (entry) => entry.kind === "friendly" && entry.match.status === "pending"
+  );
+  const combinedToPlay = [...leagueMatchesForSport, ...friendlyMatchesForSport];
   const visibleNextMatches = showAllNextMatches
-    ? nextMatchesForSport
-    : nextMatchesForSport.slice(0, MAX_VISIBLE_NEXT_MATCHES);
-  const hiddenNextMatchesCount = nextMatchesForSport.length - visibleNextMatches.length;
+    ? combinedToPlay
+    : combinedToPlay.slice(0, MAX_VISIBLE_NEXT_MATCHES);
+  const hiddenNextMatchesCount = combinedToPlay.length - visibleNextMatches.length;
 
   const winRate =
     stats && stats.matches_played > 0 ? Math.round((stats.wins / stats.matches_played) * 100) : null;
@@ -204,7 +254,12 @@ export default function Profile() {
                   </span>
                 </span>
                 <span className="home-confirm-sub">
-                  {t("לאישור")} · {entry.league_name}
+                  {t("לאישור")} ·{" "}
+                  {entry.kind === "friendly" ? (
+                    <span className="match-tag">FRIENDLY</span>
+                  ) : (
+                    entry.league_name
+                  )}
                 </span>
               </span>
               <ChevronIcon className="chevron-icon" aria-hidden="true" />
@@ -217,7 +272,7 @@ export default function Profile() {
         <ul className="match-list">
           <SkeletonMatchRow />
         </ul>
-      ) : nextMatchesForSport.length === 0 ? (
+      ) : combinedToPlay.length === 0 ? (
         <p className="muted" style={{ maxWidth: "30ch" }}>
           {t(
             "עדיין לא שובצו משחקים. מנהל הליגה קובע את לוח המשחקים, וברגע שהוא קיים המשחק שלך יופיע כאן."
@@ -228,6 +283,83 @@ export default function Profile() {
           {visibleNextMatches.map((entry) => {
             const opponent = entry.match.player1.id === user.id ? entry.match.player2 : entry.match.player1;
             const isReporting = reportingMatchId === entry.match.id;
+
+            if (entry.kind === "friendly") {
+              const isInviter = entry.match.player1.id === user.id;
+              const pending = entry.match.invite_status === "pending";
+              return (
+                <div key={entry.match.id}>
+                  <div className={`home-match${pending ? " friendly-pending" : ""}`}>
+                    <Avatar name={opponent.name} size={38} dim={pending} />
+                    <div className="home-match-body">
+                      <div className="my-match-name">
+                        <span dir="auto" style={{ unicodeBidi: "isolate" }}>
+                          {opponent.name}
+                        </span>
+                      </div>
+                      <div className="home-match-tag-row">
+                        <span className="match-tag">FRIENDLY</span>
+                        <span className="home-match-league">
+                          {pending ? t("הוזמן · ממתין לתשובה") : t("אושר")}
+                        </span>
+                      </div>
+                    </div>
+                    {!pending && !isReporting && (
+                      <button
+                        type="button"
+                        className="my-match-report"
+                        onClick={() => {
+                          setReportingMatchId(entry.match.id);
+                          setFriendlyRequireConfirm(true);
+                        }}
+                      >
+                        <span className="my-match-dot" aria-hidden="true" />
+                        {t("דווח")}
+                      </button>
+                    )}
+                    {pending && isInviter && (
+                      <button
+                        type="button"
+                        className="friendly-remind"
+                        onClick={() => handleRemindFriendly(entry.match.id)}
+                      >
+                        {t("תזכורת")}
+                      </button>
+                    )}
+                    {pending && !isInviter && (
+                      <div className="friendly-invite-actions">
+                        <button type="button" onClick={() => handleAcceptInvite(entry.match.id)}>
+                          {t("אשר הזמנה")}
+                        </button>
+                        <button
+                          type="button"
+                          className="decline"
+                          onClick={() => handleDeclineInvite(entry.match.id)}
+                        >
+                          {t("דחה הזמנה")}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  {isReporting && (
+                    <SetScoreForm
+                      player1Name={entry.match.player1.name}
+                      player2Name={entry.match.player2.name}
+                      busy={busy}
+                      maxSets={3}
+                      onSubmit={(sets) => handleReportScore(entry, entry.match.id, sets)}
+                      onCancel={() => setReportingMatchId(null)}
+                      friendlyConfirm={{
+                        opponentName: opponent.name,
+                        checked: friendlyRequireConfirm,
+                        onChange: setFriendlyRequireConfirm,
+                      }}
+                    />
+                  )}
+                </div>
+              );
+            }
+
             const daysLeft = daysLeftFor(entry);
             return (
               <div key={entry.match.id}>
@@ -275,7 +407,7 @@ export default function Profile() {
                     player2Name={entry.match.player2.name}
                     busy={busy}
                     maxSets={entry.best_of}
-                    onSubmit={(sets) => handleReportScore(entry.league_id, entry.match.id, sets)}
+                    onSubmit={(sets) => handleReportScore(entry, entry.match.id, sets)}
                     onCancel={() => setReportingMatchId(null)}
                   />
                 )}
@@ -369,13 +501,20 @@ export default function Profile() {
                   <span dir="auto" style={{ unicodeBidi: "isolate" }}>
                     {m.opponent_name}
                   </span>
-                  {m.league_name && (
+                  {m.kind === "friendly" ? (
                     <>
-                      {" · "}
-                      <span dir="auto" style={{ unicodeBidi: "isolate" }}>
-                        {m.league_name}
-                      </span>
+                      {" "}
+                      <span className="match-tag archive">FRIENDLY</span>
                     </>
+                  ) : (
+                    m.league_name && (
+                      <>
+                        {" · "}
+                        <span dir="auto" style={{ unicodeBidi: "isolate" }}>
+                          {m.league_name}
+                        </span>
+                      </>
+                    )
                   )}
                   {m.played_at && <> · {formatDayMonth(new Date(m.played_at))}</>}
                 </span>
