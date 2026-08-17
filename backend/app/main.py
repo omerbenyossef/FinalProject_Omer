@@ -120,12 +120,12 @@ backfill_league_levels()
 
 def backfill_match_kind() -> None:
     """Same gap as backfill_league_levels(): add_missing_columns() can't set
-    a default for rows that already existed, so matches created before the
-    friendly-match feature shipped have kind/requires_confirmation as NULL —
-    which fails MatchOut/NextMatchEntry validation on read since neither
-    field is optional. Backfill them to the values every pre-existing match
-    always implicitly had (it was a league match, and always required
-    confirmation)."""
+    a default for rows that already existed, so matches created before a
+    non-optional column shipped have it as NULL — which fails
+    MatchOut/NextMatchEntry validation on read since none of these fields are
+    Optional. Backfill each to the value every pre-existing match always
+    implicitly had (it was a league match, always required confirmation, and
+    had no schedule-coordination step to confirm)."""
     db = SessionLocal()
     try:
         db.query(models.Match).filter(models.Match.kind.is_(None)).update(
@@ -133,6 +133,9 @@ def backfill_match_kind() -> None:
         )
         db.query(models.Match).filter(models.Match.requires_confirmation.is_(None)).update(
             {models.Match.requires_confirmation: True}, synchronize_session=False
+        )
+        db.query(models.Match).filter(models.Match.schedule_confirmed.is_(None)).update(
+            {models.Match.schedule_confirmed: False}, synchronize_session=False
         )
         db.commit()
     finally:

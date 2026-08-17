@@ -5,10 +5,11 @@ import { useAuth } from "../AuthContext.jsx";
 import { useSport } from "../SportContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import SetScoreForm from "../SetScoreForm.jsx";
+import ScheduleForm from "../ScheduleForm.jsx";
 import ConfirmScoreSheet from "../ConfirmScoreSheet.jsx";
 import Avatar from "../Avatar.jsx";
 import { ChevronIcon, UserPlusIcon } from "../Icons.jsx";
-import { formatDayMonth, roundDueDateObj } from "../matchUtils.js";
+import { formatDayMonth, formatDayMonthTime, roundDueDateObj, matchScheduleState } from "../matchUtils.js";
 import { SkeletonMatchRow } from "../Skeleton.jsx";
 import PageHelp from "../PageHelp.jsx";
 
@@ -44,6 +45,7 @@ export default function Profile() {
   const [showAllNextMatches, setShowAllNextMatches] = useState(false);
   const [myRatings, setMyRatings] = useState([]);
   const [friendlyRequireConfirm, setFriendlyRequireConfirm] = useState(true);
+  const [schedulingMatchId, setSchedulingMatchId] = useState(null);
 
   function loadNextMatches() {
     api
@@ -155,6 +157,31 @@ export default function Profile() {
       await api.remindFriendly(matchId);
     } catch (err) {
       setError(err.message);
+    }
+  }
+
+  async function handleProposeSchedule(leagueId, matchId, scheduledAt) {
+    setBusy(true);
+    try {
+      await api.proposeSchedule(leagueId, matchId, scheduledAt);
+      setSchedulingMatchId(null);
+      loadNextMatches();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleConfirmSchedule(leagueId, matchId) {
+    setBusy(true);
+    try {
+      await api.confirmSchedule(leagueId, matchId);
+      loadNextMatches();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -361,6 +388,11 @@ export default function Profile() {
             }
 
             const daysLeft = daysLeftFor(entry);
+            const scheduleState = matchScheduleState(entry.match, user.id);
+            const isScheduling = schedulingMatchId === entry.match.id;
+            const scheduledText = entry.match.scheduled_at
+              ? formatDayMonthTime(new Date(entry.match.scheduled_at))
+              : "";
             return (
               <div key={entry.match.id}>
                 <div className="home-match">
@@ -378,19 +410,58 @@ export default function Profile() {
                         </span>
                       </span>
                       <span className="home-match-nums" dir="ltr">
-                        · round {entry.match.round_number}
-                        {daysLeft !== null && (
+                        {scheduleState === "proposed_by_me" && <> · {t("ממתין לאישור שעה")}</>}
+                        {scheduleState === "proposed_by_them" && (
+                          <> · {t("הוצע זמן: {datetime}", { datetime: scheduledText })}</>
+                        )}
+                        {scheduleState === "confirmed_future" && (
+                          <> · {t("מתוזמן ל-{datetime}", { datetime: scheduledText })}</>
+                        )}
+                        {(scheduleState === "unscheduled" || scheduleState === "ready") && (
                           <>
-                            {" · "}
-                            <span style={daysLeft < 0 ? { color: "#f0c26a" } : undefined}>
-                              {daysLeftLabel(daysLeft)}
-                            </span>
+                            · round {entry.match.round_number}
+                            {daysLeft !== null && (
+                              <>
+                                {" · "}
+                                <span style={daysLeft < 0 ? { color: "#f0c26a" } : undefined}>
+                                  {daysLeftLabel(daysLeft)}
+                                </span>
+                              </>
+                            )}
                           </>
                         )}
                       </span>
                     </div>
                   </div>
-                  {!isReporting && (
+                  {scheduleState === "unscheduled" && (
+                    <button
+                      type="button"
+                      className="my-match-report"
+                      onClick={() => setSchedulingMatchId(entry.match.id)}
+                    >
+                      <span className="my-match-dot" aria-hidden="true" />
+                      {t("קבע שעה")}
+                    </button>
+                  )}
+                  {scheduleState === "proposed_by_them" && (
+                    <div className="friendly-invite-actions">
+                      <button
+                        type="button"
+                        onClick={() => handleConfirmSchedule(entry.league_id, entry.match.id)}
+                        disabled={busy}
+                      >
+                        {t("אשר שעה")}
+                      </button>
+                      <button
+                        type="button"
+                        className="decline"
+                        onClick={() => setSchedulingMatchId(entry.match.id)}
+                      >
+                        {t("הצע שעה אחרת")}
+                      </button>
+                    </div>
+                  )}
+                  {scheduleState === "ready" && !isReporting && (
                     <button
                       type="button"
                       className="my-match-report"
@@ -401,7 +472,16 @@ export default function Profile() {
                     </button>
                   )}
                 </div>
-                {isReporting && (
+                {isScheduling && (
+                  <ScheduleForm
+                    busy={busy}
+                    onSubmit={(scheduledAt) =>
+                      handleProposeSchedule(entry.league_id, entry.match.id, scheduledAt)
+                    }
+                    onCancel={() => setSchedulingMatchId(null)}
+                  />
+                )}
+                {isReporting && scheduleState === "ready" && (
                   <SetScoreForm
                     player1Name={entry.match.player1.name}
                     player2Name={entry.match.player2.name}

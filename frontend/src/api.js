@@ -94,6 +94,13 @@ export const api = {
     request(`/leagues/${leagueId}/matches/`, { method: "POST", body: { opponent_id: opponentId } }),
   generateSchedule: (leagueId) =>
     request(`/leagues/${leagueId}/matches/generate-schedule`, { method: "POST" }),
+  proposeSchedule: (leagueId, matchId, scheduledAt) =>
+    request(`/leagues/${leagueId}/matches/${matchId}/schedule`, {
+      method: "POST",
+      body: { scheduled_at: scheduledAt },
+    }),
+  confirmSchedule: (leagueId, matchId) =>
+    request(`/leagues/${leagueId}/matches/${matchId}/schedule/confirm`, { method: "POST" }),
   reportScore: (leagueId, matchId, sets) =>
     request(`/leagues/${leagueId}/matches/${matchId}/score`, { method: "POST", body: { sets } }),
   confirmScore: (leagueId, matchId) =>

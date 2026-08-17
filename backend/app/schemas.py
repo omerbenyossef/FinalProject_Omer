@@ -180,12 +180,19 @@ class MatchScoreUpdate(BaseModel):
     sets: list[SetScore]
 
 
+class MatchScheduleProposal(BaseModel):
+    scheduled_at: datetime
+
+
 class MatchOut(BaseModel):
     id: int
     league_id: Optional[int] = None
     kind: MatchKind = MatchKind.league
     invite_status: Optional[FriendlyInviteStatus] = None
     requires_confirmation: bool = True
+    scheduled_at: Optional[datetime] = None
+    scheduled_by: Optional[int] = None
+    schedule_confirmed: bool = False
     player1: MemberOut
     player2: MemberOut
     player1_score: Optional[int]

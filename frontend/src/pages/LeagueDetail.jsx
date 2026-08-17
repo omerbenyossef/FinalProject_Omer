@@ -4,6 +4,7 @@ import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import SetScoreForm from "../SetScoreForm.jsx";
+import ScheduleForm from "../ScheduleForm.jsx";
 import Avatar from "../Avatar.jsx";
 import WaitingConfirmationCard from "../WaitingConfirmationCard.jsx";
 import ConfirmScoreSheet from "../ConfirmScoreSheet.jsx";
@@ -14,6 +15,8 @@ import {
   roundDueDate,
   leagueRuleLabels,
   nextSchedulePreview,
+  matchScheduleState,
+  formatDayMonthTime,
 } from "../matchUtils.js";
 import { SkeletonPageHeader, SkeletonHeroStat, SkeletonStandingsTable } from "../Skeleton.jsx";
 import PageHelp from "../PageHelp.jsx";
@@ -56,6 +59,7 @@ export default function LeagueDetail() {
   const [showAddRoundConfirm, setShowAddRoundConfirm] = useState(false);
   const [myH2h, setMyH2h] = useState(null);
   const [reportingMyMatch, setReportingMyMatch] = useState(false);
+  const [schedulingMyMatch, setSchedulingMyMatch] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [selectedRound, setSelectedRound] = useState(null);
   const [ratingFlow, setRatingFlow] = useState(null); // { existingResult, joinCode } | null
@@ -216,6 +220,33 @@ export default function LeagueDetail() {
     }
   }
 
+  async function handleProposeSchedule(matchId, scheduledAt) {
+    setBusy(true);
+    setError("");
+    try {
+      await api.proposeSchedule(leagueId, matchId, scheduledAt);
+      setSchedulingMyMatch(false);
+      await loadAll();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleConfirmSchedule(matchId) {
+    setBusy(true);
+    setError("");
+    try {
+      await api.confirmSchedule(leagueId, matchId);
+      await loadAll();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function handleCancelMatch(matchId) {
     setBusy(true);
     setError("");
@@ -247,6 +278,9 @@ export default function LeagueDetail() {
   const latestRound = existingRoundNumbers.length > 0 ? Math.max(...existingRoundNumbers) : null;
   const shownRound = selectedRound ?? latestRound;
   const myMatchInShownRound = matches.find((m) => m.round_number === shownRound);
+  const myMatchScheduleState = myMatchInShownRound
+    ? matchScheduleState(myMatchInShownRound, user?.id)
+    : null;
   const shownOpponent = myMatchInShownRound
     ? myMatchInShownRound.player1.id === user?.id
       ? myMatchInShownRound.player2
@@ -708,13 +742,58 @@ export default function LeagueDetail() {
                       <Avatar name={shownOpponent.name} size={38} />
                       <div className="my-match-body">
                         <div className="my-match-name">{shownOpponent.name}</div>
-                        {myH2h && (
+                        {myMatchScheduleState === "proposed_by_me" && (
+                          <div className="my-match-h2h">{t("ממתין לאישור שעה")}</div>
+                        )}
+                        {myMatchScheduleState === "proposed_by_them" && (
+                          <div className="my-match-h2h">
+                            {t("הוצע זמן: {datetime}", {
+                              datetime: formatDayMonthTime(new Date(myMatchInShownRound.scheduled_at)),
+                            })}
+                          </div>
+                        )}
+                        {myMatchScheduleState === "confirmed_future" && (
+                          <div className="my-match-h2h">
+                            {t("מתוזמן ל-{datetime}", {
+                              datetime: formatDayMonthTime(new Date(myMatchInShownRound.scheduled_at)),
+                            })}
+                          </div>
+                        )}
+                        {myH2h && (myMatchScheduleState === "unscheduled" || myMatchScheduleState === "ready") && (
                           <div className="my-match-h2h" dir="ltr">
                             H2H {myH2h.wins}-{myH2h.losses}
                           </div>
                         )}
                       </div>
-                      {!reportingMyMatch && (
+                      {myMatchScheduleState === "unscheduled" && !schedulingMyMatch && (
+                        <button
+                          type="button"
+                          className="my-match-report"
+                          onClick={() => setSchedulingMyMatch(true)}
+                        >
+                          <span className="my-match-dot" aria-hidden="true" />
+                          {t("קבע שעה")}
+                        </button>
+                      )}
+                      {myMatchScheduleState === "proposed_by_them" && (
+                        <div className="friendly-invite-actions">
+                          <button
+                            type="button"
+                            onClick={() => handleConfirmSchedule(myMatchInShownRound.id)}
+                            disabled={busy}
+                          >
+                            {t("אשר שעה")}
+                          </button>
+                          <button
+                            type="button"
+                            className="decline"
+                            onClick={() => setSchedulingMyMatch(true)}
+                          >
+                            {t("הצע שעה אחרת")}
+                          </button>
+                        </div>
+                      )}
+                      {myMatchScheduleState === "ready" && !reportingMyMatch && (
                         <button
                           type="button"
                           className="my-match-report"
@@ -725,7 +804,14 @@ export default function LeagueDetail() {
                         </button>
                       )}
                     </div>
-                    {reportingMyMatch && (
+                    {schedulingMyMatch && (
+                      <ScheduleForm
+                        busy={busy}
+                        onSubmit={(scheduledAt) => handleProposeSchedule(myMatchInShownRound.id, scheduledAt)}
+                        onCancel={() => setSchedulingMyMatch(false)}
+                      />
+                    )}
+                    {reportingMyMatch && myMatchScheduleState === "ready" && (
                       <SetScoreForm
                         player1Name={myMatchInShownRound.player1.name}
                         player2Name={myMatchInShownRound.player2.name}

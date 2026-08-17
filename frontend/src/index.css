@@ -4433,3 +4433,32 @@ button:active { transform: translateY(1px); }
   line-height: 1.5;
   color: #8b93a6;
 }
+
+/* Match scheduling (propose/confirm a time before Report unlocks) */
+
+.schedule-form {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.schedule-form-input {
+  display: block;
+  width: 100%;
+  height: 44px;
+  background: none;
+  border: 0;
+  border-bottom: 1.5px solid rgba(148, 163, 184, 0.28);
+  border-radius: 0;
+  padding: 0;
+  font-family: "IBM Plex Mono", var(--mono);
+  font-weight: 500;
+  font-size: 15.5px;
+  color: var(--ink);
+  color-scheme: dark;
+}
+
+.schedule-form-input:focus {
+  outline: none;
+  border-bottom-color: var(--court);
+}

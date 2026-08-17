@@ -5,8 +5,9 @@ import { useAuth } from "../AuthContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import Avatar from "../Avatar.jsx";
 import SetScoreForm from "../SetScoreForm.jsx";
+import ScheduleForm from "../ScheduleForm.jsx";
 import { ChevronIcon } from "../Icons.jsx";
-import { formatDayMonth, roundDueDateObj } from "../matchUtils.js";
+import { formatDayMonth, formatDayMonthTime, roundDueDateObj, matchScheduleState } from "../matchUtils.js";
 import { SkeletonPageHeader, SkeletonHeroStat } from "../Skeleton.jsx";
 
 export default function RoundDetail() {
@@ -22,6 +23,7 @@ export default function RoundDetail() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [reminded, setReminded] = useState({});
+  const [scheduling, setScheduling] = useState(false);
 
   async function loadAll() {
     try {
@@ -46,6 +48,7 @@ export default function RoundDetail() {
   const roundMatches = allMatches.filter((m) => m.round_number === roundNumber);
   const myMatch = myMatches.find((m) => m.round_number === roundNumber);
   const myOpponent = myMatch ? (myMatch.player1.id === user?.id ? myMatch.player2 : myMatch.player1) : null;
+  const myScheduleState = myMatch ? matchScheduleState(myMatch, user?.id) : null;
 
   useEffect(() => {
     if (!myOpponent) {
@@ -65,6 +68,35 @@ export default function RoundDetail() {
     setError("");
     try {
       await api.reportScore(leagueId, myMatch.id, sets);
+      await loadAll();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleProposeSchedule(scheduledAt) {
+    if (!myMatch) return;
+    setBusy(true);
+    setError("");
+    try {
+      await api.proposeSchedule(leagueId, myMatch.id, scheduledAt);
+      setScheduling(false);
+      await loadAll();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleConfirmSchedule() {
+    if (!myMatch) return;
+    setBusy(true);
+    setError("");
+    try {
+      await api.confirmSchedule(leagueId, myMatch.id);
       await loadAll();
     } catch (err) {
       setError(err.message);
@@ -143,20 +175,55 @@ export default function RoundDetail() {
             <Avatar name={myOpponent.name} size={36} />
             <div className="round-my-match-info">
               <div className="round-my-match-name">{t("מול {name}", { name: myOpponent.name })}</div>
-              {h2h && (
+              {myScheduleState === "proposed_by_me" && (
+                <div className="round-my-match-h2h">{t("ממתין לאישור שעה")}</div>
+              )}
+              {myScheduleState === "proposed_by_them" && (
+                <div className="round-my-match-h2h">
+                  {t("הוצע זמן: {datetime}", { datetime: formatDayMonthTime(new Date(myMatch.scheduled_at)) })}
+                </div>
+              )}
+              {myScheduleState === "confirmed_future" && (
+                <div className="round-my-match-h2h">
+                  {t("מתוזמן ל-{datetime}", { datetime: formatDayMonthTime(new Date(myMatch.scheduled_at)) })}
+                </div>
+              )}
+              {h2h && (myScheduleState === "unscheduled" || myScheduleState === "ready") && (
                 <div className="round-my-match-h2h" dir="ltr">
                   H2H {h2h.wins}-{h2h.losses}
                 </div>
               )}
             </div>
           </div>
-          <SetScoreForm
-            player1Name={myMatch.player1.name}
-            player2Name={myMatch.player2.name}
-            onSubmit={handleReportScore}
-            busy={busy}
-            maxSets={league.best_of}
-          />
+
+          {myScheduleState === "unscheduled" && !scheduling && (
+            <button type="button" className="my-match-report" onClick={() => setScheduling(true)}>
+              <span className="my-match-dot" aria-hidden="true" />
+              {t("קבע שעה")}
+            </button>
+          )}
+          {myScheduleState === "proposed_by_them" && (
+            <div className="friendly-invite-actions">
+              <button type="button" onClick={handleConfirmSchedule} disabled={busy}>
+                {t("אשר שעה")}
+              </button>
+              <button type="button" className="decline" onClick={() => setScheduling(true)}>
+                {t("הצע שעה אחרת")}
+              </button>
+            </div>
+          )}
+          {scheduling && (
+            <ScheduleForm busy={busy} onSubmit={handleProposeSchedule} onCancel={() => setScheduling(false)} />
+          )}
+          {myScheduleState === "ready" && (
+            <SetScoreForm
+              player1Name={myMatch.player1.name}
+              player2Name={myMatch.player2.name}
+              onSubmit={handleReportScore}
+              busy={busy}
+              maxSets={league.best_of}
+            />
+          )}
         </div>
       )}
 

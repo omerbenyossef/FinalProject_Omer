@@ -14,6 +14,22 @@ export function formatDayMonth(date) {
   return `${date.getDate()}.${date.getMonth() + 1}`;
 }
 
+export function formatDayMonthTime(date) {
+  const h = String(date.getHours()).padStart(2, "0");
+  const m = String(date.getMinutes()).padStart(2, "0");
+  return `${formatDayMonth(date)} · ${h}:${m}`;
+}
+
+// State machine for the "schedule a time before you can report a score" gate:
+// unscheduled -> proposed_by_me / proposed_by_them -> confirmed_future -> ready.
+export function matchScheduleState(match, userId) {
+  if (!match.scheduled_at) return "unscheduled";
+  if (!match.schedule_confirmed) {
+    return match.scheduled_by === userId ? "proposed_by_me" : "proposed_by_them";
+  }
+  return new Date(match.scheduled_at) > new Date() ? "confirmed_future" : "ready";
+}
+
 export function formatWeekLabel(scheduleStartedAt, roundNumber, t, roundLengthDays = 7) {
   if (!scheduleStartedAt || !roundNumber) return "";
   const anchor = new Date(scheduleStartedAt);

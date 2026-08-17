@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import or_
@@ -13,6 +13,16 @@ from ..rating_utils import update_ratings_for_match
 router = APIRouter(prefix="/leagues/{league_id}/matches", tags=["matches"])
 
 CONFIRMATION_WINDOW = timedelta(hours=48)
+
+
+def _to_naive_utc(dt: datetime) -> datetime:
+    """Everything else in this codebase stores/compares naive UTC datetimes
+    (datetime.utcnow()); a client-submitted ISO timestamp may arrive
+    timezone-aware, so normalize it before it touches the DB or gets
+    compared against datetime.utcnow()."""
+    if dt.tzinfo is not None:
+        return dt.astimezone(timezone.utc).replace(tzinfo=None)
+    return dt
 
 
 def _auto_confirm_overdue(db: Session) -> None:
@@ -197,6 +207,86 @@ def create_match(
     return match
 
 
+@router.post("/{match_id}/schedule", response_model=schemas.MatchOut)
+def propose_schedule(
+    league_id: int,
+    match_id: int,
+    proposal: schemas.MatchScheduleProposal,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    match = (
+        db.query(models.Match)
+        .filter(models.Match.id == match_id, models.Match.league_id == league_id)
+        .first()
+    )
+    if not match:
+        raise HTTPException(status_code=404, detail="Match not found")
+    if current_user.id not in (match.player1_id, match.player2_id):
+        raise HTTPException(status_code=403, detail="Not a participant in this match")
+    if match.status != models.MatchStatus.pending:
+        raise HTTPException(status_code=400, detail="אי אפשר לתאם זמן למשחק שכבר דווח")
+
+    scheduled_at = _to_naive_utc(proposal.scheduled_at)
+    if scheduled_at <= datetime.utcnow():
+        raise HTTPException(status_code=400, detail="זמן המשחק חייב להיות בעתיד")
+
+    match.scheduled_at = scheduled_at
+    match.scheduled_by = current_user.id
+    match.schedule_confirmed = False
+    db.commit()
+    db.refresh(match)
+
+    opponent_id = match.player2_id if current_user.id == match.player1_id else match.player1_id
+    notify_user(
+        db,
+        opponent_id,
+        "הצעת זמן למשחק",
+        f"{current_user.name} הציע/ה שעה למשחק שלכם, ומחכה לאישור שלך",
+        f"/leagues/{league_id}",
+    )
+
+    return match
+
+
+@router.post("/{match_id}/schedule/confirm", response_model=schemas.MatchOut)
+def confirm_schedule(
+    league_id: int,
+    match_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    match = (
+        db.query(models.Match)
+        .filter(models.Match.id == match_id, models.Match.league_id == league_id)
+        .first()
+    )
+    if not match:
+        raise HTTPException(status_code=404, detail="Match not found")
+    if current_user.id not in (match.player1_id, match.player2_id):
+        raise HTTPException(status_code=403, detail="Not a participant in this match")
+    if match.scheduled_at is None:
+        raise HTTPException(status_code=400, detail="אין הצעת זמן לאשר")
+    if match.schedule_confirmed:
+        raise HTTPException(status_code=400, detail="הזמן כבר מאושר")
+    if match.scheduled_by == current_user.id:
+        raise HTTPException(status_code=400, detail="לא ניתן לאשר הצעת זמן שהצעת בעצמך")
+
+    match.schedule_confirmed = True
+    db.commit()
+    db.refresh(match)
+
+    notify_user(
+        db,
+        match.scheduled_by,
+        "הזמן למשחק אושר",
+        f"{current_user.name} אישר/ה את הזמן שהצעת למשחק שלכם",
+        f"/leagues/{league_id}",
+    )
+
+    return match
+
+
 @router.post("/{match_id}/score", response_model=schemas.MatchOut)
 def report_score(
     league_id: int,
@@ -215,6 +305,11 @@ def report_score(
         raise HTTPException(status_code=404, detail="Match not found")
     if current_user.id not in (match.player1_id, match.player2_id):
         raise HTTPException(status_code=403, detail="Not a participant in this match")
+    if match.status == models.MatchStatus.pending:
+        if match.scheduled_at is None or not match.schedule_confirmed:
+            raise HTTPException(status_code=400, detail="צריך לתאם ולאשר שעה למשחק לפני דיווח תוצאה")
+        if datetime.utcnow() < match.scheduled_at:
+            raise HTTPException(status_code=400, detail="אפשר לדווח תוצאה רק אחרי השעה שנקבעה למשחק")
     if not score_in.sets:
         raise HTTPException(status_code=400, detail="צריך לדווח לפחות סט אחד")
     best_of = match.league.best_of or 3

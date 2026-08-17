@@ -459,6 +459,22 @@ const PAIRS = [
    "This match counts toward your personal rating and your W-L record. It is not part of any league."],
   ["לא נמצאו שחקנים", "No players found"],
   ["עדיין לא שיחקת נגד אף אחד בענף הזה.", "You haven't played against anyone in this sport yet."],
+
+  // Match scheduling
+  ["קבע שעה", "Schedule"],
+  ["הצע שעה", "Propose time"],
+  ["ממתין לאישור שעה", "Waiting for time to be confirmed"],
+  ["הוצע זמן: {datetime}", "Time proposed: {datetime}"],
+  ["מתוזמן ל-{datetime}", "Scheduled for {datetime}"],
+  ["אשר שעה", "Confirm time"],
+  ["הצע שעה אחרת", "Propose a different time"],
+  ["צריך לתאם ולאשר שעה למשחק לפני דיווח תוצאה", "You need to schedule and confirm a time for the match before reporting a score"],
+  ["אפשר לדווח תוצאה רק אחרי השעה שנקבעה למשחק", "You can only report a score after the match's scheduled time"],
+  ["זמן המשחק חייב להיות בעתיד", "The match time must be in the future"],
+  ["אין הצעת זמן לאשר", "There's no time proposal to confirm"],
+  ["הזמן כבר מאושר", "The time is already confirmed"],
+  ["לא ניתן לאשר הצעת זמן שהצעת בעצמך", "You can't confirm a time proposal you made yourself"],
+  ["אי אפשר לתאם זמן למשחק שכבר דווח", "You can't schedule a time for a match that's already been reported"],
 ];
 
 const heToEn = {};
