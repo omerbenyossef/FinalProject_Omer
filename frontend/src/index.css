@@ -2531,10 +2531,11 @@ button:active { transform: translateY(1px); }
 .home-section-label {
   margin-top: 24px;
   font-family: var(--display);
-  font-weight: 800;
-  font-size: 15.5px;
+  font-weight: 900;
+  font-size: 22px;
+  line-height: 1.05;
   color: var(--ink);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.035em;
 }
 
 .home-match {
@@ -2616,10 +2617,11 @@ button:active { transform: translateY(1px); }
 
 .home-section-title {
   font-family: var(--display);
-  font-weight: 800;
-  font-size: 15.5px;
+  font-weight: 900;
+  font-size: 22px;
+  line-height: 1.05;
   color: var(--ink);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.035em;
 }
 
 .home-section-title-archive {
