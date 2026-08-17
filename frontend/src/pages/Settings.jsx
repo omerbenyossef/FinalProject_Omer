@@ -64,9 +64,6 @@ export default function Settings() {
       </div>
 
       <div className="settings-section">
-        <div className="profile-section-header" style={{ justifyContent: "flex-start" }}>
-          <span>{t("אזור מסוכן")}</span>
-        </div>
         <DeleteAccountRow />
       </div>
     </div>

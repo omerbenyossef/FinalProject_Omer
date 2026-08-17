@@ -477,7 +477,6 @@ const PAIRS = [
   ["אי אפשר לתאם זמן למשחק שכבר דווח", "You can't schedule a time for a match that's already been reported"],
 
   // Delete account
-  ["אזור מסוכן", "Danger zone"],
   ["מחיקת חשבון", "Delete account"],
   ["מחיקה סופית של החשבון וכל הנתונים שלך", "Permanently delete your account and your data"],
   ["מחק חשבון", "Delete account"],
