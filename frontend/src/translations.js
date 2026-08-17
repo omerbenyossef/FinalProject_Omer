@@ -73,7 +73,6 @@ const PAIRS = [
   ["יוצר...", "Creating..."],
   ["צור ליגה", "Create league"],
   ["טוען...", "Loading..."],
-  ["הליגות שלי", "My Leagues"],
   ["עדיין לא הצטרפת לאף ליגה בענף הזה.", "You haven't joined any league in this sport yet."],
   ["ליגות פתוחות", "Open Leagues"],
   ["אין כרגע ליגות פתוחות.", "There are no open leagues right now."],
@@ -106,6 +105,9 @@ const PAIRS = [
   // League card
   ["את/ה חבר/ה", "You're a member"],
   ["שחקנים", "players"],
+  ["שחקן אחד", "1 player"],
+  ["ממתין לשחקנים", "waiting for players"],
+  ["עדיין אין משחקים", "no matches yet"],
   ["עדיין לא שיחקת/ה", "Haven't played yet"],
   ["אין משחק קרוב", "No upcoming match"],
   ["נגד {name}{week}", "vs {name}{week}"],

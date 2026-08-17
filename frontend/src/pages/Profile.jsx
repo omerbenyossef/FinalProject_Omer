@@ -19,6 +19,16 @@ function formatMySets(sets) {
   return sets.map((s) => `${s.player1_games}-${s.player2_games}`).join(" ");
 }
 
+function daysLeftLabel(daysLeft) {
+  if (daysLeft >= 0) return daysLeft === 1 ? "1 day left" : `${daysLeft} days left`;
+  const over = Math.abs(daysLeft);
+  return over === 1 ? "1 day over" : `${over} days over`;
+}
+
+function playersLabel(n, t) {
+  return n === 1 ? t("שחקן אחד") : `${n} ${t("שחקנים")}`;
+}
+
 export default function Profile() {
   const { user } = useAuth();
   const { selectedSportId } = useSport();
@@ -162,7 +172,7 @@ export default function Profile() {
             </>
           )}
           {" · "}
-          <span className="num" dir="ltr">
+          <span dir="ltr">
             {myRating ? `NTRP ${myRating.level.toFixed(1)}${myRating.provisional ? ` (${t("זמני")})` : ""}` : t("לא מדורג")}
           </span>
         </div>
@@ -224,15 +234,26 @@ export default function Profile() {
                 <div className="home-match">
                   <Avatar name={opponent.name} size={38} />
                   <div className="home-match-body">
-                    <div className="my-match-name">{opponent.name}</div>
+                    <div className="my-match-name">
+                      <span dir="auto" style={{ unicodeBidi: "isolate" }}>
+                        {opponent.name}
+                      </span>
+                    </div>
                     <div className="home-match-meta">
                       <span className="home-match-league">
-                        <span dir="auto">{entry.league_name}</span>
+                        <span dir="auto" style={{ unicodeBidi: "isolate" }}>
+                          {entry.league_name}
+                        </span>
                       </span>
                       <span className="home-match-nums" dir="ltr">
-                        · r{entry.match.round_number}
+                        · round {entry.match.round_number}
                         {daysLeft !== null && (
-                          <> · {daysLeft >= 0 ? `${daysLeft}d left` : `${Math.abs(daysLeft)}d over`}</>
+                          <>
+                            {" · "}
+                            <span style={daysLeft < 0 ? { color: "#f0c26a" } : undefined}>
+                              {daysLeftLabel(daysLeft)}
+                            </span>
+                          </>
                         )}
                       </span>
                     </div>
@@ -283,30 +304,42 @@ export default function Profile() {
           <span>{t("דירוג")}</span>
         )}
       </div>
-      <div className="rank-row-list">
-        {myLeaguesPreview.map((league) => (
-          <Link to={`/leagues/${league.id}`} key={league.id} className="league-row">
-            <span className={`league-row-rank${league.my_rank <= 3 ? " top" : ""}`} dir="ltr">
-              {league.my_rank}
-            </span>
-            <div className="league-row-body">
-              <div className="league-row-name">
-                <span dir="auto">{league.name}</span>
+      <div className="rank-row-list home-league-list">
+        {myLeaguesPreview.map((league) => {
+          const wins = league.my_wins ?? 0;
+          const losses = league.my_losses ?? 0;
+          const members = league.my_members_total ?? 0;
+          return (
+            <Link to={`/leagues/${league.id}`} key={league.id} className="league-row">
+              <div className="league-row-body">
+                <div className="league-row-name">
+                  <span dir="auto" style={{ unicodeBidi: "isolate" }}>
+                    {league.name}
+                  </span>
+                </div>
+                <div className="home-league-row-sub" dir="ltr">
+                  {wins + losses > 0 ? (
+                    <>
+                      <span className="mono-num">
+                        {wins}W-{losses}L
+                      </span>{" "}
+                      · {playersLabel(members, t)}
+                    </>
+                  ) : members <= 1 ? (
+                    <>
+                      {playersLabel(members, t)} · {t("ממתין לשחקנים")}
+                    </>
+                  ) : (
+                    <>
+                      {playersLabel(members, t)} · {t("עדיין אין משחקים")}
+                    </>
+                  )}
+                </div>
               </div>
-              <div className="league-row-sub" dir="ltr">
-                {league.my_wins}W-{league.my_losses}L · {league.my_members_total} {t("שחקנים")}
-              </div>
-            </div>
-            {league.my_rank_trend ? (
-              <span className={`league-row-trend ${league.my_rank_trend > 0 ? "up" : "down"}`} dir="ltr">
-                {league.my_rank_trend > 0 ? `▲${league.my_rank_trend}` : `▼${Math.abs(league.my_rank_trend)}`}
-              </span>
-            ) : (
-              <span className="league-row-trend" dir="ltr">—</span>
-            )}
-            <ChevronIcon className="league-row-chevron chevron-icon" aria-hidden="true" />
-          </Link>
-        ))}
+              <ChevronIcon className="league-row-chevron chevron-icon" aria-hidden="true" />
+            </Link>
+          );
+        })}
         {myLeaguesForSport.length === 0 && (
           <div className="home-empty-leagues">
             <p className="muted">{t("עדיין לא הצטרפת לאף ליגה בענף הזה.")}</p>
@@ -329,15 +362,22 @@ export default function Profile() {
           <div className="home-section-head">
             <span className="home-section-title-archive">{t("תוצאות אחרונות")}</span>
           </div>
-          <div>
+          <div className="home-results-list">
             {recentResults.map((m, i) => (
               <Link to={`/head-to-head/${m.opponent_id}`} className="home-result" key={i}>
                 <span className="home-result-who">
-                  <span dir="auto">
-                    {[m.opponent_name, m.league_name, m.played_at ? formatDayMonth(new Date(m.played_at)) : null]
-                      .filter(Boolean)
-                      .join(" · ")}
+                  <span dir="auto" style={{ unicodeBidi: "isolate" }}>
+                    {m.opponent_name}
                   </span>
+                  {m.league_name && (
+                    <>
+                      {" · "}
+                      <span dir="auto" style={{ unicodeBidi: "isolate" }}>
+                        {m.league_name}
+                      </span>
+                    </>
+                  )}
+                  {m.played_at && <> · {formatDayMonth(new Date(m.played_at))}</>}
                 </span>
                 <span className="home-result-score" dir="ltr">
                   {formatMySets(m.my_sets)}

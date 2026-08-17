@@ -1445,19 +1445,22 @@ a { color: var(--court); text-decoration: none; }
 
 .my-match-report {
   flex: none;
-  height: 36px;
+  height: 38px;
   padding: 0 15px;
-  border-radius: 18px;
-  border: 1px solid rgba(148, 163, 184, 0.22);
-  background: var(--card-alt);
+  border-radius: 19px;
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  background: #1a2029;
   color: var(--ink);
   font-family: var(--display);
   font-weight: 700;
   font-size: 13.5px;
   cursor: pointer;
+  text-align: start;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 7px;
+  flex-shrink: 0;
 }
 
 .my-match-dot {
@@ -2430,10 +2433,10 @@ button:active { transform: translateY(1px); }
 
 .home-summary {
   margin-top: 5px;
-  font-family: "IBM Plex Sans", var(--sans);
+  font-family: "IBM Plex Sans Hebrew", var(--sans);
   font-weight: 500;
-  font-size: 12.5px;
-  color: var(--muted);
+  font-size: 13.5px;
+  color: #a3abbb;
 }
 
 .home-summary .num {
@@ -2542,7 +2545,7 @@ button:active { transform: translateY(1px); }
 }
 
 .home-match:first-of-type {
-  margin-top: 6px;
+  margin-top: 22px;
 }
 
 .home-match-body {
@@ -2555,10 +2558,10 @@ button:active { transform: translateY(1px); }
   align-items: baseline;
   gap: 5px;
   margin-top: 4px;
-  font-family: "IBM Plex Mono", var(--mono);
+  font-family: "IBM Plex Sans Hebrew", var(--sans);
   font-weight: 500;
-  font-size: 11px;
-  color: var(--muted);
+  font-size: 13px;
+  color: #a3abbb;
 }
 
 .home-match-league {
@@ -2638,10 +2641,10 @@ button:active { transform: translateY(1px); }
 .home-result-who {
   flex: 1;
   min-width: 0;
-  font-family: "IBM Plex Sans", var(--sans);
+  font-family: "IBM Plex Sans Hebrew", var(--sans);
   font-weight: 500;
-  font-size: 13px;
-  color: var(--muted);
+  font-size: 15px;
+  color: #c2c9d6;
   overflow: hidden;
   text-overflow: ellipsis;
   text-align: start;
@@ -2826,6 +2829,26 @@ button:active { transform: translateY(1px); }
   font-size: 11px;
   color: #8b93a6;
   margin-top: 2px;
+}
+
+.home-league-row-sub {
+  font-family: "IBM Plex Sans Hebrew", var(--sans);
+  font-weight: 500;
+  font-size: 13px;
+  color: #a3abbb;
+  margin-top: 2px;
+}
+
+.home-league-row-sub .mono-num {
+  font-family: "IBM Plex Mono", var(--mono);
+}
+
+.home-league-list {
+  margin-top: 12px;
+}
+
+.home-results-list {
+  margin-top: 12px;
 }
 
 .league-row-trend {
