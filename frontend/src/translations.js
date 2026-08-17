@@ -485,6 +485,11 @@ const PAIRS = [
   ["הפעולה בלתי הפיכה. החשבון שלך יימחק, ולא תוכל/י להתחבר אליו שוב. משחקים שכבר הושלמו יישארו בהיסטוריה של היריבים שלך, בלי הפרטים האישיים שלך.",
    "This action can't be undone. Your account will be deleted and you won't be able to log back in. Matches you already completed will stay in your opponents' history, without your personal details."],
   ["הסיסמה שגויה", "Incorrect password"],
+
+  // Standings table panel
+  ["מש׳", "P"],
+  ["נצ׳", "W"],
+  ["הפ׳", "L"],
 ];
 
 const heToEn = {};

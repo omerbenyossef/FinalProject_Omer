@@ -71,17 +71,19 @@ export function SkeletonLeagueCard() {
   );
 }
 
-export function SkeletonStandingsTable({ rows = 4 }) {
+export function SkeletonStandingsTable({ rows = 6 }) {
   return (
-    <div className="standings-list">
+    <div className="standings-panel">
+      <div className="standings-panel-head" />
       {Array.from({ length: rows }).map((_, i) => (
-        <div className="standings-row" key={i}>
-          <SkeletonCircle size={18} />
-          <div className="standings-main">
-            <SkeletonBar width="40%" height={14} />
-            <SkeletonBar width="25%" height={11} style={{ marginTop: 6 }} />
-          </div>
-          <SkeletonBar width={26} height={16} style={{ borderRadius: 4 }} />
+        <div className="standings-tr" key={i}>
+          <span />
+          <SkeletonCircle size={24} />
+          <SkeletonBar width="45%" height={13} />
+          <SkeletonBar width={16} height={12} />
+          <SkeletonBar width={16} height={12} />
+          <SkeletonBar width={16} height={12} />
+          <SkeletonBar width={20} height={14} />
         </div>
       ))}
     </div>

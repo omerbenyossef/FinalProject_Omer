@@ -334,7 +334,6 @@ export default function LeagueDetail() {
   const myRankIndex = standings.findIndex((row) => row.user.id === user?.id);
   const myRank = myRankIndex >= 0 ? myRankIndex + 1 : null;
   const roundsClosed = existingRoundNumbers.length;
-  const showTrend = roundsClosed >= 2 && standings.some((row) => row.rank_delta != null);
   const myRoundRows = allMatches
     .filter((m) => m.player1.id === user?.id || m.player2.id === user?.id)
     .filter((m) => m.round_number)
@@ -550,76 +549,69 @@ export default function LeagueDetail() {
         )}
 
         {activeTab === "standings" && (
-          <div className="standings-list">
+          <>
             {standings.length > 0 && (
-              <div className="standings-list-head">
-                <span>{latestRound ? t("אחרי מחזור {n}", { n: latestRound }) : ""}</span>
-                <span>{t("נק׳")}</span>
+              <div className="standings-panel">
+                <div className="standings-panel-head">
+                  <span />
+                  <span />
+                  <span />
+                  <span>{t("מש׳")}</span>
+                  <span>{t("נצ׳")}</span>
+                  <span>{t("הפ׳")}</span>
+                  <span>{t("נק׳")}</span>
+                </div>
+
+                {standings.map((row, index) => {
+                  const rank = index + 1;
+                  const isMe = row.user.id === user?.id;
+                  const isLeader = rank === 1;
+                  const shortOfMatches = row.played < roundsClosed;
+                  const cls = `standings-tr${isMe ? " mine" : ""}${isLeader ? " leader" : ""}`;
+                  const body = (
+                    <>
+                      <span className="standings-td-rank" dir="ltr">
+                        {rank}
+                      </span>
+                      <span className="standings-td-avatar">
+                        <Avatar name={row.user.name} size={24} />
+                      </span>
+                      <span className="standings-td-name">
+                        {row.user.name}
+                        {isMe && <span className="standings-you"> · {t("אתה")}</span>}
+                      </span>
+                      <span className={`standings-td-num${shortOfMatches ? " short" : ""}`} dir="ltr">
+                        {row.played}
+                      </span>
+                      <span className="standings-td-num" dir="ltr">
+                        {row.wins}
+                      </span>
+                      <span className="standings-td-num" dir="ltr">
+                        {row.losses}
+                      </span>
+                      <span className="standings-td-pts" dir="ltr">
+                        {row.points}
+                      </span>
+                    </>
+                  );
+
+                  return isMe ? (
+                    <div className={cls} key={row.user.id}>
+                      {body}
+                    </div>
+                  ) : (
+                    <Link to={`/head-to-head/${row.user.id}`} className={cls} key={row.user.id}>
+                      {body}
+                    </Link>
+                  );
+                })}
               </div>
             )}
-
-            {standings.map((row, index) => {
-              const rank = index + 1;
-              const isMe = row.user.id === user?.id;
-              const shortOfMatches = row.played < roundsClosed;
-              const body = (
-                <>
-                  <span className="standings-rank" dir="ltr">
-                    {rank}
-                  </span>
-                  <div className="standings-main">
-                    <div className="standings-name">
-                      {row.user.name}
-                      {isMe && <span className="standings-you"> · {t("אתה")}</span>}
-                    </div>
-                    <div className="standings-record" dir="ltr">
-                      {row.wins}W-{row.losses}L
-                      {shortOfMatches &&
-                        ` · ${t("{played} מתוך {total}", { played: row.played, total: roundsClosed })}`}
-                      {" · "}
-                      {row.level != null
-                        ? `NTRP ${row.level.toFixed(1)}${row.provisional ? ` (${t("זמני")})` : ""}`
-                        : t("לא מדורג")}
-                    </div>
-                  </div>
-                  {showTrend && (
-                    <span
-                      className={`standings-trend${
-                        row.rank_delta > 0 ? " up" : row.rank_delta < 0 ? " down" : ""
-                      }`}
-                      dir="ltr"
-                    >
-                      {row.rank_delta > 0
-                        ? `▲${row.rank_delta}`
-                        : row.rank_delta < 0
-                        ? `▼${Math.abs(row.rank_delta)}`
-                        : "—"}
-                    </span>
-                  )}
-                  <span className="standings-points">{row.points}</span>
-                </>
-              );
-
-              return isMe ? (
-                <div className={`standings-row mine${rank === 1 ? " leader" : ""}`} key={row.user.id}>
-                  {body}
-                </div>
-              ) : (
-                <Link
-                  to={`/head-to-head/${row.user.id}`}
-                  className={`standings-row${rank === 1 ? " leader" : ""}`}
-                  key={row.user.id}
-                >
-                  {body}
-                  <ChevronIcon className="standings-chevron chevron-icon" aria-hidden="true" />
-                </Link>
-              );
-            })}
 
             {standings.length > 0 && (
               <p className="standings-hint">{t("הקשה על שחקן פותחת ראש בראש מולו")}</p>
             )}
-          </div>
+          </>
         )}
 
         {activeTab === "matches" && (

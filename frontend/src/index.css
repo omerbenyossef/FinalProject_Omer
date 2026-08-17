@@ -3022,143 +3022,117 @@ button:active { transform: translateY(1px); }
   color: var(--court);
 }
 
-.standings-list-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  font-family: "IBM Plex Sans", var(--sans);
-  font-weight: 600;
-  font-size: 12px;
-  color: var(--muted);
+.standings-panel {
+  background: #12171e;
+  border-radius: 16px;
+  overflow: hidden;
 }
 
-.standings-row {
-  display: flex;
+.standings-panel-head,
+.standings-tr {
+  display: grid;
+  grid-template-columns: 16px 24px 1fr 30px 30px 30px 34px;
+  gap: 6px;
   align-items: center;
-  gap: 11px;
-  padding: 10px 0;
-  border-top: 1px solid rgba(148, 163, 184, 0.1);
+  padding: 0 12px;
+}
+
+.standings-panel-head {
+  height: 32px;
+  font: 600 10px "IBM Plex Mono", monospace;
+  color: #6f7787;
+  letter-spacing: 0.06em;
+}
+
+.standings-panel-head span {
+  text-align: center;
+}
+
+.standings-tr {
+  height: 54px;
+  border-top: 1px solid rgba(148, 163, 184, 0.09);
   text-decoration: none;
   color: inherit;
 }
 
-.standings-list .standings-row:last-of-type {
-  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+.standings-tr.mine {
+  background: rgba(148, 163, 184, 0.07);
 }
 
-.standings-row.mine {
-  padding-inline-end: 24px;
-}
-
-.standings-rank {
-  flex: none;
-  width: 18px;
+.standings-td-rank {
   text-align: center;
-  font-family: "IBM Plex Mono", var(--mono);
-  font-weight: 700;
-  font-size: 12.5px;
-  color: var(--muted);
+  font: 700 12px "IBM Plex Mono", monospace;
+  color: #8b93a6;
+  font-variant-numeric: tabular-nums;
 }
 
-.standings-main {
-  flex: 1;
+.standings-td-avatar {
+  flex: none;
+}
+
+.standings-td-name {
   min-width: 0;
-}
-
-.standings-name {
-  font-family: "IBM Plex Sans", var(--sans);
-  font-weight: 600;
-  font-size: 14.5px;
-  color: var(--muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font: 600 14.5px "IBM Plex Sans Hebrew", sans-serif;
+  color: #8b93a6;
 }
 
 .standings-you {
-  font-family: "IBM Plex Sans", var(--sans);
-  font-weight: 500;
-  font-size: 11px;
-  color: var(--muted);
+  font: 500 11px "IBM Plex Sans Hebrew", sans-serif;
+  color: #a3abbb;
 }
 
-.standings-record {
-  font-family: "IBM Plex Mono", var(--mono);
-  font-weight: 500;
-  font-size: 11px;
-  color: var(--muted);
-  margin-top: 2px;
+.standings-td-num {
+  text-align: center;
+  font: 500 12.5px "IBM Plex Mono", monospace;
+  color: #8b93a6;
+  font-variant-numeric: tabular-nums;
 }
 
-.standings-points {
-  flex: none;
-  width: 26px;
-  text-align: right;
-  font-family: var(--display);
-  font-weight: 900;
-  font-size: 18px;
-  color: var(--muted);
+.standings-td-num.short {
+  color: #6f7787;
 }
 
-.standings-chevron {
-  flex: none;
-  width: 13px;
-  height: 13px;
-  color: #4d5566;
-}
-
-.standings-row.leader .standings-name {
-  color: var(--ink);
-  font-weight: 700;
-}
-
-.standings-row.leader .standings-points {
-  color: var(--ink);
-}
-
-.standings-row.leader .standings-rank {
-  color: var(--ink-dim);
-}
-
-.standings-row.mine .standings-name {
-  color: var(--ink);
-  font-weight: 800;
-}
-
-.standings-row.mine .standings-record {
-  color: var(--ink-dim);
-}
-
-.standings-row.mine .standings-points,
-.standings-row.mine .standings-rank {
-  color: var(--ink);
-}
-
-.standings-trend {
-  flex: none;
-  width: 22px;
-  text-align: right;
-  font-family: "IBM Plex Mono", var(--mono);
-  font-weight: 500;
-  font-size: 11px;
-  color: var(--muted);
-}
-
-.standings-trend.up {
-  font-weight: 600;
-  color: var(--ink-dim);
-}
-
-.standings-trend.down {
-  font-weight: 600;
-  color: #7b8496;
+.standings-td-pts {
+  text-align: center;
+  font: 900 17px "Rubik", sans-serif;
+  color: #8b93a6;
+  font-variant-numeric: tabular-nums;
 }
 
 .standings-hint {
-  font-family: "IBM Plex Mono", var(--mono);
-  font-size: 12px;
-  color: #7d8494;
-  margin-top: 10px;
+  margin-top: 12px;
+  font: 500 11.5px "IBM Plex Sans Hebrew", sans-serif;
+  color: #6f7787;
+}
+
+.standings-tr.leader .standings-td-name {
+  color: #eef1f7;
+  font-weight: 700;
+}
+
+.standings-tr.leader .standings-td-pts,
+.standings-tr.mine .standings-td-pts {
+  color: #eef1f7;
+}
+
+.standings-tr.leader .standings-td-rank {
+  color: #c9cfdb;
+}
+
+.standings-tr.mine .standings-td-name {
+  color: #eef1f7;
+  font-weight: 800;
+}
+
+.standings-tr.mine .standings-td-rank {
+  color: #eef1f7;
+}
+
+.standings-tr.mine .standings-td-num {
+  color: #c9cfdb;
 }
 
 .avatar {
