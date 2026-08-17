@@ -50,6 +50,6 @@ def get_current_user(
         raise credentials_exception
 
     user = db.query(models.User).filter(models.User.id == int(user_id)).first()
-    if user is None:
+    if user is None or user.deleted_at is not None:
         raise credentials_exception
     return user

@@ -174,6 +174,64 @@ def change_email(
     return current_user
 
 
+def _delete_user_account(db: Session, user: models.User) -> None:
+    """Anonymize-and-deactivate rather than hard-delete: the user's id is
+    referenced as a foreign key all over (matches, league memberships,
+    leagues they created), and other members' standings/match history need
+    those rows to stay intact. Mirrors leave_league's own cleanup (drop
+    pending matches + membership, keep completed ones) applied across every
+    league at once, plus removing anything that's exclusively theirs."""
+    membership_league_ids = [
+        m.league_id
+        for m in db.query(models.LeagueMembership).filter(models.LeagueMembership.user_id == user.id).all()
+    ]
+    if membership_league_ids:
+        db.query(models.Match).filter(
+            models.Match.league_id.in_(membership_league_ids),
+            models.Match.status == models.MatchStatus.pending,
+            or_(models.Match.player1_id == user.id, models.Match.player2_id == user.id),
+        ).delete(synchronize_session=False)
+    db.query(models.LeagueMembership).filter(models.LeagueMembership.user_id == user.id).delete(
+        synchronize_session=False
+    )
+
+    db.query(models.Match).filter(
+        models.Match.kind == models.MatchKind.friendly,
+        models.Match.status == models.MatchStatus.pending,
+        or_(models.Match.player1_id == user.id, models.Match.player2_id == user.id),
+    ).delete(synchronize_session=False)
+
+    db.query(models.PlayerRating).filter(models.PlayerRating.user_id == user.id).delete(synchronize_session=False)
+    db.query(models.PushSubscription).filter(models.PushSubscription.user_id == user.id).delete(
+        synchronize_session=False
+    )
+    db.query(models.FriendlyInviteLink).filter(
+        models.FriendlyInviteLink.inviter_id == user.id, models.FriendlyInviteLink.used.is_(False)
+    ).delete(synchronize_session=False)
+
+    user.name = "Deleted user"
+    user.email = f"deleted-{user.id}@deleted.rally.local"
+    user.hashed_password = hash_password(secrets.token_urlsafe(32))
+    user.age = None
+    user.reset_token = None
+    user.reset_token_expires = None
+    user.deleted_at = datetime.utcnow()
+    db.commit()
+
+
+@router.delete("/me", response_model=schemas.MessageOut)
+def delete_account(
+    payload: schemas.DeleteAccountRequest,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if not verify_password(payload.password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="הסיסמה שגויה")
+
+    _delete_user_account(db, current_user)
+    return schemas.MessageOut(message="החשבון נמחק בהצלחה")
+
+
 @router.post("/forgot-password", response_model=schemas.MessageOut)
 def forgot_password(payload: schemas.ForgotPasswordRequest, db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.email == payload.email).first()

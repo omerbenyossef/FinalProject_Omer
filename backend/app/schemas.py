@@ -40,6 +40,10 @@ class ChangeEmailRequest(BaseModel):
     new_email: EmailStr
 
 
+class DeleteAccountRequest(BaseModel):
+    password: str
+
+
 class UpdateProfileRequest(BaseModel):
     name: str
     age: Optional[int] = None

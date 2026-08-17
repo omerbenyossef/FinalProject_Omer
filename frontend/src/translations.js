@@ -475,6 +475,17 @@ const PAIRS = [
   ["הזמן כבר מאושר", "The time is already confirmed"],
   ["לא ניתן לאשר הצעת זמן שהצעת בעצמך", "You can't confirm a time proposal you made yourself"],
   ["אי אפשר לתאם זמן למשחק שכבר דווח", "You can't schedule a time for a match that's already been reported"],
+
+  // Delete account
+  ["אזור מסוכן", "Danger zone"],
+  ["מחיקת חשבון", "Delete account"],
+  ["מחיקה סופית של החשבון וכל הנתונים שלך", "Permanently delete your account and your data"],
+  ["מחק חשבון", "Delete account"],
+  ["מוחק...", "Deleting..."],
+  ["מחק את החשבון שלי לצמיתות", "Permanently delete my account"],
+  ["הפעולה בלתי הפיכה. החשבון שלך יימחק, ולא תוכל/י להתחבר אליו שוב. משחקים שכבר הושלמו יישארו בהיסטוריה של היריבים שלך, בלי הפרטים האישיים שלך.",
+   "This action can't be undone. Your account will be deleted and you won't be able to log back in. Matches you already completed will stay in your opponents' history, without your personal details."],
+  ["הסיסמה שגויה", "Incorrect password"],
 ];
 
 const heToEn = {};

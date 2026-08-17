@@ -2308,6 +2308,13 @@ button:active { transform: translateY(1px); }
 .btn-primary:hover { background: var(--court-deep); }
 .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
 
+.btn-primary.btn-danger {
+  background: var(--danger);
+  color: #1a1210;
+}
+
+.btn-primary.btn-danger:hover { background: var(--danger); opacity: 0.9; }
+
 .btn-secondary {
   background: var(--card-alt);
   color: var(--ink);

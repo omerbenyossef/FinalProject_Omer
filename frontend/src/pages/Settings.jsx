@@ -62,6 +62,13 @@ export default function Settings() {
           </button>
         </div>
       </div>
+
+      <div className="settings-section">
+        <div className="profile-section-header" style={{ justifyContent: "flex-start" }}>
+          <span>{t("אזור מסוכן")}</span>
+        </div>
+        <DeleteAccountRow />
+      </div>
     </div>
   );
 }
@@ -245,6 +252,80 @@ function ChangeEmailRow({ user, updateUser }) {
         </form>
       )}
       {!editing && message && <p className="muted">{t(message)}</p>}
+    </div>
+  );
+}
+
+function DeleteAccountRow() {
+  const [editing, setEditing] = useState(false);
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const { t } = useLanguage();
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  function openEditor() {
+    setPassword("");
+    setError("");
+    setEditing(true);
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setError("");
+    setSubmitting(true);
+    try {
+      await api.deleteAccount(password);
+      logout();
+      navigate("/login");
+    } catch (err) {
+      setError(err.message);
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="settings-detail-row" style={{ flexDirection: "column", alignItems: "stretch" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+        <div>
+          <div className="settings-detail-title">{t("מחיקת חשבון")}</div>
+          <div className="settings-detail-value">{t("מחיקה סופית של החשבון וכל הנתונים שלך")}</div>
+        </div>
+        {!editing && (
+          <button type="button" className="settings-detail-action danger" onClick={openEditor}>
+            {t("מחק חשבון")}
+          </button>
+        )}
+      </div>
+
+      {editing && (
+        <form onSubmit={handleSubmit} style={{ marginTop: 14 }}>
+          <p className="error">
+            {t(
+              "הפעולה בלתי הפיכה. החשבון שלך יימחק, ולא תוכל/י להתחבר אליו שוב. משחקים שכבר הושלמו יישארו בהיסטוריה של היריבים שלך, בלי הפרטים האישיים שלך."
+            )}
+          </p>
+          <label>
+            {t("סיסמה")}
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </label>
+          {error && <p className="error">{t(error)}</p>}
+          <div className="inline-form">
+            <button type="submit" className="btn-primary btn-danger" disabled={submitting}>
+              {submitting ? t("מוחק...") : t("מחק את החשבון שלי לצמיתות")}
+            </button>
+            <button type="button" className="link-btn" onClick={() => setEditing(false)}>
+              {t("ביטול")}
+            </button>
+          </div>
+        </form>
+      )}
     </div>
   );
 }

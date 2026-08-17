@@ -70,6 +70,8 @@ export const api = {
       method: "POST",
       body: { current_password: currentPassword, new_email: newEmail },
     }),
+  deleteAccount: (password) =>
+    request("/auth/me", { method: "DELETE", body: { password } }),
 
   listSports: () => request("/sports/", { auth: false }),
 

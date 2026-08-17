@@ -52,6 +52,7 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     reset_token = Column(String, unique=True, index=True, nullable=True)
     reset_token_expires = Column(DateTime, nullable=True)
+    deleted_at = Column(DateTime, nullable=True)
 
     memberships = relationship("LeagueMembership", back_populates="user")
     push_subscriptions = relationship("PushSubscription", back_populates="user")
