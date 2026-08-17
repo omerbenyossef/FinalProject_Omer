@@ -7,6 +7,7 @@ import SetScoreForm from "../SetScoreForm.jsx";
 import Avatar from "../Avatar.jsx";
 import WaitingConfirmationCard from "../WaitingConfirmationCard.jsx";
 import ConfirmScoreSheet from "../ConfirmScoreSheet.jsx";
+import RatingQuestionnaire from "../RatingQuestionnaire.jsx";
 import { UserPlusIcon, CalendarIcon, ChevronIcon, GearIcon, PlusIcon } from "../Icons.jsx";
 import {
   formatSets,
@@ -57,6 +58,7 @@ export default function LeagueDetail() {
   const [reportingMyMatch, setReportingMyMatch] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [selectedRound, setSelectedRound] = useState(null);
+  const [ratingFlow, setRatingFlow] = useState(null); // { existingResult, joinCode } | null
   const autoJoinAttempted = useRef(false);
   const initialTabSet = useRef(false);
 
@@ -109,12 +111,13 @@ export default function LeagueDetail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leagueId, user]);
 
-  async function handleJoin(codeOverride) {
+  async function startJoinFlow(codeOverride) {
+    const joinCode = codeOverride ?? codeFromLink;
     setBusy(true);
     setError("");
     try {
-      await api.joinLeague(leagueId, codeOverride ?? codeFromLink);
-      await loadAll();
+      const check = await api.checkRating(leagueId);
+      setRatingFlow({ existingResult: check.has_rating ? check.result : null, joinCode });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -122,10 +125,15 @@ export default function LeagueDetail() {
     }
   }
 
+  async function handleRatingJoined() {
+    setRatingFlow(null);
+    await loadAll();
+  }
+
   useEffect(() => {
     if (!user || !league || isMember || !codeFromLink || autoJoinAttempted.current) return;
     autoJoinAttempted.current = true;
-    handleJoin(codeFromLink);
+    startJoinFlow(codeFromLink);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, league, isMember, codeFromLink]);
 
@@ -391,7 +399,7 @@ export default function LeagueDetail() {
 
       <div className="league-detail-actions">
         {!isMember && user && (league.is_open || codeFromLink) && (
-          <button className="btn-primary" onClick={() => handleJoin()} disabled={busy}>
+          <button className="btn-primary" onClick={() => startJoinFlow()} disabled={busy}>
             {busy ? t("מצטרף...") : t("הצטרפות לליגה")}
           </button>
         )}
@@ -534,6 +542,10 @@ export default function LeagueDetail() {
                       {row.wins}W-{row.losses}L
                       {shortOfMatches &&
                         ` · ${t("{played} מתוך {total}", { played: row.played, total: roundsClosed })}`}
+                      {" · "}
+                      {row.level != null
+                        ? `NTRP ${row.level.toFixed(1)}${row.provisional ? ` (${t("זמני")})` : ""}`
+                        : t("לא מדורג")}
                     </div>
                   </div>
                   {showTrend && (
@@ -882,6 +894,17 @@ export default function LeagueDetail() {
           busy={busy}
           onConfirm={handleLeaveLeague}
           onClose={() => setShowLeaveConfirm(false)}
+        />
+      )}
+
+      {ratingFlow && (
+        <RatingQuestionnaire
+          league={league}
+          sportName={league.sport.name}
+          existingResult={ratingFlow.existingResult}
+          joinCode={ratingFlow.joinCode}
+          onClose={() => setRatingFlow(null)}
+          onJoined={handleRatingJoined}
         />
       )}
     </div>

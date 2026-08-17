@@ -99,11 +99,15 @@ class LeagueCreate(BaseModel):
     is_open: bool = False
     best_of: Optional[int] = None
     round_length_days: Optional[int] = None
+    level_min: Optional[float] = None
+    level_max: Optional[float] = None
 
 
 class LeagueRulesUpdate(BaseModel):
     best_of: Optional[int] = None
     round_length_days: Optional[int] = None
+    level_min: Optional[float] = None
+    level_max: Optional[float] = None
 
 
 class MyNextMatchSummary(BaseModel):
@@ -123,6 +127,8 @@ class LeagueOut(BaseModel):
     is_open: bool = False
     best_of: Optional[int] = None
     round_length_days: Optional[int] = None
+    level_min: Optional[float] = None
+    level_max: Optional[float] = None
     my_rank: Optional[int] = None
     my_members_total: Optional[int] = None
     my_wins: Optional[int] = None
@@ -209,6 +215,8 @@ class StandingRow(BaseModel):
     losses: int
     points: int
     rank_delta: Optional[int] = None
+    level: Optional[float] = None
+    provisional: Optional[bool] = None
 
 
 class HeadToHeadMatch(BaseModel):
@@ -226,3 +234,45 @@ class HeadToHeadOut(BaseModel):
     wins: int
     losses: int
     matches: list[HeadToHeadMatch]
+
+
+class RatingAnswers(BaseModel):
+    q1: int
+    q2: int
+    q3: int
+    q4: int
+    q5: int
+
+
+class PlayerRatingOut(BaseModel):
+    sport_id: int
+    level: float
+    provisional: bool
+
+    class Config:
+        from_attributes = True
+
+
+class LeagueLevelOption(BaseModel):
+    id: int
+    name: str
+    level_min: float
+    level_max: float
+    open_spots: bool
+
+
+class RatingResultOut(BaseModel):
+    level: float
+    band: str
+    provisional: bool
+    in_range: bool
+    league_id: int
+    league_name: str
+    league_level_min: float
+    league_level_max: float
+    other_leagues: list[LeagueLevelOption] = []
+
+
+class RatingCheckOut(BaseModel):
+    has_rating: bool
+    result: Optional[RatingResultOut] = None

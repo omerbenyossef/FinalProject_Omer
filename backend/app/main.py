@@ -4,7 +4,7 @@ from sqlalchemy import Enum, inspect, text
 
 from . import models
 from .database import Base, engine, SessionLocal
-from .routers import auth, leagues, matches, players, push, sports
+from .routers import auth, leagues, matches, players, push, ratings, sports
 
 Base.metadata.create_all(bind=engine)
 
@@ -82,6 +82,26 @@ def seed_sports() -> None:
 
 seed_sports()
 
+
+def backfill_league_levels() -> None:
+    """add_missing_columns() only adds the column; it can't set a default for
+    rows that already existed, so leagues created before level ranges shipped
+    would otherwise sit at NULL. Give them the full, unrestricted range."""
+    db = SessionLocal()
+    try:
+        db.query(models.League).filter(models.League.level_min.is_(None)).update(
+            {models.League.level_min: models.RATING_MIN}, synchronize_session=False
+        )
+        db.query(models.League).filter(models.League.level_max.is_(None)).update(
+            {models.League.level_max: models.RATING_MAX}, synchronize_session=False
+        )
+        db.commit()
+    finally:
+        db.close()
+
+
+backfill_league_levels()
+
 app = FastAPI(title="Amateur Sports League API")
 
 app.add_middleware(
@@ -97,6 +117,7 @@ app.include_router(leagues.router)
 app.include_router(matches.router)
 app.include_router(players.router)
 app.include_router(push.router)
+app.include_router(ratings.router)
 
 
 @app.get("/health")

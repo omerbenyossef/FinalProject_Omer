@@ -10,6 +10,7 @@ from .. import models, schemas
 from ..auth import get_current_user
 from ..database import get_db
 from ..push_utils import notify_user
+from ..rating_utils import get_rating, round_to_half
 from .matches import _auto_confirm_overdue
 
 router = APIRouter(prefix="/leagues", tags=["leagues"])
@@ -43,6 +44,16 @@ def _validate_rules(best_of: int | None, round_length_days: int | None) -> None:
         raise HTTPException(status_code=400, detail="מספר הסטים למשחק חייב להיות 1, 3 או 5")
     if round_length_days is not None and round_length_days not in VALID_ROUND_LENGTH_DAYS:
         raise HTTPException(status_code=400, detail="תדירות לוח המשחקים חייבת להיות שבועית או דו-שבועית")
+
+
+def _validate_level_range(level_min: float | None, level_max: float | None) -> None:
+    for value in (level_min, level_max):
+        if value is None:
+            continue
+        if value < models.RATING_MIN or value > models.RATING_MAX or (value * 2) % 1 != 0:
+            raise HTTPException(status_code=400, detail="טווח הדירוג חייב להיות בין 1.5 ל-5.5 בקפיצות של חצי")
+    if level_min is not None and level_max is not None and level_min > level_max:
+        raise HTTPException(status_code=400, detail="הרמה המינימלית לא יכולה להיות גבוהה מהמקסימלית")
 
 
 def _generate_join_code(db: Session) -> str:
@@ -108,6 +119,8 @@ def _to_league_out(
     out.is_open = league.join_code is None
     out.best_of = league.best_of or 3
     out.round_length_days = league.round_length_days or 7
+    out.level_min = league.level_min if league.level_min is not None else models.RATING_MIN
+    out.level_max = league.level_max if league.level_max is not None else models.RATING_MAX
 
     if db is not None and current_user_id is not None:
         matches = (
@@ -245,6 +258,7 @@ def create_league(
         raise HTTPException(status_code=403, detail="רק המנהל יכול ליצור ליגה פתוחה")
 
     _validate_rules(league_in.best_of, league_in.round_length_days)
+    _validate_level_range(league_in.level_min, league_in.level_max)
 
     league = models.League(
         name=league_in.name,
@@ -254,6 +268,8 @@ def create_league(
         join_code=None if league_in.is_open else _generate_join_code(db),
         best_of=league_in.best_of or 3,
         round_length_days=league_in.round_length_days or 7,
+        level_min=league_in.level_min if league_in.level_min is not None else models.RATING_MIN,
+        level_max=league_in.level_max if league_in.level_max is not None else models.RATING_MAX,
     )
     db.add(league)
     db.commit()
@@ -291,11 +307,16 @@ def update_league_rules(
         raise HTTPException(status_code=403, detail="רק יוצר הליגה יכול לשנות את חוקי הליגה")
 
     _validate_rules(rules_in.best_of, rules_in.round_length_days)
+    _validate_level_range(rules_in.level_min, rules_in.level_max)
 
     if rules_in.best_of is not None:
         league.best_of = rules_in.best_of
     if rules_in.round_length_days is not None:
         league.round_length_days = rules_in.round_length_days
+    if rules_in.level_min is not None:
+        league.level_min = rules_in.level_min
+    if rules_in.level_max is not None:
+        league.level_max = rules_in.level_max
 
     db.commit()
     db.refresh(league)
@@ -329,6 +350,14 @@ def join_league(
 
     if league.join_code and league.join_code != (join_in.code or "").strip().upper():
         raise HTTPException(status_code=403, detail="קוד הזמנה שגוי")
+
+    rating = get_rating(db, current_user.id, league.sport_id)
+    if not rating:
+        raise HTTPException(status_code=400, detail="צריך למלא שאלון דירוג לענף הזה לפני ההצטרפות")
+    level_min = league.level_min if league.level_min is not None else models.RATING_MIN
+    level_max = league.level_max if league.level_max is not None else models.RATING_MAX
+    if not (level_min <= round_to_half(rating.level) <= level_max):
+        raise HTTPException(status_code=403, detail="הדירוג שלך מחוץ לטווח הרמות של הליגה הזו")
 
     membership = models.LeagueMembership(league_id=league_id, user_id=current_user.id)
     db.add(membership)
@@ -477,7 +506,21 @@ def get_standings(league_id: int, db: Session = Depends(get_db)):
         for user_id, prev_rank in prev_rank_by_user.items():
             rank_delta_by_user[user_id] = prev_rank - current_rank_by_user[user_id]
 
+    ratings_by_user = {
+        r.user_id: r
+        for r in db.query(models.PlayerRating)
+        .filter(
+            models.PlayerRating.sport_id == league.sport_id,
+            models.PlayerRating.user_id.in_([m.user_id for m in league.memberships]),
+        )
+        .all()
+    }
+
     for row in rows:
         row["rank_delta"] = rank_delta_by_user.get(row["user"].id)
+        rating = ratings_by_user.get(row["user"].id)
+        if rating:
+            row["level"] = round_to_half(rating.level)
+            row["provisional"] = rating.provisional
 
     return rows

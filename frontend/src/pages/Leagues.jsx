@@ -23,6 +23,7 @@ const OPEN_OPTIONS = [
   [false, "בהזמנה בלבד"],
   [true, "פתוחה לכולם"],
 ];
+const LEVEL_OPTIONS = [1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5];
 
 export default function Leagues() {
   const [leagues, setLeagues] = useState([]);
@@ -34,6 +35,8 @@ export default function Leagues() {
   const [bestOf, setBestOf] = useState(3);
   const [roundLen, setRoundLen] = useState(7);
   const [isOpen, setIsOpen] = useState(false);
+  const [levelMin, setLevelMin] = useState(1.5);
+  const [levelMax, setLevelMax] = useState(5.5);
   const [submitting, setSubmitting] = useState(false);
   const [sheetError, setSheetError] = useState("");
   const inputRef = useRef(null);
@@ -75,6 +78,8 @@ export default function Leagues() {
     setBestOf(3);
     setRoundLen(7);
     setIsOpen(false);
+    setLevelMin(1.5);
+    setLevelMax(5.5);
     setSheetError("");
     setShowSheet(true);
   }
@@ -95,6 +100,8 @@ export default function Leagues() {
         is_open: isOpen,
         best_of: bestOf,
         round_length_days: roundLen,
+        level_min: levelMin,
+        level_max: levelMax,
       });
       navigate(`/leagues/${league.id}`);
     } catch (err) {
@@ -205,7 +212,8 @@ export default function Leagues() {
                     <span dir="auto">{league.name}</span>
                   </div>
                   <div className="open-league-meta" dir="ltr">
-                    {league.member_count} {t("שחקנים")} · {ruleLabels.frequencyLabel} · {ruleLabels.bestOfLabel}
+                    {league.member_count} {t("שחקנים")} · {ruleLabels.frequencyLabel} · {ruleLabels.bestOfLabel} · NTRP{" "}
+                    {(league.level_min ?? 1.5).toFixed(1)}–{(league.level_max ?? 5.5).toFixed(1)}
                   </div>
                 </div>
                 <span className="open-league-join">{t("הצטרף")}</span>
@@ -282,6 +290,43 @@ export default function Leagues() {
               {isOpen
                 ? t("הליגה תופיע ברשימת הליגות הפתוחות וכל אחד יכול להצטרף בלי קוד.")
                 : t("רק מי שקיבל ממך קישור הזמנה יכול להצטרף.")}
+            </p>
+
+            <div className="sheet-label">{t("טווח רמות (NTRP)")}</div>
+            <div className="sheet-level-row" dir="ltr">
+              <select
+                className="sheet-select"
+                value={levelMin}
+                onChange={(e) => {
+                  const v = Number(e.target.value);
+                  setLevelMin(v);
+                  if (v > levelMax) setLevelMax(v);
+                }}
+              >
+                {LEVEL_OPTIONS.map((v) => (
+                  <option key={v} value={v}>
+                    {v.toFixed(1)}
+                  </option>
+                ))}
+              </select>
+              <span className="sheet-level-dash">–</span>
+              <select
+                className="sheet-select"
+                value={levelMax}
+                onChange={(e) => setLevelMax(Number(e.target.value))}
+              >
+                {LEVEL_OPTIONS.filter((v) => v >= levelMin).map((v) => (
+                  <option key={v} value={v}>
+                    {v.toFixed(1)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <p className="sheet-sub">
+              {t("רק שחקנים בדירוג {min}–{max} יוכלו להצטרף", {
+                min: levelMin.toFixed(1),
+                max: levelMax.toFixed(1),
+              })}
             </p>
 
             {sheetError && <p className="error">{t(sheetError)}</p>}

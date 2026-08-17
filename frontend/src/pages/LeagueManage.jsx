@@ -138,7 +138,11 @@ export default function LeagueManage() {
           <div>
             <div className="manage-nav-title">{t("חוקי הליגה")}</div>
             <div className="manage-nav-status">
-              {ruleLabels.bestOfLabel} · {ruleLabels.frequencyLabel}
+              {ruleLabels.bestOfLabel} · {ruleLabels.frequencyLabel} ·{" "}
+              {t("NTRP {min}–{max}", {
+                min: (league.level_min ?? 1.5).toFixed(1),
+                max: (league.level_max ?? 5.5).toFixed(1),
+              })}
             </div>
           </div>
           <ChevronIcon className="manage-nav-chevron chevron-icon" aria-hidden="true" />

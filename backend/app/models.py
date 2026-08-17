@@ -11,6 +11,8 @@ from sqlalchemy import (
     Enum,
     JSON,
     UniqueConstraint,
+    Float,
+    Boolean,
 )
 from sqlalchemy.orm import relationship
 
@@ -21,6 +23,11 @@ class MatchStatus(str, enum.Enum):
     pending = "pending"
     pending_confirmation = "pending_confirmation"
     completed = "completed"
+
+
+RATING_MIN = 1.5
+RATING_MAX = 5.5
+PROVISIONAL_MATCHES = 3
 
 
 class User(Base):
@@ -66,6 +73,8 @@ class League(Base):
     join_code = Column(String, nullable=True)
     best_of = Column(Integer, nullable=True, default=3)
     round_length_days = Column(Integer, nullable=True, default=7)
+    level_min = Column(Float, nullable=False, default=RATING_MIN)
+    level_max = Column(Float, nullable=False, default=RATING_MAX)
 
     sport = relationship("Sport", back_populates="leagues")
     memberships = relationship("LeagueMembership", back_populates="league", order_by="LeagueMembership.id")
@@ -83,6 +92,22 @@ class LeagueMembership(Base):
 
     league = relationship("League", back_populates="memberships")
     user = relationship("User", back_populates="memberships")
+
+
+class PlayerRating(Base):
+    __tablename__ = "player_ratings"
+    __table_args__ = (UniqueConstraint("user_id", "sport_id", name="uq_rating_user_sport"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    sport_id = Column(Integer, ForeignKey("sports.id"), nullable=False)
+    level = Column(Float, nullable=False)
+    provisional = Column(Boolean, default=True, nullable=False)
+    matches_played = Column(Integer, default=0, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User")
+    sport = relationship("Sport")
 
 
 class Match(Base):

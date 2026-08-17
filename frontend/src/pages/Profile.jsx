@@ -32,6 +32,7 @@ export default function Profile() {
   const [confirmEntry, setConfirmEntry] = useState(null);
   const [reportingMatchId, setReportingMatchId] = useState(null);
   const [showAllNextMatches, setShowAllNextMatches] = useState(false);
+  const [myRatings, setMyRatings] = useState([]);
 
   function loadNextMatches() {
     api
@@ -45,6 +46,10 @@ export default function Profile() {
     api
       .myLeagues()
       .then(setMyLeagues)
+      .catch(() => {});
+    api
+      .myRatings()
+      .then(setMyRatings)
       .catch(() => {});
     loadNextMatches();
   }, []);
@@ -117,6 +122,7 @@ export default function Profile() {
     stats && stats.matches_played > 0 ? Math.round((stats.wins / stats.matches_played) * 100) : null;
   const recentResults = stats ? stats.recent_matches.slice(0, 3) : [];
   const myLeaguesPreview = myLeaguesForSport.slice(0, 2);
+  const myRating = myRatings.find((r) => r.sport_id === selectedSportId) || null;
 
   function daysLeftFor(entry) {
     const roundLengthDays = roundLengthById.get(entry.league_id) ?? 7;
@@ -155,6 +161,10 @@ export default function Profile() {
               </span>
             </>
           )}
+          {" · "}
+          <span className="num" dir="ltr">
+            {myRating ? `NTRP ${myRating.level.toFixed(1)}${myRating.provisional ? ` (${t("זמני")})` : ""}` : t("לא מדורג")}
+          </span>
         </div>
       </header>
 

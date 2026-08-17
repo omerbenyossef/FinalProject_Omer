@@ -8,6 +8,7 @@ from .. import models, schemas
 from ..auth import get_current_user
 from ..database import get_db
 from ..push_utils import notify_user
+from ..rating_utils import update_ratings_for_match
 
 router = APIRouter(prefix="/leagues/{league_id}/matches", tags=["matches"])
 
@@ -34,6 +35,8 @@ def _auto_confirm_overdue(db: Session) -> None:
         match.confirmed_at = now
     if overdue:
         db.commit()
+        for match in overdue:
+            update_ratings_for_match(db, match)
 
 
 def _round_robin_rounds(player_ids: list[int]) -> list[list[tuple[int, int]]]:
@@ -271,6 +274,7 @@ def confirm_score(
     match.confirmed_at = datetime.utcnow()
     db.commit()
     db.refresh(match)
+    update_ratings_for_match(db, match)
 
     if match.reported_by is not None:
         notify_user(
