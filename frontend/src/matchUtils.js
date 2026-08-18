@@ -20,6 +20,12 @@ export function formatDayMonthTime(date) {
   return `${formatDayMonth(date)} · ${h}:${m}`;
 }
 
+export function daysLeftLabel(daysLeft) {
+  if (daysLeft >= 0) return daysLeft === 1 ? "1 day left" : `${daysLeft} days left`;
+  const over = Math.abs(daysLeft);
+  return over === 1 ? "1 day over" : `${over} days over`;
+}
+
 // State machine for the "schedule a time before you can report a score" gate:
 // unscheduled -> proposed_by_me / proposed_by_them -> confirmed_future -> ready.
 export function matchScheduleState(match, userId) {

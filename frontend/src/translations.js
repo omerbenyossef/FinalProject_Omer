@@ -494,6 +494,12 @@ const PAIRS = [
   // Home screen redesign (73a)
   ["זמני · עוד {n} משחקים", "provisional · {n} matches left"],
   ["קבע רמה", "Set your level"],
+
+  // Tab bar open action (75b/76b/77a-e)
+  ["אשר {score}", "Confirm {score}"],
+  ["דווח מול {name}", "Report vs {name}"],
+  ["{name} הציע {date}", "{name} proposed {date}"],
+  ["לאישור השעה", "Confirm the time"],
 ];
 
 const heToEn = {};

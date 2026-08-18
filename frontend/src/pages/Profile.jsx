@@ -4,12 +4,13 @@ import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import { useSport } from "../SportContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
+import { useOpenAction } from "../OpenActionContext.jsx";
 import SetScoreForm from "../SetScoreForm.jsx";
 import ScheduleForm from "../ScheduleForm.jsx";
 import ConfirmScoreSheet from "../ConfirmScoreSheet.jsx";
 import Avatar from "../Avatar.jsx";
 import { ChevronIcon, UserPlusIcon } from "../Icons.jsx";
-import { formatDayMonthTime, roundDueDateObj, matchScheduleState } from "../matchUtils.js";
+import { formatDayMonthTime, roundDueDateObj, matchScheduleState, daysLeftLabel } from "../matchUtils.js";
 import { SkeletonMatchRow } from "../Skeleton.jsx";
 import PageHelp from "../PageHelp.jsx";
 
@@ -21,12 +22,6 @@ function formatMySets(sets) {
   return sets.map((s) => `${s.player1_games}-${s.player2_games}`).join(" ");
 }
 
-function daysLeftLabel(daysLeft) {
-  if (daysLeft >= 0) return daysLeft === 1 ? "1 day left" : `${daysLeft} days left`;
-  const over = Math.abs(daysLeft);
-  return over === 1 ? "1 day over" : `${over} days over`;
-}
-
 function playersLabel(n, t) {
   return n === 1 ? t("שחקן אחד") : `${n} ${t("שחקנים")}`;
 }
@@ -35,11 +30,10 @@ export default function Profile() {
   const { user } = useAuth();
   const { selectedSportId, sports } = useSport();
   const { t } = useLanguage();
+  const { nextMatches, matchesLoading, reload: loadNextMatches, openAction } = useOpenAction();
   const [stats, setStats] = useState(null);
   const [error, setError] = useState("");
   const [myLeagues, setMyLeagues] = useState([]);
-  const [nextMatches, setNextMatches] = useState([]);
-  const [matchesLoading, setMatchesLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [confirmEntry, setConfirmEntry] = useState(null);
   const [reportingMatchId, setReportingMatchId] = useState(null);
@@ -47,14 +41,6 @@ export default function Profile() {
   const [myRatings, setMyRatings] = useState([]);
   const [friendlyRequireConfirm, setFriendlyRequireConfirm] = useState(true);
   const [schedulingMatchId, setSchedulingMatchId] = useState(null);
-
-  function loadNextMatches() {
-    api
-      .myNextMatches()
-      .then(setNextMatches)
-      .catch(() => {})
-      .finally(() => setMatchesLoading(false));
-  }
 
   useEffect(() => {
     api
@@ -65,7 +51,6 @@ export default function Profile() {
       .myRatings()
       .then(setMyRatings)
       .catch(() => {});
-    loadNextMatches();
   }, []);
 
   useEffect(() => {
@@ -190,7 +175,10 @@ export default function Profile() {
 
   const myLeaguesForSport = myLeagues.filter((l) => l.sport.id === selectedSportId);
   const roundLengthById = new Map(myLeagues.map((l) => [l.id, l.round_length_days]));
-  const relevantEntries = nextMatches.filter((entry) => entry.sport_id === selectedSportId);
+  const barMatchId = openAction?.match.id ?? null;
+  const relevantEntries = nextMatches
+    .filter((entry) => entry.sport_id === selectedSportId)
+    .filter((entry) => entry.match.id !== barMatchId);
   const confirmationEntries = relevantEntries.filter(
     (entry) => entry.match.status === "pending_confirmation" && entry.match.reported_by !== user.id
   );

@@ -486,44 +486,165 @@ a { color: var(--court); text-decoration: none; }
 .tabbar {
   position: sticky;
   bottom: 0;
-  display: flex;
-  justify-content: center;
   padding: 0 16px calc(14px + env(safe-area-inset-bottom));
   pointer-events: none;
 }
 
-.tabbar-inner {
+.tabbar-row {
   display: flex;
   align-items: center;
-  gap: 6px;
-  background: var(--card);
-  border: 1px solid var(--line);
+  gap: 8px;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.tabbar-inner {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #12171e;
+  border: 1px solid rgba(148, 163, 184, 0.18);
   border-radius: 999px;
-  padding: 7px;
+  padding: 6px;
   box-shadow: 0 14px 28px -12px rgba(0, 0, 0, 0.6);
   pointer-events: auto;
 }
 
+.tabbar-inner.wide {
+  flex: 1;
+}
+
+.tabbar-inner.wide .tab {
+  flex: 1;
+  width: auto;
+  height: 48px;
+  border-radius: 24px;
+  gap: 9px;
+}
+
+.tab-label {
+  font-family: "Anton", var(--display);
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .tab {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 46px;
-  height: 46px;
-  border-radius: 50%;
-  color: var(--muted);
+  color: #a3abbb;
   transition: background-color 0.15s, color 0.15s;
 }
 
-.tab-icon {
-  width: 21px;
-  height: 21px;
+.tab.active {
+  background: #2b323d;
+  border-radius: 22px;
+  color: var(--ink);
 }
 
-.tab.active {
-  background: var(--surface-2);
-  border-radius: 16px;
+.tab-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.tab-dot {
+  position: absolute;
+  top: 8px;
+  inset-inline-end: 9px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--court);
+  box-shadow: 0 0 0 2.5px #12171e;
+}
+
+.tabbar-action {
+  flex: 1;
+  min-width: 0;
+  height: 56px;
+  border: 0;
+  border-radius: 28px;
+  background: #1c222b;
   color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-inline: 18px 8px;
+  box-shadow: 0 14px 28px -12px rgba(0, 0, 0, 0.6);
+  pointer-events: auto;
+  text-align: start;
+}
+
+.tabbar-action.lime {
+  background: var(--court);
+  color: var(--court-contrast);
+}
+
+.tabbar-action-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  min-width: 0;
+}
+
+.tabbar-action-title {
+  font-family: "Anton", var(--display);
+  font-weight: 400;
+  font-size: 15px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tabbar-action-sub {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font: 600 10.5px "IBM Plex Mono", var(--mono);
+  letter-spacing: 0.06em;
+  opacity: 0.72;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.tabbar-action.lime .tabbar-action-sub {
+  opacity: 0.62;
+}
+
+.tabbar-action-knob {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+  background: rgba(148, 163, 184, 0.14);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tabbar-action.lime .tabbar-action-knob {
+  background: rgba(14, 17, 22, 0.14);
+}
+
+.tabbar-action-knob svg {
+  width: 17px;
+  height: 17px;
+  stroke-width: 2.1;
 }
 
 .eyebrow {
