@@ -6,6 +6,7 @@ import { useOpenAction } from "./OpenActionContext.jsx";
 import { ChevronIcon, PersonIcon, SettingsIcon, TrophyIcon } from "./Icons.jsx";
 import InstallPrompt from "./InstallPrompt.jsx";
 import Onboarding from "./Onboarding.jsx";
+import SelfRatingPrompt from "./SelfRatingPrompt.jsx";
 import ConfirmScoreSheet from "./ConfirmScoreSheet.jsx";
 import { translate } from "./translations.js";
 
@@ -78,6 +79,7 @@ export default function Layout({ children }) {
       </header>
       {user && <Onboarding />}
       {user && <InstallPrompt />}
+      {user && <SelfRatingPrompt />}
       <main className="content">{children}</main>
       {user && (
         <nav className="tabbar">
