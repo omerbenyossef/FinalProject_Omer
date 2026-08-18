@@ -86,6 +86,14 @@ export default function Layout({ children }) {
           <div className="tabbar-row">
             <div className={`tabbar-inner${openAction ? "" : " wide"}`}>
               <NavLink
+                to="/profile"
+                className={({ isActive }) => `tab${isActive ? " active" : ""}`}
+                aria-label={t("פרופיל")}
+              >
+                <PersonIcon className="tab-icon" aria-hidden="true" />
+                {!openAction && <span className="tab-label">{t("פרופיל")}</span>}
+              </NavLink>
+              <NavLink
                 to="/leagues"
                 className={({ isActive }) => `tab${isActive ? " active" : ""}`}
                 aria-label={t("ליגות")}
@@ -93,14 +101,6 @@ export default function Layout({ children }) {
                 <TrophyIcon className="tab-icon" aria-hidden="true" />
                 {!openAction && <span className="tab-label">{t("ליגות")}</span>}
                 {hasOtherLeagueActivity && <span className="tab-dot" aria-hidden="true" />}
-              </NavLink>
-              <NavLink
-                to="/profile"
-                className={({ isActive }) => `tab${isActive ? " active" : ""}`}
-                aria-label={t("פרופיל")}
-              >
-                <PersonIcon className="tab-icon" aria-hidden="true" />
-                {!openAction && <span className="tab-label">{t("פרופיל")}</span>}
               </NavLink>
             </div>
 
