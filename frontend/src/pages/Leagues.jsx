@@ -4,11 +4,109 @@ import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import { useSport } from "../SportContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
+import { useOpenAction } from "../OpenActionContext.jsx";
 import EmptyState from "../EmptyState.jsx";
 import { TrophyIcon, ChevronIcon, PlusIcon } from "../Icons.jsx";
-import { SkeletonLeagueCard } from "../Skeleton.jsx";
-import { leagueRuleLabels, NTRP_STEPS } from "../matchUtils.js";
+import { SkeletonBar, SkeletonLeagueCard } from "../Skeleton.jsx";
+import {
+  leagueRuleLabels,
+  NTRP_STEPS,
+  getActionCandidates,
+  buildOpenAction,
+  pickStandingsExcerpt,
+  currentRoundNumber,
+  roundDueDateObj,
+} from "../matchUtils.js";
 import PageHelp from "../PageHelp.jsx";
+
+const CARD_WIDTH = 305;
+const CARD_GAP = 12;
+
+function LeagueCarouselCard({ league, standingsRows, openAction, userId, t, navigate, single }) {
+  const roundLengthDays = league.round_length_days || 7;
+  const currentRound = currentRoundNumber(league.schedule_started_at, roundLengthDays);
+  const due = roundDueDateObj(league.schedule_started_at, currentRound, roundLengthDays);
+  const daysLeft = due ? Math.ceil((due.getTime() - Date.now()) / 86400000) : null;
+  const hasActiveRound = Boolean(league.schedule_started_at && currentRound && daysLeft !== null && daysLeft >= 0);
+
+  const rankedRows = Array.isArray(standingsRows) ? standingsRows.map((r, i) => ({ ...r, rank: i + 1 })) : null;
+  const meRow = rankedRows?.find((r) => r.user.id === userId);
+  const rankDelta = meRow?.rank_delta ?? 0;
+  const excerptRows = rankedRows ? pickStandingsExcerpt(rankedRows, userId) : null;
+
+  return (
+    <div className={`lg-card${single ? " single" : ""}`}>
+      <div className="lg-card-top">
+        <div className="lg-card-id">
+          <Link to={`/leagues/${league.id}`} className="lg-card-name">
+            <span dir="auto">{league.name}</span>
+          </Link>
+          <div className="lg-card-meta" dir="ltr">
+            {hasActiveRound
+              ? `${t("מחזור {n}", { n: currentRound })} · ${
+                  daysLeft === 1 ? t("יום אחד נותר") : t("{n} ימים נותרו", { n: daysLeft })
+                }`
+              : `${league.my_members_total} ${t("שחקנים")}`}
+          </div>
+        </div>
+        <div className="lg-card-rank">
+          <div className="lg-rank-num" dir="ltr">
+            {league.my_rank}
+            <span className="lg-rank-of">/{league.my_members_total}</span>
+          </div>
+          {rankDelta !== 0 && (
+            <div className="lg-rank-delta" dir="ltr">
+              {rankDelta > 0 ? "▲" : "▼"}
+              {Math.abs(rankDelta)}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="lg-standings">
+        {excerptRows === null
+          ? Array.from({ length: 4 }).map((_, i) => (
+              <div className="lg-srow" key={i}>
+                <SkeletonBar width={14} height={12} />
+                <SkeletonBar width="55%" height={13} />
+                <SkeletonBar width={28} height={12} />
+              </div>
+            ))
+          : excerptRows.map((row) => (
+              <div key={row.user.id} className={row.user.id === userId ? "lg-srow is-me" : "lg-srow"}>
+                <span className="lg-srank" dir="ltr">
+                  {row.rank}
+                </span>
+                <span className="lg-sname">
+                  <span dir="auto">{row.user.name}</span>
+                </span>
+                <span className="lg-swl" dir="ltr">
+                  {row.wins}-{row.losses}
+                </span>
+              </div>
+            ))}
+      </div>
+
+      {openAction && (
+        <button type="button" className="lg-card-action" onClick={() => navigate(`/leagues/${league.id}`)}>
+          <span className="lg-dot-lime" aria-hidden="true" />
+          <span className="lg-action-body">
+            <span className="lg-action-title">{openAction.title}</span>
+            <span className="lg-action-sub" dir="ltr">
+              {openAction.subParts.map((part, i) => (
+                <span key={i} style={{ display: "contents" }}>
+                  {i > 0 && <span aria-hidden="true"> · </span>}
+                  <span dir="auto">{part}</span>
+                </span>
+              ))}
+            </span>
+          </span>
+          <ChevronIcon aria-hidden="true" />
+        </button>
+      )}
+    </div>
+  );
+}
 
 const FORMAT_OPTIONS = [
   [3, "עד 3 סטים"],
@@ -38,11 +136,16 @@ export default function Leagues() {
   const [levelMax, setLevelMax] = useState(5.5);
   const [submitting, setSubmitting] = useState(false);
   const [sheetError, setSheetError] = useState("");
+  const [active, setActive] = useState(0);
+  const [standingsCache, setStandingsCache] = useState({});
   const inputRef = useRef(null);
+  const carouselRef = useRef(null);
+  const requestedStandingsRef = useRef(new Set());
   const navigate = useNavigate();
   const { user } = useAuth();
   const { sports, selectedSportId } = useSport();
   const { t } = useLanguage();
+  const { nextMatches } = useOpenAction();
 
   async function loadData() {
     setLoading(true);
@@ -71,6 +174,30 @@ export default function Leagues() {
   useEffect(() => {
     if (showSheet) inputRef.current?.focus();
   }, [showSheet]);
+
+  useEffect(() => {
+    setActive(0);
+  }, [selectedSportId]);
+
+  useEffect(() => {
+    const forSport = myLeagues.filter((l) => l.sport.id === selectedSportId);
+    const ids = [forSport[active]?.id, forSport[active + 1]?.id].filter((id) => id != null);
+    ids.forEach((id) => {
+      if (requestedStandingsRef.current.has(id)) return;
+      requestedStandingsRef.current.add(id);
+      api
+        .getStandings(id)
+        .then((rows) => setStandingsCache((prev) => ({ ...prev, [id]: rows })))
+        .catch(() => setStandingsCache((prev) => ({ ...prev, [id]: [] })));
+    });
+  }, [active, myLeagues, selectedSportId]);
+
+  function handleCarouselScroll() {
+    const el = carouselRef.current;
+    if (!el) return;
+    const idx = Math.round(Math.abs(el.scrollLeft) / (CARD_WIDTH + CARD_GAP));
+    setActive((prev) => (prev === idx ? prev : idx));
+  }
 
   function openSheet() {
     setName("");
@@ -153,54 +280,59 @@ export default function Leagues() {
 
       {error && <p className="error">{t(error)}</p>}
 
-      {user && (
+      {user && loading && <SkeletonLeagueCard />}
+
+      {user && !loading && myLeaguesForSport.length > 0 && (
         <>
-          <div className="home-section-head">
-            <span>{t("הליגות שלי")}</span>
-            <span className="num">{myLeaguesForSport.length}</span>
-          </div>
-          <div className="rank-row-list">
-            {loading ? (
-              <SkeletonLeagueCard />
-            ) : (
-              myLeaguesForSport.map((league) => (
-                <Link to={`/leagues/${league.id}`} key={league.id} className="league-row">
-                  <span className={`league-row-rank${league.my_rank <= 3 ? " top" : ""}`} dir="ltr">
-                    {league.my_rank}
-                  </span>
-                  <div className="league-row-body">
-                    <div className="league-row-name">
-                      <span dir="auto">{league.name}</span>
-                    </div>
-                    <div className="league-row-sub" dir="ltr">
-                      {league.my_wins}W-{league.my_losses}L · {league.my_members_total} {t("שחקנים")}
-                    </div>
-                  </div>
-                  {league.my_rank_trend ? (
-                    <span className={`league-row-trend ${league.my_rank_trend > 0 ? "up" : "down"}`} dir="ltr">
-                      {league.my_rank_trend > 0
-                        ? `▲${league.my_rank_trend}`
-                        : `▼${Math.abs(league.my_rank_trend)}`}
-                    </span>
-                  ) : (
-                    <span className="league-row-trend" dir="ltr">—</span>
-                  )}
-                  <ChevronIcon className="league-row-chevron chevron-icon" aria-hidden="true" />
-                </Link>
-              ))
-            )}
-            {!loading && myLeaguesForSport.length === 0 && (
-              <EmptyState icon={<TrophyIcon aria-hidden="true" />}>
-                {t("עדיין לא הצטרפת לאף ליגה בענף הזה.")}
-              </EmptyState>
+          <div className="lg-head">
+            <h2 className="lg-title">{t("ליגות")}</h2>
+            {myLeaguesForSport.length > 1 && (
+              <span className="lg-count" dir="ltr">
+                {active + 1} / {myLeaguesForSport.length}
+              </span>
             )}
           </div>
+
+          <div
+            className={`lg-carousel${myLeaguesForSport.length === 1 ? " single" : ""}`}
+            ref={carouselRef}
+            onScroll={handleCarouselScroll}
+          >
+            {myLeaguesForSport.map((league) => {
+              const leagueEntries = nextMatches.filter((e) => e.league_id === league.id);
+              const leagueOpenAction = buildOpenAction(
+                getActionCandidates(leagueEntries, user.id),
+                user.id,
+                t
+              );
+              return (
+                <LeagueCarouselCard
+                  key={league.id}
+                  league={league}
+                  standingsRows={standingsCache[league.id]}
+                  openAction={leagueOpenAction}
+                  userId={user.id}
+                  t={t}
+                  navigate={navigate}
+                  single={myLeaguesForSport.length === 1}
+                />
+              );
+            })}
+          </div>
+
+          {myLeaguesForSport.length > 1 && (
+            <div className="lg-dots">
+              {myLeaguesForSport.map((league, i) => (
+                <span key={league.id} className={i === active ? "lg-dot is-on" : "lg-dot"} />
+              ))}
+            </div>
+          )}
         </>
       )}
 
-      <div className="home-section-head">
+      <div className="lg-open-head">
         <span>{t("ליגות פתוחות")}</span>
-        <span className="num">{openLeagues.length}</span>
+        <span>{openLeagues.length}</span>
       </div>
       <div className="open-league-list">
         {loading ? (

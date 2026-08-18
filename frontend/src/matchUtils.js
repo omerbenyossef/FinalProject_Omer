@@ -107,6 +107,116 @@ export function currentRoundNumber(scheduleStartedAt, roundLengthDays = 7, now =
   return 2 + Math.floor((offsetDays - 1) / roundLengthDays);
 }
 
+export function sortEarliest(entries) {
+  return [...entries].sort((a, b) => {
+    const rA = a.match.round_number ?? Infinity;
+    const rB = b.match.round_number ?? Infinity;
+    if (rA !== rB) return rA - rB;
+    const sA = a.schedule_started_at ? new Date(a.schedule_started_at).getTime() : Infinity;
+    const sB = b.schedule_started_at ? new Date(b.schedule_started_at).getTime() : Infinity;
+    return sA - sB;
+  });
+}
+
+// Splits a list of next-match entries into the three "something to act on"
+// buckets, in priority order (confirm > report > proposed schedule). Shared
+// by the global tab-bar action (OpenActionContext) and the per-league open
+// action on the Leagues carousel card, so both agree on what counts as
+// actionable without duplicating the filtering logic.
+export function getActionCandidates(entries, userId) {
+  if (!userId) return { confirm: [], report: [], proposed: [] };
+  return {
+    confirm: entries.filter(
+      (e) => e.match.status === "pending_confirmation" && e.match.reported_by !== userId
+    ),
+    report: entries.filter(
+      (e) => e.match.status === "pending" && matchScheduleState(e.match, userId) === "ready"
+    ),
+    proposed: entries.filter(
+      (e) => e.match.status === "pending" && matchScheduleState(e.match, userId) === "proposed_by_them"
+    ),
+  };
+}
+
+// Picks the highest-priority candidate and builds the display object for it
+// (title/subParts/kind), or null if nothing is actionable. userId is needed
+// to tell which side of the match the viewer is on.
+export function buildOpenAction(candidates, userId, t) {
+  if (!userId) return null;
+
+  if (candidates.confirm.length > 0) {
+    const entry = sortEarliest(candidates.confirm)[0];
+    const m = entry.match;
+    const iAmPlayer1 = m.player1.id === userId;
+    const reporter = m.reported_by === m.player1.id ? m.player1 : m.player2;
+    const mySets = iAmPlayer1
+      ? m.sets
+      : m.sets?.map((s) => ({ player1_games: s.player2_games, player2_games: s.player1_games }));
+    return {
+      kind: "confirm",
+      entry,
+      match: m,
+      lime: true,
+      title: t("אשר {score}", { score: formatSets(mySets) }),
+      subParts: [reporter.name, m.round_number ? t("מחזור {n}", { n: m.round_number }) : "FRIENDLY"],
+    };
+  }
+
+  if (candidates.report.length > 0) {
+    const entry = sortEarliest(candidates.report)[0];
+    const m = entry.match;
+    const opponent = m.player1.id === userId ? m.player2 : m.player1;
+    const due = roundDueDateObj(entry.schedule_started_at, m.round_number, 7);
+    const daysLeft = due ? Math.ceil((due.getTime() - Date.now()) / 86400000) : null;
+    const subParts = [
+      m.round_number ? t("מחזור {n}", { n: m.round_number }) : "FRIENDLY",
+      daysLeft !== null ? daysLeftLabel(daysLeft) : null,
+    ].filter(Boolean);
+    return {
+      kind: "report",
+      entry,
+      match: m,
+      lime: true,
+      title: t("דווח מול {name}", { name: opponent.name }),
+      subParts,
+    };
+  }
+
+  if (candidates.proposed.length > 0) {
+    const entry = sortEarliest(candidates.proposed)[0];
+    const m = entry.match;
+    const opponent = m.player1.id === userId ? m.player2 : m.player1;
+    return {
+      kind: "schedule",
+      entry,
+      match: m,
+      lime: false,
+      title: t("{name} הציע {date}", {
+        name: opponent.name,
+        date: formatDayMonthTime(new Date(m.scheduled_at)),
+      }),
+      subParts: [t("לאישור השעה")],
+    };
+  }
+
+  return null;
+}
+
+// Picks 4 standings rows to preview: the leader always first, then a window
+// around the viewer (one above, them, one below). If the leader would fall
+// inside that window, drop the duplicate and pull one more row from below
+// instead — see leaguescarousel82a.md section 2.
+export function pickStandingsExcerpt(rows, userId) {
+  const n = rows.length;
+  if (n <= 4) return rows;
+  const meIdx = rows.findIndex((r) => r.user.id === userId);
+  if (meIdx === -1) return rows.slice(0, 4);
+  if (meIdx === 0) return rows.slice(0, 4);
+  if (meIdx === n - 1) return rows.slice(n - 4, n);
+  if (meIdx === 1) return [rows[0], rows[1], rows[2], rows[3]];
+  return [rows[0], rows[meIdx - 1], rows[meIdx], rows[meIdx + 1]];
+}
+
 // Mirrors the backend's circle-method round robin in matches.py (_round_robin_rounds),
 // so the client can preview exactly which pairs the next schedule generation call will create.
 function roundRobinRounds(memberIds) {

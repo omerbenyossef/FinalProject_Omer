@@ -3127,6 +3127,213 @@ button:active { transform: translateY(1px); }
   stroke-width: 2.6;
 }
 
+.lg-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+.lg-title {
+  margin: 0;
+  font: 400 30px/1 "Anton", sans-serif;
+  letter-spacing: 0.005em;
+  text-transform: uppercase;
+}
+.lg-count {
+  font: 500 12px "IBM Plex Mono", monospace;
+  color: #8b93a6;
+}
+
+.lg-carousel {
+  margin-top: 16px;
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  margin-inline: -18px;
+  padding-inline: 18px;
+}
+.lg-carousel::-webkit-scrollbar {
+  display: none;
+}
+.lg-carousel.single {
+  margin-inline: 0;
+  padding-inline: 0;
+}
+
+.lg-card {
+  box-sizing: border-box;
+  flex: none;
+  width: 305px;
+  scroll-snap-align: start;
+  border-radius: 20px;
+  background: rgba(148, 163, 184, 0.06);
+  padding: 18px 17px;
+}
+.lg-card.single {
+  width: 100%;
+}
+
+.lg-dots {
+  margin-top: 14px;
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+.lg-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 3px;
+  background: #2b323d;
+  transition: width 0.18s;
+}
+.lg-dot.is-on {
+  width: 18px;
+  background: var(--lime, #c6f24e);
+}
+
+.lg-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.lg-card-id {
+  min-width: 0;
+}
+.lg-card-name {
+  display: block;
+  font: 700 21px/1.3 "IBM Plex Sans Hebrew", sans-serif;
+  letter-spacing: -0.01em;
+  color: #eef1f7;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.lg-card-meta {
+  margin-top: 4px;
+  font: 500 11.5px "IBM Plex Mono", monospace;
+  color: #8b93a6;
+}
+.lg-card-rank {
+  flex: none;
+  text-align: end;
+}
+.lg-rank-num {
+  font: 400 30px/1 "Anton", sans-serif;
+  color: #eef1f7;
+}
+.lg-rank-of {
+  font: 500 12px "IBM Plex Mono", monospace;
+  color: #6f7787;
+}
+.lg-rank-delta {
+  margin-top: 3px;
+  font: 600 11px "IBM Plex Mono", monospace;
+  color: #c9cfdb;
+}
+
+.lg-standings {
+  margin-top: 16px;
+  padding-top: 13px;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.lg-srow {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  font: 500 12px "IBM Plex Mono", monospace;
+  color: #8b93a6;
+}
+.lg-srank {
+  width: 14px;
+}
+.lg-sname {
+  flex: 1;
+  min-width: 0;
+  font: 600 13px "IBM Plex Sans Hebrew", sans-serif;
+  color: #c9cfdb;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lg-srow.is-me {
+  color: #eef1f7;
+  font-weight: 600;
+}
+.lg-srow.is-me .lg-sname {
+  color: #eef1f7;
+  font-weight: 700;
+}
+
+.lg-card-action {
+  margin-top: 14px;
+  padding: 12px 0 0;
+  border: 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  background: none;
+  width: 100%;
+  text-align: start;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  color: inherit;
+}
+.lg-dot-lime {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--lime, #c6f24e);
+}
+.lg-action-body {
+  flex: 1;
+  min-width: 0;
+}
+.lg-action-title {
+  display: block;
+  font: 600 14px "IBM Plex Sans Hebrew", sans-serif;
+  color: #eef1f7;
+}
+.lg-action-sub {
+  display: block;
+  margin-top: 2px;
+  font: 500 11.5px "IBM Plex Mono", monospace;
+  color: #8b93a6;
+}
+.lg-card-action svg {
+  flex: none;
+  width: 13px;
+  height: 13px;
+  stroke: #8b93a6;
+}
+
+.lg-open-head {
+  margin-top: 20px;
+  padding-top: 13px;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.lg-open-head span:first-child {
+  font: 400 19px/1 "Anton", sans-serif;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+.lg-open-head span:last-child {
+  font: 500 12px "IBM Plex Mono", monospace;
+  color: #8b93a6;
+}
+
 .open-league-list {
   display: flex;
   flex-direction: column;
