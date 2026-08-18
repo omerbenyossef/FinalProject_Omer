@@ -9,11 +9,12 @@ import ScheduleForm from "../ScheduleForm.jsx";
 import ConfirmScoreSheet from "../ConfirmScoreSheet.jsx";
 import Avatar from "../Avatar.jsx";
 import { ChevronIcon, UserPlusIcon } from "../Icons.jsx";
-import { formatDayMonth, formatDayMonthTime, roundDueDateObj, matchScheduleState } from "../matchUtils.js";
+import { formatDayMonthTime, roundDueDateObj, matchScheduleState } from "../matchUtils.js";
 import { SkeletonMatchRow } from "../Skeleton.jsx";
 import PageHelp from "../PageHelp.jsx";
 
 const MAX_VISIBLE_NEXT_MATCHES = 3;
+const NTRP_STEPS = [1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5];
 
 function formatMySets(sets) {
   if (!sets || sets.length === 0) return "";
@@ -32,7 +33,7 @@ function playersLabel(n, t) {
 
 export default function Profile() {
   const { user } = useAuth();
-  const { selectedSportId } = useSport();
+  const { selectedSportId, sports } = useSport();
   const { t } = useLanguage();
   const [stats, setStats] = useState(null);
   const [error, setError] = useState("");
@@ -207,9 +208,9 @@ export default function Profile() {
 
   const winRate =
     stats && stats.matches_played > 0 ? Math.round((stats.wins / stats.matches_played) * 100) : null;
-  const recentResults = stats ? stats.recent_matches.slice(0, 3) : [];
   const myLeaguesPreview = myLeaguesForSport.slice(0, 2);
   const myRating = myRatings.find((r) => r.sport_id === selectedSportId) || null;
+  const sportName = sports.find((s) => s.id === selectedSportId)?.name;
 
   function daysLeftFor(entry) {
     const roundLengthDays = roundLengthById.get(entry.league_id) ?? 7;
@@ -229,30 +230,49 @@ export default function Profile() {
             text="כאן תראו את המשחק שצריך לשחק או לאשר השבוע, את הליגות שאתם חברים בהן, ואת התוצאות האחרונות שלכם."
           />
         </div>
-        <div className="home-summary">
-          {t("{n} ליגות", { n: myLeaguesForSport.length })}
-          {stats && (
-            <>
-              {" · "}
-              <span className="num" dir="ltr">
-                {stats.wins}W-{stats.losses}L
-              </span>{" "}
-              {t("העונה")}
-            </>
-          )}
-          {winRate !== null && (
-            <>
-              {" · "}
-              <span className="num" dir="ltr">
-                {winRate}%
-              </span>
-            </>
-          )}
-          {" · "}
-          <span dir="ltr">
-            {myRating ? `NTRP ${myRating.level.toFixed(1)}${myRating.provisional ? ` (${t("זמני")})` : ""}` : t("לא מדורג")}
+        <div className="home-stats" dir="ltr">
+          <span className="home-stat">
+            {winRate !== null ? winRate : "–"}% <span className="home-stat-unit">{t("ניצחונות")}</span>
           </span>
+          <span className="home-stat">
+            {stats ? stats.wins : 0}W-{stats ? stats.losses : 0}L
+          </span>
+          <span className="home-stat">{t("{n} ליגות", { n: myLeaguesForSport.length })}</span>
         </div>
+
+        {myRating ? (
+          <div className="home-rating">
+            <div className="home-rating-head">
+              <span className="home-rating-label">
+                NTRP · {sportName ? t(sportName) : ""}
+              </span>
+              <span className="home-rating-level" dir="ltr">
+                {myRating.level.toFixed(1)}
+              </span>
+            </div>
+            <div className="home-rating-scale" dir="ltr" aria-hidden="true">
+              {NTRP_STEPS.map((step) => (
+                <span
+                  key={step}
+                  className={`home-rating-step${step === myRating.level ? " here" : ""}`}
+                />
+              ))}
+            </div>
+            <div className="home-rating-foot" dir="ltr">
+              <span>1.5</span>
+              <span>
+                {myRating.provisional
+                  ? t("זמני · עוד {n} משחקים", { n: 3 - myRating.rated_matches })
+                  : ""}
+              </span>
+              <span>5.5</span>
+            </div>
+          </div>
+        ) : (
+          <Link to="/leagues" className="home-rating-empty">
+            {t("לא מדורג")} · {t("קבע רמה")}
+          </Link>
+        )}
       </header>
 
       {error && <p className="error">{t(error)}</p>}
@@ -317,7 +337,7 @@ export default function Profile() {
               return (
                 <div key={entry.match.id}>
                   <div className={`home-match${pending ? " friendly-pending" : ""}`}>
-                    <Avatar name={opponent.name} size={38} dim={pending} />
+                    <Avatar name={opponent.name} size={36} dim={pending} />
                     <div className="home-match-body">
                       <div className="my-match-name">
                         <span dir="auto" style={{ unicodeBidi: "isolate" }}>
@@ -396,7 +416,7 @@ export default function Profile() {
             return (
               <div key={entry.match.id}>
                 <div className="home-match">
-                  <Avatar name={opponent.name} size={38} />
+                  <Avatar name={opponent.name} size={36} />
                   <div className="home-match-body">
                     <div className="my-match-name">
                       <span dir="auto" style={{ unicodeBidi: "isolate" }}>
@@ -536,6 +556,12 @@ export default function Profile() {
                         {wins}W-{losses}L
                       </span>{" "}
                       · {playersLabel(members, t)}
+                      {league.my_rank != null && (
+                        <>
+                          {" "}
+                          · <span className="mono-num">#{league.my_rank}</span>
+                        </>
+                      )}
                     </>
                   ) : members <= 1 ? (
                     <>
@@ -568,45 +594,6 @@ export default function Profile() {
           </div>
         )}
       </div>
-
-      {stats && recentResults.length > 0 && (
-        <>
-          <div className="home-section-head">
-            <span className="home-section-title-archive">{t("תוצאות אחרונות")}</span>
-          </div>
-          <div className="home-results-list">
-            {recentResults.map((m, i) => (
-              <Link to={`/head-to-head/${m.opponent_id}`} className="home-result" key={i}>
-                <span className="home-result-who">
-                  <span dir="auto" style={{ unicodeBidi: "isolate" }}>
-                    {m.opponent_name}
-                  </span>
-                  {m.kind === "friendly" ? (
-                    <>
-                      {" "}
-                      <span className="match-tag archive">FRIENDLY</span>
-                    </>
-                  ) : (
-                    m.league_name && (
-                      <>
-                        {" · "}
-                        <span dir="auto" style={{ unicodeBidi: "isolate" }}>
-                          {m.league_name}
-                        </span>
-                      </>
-                    )
-                  )}
-                  {m.played_at && <> · {formatDayMonth(new Date(m.played_at))}</>}
-                </span>
-                <span className="home-result-score" dir="ltr">
-                  {formatMySets(m.my_sets)}
-                </span>
-                <span className={`home-result-badge${m.won ? " win" : ""}`}>{m.won ? "W" : "L"}</span>
-              </Link>
-            ))}
-          </div>
-        </>
-      )}
 
       {confirmEntry && (
         <ConfirmScoreSheet

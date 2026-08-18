@@ -294,6 +294,7 @@ class PlayerRatingOut(BaseModel):
     sport_id: int
     level: float
     provisional: bool
+    rated_matches: int
 
     class Config:
         from_attributes = True

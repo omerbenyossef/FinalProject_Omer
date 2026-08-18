@@ -490,6 +490,10 @@ const PAIRS = [
   ["מש׳", "P"],
   ["נצ׳", "W"],
   ["הפ׳", "L"],
+
+  // Home screen redesign (73a)
+  ["זמני · עוד {n} משחקים", "provisional · {n} matches left"],
+  ["קבע רמה", "Set your level"],
 ];
 
 const heToEn = {};

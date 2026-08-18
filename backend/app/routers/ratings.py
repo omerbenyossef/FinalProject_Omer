@@ -66,7 +66,12 @@ def my_ratings(
 ):
     ratings = db.query(models.PlayerRating).filter(models.PlayerRating.user_id == current_user.id).all()
     return [
-        schemas.PlayerRatingOut(sport_id=r.sport_id, level=round_to_half(r.level), provisional=r.provisional)
+        schemas.PlayerRatingOut(
+            sport_id=r.sport_id,
+            level=round_to_half(r.level),
+            provisional=r.provisional,
+            rated_matches=r.matches_played,
+        )
         for r in ratings
     ]
 
