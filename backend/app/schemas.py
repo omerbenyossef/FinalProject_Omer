@@ -286,10 +286,11 @@ class RatingAnswers(BaseModel):
     q1: int
     q2: int
     q3: int
-    # Standard path (q3 != competitive option): q4 + q5 required, venue unused.
-    # Competitive path (q3 == competitive option): venue required, q4/q5 unused.
+    # Standard path (q3 != competitive option): q4 + q5 + q6 required, venue unused.
+    # Competitive path (q3 == competitive option): venue required, q4/q5/q6 unused.
     q4: Optional[int] = None
     q5: Optional[int] = None
+    q6: Optional[int] = None
     venue: Optional[int] = None
 
 

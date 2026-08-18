@@ -4200,6 +4200,10 @@ button:active { transform: translateY(1px); }
   gap: 9px;
 }
 
+.rating-branch-note {
+  margin: 14px 0 0;
+}
+
 .rating-option {
   display: flex;
   align-items: center;

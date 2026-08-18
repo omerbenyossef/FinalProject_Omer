@@ -51,6 +51,17 @@ const STANDARD_QUESTIONS = [
       { label: "ההגשה שלי מנצחת לי נקודות", desc: "אייסים והגשות שאי אפשר להחזיר הן חלק מהמשחק שלי." },
     ],
   },
+  {
+    key: "q6",
+    title: "מה הכי מתאר אותך?",
+    options: [
+      { label: "אני עדיין לומד/ת את הבסיס", desc: "החילופים קצרים. אני עובד/ת על מגע נקי בכדור." },
+      { label: "אני משחק/ת משחקים מלאים, אבל לא עקבי/ת", desc: "יש מכות טובות. אני לא מצליח/ה לחזור עליהן לפי דרישה." },
+      { label: "אני מחזיק/ה מעמד במשחק אמיתי", desc: "אני שומר/ת על הכדור במשחק, שם אותו בערך איפה שאני רוצה, ויש לי תוכנית לנקודה." },
+      { label: "אני בדרך כלל מנצח/ת את מי שאני משחק/ת מולם", desc: "רוב היריבים לא מצליחים ללחוץ עליי, ואני מחפש/ת משחקים חזקים יותר." },
+      { label: "שיחקתי ברמה גבוהה", desc: "קולג', נבחרת לאומית, או טניס מקצועני." },
+    ],
+  },
 ];
 
 const VENUE_QUESTION = {
@@ -102,7 +113,7 @@ export default function RatingQuestionnaire({ league, sportName, existingResult,
       const payload =
         next.q3 === COMPETITIVE_Q3_INDEX
           ? { q1: next.q1, q2: next.q2, q3: next.q3, venue: next.venue }
-          : { q1: next.q1, q2: next.q2, q3: next.q3, q4: next.q4, q5: next.q5 };
+          : { q1: next.q1, q2: next.q2, q3: next.q3, q4: next.q4, q5: next.q5, q6: next.q6 };
       const res = await api.submitRating(league.id, payload);
       setResult(res);
       setStep("result");
@@ -273,6 +284,11 @@ export default function RatingQuestionnaire({ league, sportName, existingResult,
           );
         })}
       </div>
+      {question.key === "q3" && (
+        <p className="rating-branch-note muted">
+          {t("בחירה באפשרות האחרונה מחליפה את השאלות הבאות בשאלה אחת על הרקע התחרותי שלך.")}
+        </p>
+      )}
     </div>
   );
 }

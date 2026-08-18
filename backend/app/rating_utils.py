@@ -37,6 +37,33 @@ def compute_competitive_level(venue: int) -> float:
     return clamp_rating(5.5 + 0.5 * venue)
 
 
+# The self-placement question (q6) doesn't add to the score — it's a check
+# against the ability-based computed level. Each rung is the NTRP band a
+# player claiming it would expect to land in.
+SELF_PLACEMENT_BANDS = [
+    (1.5, 2.0),
+    (2.5, 3.0),
+    (3.5, 4.0),
+    (4.5, 5.0),
+    (5.5, 5.5),  # "competed at a high level" — open-ended 5.5+, but the
+    # standard path's own ceiling is 5.5 anyway (see QUESTIONNAIRE_STANDARD_MAX).
+]
+
+
+def apply_self_placement_check(level: float, q6: int) -> float:
+    band_min, band_max = SELF_PLACEMENT_BANDS[q6]
+    if level < band_min:
+        gap, edge = band_min - level, band_min
+    elif level > band_max:
+        gap, edge = level - band_max, band_max
+    else:
+        gap, edge = 0.0, level
+
+    if gap < 1.0:
+        return level
+    return clamp_rating(round_to_half((level + edge) / 2), max_value=QUESTIONNAIRE_STANDARD_MAX)
+
+
 def band_name(level: float) -> str:
     if level <= 1.5:
         return "New player"

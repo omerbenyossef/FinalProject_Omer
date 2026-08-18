@@ -5,6 +5,7 @@ from .. import models, schemas
 from ..auth import get_current_user
 from ..database import get_db
 from ..rating_utils import (
+    apply_self_placement_check,
     band_name,
     compute_competitive_level,
     compute_questionnaire_level,
@@ -124,7 +125,10 @@ def submit_rating(
         for value in (answers.q4, answers.q5):
             if value not in (0, 1, 2, 3):
                 raise HTTPException(status_code=400, detail="תשובה לא תקינה")
+        if answers.q6 not in (0, 1, 2, 3, 4):
+            raise HTTPException(status_code=400, detail="תשובה לא תקינה")
         level = compute_questionnaire_level(answers.q1, answers.q2, answers.q3, answers.q4, answers.q5)
+        level = apply_self_placement_check(level, answers.q6)
 
     rating = models.PlayerRating(
         user_id=current_user.id, sport_id=league.sport_id, level=level, competitive=competitive
