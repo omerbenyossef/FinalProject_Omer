@@ -124,6 +124,13 @@ export const api = {
   acceptFriendlyInvite: (matchId) => request(`/friendly/matches/${matchId}/accept`, { method: "POST" }),
   declineFriendlyInvite: (matchId) => request(`/friendly/matches/${matchId}/decline`, { method: "POST" }),
   remindFriendly: (matchId) => request(`/friendly/matches/${matchId}/remind`, { method: "POST" }),
+  proposeFriendlySchedule: (matchId, scheduledAt) =>
+    request(`/friendly/matches/${matchId}/schedule`, {
+      method: "POST",
+      body: { scheduled_at: scheduledAt },
+    }),
+  confirmFriendlySchedule: (matchId) =>
+    request(`/friendly/matches/${matchId}/schedule/confirm`, { method: "POST" }),
   reportFriendlyScore: (matchId, sets, requireConfirmation) =>
     request(`/friendly/matches/${matchId}/score`, {
       method: "POST",

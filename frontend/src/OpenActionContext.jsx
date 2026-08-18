@@ -125,7 +125,7 @@ export function OpenActionProvider({ children }) {
       const due = roundDueDateObj(entry.schedule_started_at, m.round_number, 7);
       const daysLeft = due ? Math.ceil((due.getTime() - Date.now()) / 86400000) : null;
       const subParts = [
-        m.round_number ? t("מחזור {n}", { n: m.round_number }) : null,
+        m.round_number ? t("מחזור {n}", { n: m.round_number }) : "FRIENDLY",
         daysLeft !== null ? daysLeftLabel(daysLeft) : null,
       ].filter(Boolean);
       return {
@@ -167,6 +167,8 @@ export function OpenActionProvider({ children }) {
     if (!openAction) return;
     if (openAction.kind === "confirm") {
       setBarSheetOpen(true);
+    } else if (openAction.entry.kind === "friendly") {
+      navigate("/profile");
     } else if (openAction.entry.league_id != null) {
       navigate(`/leagues/${openAction.entry.league_id}`);
     }

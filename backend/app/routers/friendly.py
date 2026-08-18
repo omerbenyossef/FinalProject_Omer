@@ -10,7 +10,7 @@ from ..auth import get_current_user
 from ..database import get_db
 from ..push_utils import notify_user
 from ..rating_utils import update_ratings_for_match
-from .matches import CONFIRMATION_WINDOW, _auto_confirm_overdue
+from .matches import CONFIRMATION_WINDOW, _auto_confirm_overdue, _to_naive_utc
 
 router = APIRouter(prefix="/friendly", tags=["friendly"])
 
@@ -235,6 +235,74 @@ def remind_friendly(
     notify_user(db, opponent_id, title, body, "/profile")
 
 
+@router.post("/matches/{match_id}/schedule", response_model=schemas.MatchOut)
+def propose_friendly_schedule(
+    match_id: int,
+    proposal: schemas.MatchScheduleProposal,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    match = _get_friendly_match(db, match_id)
+    if current_user.id not in (match.player1_id, match.player2_id):
+        raise HTTPException(status_code=403, detail="Not a participant in this match")
+    if match.invite_status != models.FriendlyInviteStatus.accepted:
+        raise HTTPException(status_code=400, detail="ההזמנה עדיין לא אושרה")
+    if match.status != models.MatchStatus.pending:
+        raise HTTPException(status_code=400, detail="אי אפשר לתאם זמן למשחק שכבר דווח")
+
+    scheduled_at = _to_naive_utc(proposal.scheduled_at)
+    if scheduled_at <= datetime.utcnow():
+        raise HTTPException(status_code=400, detail="זמן המשחק חייב להיות בעתיד")
+
+    match.scheduled_at = scheduled_at
+    match.scheduled_by = current_user.id
+    match.schedule_confirmed = False
+    db.commit()
+    db.refresh(match)
+
+    opponent_id = match.player2_id if current_user.id == match.player1_id else match.player1_id
+    notify_user(
+        db,
+        opponent_id,
+        "הצעת זמן למשחק",
+        f"{current_user.name} הציע/ה שעה למשחק הידידותי שלכם, ומחכה לאישור שלך",
+        "/profile",
+    )
+
+    return match
+
+
+@router.post("/matches/{match_id}/schedule/confirm", response_model=schemas.MatchOut)
+def confirm_friendly_schedule(
+    match_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    match = _get_friendly_match(db, match_id)
+    if current_user.id not in (match.player1_id, match.player2_id):
+        raise HTTPException(status_code=403, detail="Not a participant in this match")
+    if match.scheduled_at is None:
+        raise HTTPException(status_code=400, detail="אין הצעת זמן לאשר")
+    if match.schedule_confirmed:
+        raise HTTPException(status_code=400, detail="הזמן כבר מאושר")
+    if match.scheduled_by == current_user.id:
+        raise HTTPException(status_code=400, detail="לא ניתן לאשר הצעת זמן שהצעת בעצמך")
+
+    match.schedule_confirmed = True
+    db.commit()
+    db.refresh(match)
+
+    notify_user(
+        db,
+        match.scheduled_by,
+        "הזמן למשחק אושר",
+        f"{current_user.name} אישר/ה את הזמן שהצעת למשחק הידידותי שלכם",
+        "/profile",
+    )
+
+    return match
+
+
 @router.post("/matches/{match_id}/score", response_model=schemas.MatchOut)
 def report_friendly_score(
     match_id: int,
@@ -248,6 +316,11 @@ def report_friendly_score(
         raise HTTPException(status_code=403, detail="Not a participant in this match")
     if match.invite_status != models.FriendlyInviteStatus.accepted:
         raise HTTPException(status_code=400, detail="ההזמנה עדיין לא אושרה")
+    if match.status == models.MatchStatus.pending:
+        if match.scheduled_at is None or not match.schedule_confirmed:
+            raise HTTPException(status_code=400, detail="צריך לתאם ולאשר שעה למשחק לפני דיווח תוצאה")
+        if datetime.utcnow() < match.scheduled_at:
+            raise HTTPException(status_code=400, detail="אפשר לדווח תוצאה רק אחרי השעה שנקבעה למשחק")
     if not score_in.sets:
         raise HTTPException(status_code=400, detail="צריך לדווח לפחות סט אחד")
     if len(score_in.sets) > MAX_SETS:

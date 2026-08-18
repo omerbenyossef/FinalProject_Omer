@@ -176,14 +176,47 @@ export default function Profile() {
     }
   }
 
+  async function handleProposeFriendlySchedule(matchId, scheduledAt) {
+    setBusy(true);
+    try {
+      await api.proposeFriendlySchedule(matchId, scheduledAt);
+      setSchedulingMatchId(null);
+      loadNextMatches();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleConfirmFriendlySchedule(matchId) {
+    setBusy(true);
+    try {
+      await api.confirmFriendlySchedule(matchId);
+      loadNextMatches();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   if (!user) return null;
 
   const myLeaguesForSport = myLeagues.filter((l) => l.sport.id === selectedSportId);
   const roundLengthById = new Map(myLeagues.map((l) => [l.id, l.round_length_days]));
   const barMatchId = openAction?.match.id ?? null;
+  // A friendly match has no page other than this one to act on it, unlike a league
+  // match (which still shows fully on its LeagueDetail page even while promoted to
+  // the tab bar). So only hide the promoted match here when it's a league match, or
+  // a friendly one whose action (confirm) is handled by the global ConfirmScoreSheet
+  // regardless of page — report/schedule friendly actions must stay reachable here.
   const relevantEntries = nextMatches
     .filter((entry) => entry.sport_id === selectedSportId)
-    .filter((entry) => entry.match.id !== barMatchId);
+    .filter(
+      (entry) =>
+        entry.match.id !== barMatchId || (entry.kind === "friendly" && openAction?.kind !== "confirm")
+    );
   const confirmationEntries = relevantEntries.filter(
     (entry) => entry.match.status === "pending_confirmation" && entry.match.reported_by !== user.id
   );
@@ -327,6 +360,20 @@ export default function Profile() {
             if (entry.kind === "friendly") {
               const isInviter = entry.match.player1.id === user.id;
               const pending = entry.match.invite_status === "pending";
+              const scheduleState = pending ? null : matchScheduleState(entry.match, user.id);
+              const isScheduling = schedulingMatchId === entry.match.id;
+              const scheduledText = entry.match.scheduled_at
+                ? formatDayMonthTime(new Date(entry.match.scheduled_at))
+                : "";
+              let statusLabel = t("הוזמן · ממתין לתשובה");
+              if (!pending) {
+                if (scheduleState === "proposed_by_me") statusLabel = t("ממתין לאישור שעה");
+                else if (scheduleState === "proposed_by_them")
+                  statusLabel = t("הוצע זמן: {datetime}", { datetime: scheduledText });
+                else if (scheduleState === "confirmed_future")
+                  statusLabel = t("מתוזמן ל-{datetime}", { datetime: scheduledText });
+                else statusLabel = t("אושר");
+              }
               return (
                 <div key={entry.match.id}>
                   <div className={`home-match${pending ? " friendly-pending" : ""}`}>
@@ -339,12 +386,40 @@ export default function Profile() {
                       </div>
                       <div className="home-match-tag-row">
                         <span className="match-tag">FRIENDLY</span>
-                        <span className="home-match-league">
-                          {pending ? t("הוזמן · ממתין לתשובה") : t("אושר")}
+                        <span className="home-match-league" dir="ltr">
+                          {statusLabel}
                         </span>
                       </div>
                     </div>
-                    {!pending && !isReporting && (
+                    {!pending && scheduleState === "unscheduled" && (
+                      <button
+                        type="button"
+                        className="my-match-report"
+                        onClick={() => setSchedulingMatchId(entry.match.id)}
+                      >
+                        <span className="my-match-dot" aria-hidden="true" />
+                        {t("קבע שעה")}
+                      </button>
+                    )}
+                    {!pending && scheduleState === "proposed_by_them" && (
+                      <div className="friendly-invite-actions">
+                        <button
+                          type="button"
+                          onClick={() => handleConfirmFriendlySchedule(entry.match.id)}
+                          disabled={busy}
+                        >
+                          {t("אשר שעה")}
+                        </button>
+                        <button
+                          type="button"
+                          className="decline"
+                          onClick={() => setSchedulingMatchId(entry.match.id)}
+                        >
+                          {t("הצע שעה אחרת")}
+                        </button>
+                      </div>
+                    )}
+                    {!pending && scheduleState === "ready" && !isReporting && (
                       <button
                         type="button"
                         className="my-match-report"
@@ -381,7 +456,14 @@ export default function Profile() {
                       </div>
                     )}
                   </div>
-                  {isReporting && (
+                  {isScheduling && (
+                    <ScheduleForm
+                      busy={busy}
+                      onSubmit={(scheduledAt) => handleProposeFriendlySchedule(entry.match.id, scheduledAt)}
+                      onCancel={() => setSchedulingMatchId(null)}
+                    />
+                  )}
+                  {isReporting && scheduleState === "ready" && (
                     <SetScoreForm
                       player1Name={entry.match.player1.name}
                       player2Name={entry.match.player2.name}
