@@ -4,9 +4,19 @@ from sqlalchemy.orm import Session
 from .. import models, schemas
 from ..auth import get_current_user
 from ..database import get_db
-from ..rating_utils import band_name, compute_questionnaire_level, get_rating, round_to_half
+from ..rating_utils import (
+    band_name,
+    compute_competitive_level,
+    compute_questionnaire_level,
+    get_rating,
+    round_to_half,
+)
 
 router = APIRouter(tags=["ratings"])
+
+# q3 option index for "College, national or professional" — picking it swaps
+# the rally/serve questions for the single competitive-venue question.
+COMPETITIVE_Q3_INDEX = 3
 
 
 def _get_league_or_404(db: Session, league_id: int) -> models.League:
@@ -101,12 +111,24 @@ def submit_rating(
     if get_rating(db, current_user.id, league.sport_id):
         raise HTTPException(status_code=400, detail="כבר יש לך דירוג בענף הזה")
 
-    for value in (answers.q1, answers.q2, answers.q3, answers.q4, answers.q5):
+    for value in (answers.q1, answers.q2, answers.q3):
         if value not in (0, 1, 2, 3):
             raise HTTPException(status_code=400, detail="תשובה לא תקינה")
 
-    level = compute_questionnaire_level(answers.q1, answers.q2, answers.q3, answers.q4, answers.q5)
-    rating = models.PlayerRating(user_id=current_user.id, sport_id=league.sport_id, level=level)
+    competitive = answers.q3 == COMPETITIVE_Q3_INDEX
+    if competitive:
+        if answers.venue not in (0, 1, 2, 3):
+            raise HTTPException(status_code=400, detail="תשובה לא תקינה")
+        level = compute_competitive_level(answers.venue)
+    else:
+        for value in (answers.q4, answers.q5):
+            if value not in (0, 1, 2, 3):
+                raise HTTPException(status_code=400, detail="תשובה לא תקינה")
+        level = compute_questionnaire_level(answers.q1, answers.q2, answers.q3, answers.q4, answers.q5)
+
+    rating = models.PlayerRating(
+        user_id=current_user.id, sport_id=league.sport_id, level=level, competitive=competitive
+    )
     db.add(rating)
     db.commit()
     db.refresh(rating)

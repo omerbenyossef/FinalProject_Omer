@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useLanguage } from "./LanguageContext.jsx";
-
-const LEVEL_OPTIONS = [1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5];
+import { NTRP_STEPS } from "./matchUtils.js";
 
 export default function LeagueRulesForm({ league, onUpdate, onCancel }) {
   const { t } = useLanguage();
@@ -57,7 +56,7 @@ export default function LeagueRulesForm({ league, onUpdate, onCancel }) {
             if (v > levelMax) setLevelMax(v);
           }}
         >
-          {LEVEL_OPTIONS.map((v) => (
+          {NTRP_STEPS.map((v) => (
             <option key={v} value={v}>
               {v.toFixed(1)}
             </option>
@@ -67,7 +66,7 @@ export default function LeagueRulesForm({ league, onUpdate, onCancel }) {
       <label>
         {t("רמה מקסימלית (NTRP)")}
         <select value={levelMax} onChange={(e) => setLevelMax(Number(e.target.value))}>
-          {LEVEL_OPTIONS.filter((v) => v >= levelMin).map((v) => (
+          {NTRP_STEPS.filter((v) => v >= levelMin).map((v) => (
             <option key={v} value={v}>
               {v.toFixed(1)}
             </option>

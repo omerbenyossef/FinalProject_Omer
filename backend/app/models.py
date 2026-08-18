@@ -37,7 +37,7 @@ class FriendlyInviteStatus(str, enum.Enum):
 
 
 RATING_MIN = 1.5
-RATING_MAX = 5.5
+RATING_MAX = 7.0
 PROVISIONAL_MATCHES = 3
 
 
@@ -116,6 +116,7 @@ class PlayerRating(Base):
     level = Column(Float, nullable=False)
     provisional = Column(Boolean, default=True, nullable=False)
     matches_played = Column(Integer, default=0, nullable=False)
+    competitive = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User")

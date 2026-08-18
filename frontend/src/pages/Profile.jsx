@@ -10,12 +10,17 @@ import ScheduleForm from "../ScheduleForm.jsx";
 import ConfirmScoreSheet from "../ConfirmScoreSheet.jsx";
 import Avatar from "../Avatar.jsx";
 import { ChevronIcon, UserPlusIcon } from "../Icons.jsx";
-import { formatDayMonthTime, roundDueDateObj, matchScheduleState, daysLeftLabel } from "../matchUtils.js";
+import {
+  formatDayMonthTime,
+  roundDueDateObj,
+  matchScheduleState,
+  daysLeftLabel,
+  NTRP_STEPS,
+} from "../matchUtils.js";
 import { SkeletonMatchRow } from "../Skeleton.jsx";
 import PageHelp from "../PageHelp.jsx";
 
 const MAX_VISIBLE_NEXT_MATCHES = 3;
-const NTRP_STEPS = [1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5];
 
 function formatMySets(sets) {
   if (!sets || sets.length === 0) return "";
@@ -253,7 +258,7 @@ export default function Profile() {
                   ? t("זמני · עוד {n} משחקים", { n: 3 - myRating.rated_matches })
                   : ""}
               </span>
-              <span>5.5</span>
+              <span>7.0</span>
             </div>
           </div>
         ) : (

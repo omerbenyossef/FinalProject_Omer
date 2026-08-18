@@ -51,7 +51,7 @@ def _validate_level_range(level_min: float | None, level_max: float | None) -> N
         if value is None:
             continue
         if value < models.RATING_MIN or value > models.RATING_MAX or (value * 2) % 1 != 0:
-            raise HTTPException(status_code=400, detail="טווח הדירוג חייב להיות בין 1.5 ל-5.5 בקפיצות של חצי")
+            raise HTTPException(status_code=400, detail="טווח הדירוג חייב להיות בין 1.5 ל-7.0 בקפיצות של חצי")
     if level_min is not None and level_max is not None and level_min > level_max:
         raise HTTPException(status_code=400, detail="הרמה המינימלית לא יכולה להיות גבוהה מהמקסימלית")
 

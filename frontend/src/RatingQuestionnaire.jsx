@@ -3,8 +3,14 @@ import { Link } from "react-router-dom";
 import { api } from "./api";
 import { useLanguage } from "./LanguageContext.jsx";
 import { ChevronIcon } from "./Icons.jsx";
+import { NTRP_STEPS } from "./matchUtils.js";
 
-const QUESTIONS = [
+// Picking this q3 option ("College, national or professional") swaps the
+// rally/serve questions for a single competitive-venue question — see
+// playerlevelrating2.md, "Competitive players".
+const COMPETITIVE_Q3_INDEX = 3;
+
+const STANDARD_QUESTIONS = [
   {
     key: "q1",
     title: "כמה זמן את/ה משחק/ת {sport}?",
@@ -18,7 +24,12 @@ const QUESTIONS = [
   {
     key: "q3",
     title: "שיחקת תחרותית?",
-    options: ["אף פעם, רק משחקים חברתיים", "משחקי מועדון או מקומיים", "טורנירים אזוריים או מדורגים", "רמה ארצית"],
+    options: [
+      "אף פעם, רק משחקים חברתיים",
+      "משחקי מועדון או מקומיים",
+      "טורנירים אזוריים או מדורגים",
+      "קולג', נבחרת לאומית או מקצוענות",
+    ],
   },
   {
     key: "q4",
@@ -42,6 +53,23 @@ const QUESTIONS = [
   },
 ];
 
+const VENUE_QUESTION = {
+  key: "venue",
+  title: "איפה שיחקת תחרותית?",
+  options: [
+    { label: "ליגת מועדונים או אזורית", desc: "מדורג/ת מקומית, או בליגה הבכירה של מועדון." },
+    { label: "נבחרת קולג' או נבחרת לאומית", desc: "NCAA, נבחרת לאומית, או תוכנית מקבילה." },
+    { label: "סאטלייט, פיוצ'רס או נקודות ITF", desc: "שיחקתי על נקודות, או הייתי במסלול מקצועני." },
+    { label: "רמת טור (Tour)", desc: "דירוג ATP/WTA, או שהתפרנסתי מהמשחק." },
+  ],
+};
+
+function activeQuestions(answers) {
+  return answers.q3 === COMPETITIVE_Q3_INDEX
+    ? [...STANDARD_QUESTIONS.slice(0, 3), VENUE_QUESTION]
+    : STANDARD_QUESTIONS;
+}
+
 function optionLabel(opt) {
   return typeof opt === "string" ? opt : opt.label;
 }
@@ -58,17 +86,24 @@ export default function RatingQuestionnaire({ league, sportName, existingResult,
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState("");
 
+  const questions = activeQuestions(answers);
+
   async function selectAnswer(qKey, index) {
     const next = { ...answers, [qKey]: index };
     setAnswers(next);
-    if (step < QUESTIONS.length - 1) {
+    const nextQuestions = activeQuestions(next);
+    if (step < nextQuestions.length - 1) {
       setStep(step + 1);
       return;
     }
     setSubmitting(true);
     setError("");
     try {
-      const res = await api.submitRating(league.id, next);
+      const payload =
+        next.q3 === COMPETITIVE_Q3_INDEX
+          ? { q1: next.q1, q2: next.q2, q3: next.q3, venue: next.venue }
+          : { q1: next.q1, q2: next.q2, q3: next.q3, q4: next.q4, q5: next.q5 };
+      const res = await api.submitRating(league.id, payload);
       setResult(res);
       setStep("result");
     } catch (err) {
@@ -107,7 +142,7 @@ export default function RatingQuestionnaire({ league, sportName, existingResult,
         </div>
 
         <div className="rating-bar">
-          {[1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5].map((step_) => (
+          {NTRP_STEPS.map((step_) => (
             <span
               key={step_}
               className={`rating-bar-step${Math.abs(step_ - result.level) < 0.01 ? " current" : ""}${
@@ -185,7 +220,7 @@ export default function RatingQuestionnaire({ league, sportName, existingResult,
             <Link to="/leagues" className="rating-primary-btn rating-primary-link">
               {t("ליגות ברמה {min}–{max}", {
                 min: Math.max(1.5, result.level - 0.5).toFixed(1),
-                max: Math.min(5.5, result.level + 0.5).toFixed(1),
+                max: Math.min(7.0, result.level + 0.5).toFixed(1),
               })}
             </Link>
           </>
@@ -194,7 +229,7 @@ export default function RatingQuestionnaire({ league, sportName, existingResult,
     );
   }
 
-  const question = QUESTIONS[step];
+  const question = questions[step];
   const stepNum = step + 1;
 
   return (
@@ -204,11 +239,11 @@ export default function RatingQuestionnaire({ league, sportName, existingResult,
       </button>
 
       <div className="rating-progress">
-        {QUESTIONS.map((q, i) => (
+        {questions.map((q, i) => (
           <span key={q.key} className={`rating-progress-seg${i < step ? " done" : ""}`} />
         ))}
       </div>
-      <div className="rating-step-label">{t("שלב {n} מתוך 5", { n: stepNum })}</div>
+      <div className="rating-step-label">{t("שלב {n} מתוך {total}", { n: stepNum, total: questions.length })}</div>
       <div className="rating-join-line">
         {t("מצטרפ/ת ל-{league} · {sport}", { league: league.name, sport: t(sportName) })}
       </div>
@@ -252,6 +287,10 @@ function bandSentence(band) {
       return "יש לך שליטה טובה בחילופים ואת/ה מתחיל/ה לכוון את הנקודות.";
     case "Advanced":
       return "המשחק שלך יציב ותחרותי, עם הגשה ומכות שמפעילות לחץ.";
+    case "Competitive":
+      return "יש לך רקע תחרותי רציני, והמשחק שלך משקף את זה.";
+    case "Professional":
+      return "שיחקת ברמה המקצועית ביותר — הליגות כאן בנויות בהתאם.";
     default:
       return "רמת המשחק שלך גבוהה ותחרותית ברמה הגבוהה ביותר.";
   }

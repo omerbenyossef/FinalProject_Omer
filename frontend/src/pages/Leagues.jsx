@@ -7,7 +7,7 @@ import { useLanguage } from "../LanguageContext.jsx";
 import EmptyState from "../EmptyState.jsx";
 import { TrophyIcon, ChevronIcon, PlusIcon } from "../Icons.jsx";
 import { SkeletonLeagueCard } from "../Skeleton.jsx";
-import { leagueRuleLabels } from "../matchUtils.js";
+import { leagueRuleLabels, NTRP_STEPS } from "../matchUtils.js";
 import PageHelp from "../PageHelp.jsx";
 
 const FORMAT_OPTIONS = [
@@ -23,7 +23,6 @@ const OPEN_OPTIONS = [
   [false, "בהזמנה בלבד"],
   [true, "פתוחה לכולם"],
 ];
-const LEVEL_OPTIONS = [1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5];
 
 export default function Leagues() {
   const [leagues, setLeagues] = useState([]);
@@ -307,7 +306,7 @@ export default function Leagues() {
                   if (v > levelMax) setLevelMax(v);
                 }}
               >
-                {LEVEL_OPTIONS.map((v) => (
+                {NTRP_STEPS.map((v) => (
                   <option key={v} value={v}>
                     {v.toFixed(1)}
                   </option>
@@ -319,7 +318,7 @@ export default function Leagues() {
                 value={levelMax}
                 onChange={(e) => setLevelMax(Number(e.target.value))}
               >
-                {LEVEL_OPTIONS.filter((v) => v >= levelMin).map((v) => (
+                {NTRP_STEPS.filter((v) => v >= levelMin).map((v) => (
                   <option key={v} value={v}>
                     {v.toFixed(1)}
                   </option>

@@ -1,3 +1,9 @@
+// Shared NTRP scale, 1.5–7.0 in half-steps. Levels above 5.5 are reachable
+// only through the competitive questionnaire route (see rating_utils.py's
+// QUESTIONNAIRE_STANDARD_MAX) — this array still spans the full range since
+// it drives every level picker and scale bar in the app.
+export const NTRP_STEPS = [1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7];
+
 export function formatSets(sets) {
   if (!sets || sets.length === 0) return "";
   return sets.map((s) => `${s.player1_games}-${s.player2_games}`).join(" ");

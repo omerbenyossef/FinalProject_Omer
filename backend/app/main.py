@@ -144,6 +144,24 @@ def backfill_match_kind() -> None:
 
 backfill_match_kind()
 
+
+def backfill_player_rating_competitive() -> None:
+    """Same gap as backfill_league_levels(): add_missing_columns() can't set
+    a default for rows that already existed, so ratings created before the
+    competitive-route questionnaire path shipped would otherwise sit at NULL.
+    They all came from the standard 5-question path, so False is correct."""
+    db = SessionLocal()
+    try:
+        db.query(models.PlayerRating).filter(models.PlayerRating.competitive.is_(None)).update(
+            {models.PlayerRating.competitive: False}, synchronize_session=False
+        )
+        db.commit()
+    finally:
+        db.close()
+
+
+backfill_player_rating_competitive()
+
 app = FastAPI(title="Amateur Sports League API")
 
 app.add_middleware(
