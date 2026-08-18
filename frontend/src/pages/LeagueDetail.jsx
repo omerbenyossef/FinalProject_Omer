@@ -3,20 +3,25 @@ import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom"
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
+import { useOpenAction } from "../OpenActionContext.jsx";
 import SetScoreForm from "../SetScoreForm.jsx";
 import ScheduleForm from "../ScheduleForm.jsx";
 import Avatar from "../Avatar.jsx";
 import WaitingConfirmationCard from "../WaitingConfirmationCard.jsx";
 import ConfirmScoreSheet from "../ConfirmScoreSheet.jsx";
 import RatingQuestionnaire from "../RatingQuestionnaire.jsx";
-import { UserPlusIcon, CalendarIcon, ChevronIcon, GearIcon, PlusIcon } from "../Icons.jsx";
+import { UserPlusIcon, CalendarIcon, ChevronIcon, SettingsIcon, PlusIcon } from "../Icons.jsx";
 import {
   formatSets,
   roundDueDate,
-  leagueRuleLabels,
+  roundDueDateObj,
   nextSchedulePreview,
   matchScheduleState,
   formatDayMonthTime,
+  activeRoundStatus,
+  daysLeftPhrase,
+  getActionCandidates,
+  buildOpenAction,
 } from "../matchUtils.js";
 import { SkeletonPageHeader, SkeletonHeroStat, SkeletonStandingsTable } from "../Skeleton.jsx";
 import PageHelp from "../PageHelp.jsx";
@@ -43,6 +48,7 @@ export default function LeagueDetail() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const codeFromLink = (searchParams.get("code") || "").trim();
+  const { nextMatches } = useOpenAction();
 
   const [league, setLeague] = useState(null);
   const [members, setMembers] = useState([]);
@@ -304,7 +310,7 @@ export default function LeagueDetail() {
       <div>
         <SkeletonPageHeader />
         <div className="section-tabs">
-          <span className="section-tab active">{t("טבלת דירוג")}</span>
+          <span className="section-tab active">{t("טבלה")}</span>
         </div>
         <SkeletonHeroStat />
         <div style={{ marginTop: 20 }}>
@@ -360,10 +366,8 @@ export default function LeagueDetail() {
   for (let i = myCompletedRounds.length - 1; i >= 0 && myCompletedRounds[i].won === myLastWon; i--) {
     myStreak++;
   }
-  const myStreakLabel = myStreak ? `${myStreak}${myLastWon ? "W" : "L"}` : "—";
   const myLeaderPoints = standings.length ? standings[0].points : 0;
   const myWinsBehind = Math.ceil(Math.max(myLeaderPoints - (myStanding?.points ?? 0), 0) / 3);
-  const ruleLabels = leagueRuleLabels(league, t);
   const hasSchedule = allMatches.length > 0;
   const roundsCount = new Set(allMatches.map((m) => m.round_number).filter(Boolean)).size;
   const nextRound = roundsCount + 1;
@@ -384,16 +388,75 @@ export default function LeagueDetail() {
   const nextRoundNav = existingRoundNumbers.filter((r) => r > shownRound).sort((a, b) => a - b)[0] ?? null;
   const legacyMatches = allMatches.filter((m) => !m.round_number);
 
+  const roundLengthDays = league.round_length_days || 7;
+  const { round: headCurrentRound, daysLeft: headDaysLeft } = activeRoundStatus(
+    league.schedule_started_at,
+    roundLengthDays
+  );
+  const rankDelta = myStanding?.rank_delta ?? 0;
+  const leaderName = standings[0]?.user.name ?? "";
+  // A points tie at the bottom of the table still means "behind" even though
+  // the win-count gap rounds to 0 — only rank 1 counts as actually leading.
+  const winsBehindDisplay = Math.max(myWinsBehind, 1);
+  const footLine =
+    myRank === 1
+      ? t("אתה מוביל · {n} מחזורים נותרו", { n: roundsToCreate })
+      : winsBehindDisplay === 1
+      ? t("ניצחון אחד מאחורי {name} · {n} מחזורים נותרו", { name: leaderName, n: roundsToCreate })
+      : t("{count} ניצחונות מאחורי {name} · {n} מחזורים נותרו", {
+          count: winsBehindDisplay,
+          name: leaderName,
+          n: roundsToCreate,
+        });
+
+  const leagueEntries = nextMatches.filter((e) => e.league_id === Number(leagueId));
+  const leagueOpenAction = buildOpenAction(getActionCandidates(leagueEntries, user?.id), user?.id, t);
+  let leagueActionOpponent = null;
+  let leagueActionSub = "";
+  let leagueActionBtnLabel = "";
+  if (leagueOpenAction) {
+    const actionMatch = leagueOpenAction.match;
+    leagueActionOpponent = actionMatch.player1.id === user?.id ? actionMatch.player2 : actionMatch.player1;
+    if (leagueOpenAction.kind === "confirm") {
+      leagueActionSub = t("יש לך תוצאה לאישור");
+      leagueActionBtnLabel = t("לאישור");
+    } else if (leagueOpenAction.kind === "schedule") {
+      leagueActionSub = t("לאישור השעה");
+      leagueActionBtnLabel = t("אשר שעה");
+    } else {
+      const dueForAction = roundDueDateObj(
+        leagueOpenAction.entry.schedule_started_at,
+        actionMatch.round_number,
+        roundLengthDays
+      );
+      const daysLeftForAction = Math.max(
+        dueForAction ? Math.ceil((dueForAction.getTime() - Date.now()) / 86400000) : 0,
+        0
+      );
+      leagueActionSub =
+        daysLeftForAction === 1 ? t("נותר יום אחד לדיווח") : t("נותרו {n} ימים לדיווח", { n: daysLeftForAction });
+      leagueActionBtnLabel = t("דווח");
+    }
+  }
+
+  function handleOpenLeagueAction() {
+    if (!leagueOpenAction) return;
+    if (leagueOpenAction.kind === "confirm") {
+      setConfirmSheetMatch(leagueOpenAction.match);
+    } else {
+      setActiveTab("matches");
+      setSelectedRound(leagueOpenAction.match.round_number ?? null);
+    }
+  }
+
   return (
     <div>
-      <header className="page-head">
-        <Link to="/leagues" className="back-link">
-          <ChevronIcon aria-hidden="true" />
-          {t("חזרה לליגות")}
-        </Link>
-
-        <div className="page-title-row">
-          <h1>{league.name}</h1>
+      <header className="ld-head">
+        <div className="ld-head-nav">
+          <Link to="/leagues" className="back-link">
+            <ChevronIcon aria-hidden="true" />
+            {t("ליגות")}
+          </Link>
           <div className="page-title-actions">
             <PageHelp
               pageKey="leagueDetail"
@@ -401,33 +464,59 @@ export default function LeagueDetail() {
               text="כאן תראו את טבלת הדירוג, את המשחקים שלכם ושל שאר חברי הליגה, ואת הסטטיסטיקה האישית שלכם בליגה הזו."
             />
             {isCreator && (
-              <Link to={`/leagues/${leagueId}/manage`} className="manage-league-btn" aria-label={t("ניהול הליגה")}>
-                <GearIcon aria-hidden="true" />
+              <Link to={`/leagues/${leagueId}/manage`} className="ld-head-settings" aria-label={t("הגדרות הליגה")}>
+                <SettingsIcon aria-hidden="true" />
               </Link>
             )}
           </div>
         </div>
-        <div className="league-detail-meta-row">
-          <span className="league-detail-meta-text">
-            {[
-              t(league.sport?.name),
-              `${members.length} ${t("שחקנים")}`,
-              ruleLabels.bestOfLabel,
-              ruleLabels.frequencyLabel,
-            ]
-              .filter(Boolean)
-              .join(" · ")}
+
+        <h1 className="ld-title">
+          <span dir="auto" style={{ unicodeBidi: "isolate" }}>
+            {league.name}
           </span>
-          {isMember && !isCreator && (
+        </h1>
+
+        <div className="ld-meta" dir="ltr">
+          {[
+            headCurrentRound !== null ? t("מחזור {n}", { n: headCurrentRound }) : null,
+            headCurrentRound !== null ? daysLeftPhrase(headDaysLeft, t) : null,
+            t("{n} שחקנים", { n: members.length }),
+          ]
+            .filter(Boolean)
+            .map((part, i) => (
+              <span key={i} style={{ display: "contents" }}>
+                {i > 0 && <span className="sep">·</span>}
+                <span>{part}</span>
+              </span>
+            ))}
+        </div>
+
+        <nav className="ld-tabs">
+          {isMember && (
             <button
               type="button"
-              className="league-leave-chip"
-              onClick={() => setShowLeaveConfirm(true)}
+              className={activeTab === "stats" ? "is-on" : ""}
+              onClick={() => setActiveTab("stats")}
             >
-              {t("יציאה מהליגה")}
+              {t("הסטטיסטיקה שלי")}
             </button>
           )}
-        </div>
+          <button
+            type="button"
+            className={activeTab === "standings" ? "is-on" : ""}
+            onClick={() => setActiveTab("standings")}
+          >
+            {t("טבלה")}
+          </button>
+          <button
+            type="button"
+            className={activeTab === "matches" ? "is-on" : ""}
+            onClick={() => setActiveTab("matches")}
+          >
+            {t("משחקים")}
+          </button>
+        </nav>
       </header>
 
       <div className="league-detail-actions">
@@ -445,51 +534,90 @@ export default function LeagueDetail() {
 
       {error && <p className="error">{t(error)}</p>}
 
-      <div className="section-tabs">
-        {isMember && (
-          <button
-            type="button"
-            className={`section-tab${activeTab === "stats" ? " active" : ""}`}
-            onClick={() => setActiveTab("stats")}
-          >
-            {t("הסטטיסטיקה שלי")}
-          </button>
-        )}
-        <button
-          type="button"
-          className={`section-tab${activeTab === "standings" ? " active" : ""}`}
-          onClick={() => setActiveTab("standings")}
-        >
-          {t("טבלת דירוג")}
-        </button>
-        <button
-          type="button"
-          className={`section-tab${activeTab === "matches" ? " active" : ""}`}
-          onClick={() => setActiveTab("matches")}
-        >
-          {t("משחקים")}
-        </button>
-      </div>
-
       <div>
         {activeTab === "stats" && isMember && (
           <div className="my-stats">
-            <div className="my-stats-hero">
-              <div className="my-stats-rate" dir="ltr">
-                <span className="my-stats-rate-num">{myWinRate !== null ? myWinRate : "–"}</span>
-                <span className="my-stats-rate-pct">%</span>
-              </div>
-              <div className="my-stats-hero-text">
-                <div className="my-stats-hero-label">{t("אחוז ניצחונות בליגה הזו")}</div>
-                <div className="my-stats-hero-sub" dir="ltr">
-                  {myStanding?.wins ?? 0}W-{myStanding?.losses ?? 0}L ·{" "}
-                  {myRank !== null ? t("מקום {n}", { n: myRank }) : "–"} · {myStanding?.points ?? 0}{" "}
-                  {t("נק׳")}
+            <div className="ms-slab">
+              <div className="ms-cell">
+                <div className="ms-label">{t("מקום")}</div>
+                <div className="ms-big" dir="ltr">
+                  {myRank !== null ? (
+                    <>
+                      <span className="n">{myRank}</span>
+                      <span className="unit">/{members.length}</span>
+                      {rankDelta !== 0 && (
+                        <span className="delta">
+                          {rankDelta > 0 ? "▲" : "▼"}
+                          {Math.abs(rankDelta)}
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    <span className="n">–</span>
+                  )}
                 </div>
+              </div>
+              <div className="ms-cell">
+                <div className="ms-label">{t("אחוז ניצחונות")}</div>
+                <div className="ms-big" dir="ltr">
+                  {myWinRate !== null ? (
+                    <>
+                      <span className="n">{myWinRate}</span>
+                      <span className="unit">%</span>
+                    </>
+                  ) : (
+                    <span className="n">–</span>
+                  )}
+                </div>
+              </div>
+              <div className="ms-cell">
+                <div className="ms-label">{t("מאזן")}</div>
+                <div className="ms-mid" dir="ltr">
+                  <span className="n">{myStanding?.wins ?? 0}</span>
+                  <span className="unit">W</span>
+                  <span className="n dim">{myStanding?.losses ?? 0}</span>
+                  <span className="unit dim">L</span>
+                </div>
+              </div>
+              <div className="ms-cell">
+                <div className="ms-label">{t("רצף")}</div>
+                <div className="ms-mid" dir="ltr">
+                  {myStreak > 0 ? (
+                    <>
+                      <span className="n">{myStreak}</span>
+                      <span className="unit">{myLastWon ? "W" : "L"}</span>
+                    </>
+                  ) : (
+                    <span className="n">–</span>
+                  )}
+                </div>
+              </div>
+              <div className="ms-slab-foot" dir="ltr">
+                {footLine}
               </div>
             </div>
 
-            <div className="my-stats-heading">{t("מחזור אחרי מחזור")}</div>
+            {leagueOpenAction && (
+              <div className="my-match-row" style={{ marginTop: 20 }}>
+                <div className="my-match-body">
+                  <div className="my-match-name">
+                    {leagueOpenAction.match.round_number != null && (
+                      <>{t("מחזור {n}", { n: leagueOpenAction.match.round_number })} · </>
+                    )}
+                    <span dir="auto" style={{ unicodeBidi: "isolate" }}>
+                      {leagueActionOpponent?.name}
+                    </span>
+                  </div>
+                  <div className="my-match-h2h">{leagueActionSub}</div>
+                </div>
+                <button type="button" className="my-match-report" onClick={handleOpenLeagueAction}>
+                  <span className="my-match-dot" aria-hidden="true" />
+                  {leagueActionBtnLabel}
+                </button>
+              </div>
+            )}
+
+            <div className="ms-label ms-rounds-label">{t("מחזור אחרי מחזור")}</div>
             {myRoundRows.length > 0 ? (
               <div className="my-stats-rounds">
                 {myRoundRows.map((r) => (
@@ -519,31 +647,15 @@ export default function LeagueDetail() {
               <p className="muted">{t("עוד לא שובצו לך משחקים בליגה הזו")}</p>
             )}
 
-            {myStanding && (
-              <div className="my-stats-figures">
-                <div>
-                  <div className="my-stats-figure-label">{t("רצף נוכחי")}</div>
-                  <div className="my-stats-figure" dir="ltr">
-                    {myStreakLabel}
-                  </div>
-                </div>
-                <div>
-                  <div className="my-stats-figure-label">{t("פיגור מהמוביל")}</div>
-                  <div className="my-stats-figure" dir="ltr">
-                    {myWinsBehind === 0 ? (
-                      "—"
-                    ) : (
-                      <>
-                        {myWinsBehind}
-                        <span className="unit">
-                          {" "}
-                          {myWinsBehind === 1 ? t("ניצחון") : t("ניצחונות")}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
+            {isMember && !isCreator && (
+              <button
+                type="button"
+                className="league-leave-chip"
+                style={{ marginTop: 24 }}
+                onClick={() => setShowLeaveConfirm(true)}
+              >
+                {t("יציאה מהליגה")}
+              </button>
             )}
           </div>
         )}

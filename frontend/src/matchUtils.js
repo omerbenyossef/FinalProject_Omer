@@ -26,6 +26,24 @@ export function formatDayMonthTime(date) {
   return `${formatDayMonth(date)} · ${h}:${m}`;
 }
 
+// Translatable equivalent of daysLeftLabel, for spots in the UI that render
+// in the app's own language rather than always-English numeric labels.
+export function daysLeftPhrase(daysLeft, t) {
+  return daysLeft === 1 ? t("יום אחד נותר") : t("{n} ימים נותרו", { n: daysLeft });
+}
+
+// The active round and how many days are left in it, or both null if the
+// league has no schedule yet or its current round's due date has passed
+// (the caller falls back to a different meta detail in that case).
+export function activeRoundStatus(scheduleStartedAt, roundLengthDays = 7) {
+  if (!scheduleStartedAt) return { round: null, daysLeft: null };
+  const round = currentRoundNumber(scheduleStartedAt, roundLengthDays);
+  const due = roundDueDateObj(scheduleStartedAt, round, roundLengthDays);
+  const daysLeft = due ? Math.ceil((due.getTime() - Date.now()) / 86400000) : null;
+  if (daysLeft === null || daysLeft < 0) return { round: null, daysLeft: null };
+  return { round, daysLeft };
+}
+
 export function daysLeftLabel(daysLeft) {
   if (daysLeft >= 0) return daysLeft === 1 ? "1 day left" : `${daysLeft} days left`;
   const over = Math.abs(daysLeft);

@@ -14,8 +14,8 @@ import {
   getActionCandidates,
   buildOpenAction,
   pickStandingsExcerpt,
-  currentRoundNumber,
-  roundDueDateObj,
+  activeRoundStatus,
+  daysLeftPhrase,
 } from "../matchUtils.js";
 import PageHelp from "../PageHelp.jsx";
 
@@ -23,11 +23,10 @@ const CARD_WIDTH = 305;
 const CARD_GAP = 12;
 
 function LeagueCarouselCard({ league, standingsRows, openAction, userId, t, navigate, single }) {
-  const roundLengthDays = league.round_length_days || 7;
-  const currentRound = currentRoundNumber(league.schedule_started_at, roundLengthDays);
-  const due = roundDueDateObj(league.schedule_started_at, currentRound, roundLengthDays);
-  const daysLeft = due ? Math.ceil((due.getTime() - Date.now()) / 86400000) : null;
-  const hasActiveRound = Boolean(league.schedule_started_at && currentRound && daysLeft !== null && daysLeft >= 0);
+  const { round: currentRound, daysLeft } = activeRoundStatus(
+    league.schedule_started_at,
+    league.round_length_days || 7
+  );
 
   const rankedRows = Array.isArray(standingsRows) ? standingsRows.map((r, i) => ({ ...r, rank: i + 1 })) : null;
   const meRow = rankedRows?.find((r) => r.user.id === userId);
@@ -42,10 +41,8 @@ function LeagueCarouselCard({ league, standingsRows, openAction, userId, t, navi
             <span dir="auto">{league.name}</span>
           </Link>
           <div className="lg-card-meta" dir="ltr">
-            {hasActiveRound
-              ? `${t("מחזור {n}", { n: currentRound })} · ${
-                  daysLeft === 1 ? t("יום אחד נותר") : t("{n} ימים נותרו", { n: daysLeft })
-                }`
+            {currentRound !== null
+              ? `${t("מחזור {n}", { n: currentRound })} · ${daysLeftPhrase(daysLeft, t)}`
               : `${league.my_members_total} ${t("שחקנים")}`}
           </div>
         </div>
