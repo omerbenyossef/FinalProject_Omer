@@ -8,31 +8,36 @@ function seenKey(sportId) {
   return `ratingPromptSeen:${sportId}`;
 }
 
-// Admin-only: the product owner creates every league himself, and league
-// creation adds him as a member without the rating gate join_league enforces
-// for everyone else — so he never naturally meets the questionnaire. This
-// shows it once per sport, using one of his own leagues in that sport as
-// context (he's already a member of it, so the result screen's "Join"
-// button is a harmless no-op there).
+// Prompts every user, once per sport, to rate themselves the moment they
+// enter the app with a sport selected — RatingQuestionnaire needs a league
+// as context, so we anchor to one of the user's own leagues in that sport
+// if they have one (join is then a harmless no-op), otherwise to any open
+// (no-invite-code) league in that sport so the result screen's "Join"
+// button actually works.
 export default function SelfRatingPrompt() {
   const { user } = useAuth();
   const { selectedSportId, sports } = useSport();
   const [league, setLeague] = useState(null);
 
   useEffect(() => {
-    if (!user?.is_admin || !selectedSportId) return;
+    if (!user || !selectedSportId) return;
     if (localStorage.getItem(seenKey(selectedSportId))) return;
 
     let cancelled = false;
-    Promise.all([api.myRatings(), api.myLeagues()]).then(([ratings, leagues]) => {
-      if (cancelled) return;
-      const hasRating = ratings.some((r) => r.sport_id === selectedSportId);
-      const leagueForSport = leagues.find((l) => l.sport.id === selectedSportId);
-      if (!hasRating && leagueForSport) {
-        setLeague(leagueForSport);
-        localStorage.setItem(seenKey(selectedSportId), "1");
+    Promise.all([api.myRatings(), api.myLeagues(), api.listLeagues()]).then(
+      ([ratings, myLeagues, allLeagues]) => {
+        if (cancelled) return;
+        const hasRating = ratings.some((r) => r.sport_id === selectedSportId);
+        if (hasRating) return;
+        const myLeagueForSport = myLeagues.find((l) => l.sport.id === selectedSportId);
+        const openLeagueForSport = allLeagues.find((l) => l.sport.id === selectedSportId && l.is_open);
+        const anchor = myLeagueForSport || openLeagueForSport;
+        if (anchor) {
+          setLeague(anchor);
+          localStorage.setItem(seenKey(selectedSportId), "1");
+        }
       }
-    });
+    );
     return () => {
       cancelled = true;
     };
