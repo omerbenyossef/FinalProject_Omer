@@ -4,6 +4,11 @@
 // it drives every level picker and scale bar in the app.
 export const NTRP_STEPS = [1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7];
 
+const HEBREW_RANGE = new RegExp("[\\u0590-\\u05FF]");
+export function hasHebrewChars(str) {
+  return HEBREW_RANGE.test(str || "");
+}
+
 export function formatSets(sets) {
   if (!sets || sets.length === 0) return "";
   return sets.map((s) => `${s.player1_games}-${s.player2_games}`).join(" ");

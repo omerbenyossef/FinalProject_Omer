@@ -564,6 +564,14 @@ const PAIRS = [
   ["WIN %", "WIN %"],
   ["עדיין אין דירוג שחקנים בענף הזה", "No player rankings for this sport yet"],
   ["עדיין אין שחקן עם מספיק משחקים למיון לפי מאזן", "No player has enough matches for the record ranking yet"],
+
+  // To play this week carousel (104c)
+  ["אשר תוצאה", "Confirm result"],
+  ["אשר את השעה", "Confirm time"],
+  ["תזכר", "Remind"],
+  ["טרם נקבעה", "not set"],
+  ["הציעו {time}", "they suggested {time}"],
+  ["מפגש ראשון", "first meeting"],
 ];
 
 const heToEn = {};
