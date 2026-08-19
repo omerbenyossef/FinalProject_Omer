@@ -12,6 +12,7 @@ import LeagueManage from "./pages/LeagueManage.jsx";
 import RoundDetail from "./pages/RoundDetail.jsx";
 import LeagueRounds from "./pages/LeagueRounds.jsx";
 import Profile from "./pages/Profile.jsx";
+import Rankings from "./pages/Rankings.jsx";
 import Settings from "./pages/Settings.jsx";
 import HeadToHead from "./pages/HeadToHead.jsx";
 import { SkeletonPageHeader, SkeletonHeroStat } from "./Skeleton.jsx";
@@ -89,6 +90,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <Profile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ranks"
+          element={
+            <ProtectedRoute>
+              <Rankings />
             </ProtectedRoute>
           }
         />

@@ -20,6 +20,17 @@ export function TrophyIcon(props) {
   );
 }
 
+export function RanksIcon(props) {
+  return (
+    <svg {...common} {...props}>
+      <line x1="4" y1="19" x2="4" y2="11" />
+      <line x1="10" y1="19" x2="10" y2="5" />
+      <line x1="16" y1="19" x2="16" y2="8" />
+      <line x1="21" y1="19" x2="3" y2="19" />
+    </svg>
+  );
+}
+
 export function PersonIcon(props) {
   return (
     <svg {...common} {...props}>
@@ -172,6 +183,22 @@ export function ChevronIcon({ className = "", ...rest }) {
   return (
     <svg {...common} className={`chevron-icon ${className}`.trim()} {...rest}>
       <polyline points="15 6 9 12 15 18" />
+    </svg>
+  );
+}
+
+export function ChevronDownIcon(props) {
+  return (
+    <svg {...common} {...props}>
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
+  );
+}
+
+export function CheckIcon(props) {
+  return (
+    <svg {...common} {...props}>
+      <polyline points="5 12.5 10 17 19 7" />
     </svg>
   );
 }

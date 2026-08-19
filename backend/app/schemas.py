@@ -327,3 +327,31 @@ class RatingResultOut(BaseModel):
 class RatingCheckOut(BaseModel):
     has_rating: bool
     result: Optional[RatingResultOut] = None
+
+
+class RankingsPlayerOut(BaseModel):
+    id: int
+    rank: int
+    display_name: str
+    ntrp: float
+    wins: int
+    losses: int
+    win_pct: int
+
+
+class RankingsMeOut(BaseModel):
+    rank: Optional[int] = None
+    display_name: str
+    ntrp: Optional[float] = None
+    wins: int
+    losses: int
+    win_pct: int = 0
+    matches_played: int
+
+
+class RankingsOut(BaseModel):
+    total: int
+    me: RankingsMeOut
+    players: list[RankingsPlayerOut]
+    next_cursor: Optional[str] = None
+    min_matches: int

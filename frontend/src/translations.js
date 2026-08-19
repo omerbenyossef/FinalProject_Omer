@@ -544,6 +544,26 @@ const PAIRS = [
   ["דווח מול {name}", "Report vs {name}"],
   ["{name} הציע {date}", "{name} proposed {date}"],
   ["לאישור השעה", "Confirm the time"],
+
+  // Rankings screen (99b)
+  ["YOUR PLACE", "YOUR PLACE"],
+  ["מתוך {n}", "of {n}"],
+  ["PLAYERS", "PLAYERS"],
+  ["SORTED BY", "SORTED BY"],
+  ["RECORD", "RECORD"],
+  ["WINS", "WINS"],
+  ["מיון הטבלה", "Sort table"],
+  ["דירוג NTRP", "NTRP rating"],
+  ["מאזן נצחונות", "Win record"],
+  ["עוד {n} משחקים ותיכנס לדירוג לפי מאזן", "{n} more matches until you enter the record ranking"],
+  ["לא הצלחנו לטעון את הדירוג", "We couldn't load the rankings"],
+  ["נסה שוב", "Try again"],
+  ["PLAYER", "PLAYER"],
+  ["NTRP", "NTRP"],
+  ["W %", "W %"],
+  ["WIN %", "WIN %"],
+  ["עדיין אין דירוג שחקנים בענף הזה", "No player rankings for this sport yet"],
+  ["עדיין אין שחקן עם מספיק משחקים למיון לפי מאזן", "No player has enough matches for the record ranking yet"],
 ];
 
 const heToEn = {};

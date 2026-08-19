@@ -3,7 +3,7 @@ import { useAuth } from "./AuthContext.jsx";
 import { useSport } from "./SportContext.jsx";
 import { useLanguage } from "./LanguageContext.jsx";
 import { useOpenAction } from "./OpenActionContext.jsx";
-import { ChevronIcon, PersonIcon, SettingsIcon, TrophyIcon } from "./Icons.jsx";
+import { ChevronIcon, PersonIcon, RanksIcon, SettingsIcon, TrophyIcon } from "./Icons.jsx";
 import InstallPrompt from "./InstallPrompt.jsx";
 import Onboarding from "./Onboarding.jsx";
 import SelfRatingPrompt from "./SelfRatingPrompt.jsx";
@@ -101,6 +101,14 @@ export default function Layout({ children }) {
                 <TrophyIcon className="tab-icon" aria-hidden="true" />
                 {!openAction && <span className="tab-label">{t("ליגות")}</span>}
                 {hasOtherLeagueActivity && <span className="tab-dot" aria-hidden="true" />}
+              </NavLink>
+              <NavLink
+                to="/ranks"
+                className={({ isActive }) => `tab${isActive ? " active" : ""}`}
+                aria-label={t("דירוג")}
+              >
+                <RanksIcon className="tab-icon" aria-hidden="true" />
+                {!openAction && <span className="tab-label">{t("דירוג")}</span>}
               </NavLink>
             </div>
 

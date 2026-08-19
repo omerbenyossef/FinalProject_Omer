@@ -87,6 +87,12 @@ export const api = {
   updateLeagueRules: (id, data) => request(`/leagues/${id}/rules`, { method: "PATCH", body: data }),
 
   headToHead: (opponentId) => request(`/players/${opponentId}/head-to-head`),
+  rankings: (sportId, sort, cursor, limit = 50) =>
+    request(
+      `/players/rankings?sport_id=${sportId}&sort=${sort}&limit=${limit}${
+        cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""
+      }`
+    ),
   listMembers: (id) => request(`/leagues/${id}/members`, { auth: false }),
   getStandings: (id) => request(`/leagues/${id}/standings`, { auth: false }),
 
