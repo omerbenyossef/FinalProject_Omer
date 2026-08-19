@@ -7,7 +7,6 @@ import { useOpenAction } from "../OpenActionContext.jsx";
 import SetScoreForm from "../SetScoreForm.jsx";
 import ScheduleForm from "../ScheduleForm.jsx";
 import Avatar from "../Avatar.jsx";
-import WaitingConfirmationCard from "../WaitingConfirmationCard.jsx";
 import ConfirmScoreSheet from "../ConfirmScoreSheet.jsx";
 import RatingQuestionnaire from "../RatingQuestionnaire.jsx";
 import { UserPlusIcon, CalendarIcon, ChevronIcon, SettingsIcon, PlusIcon } from "../Icons.jsx";
@@ -48,7 +47,7 @@ export default function LeagueDetail() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const codeFromLink = (searchParams.get("code") || "").trim();
-  const { nextMatches } = useOpenAction();
+  const { nextMatches, reload: reloadOpenAction } = useOpenAction();
 
   const [league, setLeague] = useState(null);
   const [members, setMembers] = useState([]);
@@ -63,7 +62,6 @@ export default function LeagueDetail() {
   const [activeTab, setActiveTab] = useState("standings");
   const [confirmSheetMatch, setConfirmSheetMatch] = useState(null);
   const [showAddRoundConfirm, setShowAddRoundConfirm] = useState(false);
-  const [myH2h, setMyH2h] = useState(null);
   const [reportingMyMatch, setReportingMyMatch] = useState(false);
   const [schedulingMyMatch, setSchedulingMyMatch] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
@@ -191,6 +189,7 @@ export default function LeagueDetail() {
     try {
       await api.reportScore(leagueId, matchId, sets);
       await loadAll();
+      reloadOpenAction();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -205,6 +204,7 @@ export default function LeagueDetail() {
       await api.confirmScore(leagueId, matchId);
       setConfirmSheetMatch(null);
       await loadAll();
+      reloadOpenAction();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -219,6 +219,7 @@ export default function LeagueDetail() {
       await api.reportScore(leagueId, matchId, sets);
       setConfirmSheetMatch(null);
       await loadAll();
+      reloadOpenAction();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -233,6 +234,7 @@ export default function LeagueDetail() {
       await api.proposeSchedule(leagueId, matchId, scheduledAt);
       setSchedulingMyMatch(false);
       await loadAll();
+      reloadOpenAction();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -246,6 +248,7 @@ export default function LeagueDetail() {
     try {
       await api.confirmSchedule(leagueId, matchId);
       await loadAll();
+      reloadOpenAction();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -259,6 +262,7 @@ export default function LeagueDetail() {
     try {
       await api.cancelMatch(leagueId, matchId);
       await loadAll();
+      reloadOpenAction();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -283,27 +287,6 @@ export default function LeagueDetail() {
   const existingRoundNumbers = groupedRounds.map((g) => g.round).filter((r) => r !== "none");
   const latestRound = existingRoundNumbers.length > 0 ? Math.max(...existingRoundNumbers) : null;
   const shownRound = selectedRound ?? latestRound;
-  const myMatchInShownRound = matches.find((m) => m.round_number === shownRound);
-  const myMatchScheduleState = myMatchInShownRound
-    ? matchScheduleState(myMatchInShownRound, user?.id)
-    : null;
-  const shownOpponent = myMatchInShownRound
-    ? myMatchInShownRound.player1.id === user?.id
-      ? myMatchInShownRound.player2
-      : myMatchInShownRound.player1
-    : null;
-
-  useEffect(() => {
-    if (!shownOpponent) {
-      setMyH2h(null);
-      return;
-    }
-    api
-      .headToHead(shownOpponent.id)
-      .then(setMyH2h)
-      .catch(() => setMyH2h(null));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shownOpponent?.id]);
 
   if (!league) {
     return (
@@ -321,19 +304,6 @@ export default function LeagueDetail() {
   }
 
   const isCreator = league.created_by === user?.id;
-  const myPendingConfirmationMatch =
-    myMatchInShownRound?.status === "pending_confirmation" ? myMatchInShownRound : null;
-  const iAmReporter = myPendingConfirmationMatch?.reported_by === user?.id;
-  const myShownMatchCompleted = myMatchInShownRound?.status === "completed" ? myMatchInShownRound : null;
-  const myShownIAmPlayer1 = myShownMatchCompleted && myShownMatchCompleted.player1.id === user?.id;
-  const myShownP1Won =
-    myShownMatchCompleted && myShownMatchCompleted.player1_score > myShownMatchCompleted.player2_score;
-  const myShownIWon = myShownMatchCompleted && (myShownIAmPlayer1 ? myShownP1Won : !myShownP1Won);
-  const myShownSets = myShownMatchCompleted
-    ? myShownIAmPlayer1
-      ? myShownMatchCompleted.sets
-      : myShownMatchCompleted.sets?.map((s) => ({ player1_games: s.player2_games, player2_games: s.player1_games }))
-    : null;
   const myStanding = standings.find((row) => row.user.id === user?.id);
   const myWinRate =
     myStanding && myStanding.played > 0 ? Math.round((myStanding.wins / myStanding.played) * 100) : null;
@@ -380,7 +350,6 @@ export default function LeagueDetail() {
   );
   const isLatestRound = shownRound === latestRound;
   const shownRoundMatches = groupedRounds.find((g) => g.round === shownRound)?.matches || [];
-  const shownRoundPlayed = shownRoundMatches.filter((m) => m.status !== "pending");
   const shownRoundCloses = shownRound
     ? roundDueDate(league.schedule_started_at, shownRound, league.round_length_days)
     : "";
@@ -784,43 +753,21 @@ export default function LeagueDetail() {
 
             {hasSchedule && shownRound !== null && (
               <>
-                <div className="round-nav">
-                  <div className="round-nav-text">
-                    <div className="round-nav-label">{t("מחזור")}</div>
-                    <div className="round-nav-sub" dir="ltr">
-                      <span className="num">
-                        {t("{played}/{total} שוחקו", {
-                          played: shownRoundPlayed.length,
-                          total: shownRoundMatches.length,
-                        })}
-                      </span>
-                      {shownRoundCloses && (
-                        <span className="num">
-                          {" "}
-                          ·{" "}
-                          {isLatestRound
-                            ? t("נסגר ב-{date}", { date: shownRoundCloses })
-                            : t("נסגר ב-{date} (עבר)", { date: shownRoundCloses })}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="round-nav-controls">
+                <div className="round-line">
+                  <div className="round-line-nav">
                     <button
                       type="button"
-                      className="round-nav-arrow"
+                      className="round-arrow"
                       disabled={prevRound === null}
                       onClick={() => setSelectedRound(prevRound)}
                       aria-label={t("מחזור קודם")}
                     >
                       <ChevronIcon aria-hidden="true" />
                     </button>
-                    <span className={`round-nav-number${isLatestRound ? " active" : ""}`} dir="ltr">
-                      {shownRound}
-                    </span>
+                    <span className="round-line-num">{t("מחזור {n}", { n: shownRound })}</span>
                     <button
                       type="button"
-                      className="round-nav-arrow next"
+                      className="round-arrow next"
                       disabled={nextRoundNav === null}
                       onClick={() => setSelectedRound(nextRoundNav)}
                       aria-label={t("מחזור הבא")}
@@ -828,162 +775,61 @@ export default function LeagueDetail() {
                       <ChevronIcon aria-hidden="true" />
                     </button>
                   </div>
-                </div>
-                <div className="round-nav-bar">
-                  <div
-                    className={`round-nav-bar-fill${isLatestRound ? "" : " past"}`}
-                    style={{
-                      width: shownRoundMatches.length
-                        ? `${Math.max((shownRoundPlayed.length / shownRoundMatches.length) * 100, 2)}%`
-                        : "0%",
-                    }}
-                  />
+                  {shownRoundCloses && (
+                    <span className="round-line-closes">
+                      {isLatestRound
+                        ? t("נסגר ב-{date}", { date: shownRoundCloses })
+                        : t("נסגר ב-{date} (עבר)", { date: shownRoundCloses })}
+                    </span>
+                  )}
                 </div>
 
-                {isMember && myMatchInShownRound && myMatchInShownRound.status === "pending" && (
-                  <div className="my-match-block">
-                    <div className="my-match-row">
-                      <Avatar name={shownOpponent.name} size={38} />
-                      <div className="my-match-body">
-                        <div className="my-match-name">{shownOpponent.name}</div>
-                        {myMatchScheduleState === "proposed_by_me" && (
-                          <div className="my-match-h2h">{t("ממתין לאישור שעה")}</div>
-                        )}
-                        {myMatchScheduleState === "proposed_by_them" && (
-                          <div className="my-match-h2h">
-                            {t("הוצע זמן: {datetime}", {
-                              datetime: formatDayMonthTime(new Date(myMatchInShownRound.scheduled_at)),
-                            })}
-                          </div>
-                        )}
-                        {myMatchScheduleState === "confirmed_future" && (
-                          <div className="my-match-h2h">
-                            {t("מתוזמן ל-{datetime}", {
-                              datetime: formatDayMonthTime(new Date(myMatchInShownRound.scheduled_at)),
-                            })}
-                          </div>
-                        )}
-                        {myH2h && (myMatchScheduleState === "unscheduled" || myMatchScheduleState === "ready") && (
-                          <div className="my-match-h2h" dir="ltr">
-                            H2H {myH2h.wins}-{myH2h.losses}
-                          </div>
-                        )}
-                      </div>
-                      {myMatchScheduleState === "unscheduled" && !schedulingMyMatch && (
-                        <button
-                          type="button"
-                          className="my-match-report"
-                          onClick={() => setSchedulingMyMatch(true)}
-                        >
-                          <span className="my-match-dot" aria-hidden="true" />
-                          {t("קבע שעה")}
-                        </button>
-                      )}
-                      {myMatchScheduleState === "proposed_by_them" && (
-                        <div className="friendly-invite-actions">
-                          <button
-                            type="button"
-                            onClick={() => handleConfirmSchedule(myMatchInShownRound.id)}
-                            disabled={busy}
-                          >
-                            {t("אשר שעה")}
-                          </button>
-                          <button
-                            type="button"
-                            className="decline"
-                            onClick={() => setSchedulingMyMatch(true)}
-                          >
-                            {t("הצע שעה אחרת")}
-                          </button>
-                        </div>
-                      )}
-                      {myMatchScheduleState === "ready" && !reportingMyMatch && (
-                        <button
-                          type="button"
-                          className="my-match-report"
-                          onClick={() => setReportingMyMatch(true)}
-                        >
-                          <span className="my-match-dot" aria-hidden="true" />
-                          {t("דווח")}
-                        </button>
-                      )}
-                    </div>
-                    {schedulingMyMatch && (
-                      <ScheduleForm
-                        busy={busy}
-                        onSubmit={(scheduledAt) => handleProposeSchedule(myMatchInShownRound.id, scheduledAt)}
-                        onCancel={() => setSchedulingMyMatch(false)}
-                      />
-                    )}
-                    {reportingMyMatch && myMatchScheduleState === "ready" && (
-                      <SetScoreForm
-                        player1Name={myMatchInShownRound.player1.name}
-                        player2Name={myMatchInShownRound.player2.name}
-                        onSubmit={(sets) => {
-                          handleReportScore(myMatchInShownRound.id, sets);
-                          setReportingMyMatch(false);
-                        }}
-                        onCancel={() => setReportingMyMatch(false)}
-                        busy={busy}
-                        maxSets={league.best_of}
-                      />
-                    )}
-                    <button
-                      type="button"
-                      className="link-btn my-match-cancel"
-                      onClick={() => handleCancelMatch(myMatchInShownRound.id)}
-                    >
-                      {t("בטל משחק")}
-                    </button>
-                  </div>
-                )}
-
-                {isMember && myPendingConfirmationMatch && (
-                  <div className="my-match-pending-wrap">
-                    {iAmReporter ? (
-                      <WaitingConfirmationCard
-                        match={myPendingConfirmationMatch}
-                        currentUserId={user.id}
-                        leagueId={leagueId}
-                        onSubmit={(sets) => handleReportScore(myPendingConfirmationMatch.id, sets)}
-                        maxSets={league.best_of}
-                      />
-                    ) : (
+                {shownRoundMatches.length === 0 ? (
+                  <>
+                    <p className="schedule-empty-text" style={{ marginTop: 18 }}>
+                      {t("עוד לא נוצר לוח משחקים למחזור הזה")}
+                    </p>
+                    {isCreator && (
                       <button
                         type="button"
-                        className="needs-confirm-banner"
-                        onClick={() => setConfirmSheetMatch(myPendingConfirmationMatch)}
+                        className="btn-create-schedule"
+                        onClick={handleGenerateSchedule}
+                        disabled={busy}
                       >
-                        <span className="needs-confirm-dot" />
-                        <span className="needs-confirm-text">{t("יש לך תוצאה לאישור")}</span>
-                        <ChevronIcon aria-hidden="true" />
+                        <PlusIcon aria-hidden="true" />
+                        {busy ? t("יוצר...") : t("צור לוח משחקים")}
                       </button>
                     )}
+                  </>
+                ) : (
+                  <div className="fixtures">
+                    {shownRoundMatches.map((match) => (
+                      <FixtureRow
+                        key={match.id}
+                        match={match}
+                        userId={user?.id}
+                        busy={busy}
+                        isReporting={reportingMyMatch}
+                        isScheduling={schedulingMyMatch}
+                        onStartReport={() => setReportingMyMatch(true)}
+                        onStartSchedule={() => setSchedulingMyMatch(true)}
+                        onConfirmSchedule={() => handleConfirmSchedule(match.id)}
+                        onSubmitScore={(sets) => {
+                          handleReportScore(match.id, sets);
+                          setReportingMyMatch(false);
+                        }}
+                        onSubmitSchedule={(scheduledAt) => handleProposeSchedule(match.id, scheduledAt)}
+                        onCancelForm={() => {
+                          setReportingMyMatch(false);
+                          setSchedulingMyMatch(false);
+                        }}
+                        onCancelMatch={() => handleCancelMatch(match.id)}
+                        onEditScore={(sets) => handleReportScore(match.id, sets)}
+                        onNeedsConfirm={() => setConfirmSheetMatch(match)}
+                        maxSets={league.best_of}
+                      />
+                    ))}
                   </div>
-                )}
-
-                {isMember && myShownMatchCompleted && (
-                  <div className="my-match-row">
-                    <Avatar name={shownOpponent.name} size={38} />
-                    <div className="my-match-body">
-                      <div className="my-match-name">{shownOpponent.name}</div>
-                      {myH2h && (
-                        <div className="my-match-h2h" dir="ltr">
-                          H2H {myH2h.wins}-{myH2h.losses}
-                        </div>
-                      )}
-                    </div>
-                    <div className="my-match-result">
-                      <span dir="ltr">{formatSets(myShownSets)}</span>
-                      <span className={`match-result-badge ${myShownIWon ? "win" : "loss"}`}>
-                        {myShownIWon ? "W" : "L"}
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {isMember && !myMatchInShownRound && (
-                  <div className="my-match-none">{t("אין לך משחק במחזור הזה")}</div>
                 )}
 
                 {!isLatestRound && (
@@ -996,39 +842,33 @@ export default function LeagueDetail() {
                   </button>
                 )}
 
-                <div className="matches-list-heading">{t("כל המשחקים במחזור {n}", { n: shownRound })}</div>
-                <div className="all-matches-list">
-                  {shownRoundMatches.map((match) => (
-                    <AllMatchesRow
-                      key={match.id}
-                      match={match}
-                      currentUserId={user.id}
-                      onReport={handleReportScore}
-                      onNeedsConfirm={() => setConfirmSheetMatch(match)}
-                      busy={busy}
-                      maxSets={league.best_of}
-                    />
-                  ))}
-                </div>
-
-                {existingRoundNumbers.length > 0 && (
-                  <Link to={`/leagues/${leagueId}/rounds`} className="all-rounds-link">
-                    {t("כל המחזורים")} ›
-                  </Link>
-                )}
+                <Link to={`/leagues/${leagueId}/rounds`} className="all-rounds-row">
+                  <span>{t("כל המחזורים")}</span>
+                  <span className="all-rounds-meta">
+                    {t("{rounds} מחזורים · {games} משחקים", {
+                      rounds: existingRoundNumbers.length,
+                      games: allMatches.length,
+                    })}
+                  </span>
+                  <ChevronIcon aria-hidden="true" />
+                </Link>
 
                 {legacyMatches.length > 0 && (
                   <div>
-                    <div className="matches-list-heading">{t("משחקים ללא מחזור")}</div>
-                    <div className="all-matches-list">
+                    <div className="ms-label" style={{ marginTop: 24 }}>
+                      {t("משחקים ללא מחזור")}
+                    </div>
+                    <div className="fixtures">
                       {legacyMatches.map((match) => (
-                        <AllMatchesRow
+                        <FixtureRow
                           key={match.id}
                           match={match}
-                          currentUserId={user.id}
-                          onReport={handleReportScore}
-                          onNeedsConfirm={() => setConfirmSheetMatch(match)}
+                          userId={user?.id}
                           busy={busy}
+                          isReporting={false}
+                          isScheduling={false}
+                          onEditScore={(sets) => handleReportScore(match.id, sets)}
+                          onNeedsConfirm={() => setConfirmSheetMatch(match)}
                           maxSets={league.best_of}
                         />
                       ))}
@@ -1171,32 +1011,51 @@ function AddRoundConfirmSheet({ nextRound, roundsToCreate, pairs, dueDate, busy,
 }
 
 
-function AllMatchesRow({ match, currentUserId, onReport, onNeedsConfirm, busy, maxSets }) {
+function FixtureRow({
+  match,
+  userId,
+  busy,
+  isReporting,
+  isScheduling,
+  onStartReport,
+  onStartSchedule,
+  onConfirmSchedule,
+  onSubmitScore,
+  onSubmitSchedule,
+  onCancelForm,
+  onCancelMatch,
+  onEditScore,
+  onNeedsConfirm,
+  maxSets,
+}) {
   const [editing, setEditing] = useState(false);
   const { t } = useLanguage();
+
+  const mine = match.player1.id === userId || match.player2.id === userId;
   const isCompleted = match.status === "completed";
   const isPendingConfirmation = match.status === "pending_confirmation";
-  const p1Won = isCompleted && match.player1_score > match.player2_score;
-  const iAmPlayer1 = match.player1.id === currentUserId;
-  const isMine = match.player1.id === currentUserId || match.player2.id === currentUserId;
-  const iNeedToConfirm = isPendingConfirmation && isMine && match.reported_by !== currentUserId;
-  const iWon = isCompleted && (iAmPlayer1 ? p1Won : !p1Won);
-  const mySets = iAmPlayer1
-    ? match.sets
-    : match.sets?.map((s) => ({ player1_games: s.player2_games, player2_games: s.player1_games }));
+  const iNeedToConfirm = isPendingConfirmation && mine && match.reported_by !== userId;
+  const scheduleState = mine && onStartSchedule ? matchScheduleState(match, userId) : null;
 
-  const meIsPlayer1 = isMine && iAmPlayer1;
-  const meIsPlayer2 = isMine && !iAmPlayer1;
-
+  // In my row I'm always on the "start" side, so my row doesn't jump around
+  // between rounds; the score/result is shown from that side's perspective.
+  const [left, right] =
+    mine && match.player2.id === userId ? [match.player2, match.player1] : [match.player1, match.player2];
+  const leftIsPlayer1 = left.id === match.player1.id;
+  const leftSets = isCompleted
+    ? leftIsPlayer1
+      ? match.sets
+      : match.sets?.map((s) => ({ player1_games: s.player2_games, player2_games: s.player1_games }))
+    : null;
   if (editing) {
     return (
-      <div className="games-row games-row-editing">
+      <div className="fx-row is-mine">
         <SetScoreForm
           player1Name={match.player1.name}
           player2Name={match.player2.name}
           initialSets={match.sets}
           onSubmit={(sets) => {
-            onReport(match.id, sets);
+            onEditScore(sets);
             setEditing(false);
           }}
           onCancel={() => setEditing(false)}
@@ -1208,48 +1067,108 @@ function AllMatchesRow({ match, currentUserId, onReport, onNeedsConfirm, busy, m
     );
   }
 
-  const row = (
-    <>
-      <span className="games-row-names">
-        <span className={meIsPlayer1 ? "me" : undefined}>{match.player1.name}</span>
-        <span className="games-row-sep"> · </span>
-        <span className={meIsPlayer2 ? "me" : undefined}>{match.player2.name}</span>
-      </span>
-      {isPendingConfirmation ? (
-        iNeedToConfirm ? (
-          <span className="games-row-confirm">{t("לאישור")}</span>
-        ) : (
-          <span className="games-row-dot" aria-label={t("ממתין")} />
-        )
-      ) : !isCompleted ? (
-        <span className="games-row-dot" aria-label={t("ממתין")} />
-      ) : (
-        <span className={`games-row-score${iWon ? " win" : ""}`} dir="ltr">
-          {formatSets(mySets)}
+  const mainRow = (
+    <div className="fx-main">
+      <span className="fx-name start">
+        <span dir="auto" style={{ unicodeBidi: "isolate" }}>
+          {left.name}
         </span>
-      )}
-    </>
+      </span>
+      <span className="fx-mid">
+        {isCompleted ? (
+          <span className="score" dir="ltr">
+            {formatSets(leftSets)}
+          </span>
+        ) : isPendingConfirmation ? (
+          iNeedToConfirm ? (
+            <span className="state open">{t("לאישור")}</span>
+          ) : (
+            <span className="state">{t("ממתין")}</span>
+          )
+        ) : mine ? (
+          <span className="state open">{t("לשחק")}</span>
+        ) : (
+          <span className="dot" aria-hidden="true" />
+        )}
+      </span>
+      <span className="fx-name end">
+        <span dir="auto" style={{ unicodeBidi: "isolate" }}>
+          {right.name}
+        </span>
+      </span>
+    </div>
   );
+
+  const rowClass = `fx-row${mine ? " is-mine" : ""}`;
 
   if (iNeedToConfirm) {
     return (
-      <button
-        type="button"
-        className={`games-row games-row-editable${isMine ? " mine" : ""}`}
-        onClick={onNeedsConfirm}
-      >
-        {row}
+      <button type="button" className={rowClass} onClick={onNeedsConfirm}>
+        {mainRow}
       </button>
     );
   }
 
-  if (isCompleted && isMine) {
+  if (isCompleted && mine) {
     return (
-      <button type="button" className="games-row games-row-editable mine" onClick={() => setEditing(true)}>
-        {row}
+      <button type="button" className={rowClass} onClick={() => setEditing(true)}>
+        {mainRow}
       </button>
     );
   }
 
-  return <div className={`games-row${isMine ? " mine" : ""}`}>{row}</div>;
+  return (
+    <div className={rowClass}>
+      {mainRow}
+      {mine && match.status === "pending" && onStartReport && !isScheduling && !isReporting && (
+        <div className="fx-actions">
+          {scheduleState === "unscheduled" && (
+            <button type="button" className="fx-report" onClick={onStartSchedule}>
+              <span className="fx-dot" aria-hidden="true" />
+              {t("הצע שעה")}
+            </button>
+          )}
+          {scheduleState === "proposed_by_me" && (
+            <span className="fx-secondary">{t("ממתין לאישור שעה")}</span>
+          )}
+          {scheduleState === "proposed_by_them" && (
+            <>
+              <button type="button" className="fx-report" onClick={onConfirmSchedule} disabled={busy}>
+                <span className="fx-dot" aria-hidden="true" />
+                {t("אשר שעה")}
+              </button>
+              <button type="button" className="fx-secondary" onClick={onStartSchedule}>
+                {t("הצע שעה")}
+              </button>
+            </>
+          )}
+          {scheduleState === "confirmed_future" && (
+            <span className="fx-secondary">
+              {t("מתוזמן ל-{datetime}", { datetime: formatDayMonthTime(new Date(match.scheduled_at)) })}
+            </span>
+          )}
+          {scheduleState === "ready" && (
+            <button type="button" className="fx-report" onClick={onStartReport}>
+              <span className="fx-dot" aria-hidden="true" />
+              {t("דווח")}
+            </button>
+          )}
+        </div>
+      )}
+      {mine && isScheduling && (
+        <ScheduleForm busy={busy} onSubmit={onSubmitSchedule} onCancel={onCancelForm} />
+      )}
+      {mine && isReporting && scheduleState === "ready" && (
+        <SetScoreForm
+          player1Name={match.player1.name}
+          player2Name={match.player2.name}
+          onSubmit={onSubmitScore}
+          onCancel={onCancelForm}
+          onCancelMatch={onCancelMatch}
+          busy={busy}
+          maxSets={maxSets}
+        />
+      )}
+    </div>
+  );
 }

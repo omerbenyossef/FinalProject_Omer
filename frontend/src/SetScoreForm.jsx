@@ -14,6 +14,7 @@ export default function SetScoreForm({
   initialSets,
   onSubmit,
   onCancel,
+  onCancelMatch,
   busy,
   submitLabel = "דווח תוצאה",
   maxSets,
@@ -114,6 +115,12 @@ export default function SetScoreForm({
             "המשחק נספר בדירוג האישי ובמאזן ה-W-L שלך. הוא לא חלק משום ליגה."
           )}
         </p>
+      )}
+
+      {onCancelMatch && (
+        <button type="button" className="link-btn score-cancel-match" onClick={onCancelMatch}>
+          {t("בטל משחק")}
+        </button>
       )}
     </form>
   );

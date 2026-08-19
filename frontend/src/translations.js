@@ -280,7 +280,7 @@ const PAIRS = [
   ["המשחק שלי", "My match"],
   ["המשחק שלי השבוע", "My match this week"],
   ["משחקים ללא מחזור", "Matches without a round"],
-  ["ממתין", "Pending"],
+  ["ממתין", "Reported"],
   ["גיל {age}", "age {age}"],
   ["כל ה-{n}", "All {n}"],
   ["אין תוצאה שממתינה לאישור עבור המשחק הזה", "There's no result waiting for confirmation on this match"],
@@ -348,7 +348,8 @@ const PAIRS = [
   ["{n} שחקנים · הזמנה בקישור", "{n} players · invite via link"],
   ["שתף קישור הזמנה", "Share invite link"],
   ["לוח משחקים", "Schedule"],
-  ["{rounds} מחזורים · {games} משחקים", "{rounds} rounds · {games} games"],
+  ["{rounds} מחזורים · {games} משחקים", "{rounds} rounds · {games} matches"],
+  ["עוד לא נוצר לוח משחקים למחזור הזה", "No schedule for this round yet"],
   ["אזור מסוכן", "Danger zone"],
   ["מחיקת הליגה תסיר לצמיתות את {n} המשחקים ואת כל החברויות בה. לא ניתן לשחזר.", "Deleting the league permanently removes its {n} matches and every membership in it. This can't be undone."],
   ["מחק את הליגה", "Delete the league"],
@@ -505,7 +506,7 @@ const PAIRS = [
 
   // Match scheduling
   ["קבע שעה", "Schedule"],
-  ["הצע שעה", "Propose time"],
+  ["הצע שעה", "Suggest a time"],
   ["ממתין לאישור שעה", "Waiting for time to be confirmed"],
   ["הוצע זמן: {datetime}", "Time proposed: {datetime}"],
   ["מתוזמן ל-{datetime}", "Scheduled for {datetime}"],
