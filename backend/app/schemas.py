@@ -269,6 +269,7 @@ class HeadToHeadMatch(BaseModel):
     kind: MatchKind = MatchKind.league
     league_id: Optional[int] = None
     league_name: Optional[str] = None
+    round_number: Optional[int] = None
     my_score: int
     opponent_score: int
     sets: Optional[list[SetScore]] = None
@@ -355,3 +356,26 @@ class RankingsOut(BaseModel):
     players: list[RankingsPlayerOut]
     next_cursor: Optional[str] = None
     min_matches: int
+
+
+class SharedLeagueOut(BaseModel):
+    id: int
+    name: str
+    my_rank: Optional[int] = None
+    opponent_rank: Optional[int] = None
+    member_count: int
+
+
+class PlayerProfileOut(BaseModel):
+    id: int
+    name: str
+    joined_at: datetime
+    league_count: int
+    ntrp: Optional[float] = None
+    rank: Optional[int] = None
+    total_players: int
+    wins: int
+    losses: int
+    streak: int
+    streak_won: Optional[bool] = None
+    shared_leagues: list[SharedLeagueOut] = []

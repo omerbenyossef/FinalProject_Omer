@@ -180,7 +180,7 @@ function ToPlayCard({
       <div className="tp-card-top">
         <Avatar name={opponent.name} size={42} dim={pendingInvite} />
         <div className="tp-id">
-          <Link to={`/head-to-head/${opponent.id}`} className="tp-name">
+          <Link to={`/players/${opponent.id}`} className="tp-name">
             <span dir="auto" style={{ unicodeBidi: "isolate" }}>
               {opponent.name}
             </span>

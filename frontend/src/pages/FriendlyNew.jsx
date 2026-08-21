@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { useSport } from "../SportContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
@@ -24,6 +24,8 @@ export default function FriendlyNew() {
   const { selectedSportId } = useSport();
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const location = useLocation();
+  const presetOpponent = location.state?.presetOpponent ?? null;
   const [query, setQuery] = useState("");
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,14 +34,14 @@ export default function FriendlyNew() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!selectedSportId) return;
+    if (!selectedSportId || presetOpponent) return;
     setLoading(true);
     api
       .searchFriendlyPlayers(selectedSportId, query.trim())
       .then(setPlayers)
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [selectedSportId, query]);
+  }, [selectedSportId, query, presetOpponent]);
 
   async function handleInvite(playerId) {
     setInvitingId(playerId);
@@ -84,56 +86,82 @@ export default function FriendlyNew() {
         </p>
       </header>
 
-      <div className="friendly-search">
-        <SearchIcon width={16} height={16} aria-hidden="true" />
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder={t("חיפוש שחקנים")}
-        />
-      </div>
+      {presetOpponent ? (
+        <div className="friendly-player-list">
+          <div className="friendly-player-row" key={presetOpponent.id}>
+            <Avatar name={presetOpponent.name} size={38} />
+            <div className="friendly-player-body">
+              <div className="friendly-player-name">
+                <span dir="auto" style={{ unicodeBidi: "isolate" }}>
+                  {presetOpponent.name}
+                </span>
+              </div>
+            </div>
+            <button
+              type="button"
+              className="my-match-report"
+              disabled={invitingId === presetOpponent.id}
+              onClick={() => handleInvite(presetOpponent.id)}
+            >
+              <span className="my-match-dot" aria-hidden="true" />
+              {t("הזמן")}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="friendly-search">
+            <SearchIcon width={16} height={16} aria-hidden="true" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={t("חיפוש שחקנים")}
+            />
+          </div>
+
+          {!query.trim() && (
+            <div className="friendly-list-head">
+              <span className="friendly-list-label">{t("שיחקתם בעבר")}</span>
+            </div>
+          )}
+          <div className="friendly-player-list">
+            {!loading &&
+              players.map((p) => (
+                <div className="friendly-player-row" key={p.id}>
+                  <Avatar name={p.name} size={38} />
+                  <div className="friendly-player-body">
+                    <div className="friendly-player-name">
+                      <span dir="auto" style={{ unicodeBidi: "isolate" }}>
+                        {p.name}
+                      </span>
+                    </div>
+                    <div className="friendly-player-sub" dir="ltr">
+                      {playedSub(p, t)}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="my-match-report"
+                    disabled={invitingId === p.id}
+                    onClick={() => handleInvite(p.id)}
+                  >
+                    <span className="my-match-dot" aria-hidden="true" />
+                    {t("הזמן")}
+                  </button>
+                </div>
+              ))}
+            {!loading && players.length === 0 && (
+              <p className="muted">
+                {query.trim() ? t("לא נמצאו שחקנים") : t("עדיין לא שיחקת נגד אף אחד בענף הזה.")}
+              </p>
+            )}
+          </div>
+        </>
+      )}
 
       {error && <p className="error">{t(error)}</p>}
 
-      {!query.trim() && (
-        <div className="friendly-list-head">
-          <span className="friendly-list-label">{t("שיחקתם בעבר")}</span>
-        </div>
-      )}
-      <div className="friendly-player-list">
-        {!loading &&
-          players.map((p) => (
-            <div className="friendly-player-row" key={p.id}>
-              <Avatar name={p.name} size={38} />
-              <div className="friendly-player-body">
-                <div className="friendly-player-name">
-                  <span dir="auto" style={{ unicodeBidi: "isolate" }}>
-                    {p.name}
-                  </span>
-                </div>
-                <div className="friendly-player-sub" dir="ltr">
-                  {playedSub(p, t)}
-                </div>
-              </div>
-              <button
-                type="button"
-                className="my-match-report"
-                disabled={invitingId === p.id}
-                onClick={() => handleInvite(p.id)}
-              >
-                <span className="my-match-dot" aria-hidden="true" />
-                {t("הזמן")}
-              </button>
-            </div>
-          ))}
-        {!loading && players.length === 0 && (
-          <p className="muted">
-            {query.trim() ? t("לא נמצאו שחקנים") : t("עדיין לא שיחקת נגד אף אחד בענף הזה.")}
-          </p>
-        )}
-      </div>
-
-      {!query.trim() && (
+      {!presetOpponent && !query.trim() && (
         <>
           <div className="friendly-list-head">
             <span className="friendly-list-label">{t("לא ב-Rally")}</span>

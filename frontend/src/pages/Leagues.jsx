@@ -75,7 +75,13 @@ function LeagueCarouselCard({ league, standingsRows, openAction, userId, t, navi
                   {row.rank}
                 </span>
                 <span className="lg-sname">
-                  <span dir="auto">{row.user.name}</span>
+                  {row.user.id === userId ? (
+                    <span dir="auto">{row.user.name}</span>
+                  ) : (
+                    <Link to={`/players/${row.user.id}`} className="player-name-link" dir="auto">
+                      {row.user.name}
+                    </Link>
+                  )}
                 </span>
                 <span className="lg-swl" dir="ltr">
                   {row.wins}-{row.losses}

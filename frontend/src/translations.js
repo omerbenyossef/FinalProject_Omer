@@ -565,6 +565,19 @@ const PAIRS = [
   ["עדיין אין דירוג שחקנים בענף הזה", "No player rankings for this sport yet"],
   ["עדיין אין שחקן עם מספיק משחקים למיון לפי מאזן", "No player has enough matches for the record ranking yet"],
 
+  // Player profile screen (105a)
+  ["RANK", "RANK"],
+  ["STREAK", "STREAK"],
+  ["HEAD TO HEAD", "HEAD TO HEAD"],
+  ["YOU LEAD", "YOU LEAD"],
+  ["HE LEADS", "HE LEADS"],
+  ["EVEN", "EVEN"],
+  ["LAST MEETINGS", "LAST MEETINGS"],
+  ["SHARED LEAGUES", "SHARED LEAGUES"],
+  ["NEVER PLAYED", "NEVER PLAYED"],
+  ["UNRANKED", "UNRANKED"],
+  ["הזמן למשחק חברות", "Invite to a friendly match"],
+
   // To play this week carousel (104c)
   ["אשר תוצאה", "Confirm result"],
   ["אשר את השעה", "Confirm time"],

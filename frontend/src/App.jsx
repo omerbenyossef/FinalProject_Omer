@@ -15,6 +15,7 @@ import Profile from "./pages/Profile.jsx";
 import Rankings from "./pages/Rankings.jsx";
 import Settings from "./pages/Settings.jsx";
 import HeadToHead from "./pages/HeadToHead.jsx";
+import PlayerProfile from "./pages/PlayerProfile.jsx";
 import { SkeletonPageHeader, SkeletonHeroStat } from "./Skeleton.jsx";
 
 function ProtectedRoute({ children }) {
@@ -106,6 +107,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <HeadToHead />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/players/:playerId"
+          element={
+            <ProtectedRoute>
+              <PlayerProfile />
             </ProtectedRoute>
           }
         />

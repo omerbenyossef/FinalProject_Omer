@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../AuthContext.jsx";
 import { useSport } from "../SportContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
@@ -240,9 +241,15 @@ export default function Rankings() {
                 {p.rank}
               </span>
               <span className="rk-who">
-                <span className="rk-name" dir="auto">
-                  {p.display_name}
-                </span>
+                {p.id === user.id ? (
+                  <span className="rk-name" dir="auto">
+                    {p.display_name}
+                  </span>
+                ) : (
+                  <Link to={`/players/${p.id}`} className="rk-name player-name-link" dir="auto">
+                    {p.display_name}
+                  </Link>
+                )}
                 <span className="rk-sub" dir="ltr">
                   {sort === "ntrp" ? `${p.wins}-${p.losses}` : `NTRP ${p.ntrp.toFixed(1)}`}
                 </span>

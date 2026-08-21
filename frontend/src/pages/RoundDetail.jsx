@@ -10,6 +10,15 @@ import { ChevronIcon } from "../Icons.jsx";
 import { formatDayMonth, formatDayMonthTime, roundDueDateObj, matchScheduleState } from "../matchUtils.js";
 import { SkeletonPageHeader, SkeletonHeroStat } from "../Skeleton.jsx";
 
+function PlayerNameLink({ player, userId, className }) {
+  if (player.id === userId) return <span className={className}>{player.name}</span>;
+  return (
+    <Link to={`/players/${player.id}`} className={`${className || ""} player-name-link`.trim()}>
+      {player.name}
+    </Link>
+  );
+}
+
 export default function RoundDetail() {
   const { leagueId, round } = useParams();
   const { user } = useAuth();
@@ -241,13 +250,17 @@ export default function RoundDetail() {
               return (
                 <div className="all-matches-row" key={match.id}>
                   <span className="all-matches-names">
-                    <span className={isCompleted ? (p1Won ? "winner" : "loser") : "strong"}>
-                      {match.player1.name}
-                    </span>{" "}
+                    <PlayerNameLink
+                      player={match.player1}
+                      userId={user?.id}
+                      className={isCompleted ? (p1Won ? "winner" : "loser") : "strong"}
+                    />{" "}
                     <span className="vs-label">vs</span>{" "}
-                    <span className={isCompleted ? (p1Won ? "loser" : "winner") : "strong"}>
-                      {match.player2.name}
-                    </span>
+                    <PlayerNameLink
+                      player={match.player2}
+                      userId={user?.id}
+                      className={isCompleted ? (p1Won ? "loser" : "winner") : "strong"}
+                    />
                   </span>
                   {isCompleted ? (
                     <span className="round-match-score" dir="ltr">
@@ -276,7 +289,9 @@ export default function RoundDetail() {
               return (
                 <div className="all-matches-row" key={match.id}>
                   <span className="all-matches-names dim">
-                    {match.player1.name} <span className="vs-label">vs</span> {match.player2.name}
+                    <PlayerNameLink player={match.player1} userId={user?.id} />{" "}
+                    <span className="vs-label">vs</span>{" "}
+                    <PlayerNameLink player={match.player2} userId={user?.id} />
                   </span>
                   {isMine ? (
                     <span className="round-tag-mine">{t("אני")}</span>

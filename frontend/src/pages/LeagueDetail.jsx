@@ -681,7 +681,7 @@ export default function LeagueDetail() {
                       {body}
                     </div>
                   ) : (
-                    <Link to={`/head-to-head/${row.user.id}`} className={cls} key={row.user.id}>
+                    <Link to={`/players/${row.user.id}`} className={cls} key={row.user.id}>
                       {body}
                     </Link>
                   );
@@ -1041,6 +1041,12 @@ function FixtureRow({
   // between rounds; the score/result is shown from that side's perspective.
   const [left, right] =
     mine && match.player2.id === userId ? [match.player2, match.player1] : [match.player1, match.player2];
+  // The opponent's name can only be a nested <Link> when the row itself
+  // renders as a plain <div> — the iNeedToConfirm/completed-mine cases wrap
+  // mainRow in a <button>, where a nested link isn't valid.
+  const canLinkOpponent = !(iNeedToConfirm || (isCompleted && mine));
+  const leftLinkable = !mine;
+  const rightLinkable = mine ? canLinkOpponent : true;
   const leftIsPlayer1 = left.id === match.player1.id;
   const leftSets = isCompleted
     ? leftIsPlayer1
@@ -1070,9 +1076,17 @@ function FixtureRow({
   const mainRow = (
     <div className="fx-main">
       <span className="fx-name start">
-        <span dir="auto" style={{ unicodeBidi: "isolate" }}>
-          {left.name}
-        </span>
+        {leftLinkable ? (
+          <Link to={`/players/${left.id}`} onClick={(e) => e.stopPropagation()} className="player-name-link">
+            <span dir="auto" style={{ unicodeBidi: "isolate" }}>
+              {left.name}
+            </span>
+          </Link>
+        ) : (
+          <span dir="auto" style={{ unicodeBidi: "isolate" }}>
+            {left.name}
+          </span>
+        )}
       </span>
       <span className="fx-mid">
         {isCompleted ? (
@@ -1092,9 +1106,17 @@ function FixtureRow({
         )}
       </span>
       <span className="fx-name end">
-        <span dir="auto" style={{ unicodeBidi: "isolate" }}>
-          {right.name}
-        </span>
+        {rightLinkable ? (
+          <Link to={`/players/${right.id}`} onClick={(e) => e.stopPropagation()} className="player-name-link">
+            <span dir="auto" style={{ unicodeBidi: "isolate" }}>
+              {right.name}
+            </span>
+          </Link>
+        ) : (
+          <span dir="auto" style={{ unicodeBidi: "isolate" }}>
+            {right.name}
+          </span>
+        )}
       </span>
     </div>
   );

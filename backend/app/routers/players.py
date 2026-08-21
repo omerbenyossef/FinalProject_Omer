@@ -8,6 +8,7 @@ from .. import models, schemas
 from ..auth import get_current_user
 from ..database import get_db
 from .matches import _auto_confirm_overdue
+from .leagues import get_standings
 
 router = APIRouter(prefix="/players", tags=["players"])
 
@@ -15,19 +16,10 @@ RANKINGS_MIN_MATCHES_FOR_RECORD = 5
 RANKINGS_PAGE_LIMIT = 50
 
 
-@router.get("/rankings", response_model=schemas.RankingsOut)
-def rankings(
-    sport_id: int,
-    sort: str = "ntrp",
-    cursor: Optional[str] = None,
-    limit: int = RANKINGS_PAGE_LIMIT,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
-):
-    if sort not in ("ntrp", "record"):
-        raise HTTPException(status_code=400, detail="Invalid sort")
-    _auto_confirm_overdue(db)
-
+def _ntrp_ranked_entries(db, sport_id):
+    """Every rated player in a sport, sorted by NTRP desc (tie-break win% then
+    id), with wins/losses/matches_played/rank computed. Shared by /rankings'
+    default sort and the player-profile endpoint's global-rank stat."""
     ratings = (
         db.query(models.PlayerRating)
         .options(joinedload(models.PlayerRating.user))
@@ -75,15 +67,32 @@ def rankings(
                 "win_pct": round(wins / played * 100) if played else 0,
             }
         )
+    entries.sort(key=lambda e: (-e["ntrp"], -e["win_pct"], e["id"]))
+    for i, e in enumerate(entries):
+        e["rank"] = i + 1
+    return entries, rating_by_user, record
+
+
+@router.get("/rankings", response_model=schemas.RankingsOut)
+def rankings(
+    sport_id: int,
+    sort: str = "ntrp",
+    cursor: Optional[str] = None,
+    limit: int = RANKINGS_PAGE_LIMIT,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    if sort not in ("ntrp", "record"):
+        raise HTTPException(status_code=400, detail="Invalid sort")
+    _auto_confirm_overdue(db)
+
+    entries, rating_by_user, record = _ntrp_ranked_entries(db, sport_id)
 
     if sort == "record":
         entries = [e for e in entries if e["matches_played"] >= RANKINGS_MIN_MATCHES_FOR_RECORD]
         entries.sort(key=lambda e: (-e["win_pct"], -e["matches_played"], e["id"]))
-    else:
-        entries.sort(key=lambda e: (-e["ntrp"], -e["win_pct"], e["id"]))
-
-    for i, e in enumerate(entries):
-        e["rank"] = i + 1
+        for i, e in enumerate(entries):
+            e["rank"] = i + 1
 
     total = len(entries)
     try:
@@ -184,6 +193,7 @@ def head_to_head(
                 kind=m.kind,
                 league_id=m.league_id,
                 league_name=m.league.name if m.league_id else None,
+                round_number=m.round_number,
                 my_score=my_score,
                 opponent_score=opponent_score,
                 sets=sets,
@@ -192,3 +202,106 @@ def head_to_head(
         )
 
     return schemas.HeadToHeadOut(opponent=opponent, wins=wins, losses=losses, matches=match_list)
+
+
+@router.get("/{player_id}", response_model=schemas.PlayerProfileOut)
+def get_player_profile(
+    player_id: int,
+    sport_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    player = db.query(models.User).filter(models.User.id == player_id).first()
+    if not player:
+        raise HTTPException(status_code=404, detail="Player not found")
+    _auto_confirm_overdue(db)
+
+    entries, rating_by_user, record = _ntrp_ranked_entries(db, sport_id)
+    total_players = len(entries)
+    entry = next((e for e in entries if e["id"] == player_id), None)
+    if entry:
+        ntrp = entry["ntrp"]
+        wins = entry["wins"]
+        losses = entry["losses"]
+        matches_played = entry["matches_played"]
+        rank = entry["rank"] if matches_played >= RANKINGS_MIN_MATCHES_FOR_RECORD else None
+    else:
+        ntrp = None
+        wins = 0
+        losses = 0
+        rank = None
+
+    matches = (
+        db.query(models.Match)
+        .outerjoin(models.League)
+        .filter(
+            models.Match.status == models.MatchStatus.completed,
+            or_(models.League.sport_id == sport_id, models.Match.sport_id == sport_id),
+            or_(models.Match.player1_id == player_id, models.Match.player2_id == player_id),
+        )
+        .order_by(models.Match.played_at.desc())
+        .all()
+    )
+    streak = 0
+    streak_won = None
+    for m in matches:
+        won = (m.player1_id == player_id) == (m.player1_score > m.player2_score)
+        if streak_won is None:
+            streak_won = won
+        if won != streak_won:
+            break
+        streak += 1
+
+    league_count = (
+        db.query(models.LeagueMembership)
+        .join(models.League)
+        .filter(models.LeagueMembership.user_id == player_id, models.League.sport_id == sport_id)
+        .count()
+    )
+
+    my_league_ids = {
+        m.league_id
+        for m in db.query(models.LeagueMembership).filter(models.LeagueMembership.user_id == current_user.id)
+    }
+    their_shared_memberships = (
+        db.query(models.LeagueMembership)
+        .filter(
+            models.LeagueMembership.user_id == player_id,
+            models.LeagueMembership.league_id.in_(my_league_ids),
+        )
+        .all()
+        if my_league_ids
+        else []
+    )
+    shared_leagues = []
+    for membership in their_shared_memberships:
+        league = db.query(models.League).filter(models.League.id == membership.league_id).first()
+        if not league:
+            continue
+        rows = get_standings(membership.league_id, db)
+        my_rank = next((i + 1 for i, r in enumerate(rows) if r["user"].id == current_user.id), None)
+        their_rank = next((i + 1 for i, r in enumerate(rows) if r["user"].id == player_id), None)
+        shared_leagues.append(
+            schemas.SharedLeagueOut(
+                id=league.id,
+                name=league.name,
+                my_rank=my_rank,
+                opponent_rank=their_rank,
+                member_count=len(rows),
+            )
+        )
+
+    return schemas.PlayerProfileOut(
+        id=player.id,
+        name=player.name,
+        joined_at=player.created_at,
+        league_count=league_count,
+        ntrp=ntrp,
+        rank=rank,
+        total_players=total_players,
+        wins=wins,
+        losses=losses,
+        streak=streak,
+        streak_won=streak_won,
+        shared_leagues=shared_leagues,
+    )
