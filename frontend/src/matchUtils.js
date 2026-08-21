@@ -277,6 +277,187 @@ export function buildOpenAction(candidates, userId, t) {
   return null;
 }
 
+// Tab-bar action button preview (title/subParts/lime) for the single
+// highest-priority item from GET /leagues/mine/open-items — same wording as
+// buildOpenAction above, just sourced from the server-corrected open-items
+// list instead of client-derived candidates (which had a real bug: it
+// treated a correction *I* sent as something *I* needed to confirm).
+export function buildTabbarPreview(item, userId, t) {
+  if (!item) return null;
+  const m = item.match;
+  const iAmPlayer1 = m.player1.id === userId;
+  const opponent = iAmPlayer1 ? m.player2 : m.player1;
+  const roundOrFriendly = m.round_number ? t("מחזור {n}", { n: m.round_number }) : "FRIENDLY";
+
+  if (item.type === "confirm") {
+    const claimSets = m.corrected_sets ?? m.sets;
+    const mySets = iAmPlayer1
+      ? claimSets
+      : claimSets?.map((s) => ({ player1_games: s.player2_games, player2_games: s.player1_games }));
+    return {
+      kind: "confirm",
+      match: m,
+      lime: true,
+      title: t("אשר {score}", { score: formatSets(mySets) }),
+      subParts: [opponent.name, roundOrFriendly],
+    };
+  }
+
+  if (item.type === "report") {
+    const due = roundDueDateObj(item.schedule_started_at, m.round_number, item.round_length_days);
+    const daysLeft = due ? Math.ceil((due.getTime() - Date.now()) / 86400000) : null;
+    return {
+      kind: "report",
+      match: m,
+      lime: true,
+      title: t("דווח מול {name}", { name: opponent.name }),
+      subParts: [roundOrFriendly, daysLeft !== null ? daysLeftLabel(daysLeft) : null].filter(Boolean),
+    };
+  }
+
+  if (item.type === "proposed") {
+    return {
+      kind: "schedule",
+      match: m,
+      lime: false,
+      title: t("{name} הציע {date}", {
+        name: opponent.name,
+        date: formatDayMonthTime(new Date(m.scheduled_at)),
+      }),
+      subParts: [t("לאישור השעה")],
+    };
+  }
+
+  // waiting
+  return {
+    kind: "waiting",
+    match: m,
+    lime: false,
+    title: t("ממתין לתשובה מ{name}", { name: opponent.name }),
+    subParts: [roundOrFriendly],
+  };
+}
+
+// Compact "2H"/"3D" age marker for needsyou112a.md's item rows — always
+// English/mono, distinct from timeAgoLabel's verbose "2 HOURS AGO" form.
+export function compactAge(date) {
+  if (!date) return "";
+  const diffMs = Date.now() - date.getTime();
+  const minutes = Math.round(diffMs / 60000);
+  if (minutes < 1) return "NOW";
+  if (minutes < 60) return `${minutes}M`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours}H`;
+  const days = Math.round(hours / 24);
+  return `${days}D`;
+}
+
+// report_score and dispute_result (backend) both reset auto_confirm_at to
+// now+48h whenever a new claim (report or correction) is submitted, and
+// there's no dedicated "reported/corrected at" column — so working backward
+// from auto_confirm_at recovers that moment for the "2H" age marker.
+const CONFIRMATION_WINDOW_MS = 48 * 60 * 60 * 1000;
+export function claimSubmittedAt(autoConfirmAt) {
+  return autoConfirmAt ? new Date(new Date(autoConfirmAt).getTime() - CONFIRMATION_WINDOW_MS) : null;
+}
+
+// Where tapping an open item (needsyou112a.md) should navigate — used both
+// for the tab-bar's "1 item -> jump straight to it" case and for tapping a
+// row on the NEEDS YOU list itself.
+export function openItemRoute(item) {
+  const m = item.match;
+  if (item.type === "confirm") return `/matches/${m.id}/confirm`;
+  if (item.type === "proposed") return `/matches/${m.id}`;
+  if (item.type === "report") return `/matches/${m.id}`;
+  // waiting: nothing to confirm yet, just let them see the match itself
+  return `/matches/${m.id}`;
+}
+
+// Builds every display string a needsyou112a.md item row needs, in the
+// viewer's language. Kept as one function (rather than scattering this
+// logic across NeedsYou.jsx and Layout.jsx) so the tab-bar preview and the
+// full list always agree on wording.
+export function buildOpenItemDisplay(item, userId, t) {
+  const m = item.match;
+  const iAmPlayer1 = m.player1.id === userId;
+  const opponent = iAmPlayer1 ? m.player2 : m.player1;
+  const roundLabel = m.round_number ? `R${m.round_number}` : null;
+  const leagueOrFriendly = item.league_name || t("FRIENDLY");
+
+  if (item.type === "waiting") {
+    return {
+      typeLabel: t("CORRECTION SENT · WAITING"),
+      opponentName: opponent.name,
+      opponentId: opponent.id,
+      context: t("NOT COUNTED UNTIL THEY ANSWER"),
+      secondaryLabel: t("CANCEL"),
+    };
+  }
+
+  if (item.type === "confirm") {
+    const claimSets = m.corrected_sets ?? m.sets;
+    const mySets = iAmPlayer1
+      ? claimSets
+      : claimSets?.map((s) => ({ player1_games: s.player2_games, player2_games: s.player1_games }));
+    let rankClause = null;
+    if (item.old_rank != null && item.new_rank != null && item.old_rank !== item.new_rank) {
+      rankClause =
+        item.new_rank > item.old_rank
+          ? t("CONFIRMING DROPS YOU #{old} → #{new}", { old: item.old_rank, new: item.new_rank })
+          : t("CONFIRMING MOVES YOU UP #{old} → #{new}", { old: item.old_rank, new: item.new_rank });
+    }
+    return {
+      typeLabel: t("RESULT TO CONFIRM"),
+      age: compactAge(claimSubmittedAt(m.auto_confirm_at)),
+      opponentName: opponent.name,
+      opponentId: opponent.id,
+      value: formatSets(mySets),
+      valueKind: "score",
+      context: [leagueOrFriendly, roundLabel, rankClause].filter(Boolean).join(" · "),
+      primaryLabel: t("אישור התוצאה"),
+      primaryLime: true,
+      secondaryLabel: t("התוצאה לא נכונה"),
+    };
+  }
+
+  if (item.type === "proposed") {
+    const due = roundDueDateObj(item.schedule_started_at, m.round_number, item.round_length_days);
+    const daysLeft = due ? Math.ceil((due.getTime() - Date.now()) / 86400000) : null;
+    const context = [
+      m.court || (item.league_id ? leagueOrFriendly : null),
+      daysLeft !== null ? t("ROUND ENDS IN {n}D", { n: daysLeft }) : null,
+    ]
+      .filter(Boolean)
+      .join(" · ");
+    return {
+      typeLabel: t("TIME PROPOSED TO YOU"),
+      age: weekdayShort(new Date(m.scheduled_at)),
+      opponentName: opponent.name,
+      opponentId: opponent.id,
+      value: formatWeekdayTime(new Date(m.scheduled_at)).split(" ")[1],
+      valueKind: "time",
+      context,
+      primaryLabel: t("מאשר, נשחק"),
+      primaryLime: false,
+      secondaryLabel: t("הצע שעה אחרת"),
+    };
+  }
+
+  // report
+  return {
+    typeLabel: t("PLAYED · NOT REPORTED"),
+    age: compactAge(new Date(m.scheduled_at)),
+    opponentName: opponent.name,
+    opponentId: opponent.id,
+    value: roundLabel,
+    valueKind: "meta",
+    context: `${t("PLAYED")} ${formatWeekdayTime(new Date(m.scheduled_at))} · ${t("NEITHER OF YOU REPORTED")}`,
+    primaryLabel: t("דווח תוצאה"),
+    primaryLime: true,
+    secondaryLabel: null,
+  };
+}
+
 // Picks 4 standings rows to preview: the leader always first, then a window
 // around the viewer (one above, them, one below). If the leader would fall
 // inside that window, drop the duplicate and pull one more row from below

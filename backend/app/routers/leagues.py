@@ -2,6 +2,7 @@ import math
 import random
 import string
 from datetime import datetime, timedelta
+from types import SimpleNamespace
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import or_
@@ -294,6 +295,172 @@ def my_next_matches(
         )
 
     return entries
+
+
+def _classify_open_item(match: models.Match, user_id: int) -> str | None:
+    """Which of needsyou112a.md's four tile types (or None) a match is for
+    this viewer. Mirrors matchUtils.js's matchScheduleState/getActionCandidates
+    but fixes the bug those had: after a dispute, corrected_by (not
+    reported_by) is the one actually waiting on a response."""
+    if match.status == models.MatchStatus.pending_confirmation:
+        if match.corrected_sets is not None:
+            return "waiting" if match.corrected_by == user_id else "confirm"
+        return None if match.reported_by == user_id else "confirm"
+
+    if match.status == models.MatchStatus.pending:
+        if not match.scheduled_at:
+            return None
+        if not match.schedule_confirmed:
+            return "proposed" if match.scheduled_by != user_id else None
+        return "report" if match.scheduled_at <= datetime.utcnow() else None
+
+    return None
+
+
+def _hypothetical_scores(match: models.Match) -> tuple[int, int]:
+    sets = match.corrected_sets if match.corrected_sets is not None else match.sets
+    if not sets:
+        return match.player1_score or 0, match.player2_score or 0
+    p1 = sum(1 for s in sets if s["player1_games"] > s["player2_games"])
+    p2 = sum(1 for s in sets if s["player2_games"] > s["player1_games"])
+    return p1, p2
+
+
+def _rank_impact(db: Session, league: models.League, match: models.Match, user_id: int):
+    """old_rank/new_rank/members_total for a pending_confirmation match — lets
+    the "what needs you" screen show "CONFIRMING DROPS YOU #3 -> #4" without
+    the viewer having to open the match to find out."""
+    completed = (
+        db.query(models.Match)
+        .filter(models.Match.league_id == league.id, models.Match.status == models.MatchStatus.completed)
+        .all()
+    )
+    old_standing = _compute_my_standing(league, user_id, completed)
+    p1_score, p2_score = _hypothetical_scores(match)
+    hypothetical = SimpleNamespace(
+        player1_id=match.player1_id, player2_id=match.player2_id, player1_score=p1_score, player2_score=p2_score
+    )
+    new_standing = _compute_my_standing(league, user_id, [*completed, hypothetical])
+    old_rank = old_standing[0] if old_standing else None
+    new_rank = new_standing[0] if new_standing else None
+    members_total = new_standing[1] if new_standing else (old_standing[1] if old_standing else None)
+    return old_rank, new_rank, members_total
+
+
+@router.get("/mine/open-items", response_model=schemas.OpenItemsOut)
+def my_open_items(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Everything the viewer can act on right now, one server-sorted list —
+    see needsyou112a.md. Feeds both the tab-bar action button (1 item ->
+    jump straight to it, 2+ -> this list) and the NEEDS YOU screen itself."""
+    _auto_confirm_overdue(db)
+    my_leagues = (
+        db.query(models.League)
+        .join(models.LeagueMembership)
+        .options(joinedload(models.League.memberships))
+        .filter(models.LeagueMembership.user_id == current_user.id)
+        .all()
+    )
+
+    items = []
+    for league in my_leagues:
+        my_match_filter = or_(
+            models.Match.player1_id == current_user.id,
+            models.Match.player2_id == current_user.id,
+        )
+        matches = (
+            db.query(models.Match)
+            .options(joinedload(models.Match.player1), joinedload(models.Match.player2))
+            .filter(
+                models.Match.league_id == league.id,
+                models.Match.status.in_([models.MatchStatus.pending, models.MatchStatus.pending_confirmation]),
+                my_match_filter,
+            )
+            .all()
+        )
+        for match in matches:
+            item_type = _classify_open_item(match, current_user.id)
+            if not item_type:
+                continue
+            old_rank = new_rank = members_total = None
+            if item_type == "confirm":
+                old_rank, new_rank, members_total = _rank_impact(db, league, match, current_user.id)
+            items.append(
+                schemas.OpenItemOut(
+                    type=item_type,
+                    kind=models.MatchKind.league,
+                    sport_id=league.sport_id,
+                    league_id=league.id,
+                    league_name=league.name,
+                    schedule_started_at=league.schedule_started_at,
+                    round_length_days=league.round_length_days or 7,
+                    best_of=league.best_of or 3,
+                    old_rank=old_rank,
+                    new_rank=new_rank,
+                    members_total=members_total,
+                    match=match,
+                )
+            )
+
+    friendly_matches = (
+        db.query(models.Match)
+        .options(joinedload(models.Match.player1), joinedload(models.Match.player2))
+        .filter(
+            models.Match.kind == models.MatchKind.friendly,
+            models.Match.status.in_([models.MatchStatus.pending, models.MatchStatus.pending_confirmation]),
+            or_(
+                models.Match.player1_id == current_user.id,
+                models.Match.player2_id == current_user.id,
+            ),
+        )
+        .all()
+    )
+    for match in friendly_matches:
+        item_type = _classify_open_item(match, current_user.id)
+        if not item_type:
+            continue
+        items.append(
+            schemas.OpenItemOut(
+                type=item_type,
+                kind=models.MatchKind.friendly,
+                sport_id=match.sport_id,
+                best_of=3,
+                match=match,
+            )
+        )
+
+    type_priority = {"confirm": 0, "report": 1, "proposed": 2, "waiting": 3}
+
+    def sort_key(item: schemas.OpenItemOut):
+        m = item.match
+        if item.type in ("confirm", "waiting"):
+            urgency = m.auto_confirm_at or datetime.max
+        elif item.type == "proposed":
+            urgency = m.scheduled_at or datetime.max
+        else:
+            urgency = m.scheduled_at or datetime.max
+        return type_priority[item.type], urgency
+
+    items.sort(key=sort_key)
+
+    my_match_filter = or_(
+        models.Match.player1_id == current_user.id,
+        models.Match.player2_id == current_user.id,
+    )
+    scheduled_count = (
+        db.query(models.Match)
+        .filter(
+            models.Match.status == models.MatchStatus.pending,
+            models.Match.schedule_confirmed.is_(True),
+            models.Match.scheduled_at > datetime.utcnow(),
+            my_match_filter,
+        )
+        .count()
+    )
+
+    return schemas.OpenItemsOut(items=items, scheduled_count=scheduled_count)
 
 
 @router.get("/open", response_model=list[schemas.OpenLeagueOut])

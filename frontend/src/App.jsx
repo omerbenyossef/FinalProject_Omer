@@ -15,6 +15,7 @@ import LeagueManage from "./pages/LeagueManage.jsx";
 import RoundDetail from "./pages/RoundDetail.jsx";
 import LeagueRounds from "./pages/LeagueRounds.jsx";
 import Profile from "./pages/Profile.jsx";
+import NeedsYou from "./pages/NeedsYou.jsx";
 import Rankings from "./pages/Rankings.jsx";
 import Settings from "./pages/Settings.jsx";
 import HeadToHead from "./pages/HeadToHead.jsx";
@@ -53,6 +54,14 @@ export default function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/leagues" element={<Leagues />} />
+        <Route
+          path="/needs-you"
+          element={
+            <ProtectedRoute>
+              <NeedsYou />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/leagues/open"
           element={

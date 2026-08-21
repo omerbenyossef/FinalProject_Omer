@@ -78,6 +78,7 @@ export const api = {
   listLeagues: () => request("/leagues/", { auth: false }),
   myLeagues: () => request("/leagues/mine"),
   myNextMatches: () => request("/leagues/mine/next-matches"),
+  myOpenItems: () => request("/leagues/mine/open-items"),
   createLeague: (data) => request("/leagues/", { method: "POST", body: data }),
   getLeague: (id) => request(`/leagues/${id}`, { auth: false }),
   joinLeague: (id, code) => request(`/leagues/${id}/join`, { method: "POST", body: { code } }),
@@ -144,6 +145,7 @@ export const api = {
   disputeMatchResult: (matchId, sets, note) =>
     request(`/matches/${matchId}/dispute`, { method: "POST", body: { sets, note: note || null } }),
   rejectMatchCorrection: (matchId) => request(`/matches/${matchId}/dispute/reject`, { method: "POST" }),
+  cancelMatchCorrection: (matchId) => request(`/matches/${matchId}/dispute/cancel`, { method: "POST" }),
 
   myRatings: () => request("/ratings/me"),
   checkRating: (leagueId) => request(`/leagues/${leagueId}/rating-check`),

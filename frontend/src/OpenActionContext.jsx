@@ -4,7 +4,7 @@ import { api } from "./api";
 import { useAuth } from "./AuthContext.jsx";
 import { useSport } from "./SportContext.jsx";
 import { useLanguage } from "./LanguageContext.jsx";
-import { getActionCandidates, buildOpenAction } from "./matchUtils.js";
+import { buildTabbarPreview, openItemRoute } from "./matchUtils.js";
 
 const OpenActionContext = createContext(null);
 
@@ -17,20 +17,34 @@ export function OpenActionProvider({ children }) {
 
   const [nextMatches, setNextMatches] = useState([]);
   const [matchesLoading, setMatchesLoading] = useState(true);
+  const [openItems, setOpenItems] = useState([]);
+  const [scheduledCount, setScheduledCount] = useState(0);
+  const [openItemsLoading, setOpenItemsLoading] = useState(true);
 
   function reload() {
-    if (!user) return;
+    if (!user) return Promise.resolve();
     api
       .myNextMatches()
       .then(setNextMatches)
       .catch(() => {})
       .finally(() => setMatchesLoading(false));
+    return api
+      .myOpenItems()
+      .then((data) => {
+        setOpenItems(data.items);
+        setScheduledCount(data.scheduled_count);
+      })
+      .catch(() => {})
+      .finally(() => setOpenItemsLoading(false));
   }
 
   useEffect(() => {
     if (!user) {
       setNextMatches([]);
+      setOpenItems([]);
+      setScheduledCount(0);
       setMatchesLoading(false);
+      setOpenItemsLoading(false);
       return;
     }
     reload();
@@ -47,32 +61,30 @@ export function OpenActionProvider({ children }) {
     [nextMatches, selectedSportId]
   );
 
-  const actionCandidates = useMemo(
-    () => getActionCandidates(relevantEntries, user?.id),
-    [relevantEntries, user]
+  const relevantItems = useMemo(
+    () => openItems.filter((item) => item.sport_id === selectedSportId),
+    [openItems, selectedSportId]
   );
 
+  const itemCount = relevantItems.length;
+
   const openAction = useMemo(
-    () => buildOpenAction(actionCandidates, user?.id, t),
-    [actionCandidates, user, t]
+    () => buildTabbarPreview(relevantItems[0] ?? null, user?.id, t),
+    [relevantItems, user, t]
   );
 
   const hasOtherLeagueActivity = useMemo(() => {
-    const all = [...actionCandidates.confirm, ...actionCandidates.report, ...actionCandidates.proposed];
-    return all.some((e) => currentLeagueId === null || e.league_id !== currentLeagueId);
-  }, [actionCandidates, currentLeagueId]);
+    const actionable = relevantItems.filter((item) => item.type !== "waiting");
+    return actionable.some((item) => currentLeagueId === null || item.league_id !== currentLeagueId);
+  }, [relevantItems, currentLeagueId]);
 
   function triggerOpenAction() {
-    if (!openAction) return;
-    if (openAction.kind === "confirm") {
-      navigate(`/matches/${openAction.match.id}/confirm`);
-    } else if (openAction.kind === "schedule") {
-      navigate(`/matches/${openAction.match.id}`);
-    } else if (openAction.entry.kind === "friendly") {
-      navigate("/profile");
-    } else if (openAction.entry.league_id != null) {
-      navigate(`/leagues/${openAction.entry.league_id}`);
+    if (itemCount === 0) return;
+    if (itemCount >= 2) {
+      navigate("/needs-you");
+      return;
     }
+    navigate(openItemRoute(relevantItems[0]));
   }
 
   return (
@@ -81,6 +93,10 @@ export function OpenActionProvider({ children }) {
         nextMatches,
         matchesLoading,
         reload,
+        openItems: relevantItems,
+        itemCount,
+        openItemsLoading,
+        scheduledCount,
         openAction,
         hasOtherLeagueActivity,
         triggerOpenAction,

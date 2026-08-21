@@ -355,7 +355,8 @@ export default function Profile() {
   const { selectedSportId, sports } = useSport();
   const { t } = useLanguage();
   const navigate = useNavigate();
-  const { nextMatches, matchesLoading, reload: loadNextMatches, openAction } = useOpenAction();
+  const { nextMatches, matchesLoading, reload: loadNextMatches, openAction, itemCount, triggerOpenAction } =
+    useOpenAction();
   const [stats, setStats] = useState(null);
   const [error, setError] = useState("");
   const [myLeagues, setMyLeagues] = useState([]);
@@ -594,6 +595,11 @@ export default function Profile() {
             <h1 className="home-name">{user.name}</h1>
             {(isNoLeague || isRoundNotOpened) && (
               <span className="home-tag">{isNoLeague ? "DAY 1" : "1 LEAGUE"}</span>
+            )}
+            {itemCount > 0 && (
+              <button type="button" className="home-tag home-tag-needs" onClick={triggerOpenAction}>
+                {itemCount}
+              </button>
             )}
           </div>
           <PageHelp

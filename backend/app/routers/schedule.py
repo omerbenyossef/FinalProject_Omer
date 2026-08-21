@@ -448,3 +448,28 @@ def reject_correction(
     )
 
     return match
+
+
+@router.post("/{match_id}/dispute/cancel", response_model=schemas.MatchOut)
+def cancel_correction(
+    match_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Lets the person who sent a correction (needsyou112a.md's "CORRECTION
+    SENT · WAITING" tile) withdraw it before the original reporter has acted
+    on it, reverting the match to their still-standing original report."""
+    match = _get_match_for_participant(db, match_id, current_user.id)
+    if match.status != models.MatchStatus.pending_confirmation or match.corrected_sets is None:
+        raise HTTPException(status_code=400, detail="אין תיקון לבטל")
+    if current_user.id != match.corrected_by:
+        raise HTTPException(status_code=400, detail="רק מי ששלח את התיקון יכול לבטל אותו")
+
+    match.corrected_by = None
+    match.corrected_sets = None
+    match.dispute_note = None
+    match.auto_confirm_at = datetime.utcnow() + CONFIRMATION_WINDOW
+    db.commit()
+    db.refresh(match)
+
+    return match

@@ -297,6 +297,31 @@ class NextMatchEntry(BaseModel):
     match: MatchOut
 
 
+class OpenItemOut(BaseModel):
+    """One row for needsyou112a.md's "what needs you" screen — see
+    routers/leagues.py list_open_items for how `type` is decided and how
+    old_rank/new_rank (the "confirming this drops/moves you #X -> #Y"
+    context) are computed."""
+
+    type: str  # "confirm" | "report" | "proposed" | "waiting"
+    kind: MatchKind = MatchKind.league
+    sport_id: Optional[int] = None
+    league_id: Optional[int] = None
+    league_name: Optional[str] = None
+    schedule_started_at: Optional[datetime] = None
+    round_length_days: int = 7
+    best_of: int = 3
+    old_rank: Optional[int] = None
+    new_rank: Optional[int] = None
+    members_total: Optional[int] = None
+    match: MatchOut
+
+
+class OpenItemsOut(BaseModel):
+    items: list[OpenItemOut]
+    scheduled_count: int = 0
+
+
 class FriendlyInviteCreate(BaseModel):
     opponent_id: int
     sport_id: int

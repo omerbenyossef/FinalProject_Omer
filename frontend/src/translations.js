@@ -607,6 +607,24 @@ const PAIRS = [
   ["שתפו את הקוד הזה עם מי שתרצו להזמין ישירות לליגה.", "Share this code with anyone you want to invite directly to the league."],
   ["תקבלו התראה כשיש לכם משחק לתאם", "You'll get a notification when you have a match to schedule"],
 
+  // What needs you (112a)
+  ["NEEDS YOU", "NEEDS YOU"],
+  ["FRIENDLY", "FRIENDLY"],
+  ["RESULT TO CONFIRM", "RESULT TO CONFIRM"],
+  ["TIME PROPOSED TO YOU", "TIME PROPOSED TO YOU"],
+  ["PLAYED · NOT REPORTED", "PLAYED · NOT REPORTED"],
+  ["CORRECTION SENT · WAITING", "CORRECTION SENT · WAITING"],
+  ["NOT COUNTED UNTIL THEY ANSWER", "NOT COUNTED UNTIL THEY ANSWER"],
+  ["PLAYED", "PLAYED"],
+  ["NEITHER OF YOU REPORTED", "NEITHER OF YOU REPORTED"],
+  ["NOTHING ELSE IS WAITING", "NOTHING ELSE IS WAITING"],
+  ["ROUND ENDS IN {n}D", "ROUND ENDS IN {n}D"],
+  ["CONFIRMING DROPS YOU #{old} → #{new}", "CONFIRMING DROPS YOU #{old} → #{new}"],
+  ["CONFIRMING MOVES YOU UP #{old} → #{new}", "CONFIRMING MOVES YOU UP #{old} → #{new}"],
+  ["{n} need you · {m} waiting", "{n} need you · {m} waiting"],
+  ["{n} MATCHES SCHEDULED", "{n} MATCHES SCHEDULED"],
+  ["ממתין לתשובה מ{name}", "Waiting for a reply from {name}"],
+
   // Delete account
   ["מחיקת חשבון", "Delete account"],
   ["מחיקה סופית של החשבון וכל הנתונים שלך", "Permanently delete your account and your data"],
