@@ -176,6 +176,32 @@ def backfill_player_rating_competitive() -> None:
 
 backfill_player_rating_competitive()
 
+
+def backfill_notification_preferences() -> None:
+    """settings114b.md added notification-preference columns to User; existing
+    rows predate them and would otherwise sit at NULL forever (add_missing_columns
+    can't apply a default retroactively)."""
+    db = SessionLocal()
+    try:
+        db.query(models.User).filter(models.User.notify_time_proposals.is_(None)).update(
+            {models.User.notify_time_proposals: True}, synchronize_session=False
+        )
+        db.query(models.User).filter(models.User.notify_round_opens.is_(None)).update(
+            {models.User.notify_round_opens: True}, synchronize_session=False
+        )
+        db.query(models.User).filter(models.User.quiet_hours_from.is_(None)).update(
+            {models.User.quiet_hours_from: "22:00"}, synchronize_session=False
+        )
+        db.query(models.User).filter(models.User.quiet_hours_to.is_(None)).update(
+            {models.User.quiet_hours_to: "08:00"}, synchronize_session=False
+        )
+        db.commit()
+    finally:
+        db.close()
+
+
+backfill_notification_preferences()
+
 app = FastAPI(title="Amateur Sports League API")
 
 app.add_middleware(

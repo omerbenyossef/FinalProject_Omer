@@ -59,7 +59,9 @@ export const api = {
       auth: false,
     }),
   myStats: (sportId) => request(`/auth/me/stats${sportId ? `?sport_id=${sportId}` : ""}`),
-  updateProfile: (name, age) => request("/auth/me", { method: "PATCH", body: { name, age } }),
+  updateProfile: (fields) => request("/auth/me", { method: "PATCH", body: fields }),
+  updateNotificationPreferences: (fields) =>
+    request("/auth/me/notifications", { method: "PATCH", body: fields }),
   changePassword: (currentPassword, newPassword) =>
     request("/auth/change-password", {
       method: "POST",
@@ -152,6 +154,8 @@ export const api = {
   checkRating: (leagueId) => request(`/leagues/${leagueId}/rating-check`),
   submitRating: (leagueId, answers) =>
     request(`/leagues/${leagueId}/rate`, { method: "POST", body: answers }),
+  retakeRating: (sportId, answers) =>
+    request(`/ratings/${sportId}/retake`, { method: "POST", body: answers }),
 
   searchFriendlyPlayers: (sportId, q) =>
     request(`/friendly/players/search?sport_id=${sportId}${q ? `&q=${encodeURIComponent(q)}` : ""}`),

@@ -53,6 +53,27 @@ def _other_leagues_at_level(db: Session, league: models.League, level: float, us
     ]
 
 
+def _compute_level_from_answers(answers: schemas.RatingAnswers) -> tuple[float, bool]:
+    for value in (answers.q1, answers.q2, answers.q3):
+        if value not in (0, 1, 2, 3):
+            raise HTTPException(status_code=400, detail="תשובה לא תקינה")
+
+    competitive = answers.q3 == COMPETITIVE_Q3_INDEX
+    if competitive:
+        if answers.venue not in (0, 1, 2, 3):
+            raise HTTPException(status_code=400, detail="תשובה לא תקינה")
+        level = compute_competitive_level(answers.venue)
+    else:
+        for value in (answers.q4, answers.q5):
+            if value not in (0, 1, 2, 3):
+                raise HTTPException(status_code=400, detail="תשובה לא תקינה")
+        if answers.q6 not in (0, 1, 2, 3, 4):
+            raise HTTPException(status_code=400, detail="תשובה לא תקינה")
+        level = compute_questionnaire_level(answers.q1, answers.q2, answers.q3, answers.q4, answers.q5)
+        level = apply_self_placement_check(level, answers.q6)
+    return level, competitive
+
+
 def _build_result(db: Session, league: models.League, raw_level: float, provisional: bool, user_id: int):
     level = round_to_half(raw_level)
     in_range = league.level_min <= level <= league.level_max
@@ -82,6 +103,7 @@ def my_ratings(
             level=round_to_half(r.level),
             provisional=r.provisional,
             rated_matches=r.matches_played,
+            finalized_at=r.finalized_at,
         )
         for r in ratings
     ]
@@ -112,23 +134,7 @@ def submit_rating(
     if get_rating(db, current_user.id, league.sport_id):
         raise HTTPException(status_code=400, detail="כבר יש לך דירוג בענף הזה")
 
-    for value in (answers.q1, answers.q2, answers.q3):
-        if value not in (0, 1, 2, 3):
-            raise HTTPException(status_code=400, detail="תשובה לא תקינה")
-
-    competitive = answers.q3 == COMPETITIVE_Q3_INDEX
-    if competitive:
-        if answers.venue not in (0, 1, 2, 3):
-            raise HTTPException(status_code=400, detail="תשובה לא תקינה")
-        level = compute_competitive_level(answers.venue)
-    else:
-        for value in (answers.q4, answers.q5):
-            if value not in (0, 1, 2, 3):
-                raise HTTPException(status_code=400, detail="תשובה לא תקינה")
-        if answers.q6 not in (0, 1, 2, 3, 4):
-            raise HTTPException(status_code=400, detail="תשובה לא תקינה")
-        level = compute_questionnaire_level(answers.q1, answers.q2, answers.q3, answers.q4, answers.q5)
-        level = apply_self_placement_check(level, answers.q6)
+    level, competitive = _compute_level_from_answers(answers)
 
     rating = models.PlayerRating(
         user_id=current_user.id, sport_id=league.sport_id, level=level, competitive=competitive
@@ -138,3 +144,32 @@ def submit_rating(
     db.refresh(rating)
 
     return _build_result(db, league, rating.level, rating.provisional, current_user.id)
+
+
+@router.post("/ratings/{sport_id}/retake", response_model=schemas.RatingRetakeOut)
+def retake_rating(
+    sport_id: int,
+    answers: schemas.RatingAnswers,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """settings114b.md — the only place a player can redo the questionnaire.
+    The existing rating stays in effect (still used for standings/matchmaking)
+    right up until these new answers are computed and saved here."""
+    rating = get_rating(db, current_user.id, sport_id)
+    if not rating:
+        raise HTTPException(status_code=404, detail="אין לך דירוג בענף הזה לתקן")
+
+    level, competitive = _compute_level_from_answers(answers)
+
+    rating.level = level
+    rating.competitive = competitive
+    rating.provisional = True
+    rating.matches_played = 0
+    rating.finalized_at = None
+    db.commit()
+    db.refresh(rating)
+
+    return schemas.RatingRetakeOut(
+        level=round_to_half(rating.level), band=band_name(rating.level), provisional=rating.provisional
+    )

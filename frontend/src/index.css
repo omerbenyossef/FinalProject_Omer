@@ -749,6 +749,194 @@ a { color: var(--court); text-decoration: none; }
   background: var(--court-contrast);
 }
 
+/* settings114b — identity rows, YOUR LEVEL, notification toggles, end actions */
+
+.settings-id-label {
+  font-family: "IBM Plex Sans", var(--sans);
+  font-weight: 600;
+  font-size: 16.5px;
+}
+
+.settings-id-value {
+  flex: none;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: "IBM Plex Mono", var(--mono);
+  font-size: 14px;
+  color: var(--muted);
+  cursor: pointer;
+  max-width: 55%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-id-input {
+  flex: none;
+  width: 55%;
+  border: none;
+  border-bottom: 1px solid var(--court);
+  background: none;
+  padding: 0 0 2px;
+  font-family: "IBM Plex Mono", var(--mono);
+  font-size: 14px;
+  color: var(--ink);
+  text-align: end;
+}
+
+.settings-quiet-edit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-quiet-edit input[type="time"] {
+  border: none;
+  border-bottom: 1px solid var(--court);
+  background: none;
+  padding: 0 0 2px;
+  font-family: "IBM Plex Mono", var(--mono);
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.settings-quiet-edit span {
+  color: var(--muted);
+}
+
+.settings-level-label {
+  font-family: "IBM Plex Mono", var(--mono);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.settings-level-num {
+  margin-top: 8px;
+  font-family: "Anton", sans-serif;
+  font-weight: 400;
+  font-size: 40px;
+  line-height: 1;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.settings-level-status {
+  margin-top: 4px;
+  font-family: "IBM Plex Mono", var(--mono);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+
+.settings-level-note {
+  margin-top: 10px;
+  font-family: "IBM Plex Sans", var(--sans);
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.settings-link-action {
+  margin-top: 12px;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: "IBM Plex Sans", var(--sans);
+  font-weight: 700;
+  font-size: 13.5px;
+  color: var(--ink);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Scoped gray-scale palette for this page's toggles — result_to_confirm's
+   "locked" state especially needs to read as visually distinct from a real
+   off, not just disabled-looking. */
+.toggle-switch.settings-toggle {
+  width: 44px;
+  height: 26px;
+  border-radius: 13px;
+  background: #3b424e;
+}
+.toggle-switch.settings-toggle .toggle-knob {
+  width: 20px;
+  height: 20px;
+  background: #6f7787;
+}
+.toggle-switch.settings-toggle.on {
+  background: #eef1f7;
+}
+.toggle-switch.settings-toggle.on .toggle-knob {
+  background: #12151b;
+}
+.toggle-switch.settings-toggle.locked {
+  background: #5b6373;
+}
+.toggle-switch.settings-toggle.locked .toggle-knob {
+  background: #c9cfdb;
+}
+.toggle-switch.settings-toggle:disabled {
+  opacity: 1;
+}
+
+.settings-league-pick-list {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-league-pick-row {
+  padding: 13px 0;
+  border-top: 1px solid var(--line-soft);
+  background: none;
+  border-inline: none;
+  border-bottom: none;
+  text-align: start;
+  font-family: "IBM Plex Sans", var(--sans);
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--ink);
+  cursor: pointer;
+}
+.settings-league-pick-row:first-child {
+  border-top: none;
+}
+
+.settings-end-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: "IBM Plex Mono", var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.settings-end-action {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.settings-footer {
+  margin-top: 26px;
+  padding: 14px 0;
+  border-top: 1px solid var(--line-soft);
+  font-family: "IBM Plex Mono", var(--mono);
+  font-weight: 600;
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-align: center;
+  color: var(--muted);
+}
+
 .h2h-compare {
   display: flex;
   align-items: center;

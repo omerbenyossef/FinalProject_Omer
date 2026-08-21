@@ -54,6 +54,12 @@ class User(Base):
     reset_token = Column(String, unique=True, index=True, nullable=True)
     reset_token_expires = Column(DateTime, nullable=True)
     deleted_at = Column(DateTime, nullable=True)
+    area = Column(String, nullable=True)
+    travel_radius_km = Column(Float, nullable=True)
+    notify_time_proposals = Column(Boolean, nullable=False, default=True)
+    notify_round_opens = Column(Boolean, nullable=False, default=True)
+    quiet_hours_from = Column(String, nullable=True, default="22:00")
+    quiet_hours_to = Column(String, nullable=True, default="08:00")
 
     memberships = relationship("LeagueMembership", back_populates="user")
     push_subscriptions = relationship("PushSubscription", back_populates="user")
@@ -126,6 +132,7 @@ class PlayerRating(Base):
     matches_played = Column(Integer, default=0, nullable=False)
     competitive = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+    finalized_at = Column(DateTime, nullable=True)
 
     user = relationship("User")
     sport = relationship("Sport")

@@ -56,8 +56,33 @@ def update_profile(
     current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    current_user.name = payload.name
-    current_user.age = payload.age
+    # settings114b.md: each identity row saves on its own, so only the field
+    # actually sent gets applied — the others stay untouched.
+    data = payload.dict(exclude_unset=True)
+    for field in ("name", "age", "area", "travel_radius_km"):
+        if field in data:
+            setattr(current_user, field, data[field])
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+
+@router.patch("/me/notifications", response_model=schemas.UserOut)
+def update_notification_preferences(
+    payload: schemas.UpdateNotificationPreferencesRequest,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    # result_to_confirm is always on and never sent from the client (settings114b.md).
+    data = payload.dict(exclude_unset=True)
+    if "time_proposals" in data:
+        current_user.notify_time_proposals = data["time_proposals"]
+    if "round_opens" in data:
+        current_user.notify_round_opens = data["round_opens"]
+    if "quiet_from" in data:
+        current_user.quiet_hours_from = data["quiet_from"]
+    if "quiet_to" in data:
+        current_user.quiet_hours_to = data["quiet_to"]
     db.commit()
     db.refresh(current_user)
     return current_user

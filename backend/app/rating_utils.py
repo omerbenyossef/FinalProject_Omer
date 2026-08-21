@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sqlalchemy.orm import Session
 
 from . import models
@@ -103,6 +105,7 @@ def _apply_result(rating: models.PlayerRating, opponent_level: float, won: bool)
         rating.matches_played += 1
         if rating.matches_played >= models.PROVISIONAL_MATCHES:
             rating.provisional = False
+            rating.finalized_at = datetime.utcnow()
         return
 
     expected = _expected_score(rating.level, opponent_level)
@@ -112,6 +115,7 @@ def _apply_result(rating: models.PlayerRating, opponent_level: float, won: bool)
     rating.matches_played += 1
     if rating.provisional and rating.matches_played >= models.PROVISIONAL_MATCHES:
         rating.provisional = False
+        rating.finalized_at = datetime.utcnow()
 
 
 def update_ratings_for_match(db: Session, match: models.Match) -> None:

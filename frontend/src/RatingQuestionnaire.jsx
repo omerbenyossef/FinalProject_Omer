@@ -88,7 +88,16 @@ function optionDesc(opt) {
   return typeof opt === "string" ? null : opt.desc;
 }
 
-export default function RatingQuestionnaire({ league, sportName, existingResult, joinCode, onClose, onJoined }) {
+export default function RatingQuestionnaire({
+  league,
+  sportName,
+  existingResult,
+  joinCode,
+  onClose,
+  onJoined,
+  retake,
+  sportId,
+}) {
   const { t } = useLanguage();
   const [step, setStep] = useState(existingResult ? "result" : 0);
   const [answers, setAnswers] = useState({});
@@ -114,7 +123,7 @@ export default function RatingQuestionnaire({ league, sportName, existingResult,
         next.q3 === COMPETITIVE_Q3_INDEX
           ? { q1: next.q1, q2: next.q2, q3: next.q3, venue: next.venue }
           : { q1: next.q1, q2: next.q2, q3: next.q3, q4: next.q4, q5: next.q5, q6: next.q6 };
-      const res = await api.submitRating(league.id, payload);
+      const res = retake ? await api.retakeRating(sportId, payload) : await api.submitRating(league.id, payload);
       setResult(res);
       setStep("result");
     } catch (err) {
@@ -136,6 +145,41 @@ export default function RatingQuestionnaire({ league, sportName, existingResult,
   }
 
   if (step === "result" && result) {
+    if (retake) {
+      return (
+        <div className="rating-overlay">
+          <button type="button" className="rating-back" onClick={onClose}>
+            <ChevronIcon aria-hidden="true" />
+          </button>
+
+          <div className="rating-result-hero">
+            <div className="rating-hero-num" dir="ltr">
+              {result.level.toFixed(1)}
+            </div>
+            <div className="rating-hero-band">{t(result.band)}</div>
+            <div className="rating-hero-meta" dir="ltr">
+              NTRP · {t(sportName)} {result.provisional && <>· {t("זמני")}</>}
+            </div>
+          </div>
+
+          <div className="rating-bar">
+            {NTRP_STEPS.map((step_) => (
+              <span
+                key={step_}
+                className={`rating-bar-step${Math.abs(step_ - result.level) < 0.01 ? " current" : ""}${
+                  step_ <= result.level ? " filled" : ""
+                }`}
+              />
+            ))}
+          </div>
+
+          <button type="button" className="rating-primary-btn" onClick={onClose}>
+            {t("סיום")}
+          </button>
+        </div>
+      );
+    }
+
     return (
       <div className="rating-overlay">
         <button type="button" className="rating-back" onClick={onClose}>
@@ -256,7 +300,9 @@ export default function RatingQuestionnaire({ league, sportName, existingResult,
       </div>
       <div className="rating-step-label">{t("STEP {n} OF {total}", { n: stepNum, total: questions.length })}</div>
       <div className="rating-join-line">
-        {t("מצטרפ/ת ל-{league} · {sport}", { league: league.name, sport: t(sportName) })}
+        {retake
+          ? t("קובע/ת מחדש את הרמה שלך · {sport}", { sport: t(sportName) })
+          : t("מצטרפ/ת ל-{league} · {sport}", { league: league.name, sport: t(sportName) })}
       </div>
 
       <h1 className="rating-question">{t(question.title, { sport: t(sportName) })}</h1>

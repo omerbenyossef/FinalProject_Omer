@@ -712,6 +712,29 @@ const PAIRS = [
   ["+{n} more · ALL ON PACE", "+{n} more · ALL ON PACE"],
   ["READ ONLY", "READ ONLY"],
   ["UPDATED", "UPDATED"],
+
+  // Settings redesign (114b)
+  ["שם", "Name"],
+  ["אזור", "Area"],
+  ["לא הוגדר", "Not set"],
+  ["רדיוס נסיעה", "Travel radius"],
+  ["YOUR LEVEL", "YOUR LEVEL"],
+  ["הרמה נקבעת מהתוצאות שלך, לא נקבעת ידנית.", "Your level is set from your results, not by hand."],
+  ["RETAKE THE QUESTIONNAIRE", "RETAKE THE QUESTIONNAIRE"],
+  ["PROVISIONAL · {n} MATCHES LEFT", "PROVISIONAL · {n} MATCHES LEFT"],
+  ["FINAL SINCE {month}", "FINAL SINCE {month}"],
+  ["FINAL", "FINAL"],
+  ["קובע/ת מחדש את הרמה שלך · {sport}", "Retaking your level · {sport}"],
+  ["סיום", "Done"],
+  ["NOTIFICATIONS", "NOTIFICATIONS"],
+  ["תוצאה לאישור", "Result to confirm"],
+  ["הצעות שעה", "Time proposals"],
+  ["פתיחת מחזור", "Round opens"],
+  ["שעות שקט", "Quiet hours"],
+  ["עזיבת ליגה", "Leave a league"],
+  ["SIGN OUT", "SIGN OUT"],
+  ["DELETE ACCOUNT", "DELETE ACCOUNT"],
+  ["SAVED AUTOMATICALLY", "SAVED AUTOMATICALLY"],
 ];
 
 const heToEn = {};

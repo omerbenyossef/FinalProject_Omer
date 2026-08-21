@@ -45,8 +45,21 @@ class DeleteAccountRequest(BaseModel):
 
 
 class UpdateProfileRequest(BaseModel):
-    name: str
+    # settings114b.md: each identity row (Name/Area/Travel radius) saves on
+    # its own as soon as it's edited, so the client only ever sends the one
+    # field that changed — every field here is optional, and update_profile
+    # applies only whatever was actually provided.
+    name: Optional[str] = None
     age: Optional[int] = None
+    area: Optional[str] = None
+    travel_radius_km: Optional[float] = None
+
+
+class UpdateNotificationPreferencesRequest(BaseModel):
+    time_proposals: Optional[bool] = None
+    round_opens: Optional[bool] = None
+    quiet_from: Optional[str] = None
+    quiet_to: Optional[str] = None
 
 
 class SetScore(BaseModel):
@@ -78,6 +91,12 @@ class UserOut(BaseModel):
     age: Optional[int] = None
     email: EmailStr
     is_admin: bool = False
+    area: Optional[str] = None
+    travel_radius_km: Optional[float] = None
+    notify_time_proposals: bool = True
+    notify_round_opens: bool = True
+    quiet_hours_from: Optional[str] = None
+    quiet_hours_to: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -396,9 +415,16 @@ class PlayerRatingOut(BaseModel):
     level: float
     provisional: bool
     rated_matches: int
+    finalized_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
+
+
+class RatingRetakeOut(BaseModel):
+    level: float
+    band: str
+    provisional: bool
 
 
 class LeagueLevelOption(BaseModel):
