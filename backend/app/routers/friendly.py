@@ -295,40 +295,6 @@ def report_friendly_score(
     return match
 
 
-@router.post("/matches/{match_id}/confirm", response_model=schemas.MatchOut)
-def confirm_friendly_score(
-    match_id: int,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
-):
-    _auto_confirm_overdue(db)
-    match = _get_friendly_match(db, match_id)
-    if current_user.id not in (match.player1_id, match.player2_id):
-        raise HTTPException(status_code=403, detail="Not a participant in this match")
-    if match.status != models.MatchStatus.pending_confirmation:
-        raise HTTPException(status_code=400, detail="אין תוצאה שממתינה לאישור עבור המשחק הזה")
-    if match.reported_by == current_user.id:
-        raise HTTPException(status_code=400, detail="לא ניתן לאשר תוצאה שדיווחת בעצמך")
-
-    match.status = models.MatchStatus.completed
-    match.confirmed_by = current_user.id
-    match.confirmed_at = datetime.utcnow()
-    db.commit()
-    db.refresh(match)
-    update_ratings_for_match(db, match)
-
-    if match.reported_by is not None:
-        notify_user(
-            db,
-            match.reported_by,
-            "התוצאה שלך אושרה",
-            f"{current_user.name} אישר/ה את התוצאה שדיווחת",
-            "/profile",
-        )
-
-    return match
-
-
 @router.post("/invite-links", response_model=schemas.FriendlyInviteLinkOut)
 def create_invite_link(
     payload: schemas.FriendlyInviteLinkCreate,

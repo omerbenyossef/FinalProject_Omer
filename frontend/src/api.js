@@ -112,8 +112,6 @@ export const api = {
     request(`/leagues/${leagueId}/matches/${matchId}/schedule/confirm`, { method: "POST" }),
   reportScore: (leagueId, matchId, sets) =>
     request(`/leagues/${leagueId}/matches/${matchId}/score`, { method: "POST", body: { sets } }),
-  confirmScore: (leagueId, matchId) =>
-    request(`/leagues/${leagueId}/matches/${matchId}/confirm`, { method: "POST" }),
   sendMatchReminder: (leagueId, matchId) =>
     request(`/leagues/${leagueId}/matches/${matchId}/remind`, { method: "POST" }),
   cancelMatch: (leagueId, matchId) =>
@@ -127,6 +125,10 @@ export const api = {
     }),
   confirmMatchSchedule: (matchId) => request(`/matches/${matchId}/schedule/confirm`, { method: "POST" }),
   declineMatchSchedule: (matchId) => request(`/matches/${matchId}/schedule/decline`, { method: "POST" }),
+  confirmMatchResult: (matchId) => request(`/matches/${matchId}/confirm`, { method: "POST" }),
+  disputeMatchResult: (matchId, sets, note) =>
+    request(`/matches/${matchId}/dispute`, { method: "POST", body: { sets, note: note || null } }),
+  rejectMatchCorrection: (matchId) => request(`/matches/${matchId}/dispute/reject`, { method: "POST" }),
 
   myRatings: () => request("/ratings/me"),
   checkRating: (leagueId) => request(`/leagues/${leagueId}/rating-check`),
@@ -145,7 +147,6 @@ export const api = {
       method: "POST",
       body: { sets, require_confirmation: requireConfirmation },
     }),
-  confirmFriendlyScore: (matchId) => request(`/friendly/matches/${matchId}/confirm`, { method: "POST" }),
   createFriendlyInviteLink: (sportId) =>
     request("/friendly/invite-links", { method: "POST", body: { sport_id: sportId } }),
   redeemFriendlyInviteLink: (token) => request(`/friendly/invite-links/${token}/redeem`, { method: "POST" }),

@@ -344,47 +344,6 @@ def report_score(
     return match
 
 
-@router.post("/{match_id}/confirm", response_model=schemas.MatchOut)
-def confirm_score(
-    league_id: int,
-    match_id: int,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
-):
-    _auto_confirm_overdue(db)
-    match = (
-        db.query(models.Match)
-        .filter(models.Match.id == match_id, models.Match.league_id == league_id)
-        .first()
-    )
-    if not match:
-        raise HTTPException(status_code=404, detail="Match not found")
-    if current_user.id not in (match.player1_id, match.player2_id):
-        raise HTTPException(status_code=403, detail="Not a participant in this match")
-    if match.status != models.MatchStatus.pending_confirmation:
-        raise HTTPException(status_code=400, detail="אין תוצאה שממתינה לאישור עבור המשחק הזה")
-    if match.reported_by == current_user.id:
-        raise HTTPException(status_code=400, detail="לא ניתן לאשר תוצאה שדיווחת בעצמך")
-
-    match.status = models.MatchStatus.completed
-    match.confirmed_by = current_user.id
-    match.confirmed_at = datetime.utcnow()
-    db.commit()
-    db.refresh(match)
-    update_ratings_for_match(db, match)
-
-    if match.reported_by is not None:
-        notify_user(
-            db,
-            match.reported_by,
-            "התוצאה שלך אושרה",
-            f"{current_user.name} אישר/ה את התוצאה שדיווחת",
-            f"/leagues/{league_id}",
-        )
-
-    return match
-
-
 @router.post("/{match_id}/remind", status_code=status.HTTP_204_NO_CONTENT)
 def remind_score(
     league_id: int,

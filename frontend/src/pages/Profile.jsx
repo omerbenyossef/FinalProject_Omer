@@ -6,7 +6,6 @@ import { useSport } from "../SportContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import { useOpenAction } from "../OpenActionContext.jsx";
 import SetScoreForm from "../SetScoreForm.jsx";
-import ConfirmScoreSheet from "../ConfirmScoreSheet.jsx";
 import Avatar from "../Avatar.jsx";
 import { ChevronIcon, UserPlusIcon } from "../Icons.jsx";
 import {
@@ -251,7 +250,6 @@ export default function Profile() {
   const [error, setError] = useState("");
   const [myLeagues, setMyLeagues] = useState([]);
   const [busy, setBusy] = useState(false);
-  const [confirmEntry, setConfirmEntry] = useState(null);
   const [reportingMatchId, setReportingMatchId] = useState(null);
   const [myRatings, setMyRatings] = useState([]);
   const [friendlyRequireConfirm, setFriendlyRequireConfirm] = useState(true);
@@ -315,43 +313,6 @@ export default function Profile() {
     }
   }
 
-  async function handleConfirmScore() {
-    if (!confirmEntry) return;
-    setBusy(true);
-    try {
-      if (confirmEntry.kind === "friendly") {
-        await api.confirmFriendlyScore(confirmEntry.match.id);
-      } else {
-        await api.confirmScore(confirmEntry.league_id, confirmEntry.match.id);
-      }
-      setConfirmEntry(null);
-      loadNextMatches();
-      reloadRatings();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleDisputeScore(sets) {
-    if (!confirmEntry) return;
-    setBusy(true);
-    try {
-      if (confirmEntry.kind === "friendly") {
-        await api.reportFriendlyScore(confirmEntry.match.id, sets, confirmEntry.match.requires_confirmation);
-      } else {
-        await api.reportScore(confirmEntry.league_id, confirmEntry.match.id, sets);
-      }
-      setConfirmEntry(null);
-      reloadRatings();
-      loadNextMatches();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setBusy(false);
-    }
-  }
 
   async function handleAcceptInvite(matchId) {
     setBusy(true);
@@ -399,8 +360,9 @@ export default function Profile() {
   // A friendly match has no page other than this one to act on it, unlike a league
   // match (which still shows fully on its LeagueDetail page even while promoted to
   // the tab bar). So only hide the promoted match here when it's a league match, or
-  // a friendly one whose action (confirm) is handled by the global ConfirmScoreSheet
-  // regardless of page — report/schedule friendly actions must stay reachable here.
+  // a friendly one whose action (confirm) navigates to the dedicated confirm page
+  // regardless of which page triggered it — report/schedule friendly actions must
+  // stay reachable here.
   const relevantEntries = nextMatches
     .filter((entry) => entry.sport_id === selectedSportId)
     .filter(
@@ -540,7 +502,7 @@ export default function Profile() {
               type="button"
               key={m.id}
               className="home-confirm"
-              onClick={() => setConfirmEntry(entry)}
+              onClick={() => navigate(`/matches/${m.id}/confirm`)}
             >
               <span className="home-confirm-dot" aria-hidden="true" />
               <span className="home-confirm-body">
@@ -606,7 +568,7 @@ export default function Profile() {
                   onCancelForm={() => setReportingMatchId(null)}
                   onSubmitScore={(sets) => handleReportScore(entry, entry.match.id, sets)}
                   onOpenProposal={() => navigate(`/matches/${entry.match.id}`)}
-                  onOpenConfirmScore={() => setConfirmEntry(entry)}
+                  onOpenConfirmScore={() => navigate(`/matches/${entry.match.id}/confirm`)}
                   onAccept={() => handleAcceptInvite(entry.match.id)}
                   onDecline={() => handleDeclineInvite(entry.match.id)}
                   onRemind={() =>
@@ -698,18 +660,6 @@ export default function Profile() {
           </div>
         )}
       </div>
-
-      {confirmEntry && (
-        <ConfirmScoreSheet
-          match={confirmEntry.match}
-          currentUserId={user.id}
-          busy={busy}
-          maxSets={confirmEntry.best_of}
-          onConfirm={handleConfirmScore}
-          onDispute={handleDisputeScore}
-          onClose={() => setConfirmEntry(null)}
-        />
-      )}
     </div>
   );
 }

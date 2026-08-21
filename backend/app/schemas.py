@@ -184,6 +184,11 @@ class MatchScoreUpdate(BaseModel):
     sets: list[SetScore]
 
 
+class MatchCorrection(BaseModel):
+    sets: list[SetScore]
+    note: Optional[str] = None
+
+
 class MatchScheduleProposal(BaseModel):
     scheduled_at: datetime
     court: Optional[str] = None
@@ -212,6 +217,10 @@ class MatchOut(BaseModel):
     confirmed_by: Optional[int] = None
     confirmed_at: Optional[datetime] = None
     auto_confirm_at: Optional[datetime] = None
+    corrected_by: Optional[int] = None
+    corrected_sets: Optional[list[SetScore]] = None
+    dispute_note: Optional[str] = None
+    disputed_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -383,6 +392,21 @@ class PlayerProfileOut(BaseModel):
     shared_leagues: list[SharedLeagueOut] = []
 
 
+class ResultPrediction(BaseModel):
+    my_wins_before: int
+    my_losses_before: int
+    my_wins_after: int
+    my_losses_after: int
+    my_rank_before: Optional[int] = None
+    my_rank_after: Optional[int] = None
+    my_points_before: int = 0
+    my_points_after: int = 0
+    h2h_wins_before: int = 0
+    h2h_losses_before: int = 0
+    h2h_wins_after: int = 0
+    h2h_losses_after: int = 0
+
+
 class MatchDetailOut(BaseModel):
     id: int
     kind: MatchKind
@@ -398,8 +422,18 @@ class MatchDetailOut(BaseModel):
     schedule_proposed_at: Optional[datetime] = None
     court: Optional[str] = None
     default_court: Optional[str] = None
+    max_sets: int = 3
     my_ntrp: Optional[float] = None
     opponent_ntrp: Optional[float] = None
     h2h_wins: int = 0
     h2h_losses: int = 0
     last_match_sets: Optional[list[SetScore]] = None
+    result_status: Optional[str] = None
+    reported_by: Optional[int] = None
+    reported_sets: Optional[list[SetScore]] = None
+    corrected_by: Optional[int] = None
+    corrected_sets: Optional[list[SetScore]] = None
+    dispute_note: Optional[str] = None
+    disputed_at: Optional[datetime] = None
+    auto_confirm_at: Optional[datetime] = None
+    prediction: Optional[ResultPrediction] = None

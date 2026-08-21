@@ -6,7 +6,6 @@ import { useLanguage } from "../LanguageContext.jsx";
 import { useOpenAction } from "../OpenActionContext.jsx";
 import SetScoreForm from "../SetScoreForm.jsx";
 import Avatar from "../Avatar.jsx";
-import ConfirmScoreSheet from "../ConfirmScoreSheet.jsx";
 import RatingQuestionnaire from "../RatingQuestionnaire.jsx";
 import { UserPlusIcon, CalendarIcon, ChevronIcon, SettingsIcon, PlusIcon } from "../Icons.jsx";
 import {
@@ -60,7 +59,6 @@ export default function LeagueDetail() {
   const [inviteError, setInviteError] = useState("");
   const [inviteLoading, setInviteLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("standings");
-  const [confirmSheetMatch, setConfirmSheetMatch] = useState(null);
   const [showAddRoundConfirm, setShowAddRoundConfirm] = useState(false);
   const [reportingMyMatch, setReportingMyMatch] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
@@ -187,36 +185,6 @@ export default function LeagueDetail() {
     setError("");
     try {
       await api.reportScore(leagueId, matchId, sets);
-      await loadAll();
-      reloadOpenAction();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleConfirmScore(matchId) {
-    setBusy(true);
-    setError("");
-    try {
-      await api.confirmScore(leagueId, matchId);
-      setConfirmSheetMatch(null);
-      await loadAll();
-      reloadOpenAction();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleDisputeScore(matchId, sets) {
-    setBusy(true);
-    setError("");
-    try {
-      await api.reportScore(leagueId, matchId, sets);
-      setConfirmSheetMatch(null);
       await loadAll();
       reloadOpenAction();
     } catch (err) {
@@ -409,7 +377,7 @@ export default function LeagueDetail() {
   function handleOpenLeagueAction() {
     if (!leagueOpenAction) return;
     if (leagueOpenAction.kind === "confirm") {
-      setConfirmSheetMatch(leagueOpenAction.match);
+      navigate(`/matches/${leagueOpenAction.match.id}/confirm`);
     } else {
       setActiveTab("matches");
       setSelectedRound(leagueOpenAction.match.round_number ?? null);
@@ -818,7 +786,7 @@ export default function LeagueDetail() {
                         onCancelForm={() => setReportingMyMatch(false)}
                         onCancelMatch={() => handleCancelMatch(match.id)}
                         onEditScore={(sets) => handleReportScore(match.id, sets)}
-                        onNeedsConfirm={() => setConfirmSheetMatch(match)}
+                        onNeedsConfirm={() => navigate(`/matches/${match.id}/confirm`)}
                         maxSets={league.best_of}
                       />
                     ))}
@@ -860,7 +828,7 @@ export default function LeagueDetail() {
                           busy={busy}
                           isReporting={false}
                           onEditScore={(sets) => handleReportScore(match.id, sets)}
-                          onNeedsConfirm={() => setConfirmSheetMatch(match)}
+                          onNeedsConfirm={() => navigate(`/matches/${match.id}/confirm`)}
                           maxSets={league.best_of}
                         />
                       ))}
@@ -885,18 +853,6 @@ export default function LeagueDetail() {
           <UserPlusIcon aria-hidden="true" />
           {inviteLoading ? t("טוען...") : t("הזמן חבר לליגה")}
         </button>
-      )}
-
-      {confirmSheetMatch && user && (
-        <ConfirmScoreSheet
-          match={confirmSheetMatch}
-          currentUserId={user.id}
-          busy={busy}
-          onConfirm={() => handleConfirmScore(confirmSheetMatch.id)}
-          onDispute={(sets) => handleDisputeScore(confirmSheetMatch.id, sets)}
-          onClose={() => setConfirmSheetMatch(null)}
-          maxSets={league.best_of}
-        />
       )}
 
       {showAddRoundConfirm && (
@@ -1027,7 +983,17 @@ function FixtureRow({
   const mine = match.player1.id === userId || match.player2.id === userId;
   const isCompleted = match.status === "completed";
   const isPendingConfirmation = match.status === "pending_confirmation";
-  const iNeedToConfirm = isPendingConfirmation && mine && match.reported_by !== userId;
+  const isDisputed = match.status === "disputed";
+  // Round 2 (a correction sent after a dispute) keeps status pending_confirmation
+  // and reported_by unchanged — it's the ORIGINAL reporter who now needs to
+  // accept/reject the correction, the opposite of round 1's polarity.
+  const inCorrectionRound = match.corrected_sets != null;
+  const iNeedToConfirm =
+    isPendingConfirmation &&
+    mine &&
+    (inCorrectionRound ? match.reported_by === userId : match.reported_by !== userId);
+  const iSentCorrectionPending = isPendingConfirmation && mine && inCorrectionRound && match.corrected_by === userId;
+  const correctionAcceptedFinal = isCompleted && mine && inCorrectionRound && match.corrected_by === userId;
   const scheduleState = mine && onStartReport ? matchScheduleState(match, userId) : null;
   const rowStatus = mine && onStartReport ? scheduleRowStatus(match, userId) : null;
 
@@ -1042,10 +1008,22 @@ function FixtureRow({
   const leftLinkable = !mine;
   const rightLinkable = mine ? canLinkOpponent : true;
   const leftIsPlayer1 = left.id === match.player1.id;
-  const leftSets = isCompleted
-    ? leftIsPlayer1
-      ? match.sets
-      : match.sets?.map((s) => ({ player1_games: s.player2_games, player2_games: s.player1_games }))
+  const orientLeft = (sets) =>
+    sets
+      ? leftIsPlayer1
+        ? sets
+        : sets.map((s) => ({ player1_games: s.player2_games, player2_games: s.player1_games }))
+      : null;
+  const leftSets = isCompleted ? orientLeft(match.sets) : null;
+  // Round 2's SENT tag shows the correction I sent (not yet accepted), so it
+  // needs its own oriented copy independent of leftSets (which only reflects
+  // match.sets once the match is actually completed).
+  const correctedLeftSets = iSentCorrectionPending ? orientLeft(match.corrected_sets) : null;
+  // A disputed match keeps both claims side by side, one per original
+  // submitter — orient each to "my games first" regardless of who made it.
+  const myDisputeSets = isDisputed ? orientLeft(userId === match.reported_by ? match.sets : match.corrected_sets) : null;
+  const theirDisputeSets = isDisputed
+    ? orientLeft(userId === match.reported_by ? match.corrected_sets : match.sets)
     : null;
   if (editing) {
     return (
@@ -1083,13 +1061,27 @@ function FixtureRow({
         )}
       </span>
       <span className="fx-mid">
-        {isCompleted ? (
-          <span className="score" dir="ltr">
-            {formatSets(leftSets)}
+        {isDisputed ? (
+          <span className="fx-sched-tag" dir="ltr">
+            {t("DISPUTED")}
           </span>
+        ) : isCompleted ? (
+          correctionAcceptedFinal ? (
+            <span className="fx-sched-tag bright" dir="ltr">
+              {formatSets(leftSets)} · FINAL
+            </span>
+          ) : (
+            <span className="score" dir="ltr">
+              {formatSets(leftSets)}
+            </span>
+          )
         ) : isPendingConfirmation ? (
           iNeedToConfirm ? (
             <span className="state open">{t("לאישור")}</span>
+          ) : iSentCorrectionPending ? (
+            <span className="fx-sched-tag" dir="ltr">
+              {formatSets(correctedLeftSets)} · SENT
+            </span>
           ) : (
             <span className="state">{t("ממתין")}</span>
           )
@@ -1129,7 +1121,7 @@ function FixtureRow({
     );
   }
 
-  if (isCompleted && mine) {
+  if (isCompleted && mine && !correctionAcceptedFinal) {
     return (
       <button type="button" className={rowClass} onClick={() => setEditing(true)}>
         {mainRow}
@@ -1140,6 +1132,27 @@ function FixtureRow({
   return (
     <div className={rowClass}>
       {mainRow}
+      {mine && iSentCorrectionPending && (
+        <div className="fx-actions">
+          <span className="fx-secondary">{t("WAITING FOR HIM · THE MATCH DOES NOT COUNT YET")}</span>
+        </div>
+      )}
+      {mine && correctionAcceptedFinal && (
+        <div className="fx-actions">
+          <span className="fx-secondary">{t("HE ACCEPTED YOUR CORRECTION · TABLE UPDATED")}</span>
+        </div>
+      )}
+      {mine && isDisputed && (
+        <div className="fx-dispute-block is-asked">
+          <span className="fx-secondary" dir="ltr">
+            YOU {formatSets(myDisputeSets)}
+          </span>
+          <span className="fx-secondary" dir="ltr">
+            HIM {formatSets(theirDisputeSets)}
+          </span>
+          <span className="fx-secondary">{t("NOT COUNTED · NEITHER SIDE GETS THE WIN")}</span>
+        </div>
+      )}
       {mine && match.status === "pending" && onStartReport && !isReporting && (
         <div className={`fx-actions${rowStatus === "asked_you" ? " is-asked" : ""}`}>
           {rowStatus === "no_time" && (

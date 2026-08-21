@@ -23,6 +23,7 @@ class MatchStatus(str, enum.Enum):
     pending = "pending"
     pending_confirmation = "pending_confirmation"
     completed = "completed"
+    disputed = "disputed"
 
 
 class MatchKind(str, enum.Enum):
@@ -150,6 +151,10 @@ class Match(Base):
     confirmed_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     confirmed_at = Column(DateTime, nullable=True)
     auto_confirm_at = Column(DateTime, nullable=True)
+    corrected_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    corrected_sets = Column(JSON, nullable=True)
+    dispute_note = Column(String, nullable=True)
+    disputed_at = Column(DateTime, nullable=True)
 
     league = relationship("League", back_populates="matches")
     sport = relationship("Sport")

@@ -18,6 +18,8 @@ import HeadToHead from "./pages/HeadToHead.jsx";
 import PlayerProfile from "./pages/PlayerProfile.jsx";
 import ProposeSchedule from "./pages/ProposeSchedule.jsx";
 import MatchSchedule from "./pages/MatchSchedule.jsx";
+import ConfirmResult from "./pages/ConfirmResult.jsx";
+import CorrectScore from "./pages/CorrectScore.jsx";
 import { SkeletonPageHeader, SkeletonHeroStat } from "./Skeleton.jsx";
 
 function ProtectedRoute({ children }) {
@@ -133,6 +135,22 @@ export default function App() {
           element={
             <ProtectedRoute>
               <MatchSchedule />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/matches/:matchId/confirm"
+          element={
+            <ProtectedRoute>
+              <ConfirmResult />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/matches/:matchId/correct"
+          element={
+            <ProtectedRoute>
+              <CorrectScore />
             </ProtectedRoute>
           }
         />

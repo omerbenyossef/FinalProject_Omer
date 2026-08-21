@@ -538,6 +538,24 @@ const PAIRS = [
   ["WAITING FOR HIM", "WAITING FOR HIM"],
   ["CANCEL", "CANCEL"],
 
+  // Result confirm/dispute (108)
+  ["CONFIRM RESULT", "CONFIRM RESULT"],
+  ["את/ה", "You"],
+  ["IF YOU CONFIRM", "IF YOU CONFIRM"],
+  ["אישור התוצאה", "Confirm the result"],
+  ["DISPUTED", "DISPUTED"],
+  ["התוצאה כבר אושרה", "The result has already been confirmed"],
+  ["CORRECT THE SCORE", "CORRECT THE SCORE"],
+  ["מה הייתה התוצאה", "What was the result"],
+  ["HE REPORTED", "HE REPORTED"],
+  ["HE REPORTED {sets} TO HIM", "HE REPORTED {sets} TO HIM"],
+  ["NOTE FOR HIM · OPTIONAL", "NOTE FOR HIM · OPTIONAL"],
+  ["שלח תיקון", "Send correction"],
+  ["HE CONFIRMS · THEN IT COUNTS", "HE CONFIRMS · THEN IT COUNTS"],
+  ["WAITING FOR HIM · THE MATCH DOES NOT COUNT YET", "WAITING FOR HIM · THE MATCH DOES NOT COUNT YET"],
+  ["HE ACCEPTED YOUR CORRECTION · TABLE UPDATED", "HE ACCEPTED YOUR CORRECTION · TABLE UPDATED"],
+  ["NOT COUNTED · NEITHER SIDE GETS THE WIN", "NOT COUNTED · NEITHER SIDE GETS THE WIN"],
+
   // Delete account
   ["מחיקת חשבון", "Delete account"],
   ["מחיקה סופית של החשבון וכל הנתונים שלך", "Permanently delete your account and your data"],

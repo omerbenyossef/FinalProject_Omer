@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import and_, or_
@@ -8,8 +9,10 @@ from .. import models, schemas
 from ..auth import get_current_user
 from ..database import get_db
 from ..push_utils import notify_user
-from ..rating_utils import round_to_half
-from .matches import _auto_confirm_overdue, _to_naive_utc
+from ..rating_utils import round_to_half, update_ratings_for_match
+from .friendly import MAX_SETS as FRIENDLY_MAX_SETS
+from .leagues import _accumulate_stats, _empty_stats
+from .matches import CONFIRMATION_WINDOW, _auto_confirm_overdue, _to_naive_utc
 
 router = APIRouter(prefix="/matches", tags=["schedule"])
 
@@ -38,6 +41,77 @@ def _schedule_status(match: models.Match, user_id: int) -> str:
     if match.schedule_confirmed:
         return "set"
     return "sent" if match.scheduled_by == user_id else "asked_you"
+
+
+def _result_status(match: models.Match, user_id: int) -> Optional[str]:
+    if match.status == models.MatchStatus.disputed:
+        return "disputed"
+    if match.status == models.MatchStatus.completed:
+        return "final" if match.reported_by is not None else None
+    if match.status == models.MatchStatus.pending_confirmation:
+        if match.corrected_sets is not None:
+            # Round 2: the original reporter is the one who accepts/rejects the
+            # correction; the corrector is just waiting on them.
+            return "pending_you" if user_id == match.reported_by else "pending_him"
+        return "pending_you" if user_id != match.reported_by else "pending_him"
+    return None
+
+
+def _compute_prediction(
+    db: Session, match: models.Match, current_user_id: int, sets_to_evaluate, h2h_wins: int, h2h_losses: int
+) -> Optional[schemas.ResultPrediction]:
+    """The 'IF YOU CONFIRM' forecast — only meaningful inside a league (a
+    friendly match has no place/points), and only when there's an actual
+    score on the table to evaluate. See resultconfirmdispute108.md section 4:
+    if this can't be computed, the section is dropped, never shown as zero."""
+    if not match.league_id or not sets_to_evaluate:
+        return None
+    league = match.league
+    completed = [
+        m for m in db.query(models.Match).filter(models.Match.league_id == match.league_id).all()
+        if m.status == models.MatchStatus.completed
+    ]
+    stats_before = _empty_stats(league)
+    _accumulate_stats(stats_before, completed)
+    my_before = stats_before.get(current_user_id)
+    if not my_before:
+        return None
+    rows_before = sorted(stats_before.values(), key=lambda r: (-r["points"], -r["wins"]))
+    rank_before = next((i + 1 for i, r in enumerate(rows_before) if r["user"].id == current_user_id), None)
+
+    fake_match = models.Match(
+        player1_id=match.player1_id,
+        player2_id=match.player2_id,
+        player1_score=sum(1 for s in sets_to_evaluate if s["player1_games"] > s["player2_games"]),
+        player2_score=sum(1 for s in sets_to_evaluate if s["player2_games"] > s["player1_games"]),
+    )
+    stats_after = _empty_stats(league)
+    _accumulate_stats(stats_after, completed + [fake_match])
+    my_after = stats_after.get(current_user_id)
+    rows_after = sorted(stats_after.values(), key=lambda r: (-r["points"], -r["wins"]))
+    rank_after = next((i + 1 for i, r in enumerate(rows_after) if r["user"].id == current_user_id), None)
+
+    i_am_player1 = match.player1_id == current_user_id
+    i_won = (
+        fake_match.player1_score > fake_match.player2_score
+        if i_am_player1
+        else fake_match.player2_score > fake_match.player1_score
+    )
+
+    return schemas.ResultPrediction(
+        my_wins_before=my_before["wins"],
+        my_losses_before=my_before["losses"],
+        my_wins_after=my_after["wins"],
+        my_losses_after=my_after["losses"],
+        my_rank_before=rank_before,
+        my_rank_after=rank_after,
+        my_points_before=my_before["points"],
+        my_points_after=my_after["points"],
+        h2h_wins_before=h2h_wins,
+        h2h_losses_before=h2h_losses,
+        h2h_wins_after=h2h_wins + (1 if i_won else 0),
+        h2h_losses_after=h2h_losses + (0 if i_won else 1),
+    )
 
 
 def _default_court(db: Session, match: models.Match) -> str | None:
@@ -109,6 +183,22 @@ def get_match_detail(
                 sets = [{"player1_games": s["player2_games"], "player2_games": s["player1_games"]} for s in sets]
             last_match_sets = sets
 
+    sets_to_evaluate = match.corrected_sets if match.corrected_sets is not None else match.sets
+    prediction = None
+    if match.status == models.MatchStatus.pending_confirmation:
+        prediction = _compute_prediction(db, match, current_user.id, sets_to_evaluate, h2h_wins, h2h_losses)
+
+    # reported_sets/corrected_sets are stored in the match's own player1/player2
+    # orientation; the confirm screen always shows the viewer's column first
+    # (resultconfirmdispute108.md section 3), so flip them when the viewer is
+    # player2 — same convention as last_match_sets above.
+    i_am_player1 = match.player1_id == current_user.id
+
+    def _mine_first(sets):
+        if not sets or i_am_player1:
+            return sets
+        return [{"player1_games": s["player2_games"], "player2_games": s["player1_games"]} for s in sets]
+
     return schemas.MatchDetailOut(
         id=match.id,
         kind=match.kind,
@@ -124,11 +214,21 @@ def get_match_detail(
         schedule_proposed_at=match.schedule_proposed_at,
         court=match.court,
         default_court=_default_court(db, match),
+        max_sets=(match.league.best_of or FRIENDLY_MAX_SETS) if match.league_id else FRIENDLY_MAX_SETS,
         my_ntrp=my_ntrp,
         opponent_ntrp=opp_ntrp,
         h2h_wins=h2h_wins,
         h2h_losses=h2h_losses,
         last_match_sets=last_match_sets,
+        result_status=_result_status(match, current_user.id),
+        reported_by=match.reported_by,
+        reported_sets=_mine_first(match.sets),
+        corrected_by=match.corrected_by,
+        corrected_sets=_mine_first(match.corrected_sets),
+        dispute_note=match.dispute_note,
+        disputed_at=match.disputed_at,
+        auto_confirm_at=match.auto_confirm_at,
+        prediction=prediction,
     )
 
 
@@ -225,6 +325,126 @@ def decline_match_schedule(
         "הצעת הזמן בוטלה",
         f"{current_user.name} ביטל/ה את הצעת הזמן למשחק שלכם",
         f"/matches/{match.id}/schedule",
+    )
+
+    return match
+
+
+@router.post("/{match_id}/confirm", response_model=schemas.MatchOut)
+def confirm_result(
+    match_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    _auto_confirm_overdue(db)
+    match = _get_match_for_participant(db, match_id, current_user.id)
+    if match.status != models.MatchStatus.pending_confirmation:
+        raise HTTPException(status_code=400, detail="אין תוצאה שממתינה לאישור עבור המשחק הזה")
+
+    if match.corrected_sets is not None:
+        # Round 2: only the person who made the original report can accept
+        # the correction that replaces it.
+        if current_user.id != match.reported_by:
+            raise HTTPException(status_code=400, detail="רק מי שדיווח את התוצאה המקורית יכול לאשר את התיקון")
+        match.sets = match.corrected_sets
+        match.player1_score = sum(1 for s in match.corrected_sets if s["player1_games"] > s["player2_games"])
+        match.player2_score = sum(1 for s in match.corrected_sets if s["player2_games"] > s["player1_games"])
+    else:
+        if current_user.id == match.reported_by:
+            raise HTTPException(status_code=400, detail="לא ניתן לאשר תוצאה שדיווחת בעצמך")
+
+    match.status = models.MatchStatus.completed
+    match.confirmed_by = current_user.id
+    match.confirmed_at = datetime.utcnow()
+    db.commit()
+    db.refresh(match)
+    update_ratings_for_match(db, match)
+
+    other_id = match.player2_id if current_user.id == match.player1_id else match.player1_id
+    notify_user(
+        db,
+        other_id,
+        "התוצאה אושרה",
+        f"{current_user.name} אישר/ה את התוצאה למשחק שלכם",
+        f"/matches/{match.id}",
+    )
+
+    return match
+
+
+@router.post("/{match_id}/dispute", response_model=schemas.MatchOut)
+def dispute_result(
+    match_id: int,
+    correction: schemas.MatchCorrection,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    _auto_confirm_overdue(db)
+    match = _get_match_for_participant(db, match_id, current_user.id)
+    if match.status != models.MatchStatus.pending_confirmation:
+        raise HTTPException(status_code=400, detail="אין תוצאה לערער עליה")
+    if match.corrected_sets is not None:
+        raise HTTPException(status_code=400, detail="כבר נשלח תיקון למשחק הזה")
+    if current_user.id == match.reported_by:
+        raise HTTPException(status_code=400, detail="לא ניתן לערער על תוצאה שדיווחת בעצמך")
+    if not correction.sets:
+        raise HTTPException(status_code=400, detail="צריך לדווח לפחות סט אחד")
+
+    max_sets = match.league.best_of if match.league_id else FRIENDLY_MAX_SETS
+    max_sets = max_sets or FRIENDLY_MAX_SETS
+    if len(correction.sets) > max_sets:
+        raise HTTPException(status_code=400, detail=f"אפשר לדווח עד {max_sets} סטים")
+
+    # The client always submits sets "my games first" (matching what it's shown
+    # via _mine_first), so flip back to the match's own player1/player2
+    # orientation before storing — same convention as report_score expects,
+    # except that endpoint's caller is always oriented to the DB already.
+    i_am_player1 = current_user.id == match.player1_id
+    match.corrected_by = current_user.id
+    match.corrected_sets = (
+        [s.model_dump() for s in correction.sets]
+        if i_am_player1
+        else [{"player1_games": s.player2_games, "player2_games": s.player1_games} for s in correction.sets]
+    )
+    match.dispute_note = correction.note
+    match.auto_confirm_at = datetime.utcnow() + CONFIRMATION_WINDOW
+    db.commit()
+    db.refresh(match)
+
+    notify_user(
+        db,
+        match.reported_by,
+        "תיקון לתוצאה",
+        f"{current_user.name} שלח/ה תיקון לתוצאה שדיווחת, וממתין/ה לתשובה שלך",
+        f"/matches/{match.id}",
+    )
+
+    return match
+
+
+@router.post("/{match_id}/dispute/reject", response_model=schemas.MatchOut)
+def reject_correction(
+    match_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    match = _get_match_for_participant(db, match_id, current_user.id)
+    if match.status != models.MatchStatus.pending_confirmation or match.corrected_sets is None:
+        raise HTTPException(status_code=400, detail="אין תיקון לדחות")
+    if current_user.id != match.reported_by:
+        raise HTTPException(status_code=400, detail="רק מי שדיווח את התוצאה המקורית יכול לדחות את התיקון")
+
+    match.status = models.MatchStatus.disputed
+    match.disputed_at = datetime.utcnow()
+    db.commit()
+    db.refresh(match)
+
+    notify_user(
+        db,
+        match.corrected_by,
+        "המשחק נכנס למחלוקת",
+        f"{current_user.name} דחה/תה את התיקון שלך — המשחק לא ייספר בטבלה",
+        f"/matches/{match.id}",
     )
 
     return match

@@ -7,7 +7,6 @@ import { ChevronIcon, PersonIcon, RanksIcon, SettingsIcon, TrophyIcon } from "./
 import InstallPrompt from "./InstallPrompt.jsx";
 import Onboarding from "./Onboarding.jsx";
 import SelfRatingPrompt from "./SelfRatingPrompt.jsx";
-import ConfirmScoreSheet from "./ConfirmScoreSheet.jsx";
 import { translate } from "./translations.js";
 
 const AUTH_PATHS = ["/login", "/register", "/forgot-password", "/reset-password"];
@@ -17,16 +16,7 @@ export default function Layout({ children }) {
   const { sports, selectedSportId, setSelectedSportId } = useSport();
   const { t } = useLanguage();
   const location = useLocation();
-  const {
-    openAction,
-    hasOtherLeagueActivity,
-    triggerOpenAction,
-    barSheetOpen,
-    closeBarSheet,
-    barBusy,
-    confirmBarAction,
-    disputeBarAction,
-  } = useOpenAction();
+  const { openAction, hasOtherLeagueActivity, triggerOpenAction } = useOpenAction();
   const isAuthRoute = AUTH_PATHS.includes(location.pathname);
 
   if (isAuthRoute) {
@@ -136,17 +126,6 @@ export default function Layout({ children }) {
             )}
           </div>
         </nav>
-      )}
-      {barSheetOpen && openAction?.kind === "confirm" && (
-        <ConfirmScoreSheet
-          match={openAction.match}
-          currentUserId={user.id}
-          busy={barBusy}
-          maxSets={openAction.entry.best_of}
-          onConfirm={confirmBarAction}
-          onDispute={disputeBarAction}
-          onClose={closeBarSheet}
-        />
       )}
     </div>
   );
