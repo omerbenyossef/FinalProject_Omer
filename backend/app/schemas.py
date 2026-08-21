@@ -186,6 +186,7 @@ class MatchScoreUpdate(BaseModel):
 
 class MatchScheduleProposal(BaseModel):
     scheduled_at: datetime
+    court: Optional[str] = None
 
 
 class MatchOut(BaseModel):
@@ -197,6 +198,7 @@ class MatchOut(BaseModel):
     scheduled_at: Optional[datetime] = None
     scheduled_by: Optional[int] = None
     schedule_confirmed: bool = False
+    court: Optional[str] = None
     player1: MemberOut
     player2: MemberOut
     player1_score: Optional[int]
@@ -379,3 +381,25 @@ class PlayerProfileOut(BaseModel):
     streak: int
     streak_won: Optional[bool] = None
     shared_leagues: list[SharedLeagueOut] = []
+
+
+class MatchDetailOut(BaseModel):
+    id: int
+    kind: MatchKind
+    opponent: MemberOut
+    league_id: Optional[int] = None
+    league_name: Optional[str] = None
+    round_number: Optional[int] = None
+    schedule_started_at: Optional[datetime] = None
+    round_length_days: Optional[int] = None
+    status: str
+    scheduled_at: Optional[datetime] = None
+    scheduled_by: Optional[int] = None
+    schedule_proposed_at: Optional[datetime] = None
+    court: Optional[str] = None
+    default_court: Optional[str] = None
+    my_ntrp: Optional[float] = None
+    opponent_ntrp: Optional[float] = None
+    h2h_wins: int = 0
+    h2h_losses: int = 0
+    last_match_sets: Optional[list[SetScore]] = None

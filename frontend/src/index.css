@@ -1645,6 +1645,39 @@ button.fx-secondary {
   padding: 0;
   cursor: pointer;
 }
+.fx-sched-tag {
+  font: 600 11px "IBM Plex Mono", monospace;
+  letter-spacing: 0.02em;
+  color: #8b93a6;
+}
+.fx-sched-tag.bright {
+  color: #eef1f7;
+  font-weight: 700;
+}
+.fx-actions.is-asked {
+  margin-inline: -20px;
+  margin-top: 12px;
+  padding: 12px 20px 0;
+  background: rgba(148, 163, 184, 0.05);
+}
+.fx-cancel-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: #8b93a6;
+  text-decoration: underline;
+  cursor: pointer;
+}
+a.fx-report {
+  text-decoration: none;
+}
+a.fx-report svg {
+  width: 13px;
+  height: 13px;
+  stroke: #8b93a6;
+  stroke-width: 2.2;
+}
 
 .all-rounds-row {
   margin-top: 20px;
@@ -5130,3 +5163,76 @@ button:active { transform: translateY(1px); }
 .pp-dot-lime { flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--court); }
 .pp-challenge-label { flex: 1; font: 700 15px "IBM Plex Sans Hebrew", var(--sans); color: #eef1f7; }
 .pp-challenge svg { flex: none; width: 15px; height: 15px; stroke: #eef1f7; stroke-width: 2.2; }
+
+/* Schedule flow (107) — no lime anywhere in this flow: scheduling is a
+   response, not a score (see scheduleflow107.md's color rule). */
+.sched-page { padding-bottom: 24px; }
+.sched-nav { display: flex; align-items: center; gap: 8px; }
+.sched-nav-back { display:flex; align-items:center; justify-content:center; width:32px; height:32px; margin-inline-start:-6px; border:0; background:none; padding:0; color:#8b93a6; cursor:pointer; }
+.sched-nav-back svg { width: 20px; height: 20px; }
+.sched-nav-label { font: 600 11px "IBM Plex Mono", monospace; letter-spacing: .16em; color: #8b93a6; text-transform: uppercase; }
+
+.sched-title { margin: 18px 0 0; font: 700 32px/1.1 "IBM Plex Sans Hebrew", var(--sans); letter-spacing: -.02em; color: #eef1f7; }
+.sched-sub { margin: 8px 0 0; font: 500 11.5px "IBM Plex Mono", monospace; letter-spacing: .04em; color: #8b93a6; text-transform: uppercase; }
+.sched-sub-sans { font: 500 12.5px "IBM Plex Sans Hebrew", var(--sans); text-transform: none; }
+
+.sched-section-label { margin-top: 24px; margin-bottom: 8px; font: 600 10px "IBM Plex Mono", monospace; letter-spacing: .16em; color: #8b93a6; text-transform: uppercase; }
+
+.sched-days { display: flex; gap: 8px; }
+.sched-day {
+  flex: 1; padding: 10px 4px; border-radius: 12px; border: 0; background: rgba(148, 163, 184, .07);
+  display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; color: inherit;
+}
+.sched-day-weekday { font: 600 10px "IBM Plex Mono", monospace; letter-spacing: .04em; color: #8b93a6; }
+.sched-day-date { font: 400 20px "Anton", sans-serif; color: #eef1f7; }
+.sched-day.on { background: #eef1f7; }
+.sched-day.on .sched-day-weekday, .sched-day.on .sched-day-date { color: #0e1116; }
+
+.sched-times { max-height: 260px; overflow-y: auto; }
+.sched-time-row {
+  width: 100%; padding: 12px 2px; border: 0; border-bottom: 1px solid rgba(148, 163, 184, .1); background: none;
+  display: flex; align-items: center; justify-content: space-between; font: 500 17px "IBM Plex Mono", monospace; color: #8b93a6; cursor: pointer;
+}
+.sched-time-row.on { color: #eef1f7; font-weight: 600; }
+.sched-time-row svg { width: 16px; height: 16px; stroke: #eef1f7; stroke-width: 2.4; }
+
+.sched-court-row { display: flex; align-items: center; justify-content: space-between; }
+.sched-court-value { font: 600 15px "IBM Plex Sans Hebrew", var(--sans); color: #eef1f7; }
+.sched-court-input {
+  flex: 1; margin-inline-end: 12px; padding: 8px 0; border: 0; border-bottom: 1px solid rgba(148, 163, 184, .3);
+  background: none; font: 600 15px "IBM Plex Sans Hebrew", var(--sans); color: #eef1f7;
+}
+.sched-court-edit {
+  flex: none; border: 0; background: none; padding: 0; font: 600 11px "IBM Plex Mono", monospace;
+  letter-spacing: .08em; color: #8b93a6; text-decoration: underline; cursor: pointer;
+}
+
+.sched-bottom { margin-top: 32px; }
+.sched-send {
+  width: 100%; height: 48px; border-radius: 24px; border: 0; background: #eef1f7; color: #0e1116;
+  font: 700 15px "IBM Plex Sans Hebrew", var(--sans); cursor: pointer;
+}
+.sched-send:disabled { opacity: .45; cursor: default; }
+.sched-pending { margin: 10px 0 0; text-align: center; font: 600 11px "IBM Plex Mono", monospace; letter-spacing: .08em; color: #8b93a6; text-transform: uppercase; }
+
+.sched-bottom-row { margin-top: 16px; display: flex; align-items: center; justify-content: space-between; }
+.sched-other-link {
+  border: 0; background: none; padding: 0; font: 600 13px "IBM Plex Sans Hebrew", var(--sans); color: #eef1f7;
+  text-decoration: underline; cursor: pointer;
+}
+.sched-cant {
+  border: 0; background: none; padding: 0; font: 600 11px "IBM Plex Mono", monospace; letter-spacing: .06em;
+  color: #8b93a6; text-transform: uppercase; cursor: pointer;
+}
+
+.sched-hero { margin-top: 28px; text-align: center; }
+.sched-hero-time { font: 400 62px/.88 "Anton", sans-serif; color: #eef1f7; }
+.sched-hero-court { margin-top: 6px; font: 600 16px "IBM Plex Sans Hebrew", var(--sans); color: #c9cfdb; }
+.sched-hero-meta { margin-top: 8px; font: 500 11.5px "IBM Plex Mono", monospace; letter-spacing: .04em; color: #8b93a6; text-transform: uppercase; }
+
+.sched-h2h { margin-top: 28px; display: flex; align-items: baseline; gap: 14px; justify-content: center; }
+.sched-h2h-score { font: 400 30px/.9 "Anton", sans-serif; color: #eef1f7; }
+.sched-h2h-meta { font: 500 11.5px "IBM Plex Mono", monospace; letter-spacing: .02em; color: #8b93a6; text-transform: uppercase; }
+
+.sched-waiting { margin-top: 20px; text-align: center; font: 600 11.5px "IBM Plex Mono", monospace; letter-spacing: .06em; color: #8b93a6; text-transform: uppercase; }
+.sched-cancel-link { border: 0; background: none; padding: 0; font: inherit; color: #eef1f7; text-decoration: underline; cursor: pointer; }

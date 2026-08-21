@@ -68,6 +68,8 @@ export function OpenActionProvider({ children }) {
     if (!openAction) return;
     if (openAction.kind === "confirm") {
       setBarSheetOpen(true);
+    } else if (openAction.kind === "schedule") {
+      navigate(`/matches/${openAction.match.id}`);
     } else if (openAction.entry.kind === "friendly") {
       navigate("/profile");
     } else if (openAction.entry.league_id != null) {

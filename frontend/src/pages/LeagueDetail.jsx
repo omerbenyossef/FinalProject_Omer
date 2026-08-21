@@ -5,7 +5,6 @@ import { useAuth } from "../AuthContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import { useOpenAction } from "../OpenActionContext.jsx";
 import SetScoreForm from "../SetScoreForm.jsx";
-import ScheduleForm from "../ScheduleForm.jsx";
 import Avatar from "../Avatar.jsx";
 import ConfirmScoreSheet from "../ConfirmScoreSheet.jsx";
 import RatingQuestionnaire from "../RatingQuestionnaire.jsx";
@@ -16,7 +15,8 @@ import {
   roundDueDateObj,
   nextSchedulePreview,
   matchScheduleState,
-  formatDayMonthTime,
+  scheduleRowStatus,
+  formatWeekdayTime,
   activeRoundStatus,
   daysLeftPhrase,
   getActionCandidates,
@@ -63,7 +63,6 @@ export default function LeagueDetail() {
   const [confirmSheetMatch, setConfirmSheetMatch] = useState(null);
   const [showAddRoundConfirm, setShowAddRoundConfirm] = useState(false);
   const [reportingMyMatch, setReportingMyMatch] = useState(false);
-  const [schedulingMyMatch, setSchedulingMyMatch] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [selectedRound, setSelectedRound] = useState(null);
   const [ratingFlow, setRatingFlow] = useState(null); // { existingResult, joinCode } | null
@@ -227,12 +226,11 @@ export default function LeagueDetail() {
     }
   }
 
-  async function handleProposeSchedule(matchId, scheduledAt) {
+  async function handleQuickConfirmSchedule(matchId) {
     setBusy(true);
     setError("");
     try {
-      await api.proposeSchedule(leagueId, matchId, scheduledAt);
-      setSchedulingMyMatch(false);
+      await api.confirmMatchSchedule(matchId);
       await loadAll();
       reloadOpenAction();
     } catch (err) {
@@ -242,11 +240,11 @@ export default function LeagueDetail() {
     }
   }
 
-  async function handleConfirmSchedule(matchId) {
+  async function handleCancelSchedule(matchId) {
     setBusy(true);
     setError("");
     try {
-      await api.confirmSchedule(leagueId, matchId);
+      await api.declineMatchSchedule(matchId);
       await loadAll();
       reloadOpenAction();
     } catch (err) {
@@ -810,19 +808,14 @@ export default function LeagueDetail() {
                         userId={user?.id}
                         busy={busy}
                         isReporting={reportingMyMatch}
-                        isScheduling={schedulingMyMatch}
                         onStartReport={() => setReportingMyMatch(true)}
-                        onStartSchedule={() => setSchedulingMyMatch(true)}
-                        onConfirmSchedule={() => handleConfirmSchedule(match.id)}
+                        onQuickConfirmSchedule={() => handleQuickConfirmSchedule(match.id)}
+                        onCancelSchedule={() => handleCancelSchedule(match.id)}
                         onSubmitScore={(sets) => {
                           handleReportScore(match.id, sets);
                           setReportingMyMatch(false);
                         }}
-                        onSubmitSchedule={(scheduledAt) => handleProposeSchedule(match.id, scheduledAt)}
-                        onCancelForm={() => {
-                          setReportingMyMatch(false);
-                          setSchedulingMyMatch(false);
-                        }}
+                        onCancelForm={() => setReportingMyMatch(false)}
                         onCancelMatch={() => handleCancelMatch(match.id)}
                         onEditScore={(sets) => handleReportScore(match.id, sets)}
                         onNeedsConfirm={() => setConfirmSheetMatch(match)}
@@ -866,7 +859,6 @@ export default function LeagueDetail() {
                           userId={user?.id}
                           busy={busy}
                           isReporting={false}
-                          isScheduling={false}
                           onEditScore={(sets) => handleReportScore(match.id, sets)}
                           onNeedsConfirm={() => setConfirmSheetMatch(match)}
                           maxSets={league.best_of}
@@ -1011,17 +1003,17 @@ function AddRoundConfirmSheet({ nextRound, roundsToCreate, pairs, dueDate, busy,
 }
 
 
+const FX_STATUS_TAG = { no_time: "NO TIME", sent: "SENT", asked_you: "ASKED YOU", set: "SET" };
+
 function FixtureRow({
   match,
   userId,
   busy,
   isReporting,
-  isScheduling,
   onStartReport,
-  onStartSchedule,
-  onConfirmSchedule,
+  onQuickConfirmSchedule,
+  onCancelSchedule,
   onSubmitScore,
-  onSubmitSchedule,
   onCancelForm,
   onCancelMatch,
   onEditScore,
@@ -1030,12 +1022,14 @@ function FixtureRow({
 }) {
   const [editing, setEditing] = useState(false);
   const { t } = useLanguage();
+  const navigate = useNavigate();
 
   const mine = match.player1.id === userId || match.player2.id === userId;
   const isCompleted = match.status === "completed";
   const isPendingConfirmation = match.status === "pending_confirmation";
   const iNeedToConfirm = isPendingConfirmation && mine && match.reported_by !== userId;
-  const scheduleState = mine && onStartSchedule ? matchScheduleState(match, userId) : null;
+  const scheduleState = mine && onStartReport ? matchScheduleState(match, userId) : null;
+  const rowStatus = mine && onStartReport ? scheduleRowStatus(match, userId) : null;
 
   // In my row I'm always on the "start" side, so my row doesn't jump around
   // between rounds; the score/result is shown from that side's perspective.
@@ -1099,6 +1093,10 @@ function FixtureRow({
           ) : (
             <span className="state">{t("ממתין")}</span>
           )
+        ) : mine && rowStatus ? (
+          <span className={`fx-sched-tag${rowStatus === "asked_you" || rowStatus === "set" ? " bright" : ""}`} dir="ltr">
+            {rowStatus === "no_time" ? FX_STATUS_TAG.no_time : `${formatWeekdayTime(new Date(match.scheduled_at))} · ${FX_STATUS_TAG[rowStatus]}`}
+          </span>
         ) : mine ? (
           <span className="state open">{t("לשחק")}</span>
         ) : (
@@ -1142,43 +1140,46 @@ function FixtureRow({
   return (
     <div className={rowClass}>
       {mainRow}
-      {mine && match.status === "pending" && onStartReport && !isScheduling && !isReporting && (
-        <div className="fx-actions">
-          {scheduleState === "unscheduled" && (
-            <button type="button" className="fx-report" onClick={onStartSchedule}>
-              <span className="fx-dot" aria-hidden="true" />
-              {t("הצע שעה")}
-            </button>
+      {mine && match.status === "pending" && onStartReport && !isReporting && (
+        <div className={`fx-actions${rowStatus === "asked_you" ? " is-asked" : ""}`}>
+          {rowStatus === "no_time" && (
+            <Link to={`/matches/${match.id}/schedule`} className="fx-report">
+              {t("קבע שעה")}
+              <ChevronIcon aria-hidden="true" />
+            </Link>
           )}
-          {scheduleState === "proposed_by_me" && (
-            <span className="fx-secondary">{t("ממתין לאישור שעה")}</span>
-          )}
-          {scheduleState === "proposed_by_them" && (
-            <>
-              <button type="button" className="fx-report" onClick={onConfirmSchedule} disabled={busy}>
-                <span className="fx-dot" aria-hidden="true" />
-                {t("אשר שעה")}
+          {rowStatus === "sent" && (
+            <span className="fx-secondary">
+              {t("WAITING FOR HIM")} ·{" "}
+              <button type="button" className="fx-cancel-link" onClick={onCancelSchedule} disabled={busy}>
+                {t("CANCEL")}
               </button>
-              <button type="button" className="fx-secondary" onClick={onStartSchedule}>
-                {t("הצע שעה")}
+            </span>
+          )}
+          {rowStatus === "asked_you" && (
+            <>
+              <button type="button" className="fx-report" onClick={onQuickConfirmSchedule} disabled={busy}>
+                {t("אשר")}
+              </button>
+              <button
+                type="button"
+                className="fx-secondary"
+                onClick={() => navigate(`/matches/${match.id}/schedule`)}
+              >
+                {t("הצע שעה אחרת")}
               </button>
             </>
           )}
-          {scheduleState === "confirmed_future" && (
-            <span className="fx-secondary">
-              {t("מתוזמן ל-{datetime}", { datetime: formatDayMonthTime(new Date(match.scheduled_at)) })}
-            </span>
-          )}
-          {scheduleState === "ready" && (
+          {rowStatus === "set" && scheduleState === "ready" && (
             <button type="button" className="fx-report" onClick={onStartReport}>
               <span className="fx-dot" aria-hidden="true" />
               {t("דווח")}
             </button>
           )}
+          {rowStatus === "set" && scheduleState === "confirmed_future" && match.court && (
+            <span className="fx-secondary">{match.court}</span>
+          )}
         </div>
-      )}
-      {mine && isScheduling && (
-        <ScheduleForm busy={busy} onSubmit={onSubmitSchedule} onCancel={onCancelForm} />
       )}
       {mine && isReporting && scheduleState === "ready" && (
         <SetScoreForm

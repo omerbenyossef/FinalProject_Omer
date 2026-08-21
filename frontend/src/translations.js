@@ -519,6 +519,24 @@ const PAIRS = [
   ["הזמן כבר מאושר", "The time is already confirmed"],
   ["לא ניתן לאשר הצעת זמן שהצעת בעצמך", "You can't confirm a time proposal you made yourself"],
   ["אי אפשר לתאם זמן למשחק שכבר דווח", "You can't schedule a time for a match that's already been reported"],
+  ["ההזמנה עדיין לא אושרה", "The invite hasn't been accepted yet"],
+  ["אין הצעת זמן לבטל", "There's no time proposal to cancel"],
+  ["הצעת הזמן בוטלה", "The time proposal was cancelled"],
+  ["אשר", "Confirm"],
+
+  // Schedule flow (107)
+  ["SCHEDULE", "SCHEDULE"],
+  ["DAY", "DAY"],
+  ["TIME", "TIME"],
+  ["COURT", "COURT"],
+  ["שלח הצעה ל{name}", "Send proposal to {name}"],
+  ["HE CONFIRMS · THEN IT IS SET", "HE CONFIRMS · THEN IT IS SET"],
+  ["TIME PROPOSED", "TIME PROPOSED"],
+  ["מאשר, נשחק", "Confirm, let's play"],
+  ["CANT MAKE IT", "CANT MAKE IT"],
+  ["{name} הציע", "{name} proposed"],
+  ["WAITING FOR HIM", "WAITING FOR HIM"],
+  ["CANCEL", "CANCEL"],
 
   // Delete account
   ["מחיקת חשבון", "Delete account"],

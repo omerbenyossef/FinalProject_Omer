@@ -119,6 +119,15 @@ export const api = {
   cancelMatch: (leagueId, matchId) =>
     request(`/leagues/${leagueId}/matches/${matchId}`, { method: "DELETE" }),
 
+  getMatchDetail: (matchId) => request(`/matches/${matchId}`),
+  proposeMatchSchedule: (matchId, scheduledAt, court) =>
+    request(`/matches/${matchId}/schedule`, {
+      method: "POST",
+      body: { scheduled_at: scheduledAt, court: court || null },
+    }),
+  confirmMatchSchedule: (matchId) => request(`/matches/${matchId}/schedule/confirm`, { method: "POST" }),
+  declineMatchSchedule: (matchId) => request(`/matches/${matchId}/schedule/decline`, { method: "POST" }),
+
   myRatings: () => request("/ratings/me"),
   checkRating: (leagueId) => request(`/leagues/${leagueId}/rating-check`),
   submitRating: (leagueId, answers) =>
@@ -131,13 +140,6 @@ export const api = {
   acceptFriendlyInvite: (matchId) => request(`/friendly/matches/${matchId}/accept`, { method: "POST" }),
   declineFriendlyInvite: (matchId) => request(`/friendly/matches/${matchId}/decline`, { method: "POST" }),
   remindFriendly: (matchId) => request(`/friendly/matches/${matchId}/remind`, { method: "POST" }),
-  proposeFriendlySchedule: (matchId, scheduledAt) =>
-    request(`/friendly/matches/${matchId}/schedule`, {
-      method: "POST",
-      body: { scheduled_at: scheduledAt },
-    }),
-  confirmFriendlySchedule: (matchId) =>
-    request(`/friendly/matches/${matchId}/schedule/confirm`, { method: "POST" }),
   reportFriendlyScore: (matchId, sets, requireConfirmation) =>
     request(`/friendly/matches/${matchId}/score`, {
       method: "POST",

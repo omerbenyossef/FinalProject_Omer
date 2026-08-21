@@ -31,6 +31,16 @@ export function formatDayMonthTime(date) {
   return `${formatDayMonth(date)} · ${h}:${m}`;
 }
 
+const WEEKDAY_SHORT = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+// Always-Latin "WED 20:00" label used across the schedule flow (107) — Anton
+// has no Hebrew glyphs, so this format is reserved for spots that render in
+// mono/Anton regardless of app language.
+export function formatWeekdayTime(date) {
+  const h = String(date.getHours()).padStart(2, "0");
+  const m = String(date.getMinutes()).padStart(2, "0");
+  return `${WEEKDAY_SHORT[date.getDay()]} ${h}:${m}`;
+}
+
 // Translatable equivalent of daysLeftLabel, for spots in the UI that render
 // in the app's own language rather than always-English numeric labels.
 export function daysLeftPhrase(daysLeft, t) {
@@ -55,6 +65,23 @@ export function daysLeftLabel(daysLeft) {
   return over === 1 ? "1 day over" : `${over} days over`;
 }
 
+// "1 DAY" vs "N DAYS" — shared by the schedule flow's mono meta lines.
+export function daysWord(n) {
+  return n === 1 ? "DAY" : "DAYS";
+}
+
+// Always-English "2 DAYS AGO" label for the schedule flow's mono meta lines
+// (see daysLeftLabel above for the same pattern applied to due dates).
+export function timeAgoLabel(date) {
+  const diffMs = Date.now() - date.getTime();
+  const minutes = Math.round(diffMs / 60000);
+  if (minutes < 60) return minutes <= 1 ? "JUST NOW" : `${minutes} MIN AGO`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return hours === 1 ? "1 HOUR AGO" : `${hours} HOURS AGO`;
+  const days = Math.round(hours / 24);
+  return days === 1 ? "1 DAY AGO" : `${days} DAYS AGO`;
+}
+
 // State machine for the "schedule a time before you can report a score" gate:
 // unscheduled -> proposed_by_me / proposed_by_them -> confirmed_future -> ready.
 export function matchScheduleState(match, userId) {
@@ -63,6 +90,16 @@ export function matchScheduleState(match, userId) {
     return match.scheduled_by === userId ? "proposed_by_me" : "proposed_by_them";
   }
   return new Date(match.scheduled_at) > new Date() ? "confirmed_future" : "ready";
+}
+
+// Collapses matchScheduleState's 5 states down to the 4 the schedule flow
+// (107) shows in the match row and elsewhere: no_time | sent | asked_you | set.
+export function scheduleRowStatus(match, userId) {
+  const state = matchScheduleState(match, userId);
+  if (state === "unscheduled") return "no_time";
+  if (state === "proposed_by_me") return "sent";
+  if (state === "proposed_by_them") return "asked_you";
+  return "set";
 }
 
 export function formatWeekLabel(scheduleStartedAt, roundNumber, t, roundLengthDays = 7) {

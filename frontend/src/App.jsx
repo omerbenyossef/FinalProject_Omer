@@ -16,6 +16,8 @@ import Rankings from "./pages/Rankings.jsx";
 import Settings from "./pages/Settings.jsx";
 import HeadToHead from "./pages/HeadToHead.jsx";
 import PlayerProfile from "./pages/PlayerProfile.jsx";
+import ProposeSchedule from "./pages/ProposeSchedule.jsx";
+import MatchSchedule from "./pages/MatchSchedule.jsx";
 import { SkeletonPageHeader, SkeletonHeroStat } from "./Skeleton.jsx";
 
 function ProtectedRoute({ children }) {
@@ -115,6 +117,22 @@ export default function App() {
           element={
             <ProtectedRoute>
               <PlayerProfile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/matches/:matchId/schedule"
+          element={
+            <ProtectedRoute>
+              <ProposeSchedule />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/matches/:matchId"
+          element={
+            <ProtectedRoute>
+              <MatchSchedule />
             </ProtectedRoute>
           }
         />

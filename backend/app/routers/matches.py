@@ -234,6 +234,8 @@ def propose_schedule(
     match.scheduled_at = scheduled_at
     match.scheduled_by = current_user.id
     match.schedule_confirmed = False
+    match.schedule_proposed_at = datetime.utcnow()
+    match.court = proposal.court
     db.commit()
     db.refresh(match)
 

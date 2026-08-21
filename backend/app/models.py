@@ -135,6 +135,8 @@ class Match(Base):
     scheduled_at = Column(DateTime, nullable=True)
     scheduled_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     schedule_confirmed = Column(Boolean, default=False, nullable=False)
+    schedule_proposed_at = Column(DateTime, nullable=True)
+    court = Column(String, nullable=True)
     player1_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     player2_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     player1_score = Column(Integer, nullable=True)

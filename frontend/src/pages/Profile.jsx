@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import { useSport } from "../SportContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import { useOpenAction } from "../OpenActionContext.jsx";
 import SetScoreForm from "../SetScoreForm.jsx";
-import ScheduleForm from "../ScheduleForm.jsx";
 import ConfirmScoreSheet from "../ConfirmScoreSheet.jsx";
 import Avatar from "../Avatar.jsx";
 import { ChevronIcon, UserPlusIcon } from "../Icons.jsx";
@@ -98,13 +97,11 @@ function ToPlayCard({
   h2h,
   busy,
   isReporting,
-  isScheduling,
   onStartReport,
   onStartSchedule,
   onCancelForm,
   onSubmitScore,
-  onSubmitSchedule,
-  onConfirmSchedule,
+  onOpenProposal,
   onOpenConfirmScore,
   onAccept,
   onDecline,
@@ -134,9 +131,11 @@ function ToPlayCard({
   } else if (pendingInvite) {
     if (isInviter) action = { title: t("תזכר"), dependsOnMe: false, onPress: onRemind };
   } else if (scheduleState === "unscheduled") {
-    action = { title: t("קבע שעה"), dependsOnMe: true, onPress: onStartSchedule };
+    // No lime dot for scheduling actions — see scheduleflow107.md's color
+    // rule: proposing/confirming a time is a response, not a score.
+    action = { title: t("קבע שעה"), dependsOnMe: true, noDot: true, onPress: onStartSchedule };
   } else if (scheduleState === "proposed_by_them") {
-    action = { title: t("אשר את השעה"), dependsOnMe: true, onPress: onConfirmSchedule };
+    action = { title: t("אשר את השעה"), dependsOnMe: true, noDot: true, onPress: onOpenProposal };
   } else if (scheduleState === "proposed_by_me") {
     action = { title: t("תזכר"), dependsOnMe: false, onPress: onRemind };
   } else if (scheduleState === "ready") {
@@ -163,14 +162,6 @@ function ToPlayCard({
               : undefined
           }
         />
-      </div>
-    );
-  }
-
-  if (isScheduling) {
-    return (
-      <div className={`tp-card${single ? " single" : ""}`}>
-        <ScheduleForm busy={busy} onSubmit={onSubmitSchedule} onCancel={onCancelForm} />
       </div>
     );
   }
@@ -240,7 +231,7 @@ function ToPlayCard({
             onClick={action.onPress}
             disabled={busy}
           >
-            {action.dependsOnMe && <span className="tp-dot-lime" aria-hidden="true" />}
+            {action.dependsOnMe && !action.noDot && <span className="tp-dot-lime" aria-hidden="true" />}
             <span className="tp-action-label">{action.title}</span>
             <ChevronIcon aria-hidden="true" />
           </button>
@@ -254,6 +245,7 @@ export default function Profile() {
   const { user } = useAuth();
   const { selectedSportId, sports } = useSport();
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const { nextMatches, matchesLoading, reload: loadNextMatches, openAction } = useOpenAction();
   const [stats, setStats] = useState(null);
   const [error, setError] = useState("");
@@ -263,7 +255,6 @@ export default function Profile() {
   const [reportingMatchId, setReportingMatchId] = useState(null);
   const [myRatings, setMyRatings] = useState([]);
   const [friendlyRequireConfirm, setFriendlyRequireConfirm] = useState(true);
-  const [schedulingMatchId, setSchedulingMatchId] = useState(null);
   const [activeToPlay, setActiveToPlay] = useState(0);
   const [standingsByLeague, setStandingsByLeague] = useState({});
   const [h2hByOpponent, setH2hByOpponent] = useState({});
@@ -384,56 +375,6 @@ export default function Profile() {
       await api.sendMatchReminder(leagueId, matchId);
     } catch (err) {
       setError(err.message);
-    }
-  }
-
-  async function handleProposeSchedule(leagueId, matchId, scheduledAt) {
-    setBusy(true);
-    try {
-      await api.proposeSchedule(leagueId, matchId, scheduledAt);
-      setSchedulingMatchId(null);
-      loadNextMatches();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleConfirmSchedule(leagueId, matchId) {
-    setBusy(true);
-    try {
-      await api.confirmSchedule(leagueId, matchId);
-      loadNextMatches();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleProposeFriendlySchedule(matchId, scheduledAt) {
-    setBusy(true);
-    try {
-      await api.proposeFriendlySchedule(matchId, scheduledAt);
-      setSchedulingMatchId(null);
-      loadNextMatches();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleConfirmFriendlySchedule(matchId) {
-    setBusy(true);
-    try {
-      await api.confirmFriendlySchedule(matchId);
-      loadNextMatches();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setBusy(false);
     }
   }
 
@@ -641,28 +582,15 @@ export default function Profile() {
                   h2h={h2hByOpponent[opponentIdFor(entry)]}
                   busy={busy}
                   isReporting={reportingMatchId === entry.match.id}
-                  isScheduling={schedulingMatchId === entry.match.id}
                   single={sortedToPlay.length === 1}
                   onStartReport={() => {
                     setReportingMatchId(entry.match.id);
                     setFriendlyRequireConfirm(true);
                   }}
-                  onStartSchedule={() => setSchedulingMatchId(entry.match.id)}
-                  onCancelForm={() => {
-                    setReportingMatchId(null);
-                    setSchedulingMatchId(null);
-                  }}
+                  onStartSchedule={() => navigate(`/matches/${entry.match.id}/schedule`)}
+                  onCancelForm={() => setReportingMatchId(null)}
                   onSubmitScore={(sets) => handleReportScore(entry, entry.match.id, sets)}
-                  onSubmitSchedule={(scheduledAt) =>
-                    entry.kind === "friendly"
-                      ? handleProposeFriendlySchedule(entry.match.id, scheduledAt)
-                      : handleProposeSchedule(entry.league_id, entry.match.id, scheduledAt)
-                  }
-                  onConfirmSchedule={() =>
-                    entry.kind === "friendly"
-                      ? handleConfirmFriendlySchedule(entry.match.id)
-                      : handleConfirmSchedule(entry.league_id, entry.match.id)
-                  }
+                  onOpenProposal={() => navigate(`/matches/${entry.match.id}`)}
                   onOpenConfirmScore={() => setConfirmEntry(entry)}
                   onAccept={() => handleAcceptInvite(entry.match.id)}
                   onDecline={() => handleDeclineInvite(entry.match.id)}
