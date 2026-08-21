@@ -37,7 +37,7 @@ def _other_leagues_at_level(db: Session, league: models.League, level: float, us
         .filter(
             models.League.sport_id == league.sport_id,
             models.League.id != league.id,
-            models.League.join_code.is_(None),
+            models.League.is_open.is_(True),
             models.League.level_min <= level,
             models.League.level_max >= level,
         )

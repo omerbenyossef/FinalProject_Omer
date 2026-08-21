@@ -30,6 +30,20 @@ def add_missing_columns() -> None:
 add_missing_columns()
 
 
+def backfill_league_is_open() -> None:
+    """League.is_open used to be inferred from join_code IS NULL, but that
+    field gets overwritten the moment anyone fetches an invite code for an
+    open league (round 110's "share this code with friends" reuse of the
+    existing endpoint) — silently hiding the league from open-leagues browse
+    forever after. Give is_open its own persisted value, seeded once from
+    the join_code state at the moment this column first appears."""
+    with engine.begin() as conn:
+        conn.execute(text("UPDATE leagues SET is_open = (join_code IS NULL) WHERE is_open IS NULL"))
+
+
+backfill_league_is_open()
+
+
 def add_missing_enum_values() -> None:
     """Postgres enum columns don't pick up new Python enum.Enum members on
     their own (SQLite has no such constraint, so this only matters in

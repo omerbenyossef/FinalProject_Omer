@@ -108,6 +108,10 @@ class LeagueCreate(BaseModel):
     level_max: Optional[float] = None
     capacity: Optional[int] = None
     starts_at: Optional[datetime] = None
+    location_name: Optional[str] = None
+    lat: Optional[float] = None
+    lng: Optional[float] = None
+    planned_rounds: Optional[int] = None
 
 
 class LeagueRulesUpdate(BaseModel):
@@ -119,6 +123,11 @@ class LeagueRulesUpdate(BaseModel):
     starts_at: Optional[datetime] = None
     clear_capacity: bool = False
     clear_starts_at: bool = False
+    location_name: Optional[str] = None
+    lat: Optional[float] = None
+    lng: Optional[float] = None
+    planned_rounds: Optional[int] = None
+    clear_planned_rounds: bool = False
 
 
 class MyNextMatchSummary(BaseModel):
@@ -142,6 +151,10 @@ class LeagueOut(BaseModel):
     level_max: Optional[float] = None
     capacity: Optional[int] = None
     starts_at: Optional[datetime] = None
+    location_name: Optional[str] = None
+    lat: Optional[float] = None
+    lng: Optional[float] = None
+    planned_rounds: Optional[int] = None
     my_rank: Optional[int] = None
     my_members_total: Optional[int] = None
     my_wins: Optional[int] = None
@@ -152,6 +165,45 @@ class LeagueOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class OpenLeagueOut(BaseModel):
+    id: int
+    name: str
+    location_name: Optional[str] = None
+    distance_km: Optional[float] = None
+    rounds: Optional[int] = None
+    round_length_days: int = 7
+    level_min: float
+    level_max: float
+    joined: int
+    capacity: Optional[int] = None
+    starts_at: Optional[datetime] = None
+    is_full: bool = False
+    best_fit: bool = False
+
+
+class LeaguePreviewOut(BaseModel):
+    id: int
+    name: str
+    location_name: Optional[str] = None
+    distance_km: Optional[float] = None
+    starts_at: Optional[datetime] = None
+    rounds: Optional[int] = None
+    round_length_days: int = 7
+    best_of: int = 3
+    joined: int
+    capacity: Optional[int] = None
+    level_min: float
+    level_max: float
+    level_histogram: list[int]
+    my_level: Optional[float] = None
+    my_bucket_index: Optional[int] = None
+    is_member: bool = False
+
+
+class JoinByCodeRequest(BaseModel):
+    code: str
 
 
 class MemberOut(BaseModel):

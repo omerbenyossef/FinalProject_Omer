@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useLanguage } from "./LanguageContext.jsx";
 import { NTRP_STEPS } from "./matchUtils.js";
+import { getCurrentPosition } from "./geo.js";
 
 export default function LeagueRulesForm({ league, onUpdate, onCancel }) {
   const { t } = useLanguage();
@@ -12,6 +13,10 @@ export default function LeagueRulesForm({ league, onUpdate, onCancel }) {
   const [startsAt, setStartsAt] = useState(
     league.starts_at ? new Date(league.starts_at).toISOString().slice(0, 10) : ""
   );
+  const [locationName, setLocationName] = useState(league.location_name ?? "");
+  const [plannedRounds, setPlannedRounds] = useState(
+    league.planned_rounds != null ? String(league.planned_rounds) : ""
+  );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -20,6 +25,8 @@ export default function LeagueRulesForm({ league, onUpdate, onCancel }) {
     setSubmitting(true);
     setError("");
     try {
+      const locationChanged = locationName.trim() !== (league.location_name ?? "");
+      const position = locationChanged ? await getCurrentPosition() : null;
       await onUpdate({
         best_of: bestOf,
         round_length_days: roundLengthDays,
@@ -29,6 +36,11 @@ export default function LeagueRulesForm({ league, onUpdate, onCancel }) {
         clear_capacity: !capacity.trim(),
         starts_at: startsAt ? new Date(startsAt).toISOString() : null,
         clear_starts_at: !startsAt,
+        location_name: locationName.trim() || null,
+        lat: position?.lat ?? null,
+        lng: position?.lng ?? null,
+        planned_rounds: plannedRounds.trim() ? Number(plannedRounds) : null,
+        clear_planned_rounds: !plannedRounds.trim(),
       });
     } catch (err) {
       setError(err.message);
@@ -94,6 +106,26 @@ export default function LeagueRulesForm({ league, onUpdate, onCancel }) {
       <label>
         {t("תאריך פתיחה (אופציונלי)")}
         <input type="date" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} />
+      </label>
+      <label>
+        {t("מיקום (אופציונלי)")}
+        <input
+          type="text"
+          value={locationName}
+          onChange={(e) => setLocationName(e.target.value)}
+          placeholder={t("לדוגמה: רמת גן")}
+          maxLength={40}
+        />
+      </label>
+      <label>
+        {t("מספר מחזורים מתוכנן (אופציונלי)")}
+        <input
+          type="number"
+          min="1"
+          value={plannedRounds}
+          onChange={(e) => setPlannedRounds(e.target.value)}
+          placeholder={t("ללא הגבלה")}
+        />
       </label>
       {error && <p className="error">{t(error)}</p>}
       <div className="inline-form">

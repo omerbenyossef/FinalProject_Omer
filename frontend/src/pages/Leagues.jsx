@@ -18,6 +18,7 @@ import {
   daysLeftPhrase,
 } from "../matchUtils.js";
 import PageHelp from "../PageHelp.jsx";
+import { getCurrentPosition } from "../geo.js";
 
 const CARD_WIDTH = 305;
 const CARD_GAP = 12;
@@ -139,6 +140,7 @@ export default function Leagues() {
   const [levelMax, setLevelMax] = useState(5.5);
   const [capacity, setCapacity] = useState("");
   const [startsAt, setStartsAt] = useState("");
+  const [locationName, setLocationName] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [sheetError, setSheetError] = useState("");
   const [active, setActive] = useState(0);
@@ -229,6 +231,7 @@ export default function Leagues() {
     setLevelMax(5.5);
     setCapacity("");
     setStartsAt("");
+    setLocationName("");
     setSheetError("");
     setShowSheet(true);
   }
@@ -242,6 +245,7 @@ export default function Leagues() {
     setSheetError("");
     setSubmitting(true);
     try {
+      const position = await getCurrentPosition();
       const league = await api.createLeague({
         name: name.trim(),
         description: "",
@@ -253,6 +257,9 @@ export default function Leagues() {
         level_max: levelMax,
         capacity: capacity.trim() ? Number(capacity) : null,
         starts_at: startsAt ? new Date(startsAt).toISOString() : null,
+        location_name: locationName.trim() || null,
+        lat: position?.lat ?? null,
+        lng: position?.lng ?? null,
       });
       navigate(`/leagues/${league.id}`);
     } catch (err) {
@@ -355,10 +362,10 @@ export default function Leagues() {
         </>
       )}
 
-      <div className="lg-open-head">
+      <Link to="/leagues/open" className="lg-open-head">
         <span>{t("ליגות פתוחות")}</span>
         <span>{openLeagues.length}</span>
-      </div>
+      </Link>
       <div className="open-league-list">
         {loading ? (
           <SkeletonLeagueCard />
@@ -366,7 +373,7 @@ export default function Leagues() {
           openLeagues.map((league) => {
             const ruleLabels = leagueRuleLabels(league, t);
             return (
-              <Link to={`/leagues/${league.id}`} key={league.id} className="open-league-row">
+              <Link to={`/leagues/${league.id}/preview`} key={league.id} className="open-league-row">
                 <div className="open-league-body">
                   <div className="open-league-name">
                     <span dir="auto">{league.name}</span>
@@ -488,6 +495,19 @@ export default function Leagues() {
                 max: levelMax.toFixed(1),
               })}
             </p>
+
+            <label className="sheet-label" htmlFor="league-location">
+              {t("מיקום (אופציונלי)")}
+            </label>
+            <input
+              id="league-location"
+              type="text"
+              className="sheet-input"
+              value={locationName}
+              onChange={(e) => setLocationName(e.target.value)}
+              placeholder={t("לדוגמה: רמת גן")}
+              maxLength={40}
+            />
 
             <label className="sheet-label" htmlFor="league-capacity">
               {t("קיבולת (אופציונלי)")}

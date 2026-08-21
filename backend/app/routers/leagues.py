@@ -1,3 +1,4 @@
+import math
 import random
 import string
 from datetime import datetime, timedelta
@@ -53,6 +54,20 @@ def _validate_capacity(capacity: int | None, current_member_count: int | None = 
         raise HTTPException(status_code=400, detail="בליגה צריכים להיות לפחות 2 מקומות")
     if current_member_count is not None and capacity < current_member_count:
         raise HTTPException(status_code=400, detail="אי אפשר לקבוע קיבולת נמוכה ממספר החברים הנוכחי")
+
+
+def _validate_planned_rounds(planned_rounds: int | None) -> None:
+    if planned_rounds is not None and planned_rounds < 1:
+        raise HTTPException(status_code=400, detail="מספר המחזורים המתוכנן חייב להיות לפחות 1")
+
+
+def _haversine_km(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
+    r = 6371.0
+    phi1, phi2 = math.radians(lat1), math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlambda = math.radians(lng2 - lng1)
+    a = math.sin(dphi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda / 2) ** 2
+    return 2 * r * math.asin(math.sqrt(a))
 
 
 def _validate_level_range(level_min: float | None, level_max: float | None) -> None:
@@ -125,7 +140,7 @@ def _to_league_out(
 ) -> schemas.LeagueOut:
     out = schemas.LeagueOut.model_validate(league)
     out.member_count = len(league.memberships)
-    out.is_open = league.join_code is None
+    out.is_open = bool(league.is_open)
     out.best_of = league.best_of or 3
     out.round_length_days = league.round_length_days or 7
     out.level_min = league.level_min if league.level_min is not None else models.RATING_MIN
@@ -281,6 +296,112 @@ def my_next_matches(
     return entries
 
 
+@router.get("/open", response_model=list[schemas.OpenLeagueOut])
+def list_open_leagues(
+    sport_id: int,
+    lat: float | None = None,
+    lng: float | None = None,
+    ntrp_min: float | None = None,
+    ntrp_max: float | None = None,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Public leagues for a sport, ranked for "which one should I join" —
+    see joinpublicleague110.md section 1. fit/distance/spots-remaining sort,
+    full leagues always last, at most one BEST_FIT (needs a real rating —
+    never fabricated for an unrated viewer)."""
+    _auto_confirm_overdue(db)
+    leagues = (
+        db.query(models.League)
+        .options(joinedload(models.League.sport), joinedload(models.League.memberships))
+        .filter(models.League.sport_id == sport_id, models.League.is_open.is_(True))
+        .all()
+    )
+
+    my_rating = get_rating(db, current_user.id, sport_id)
+    my_level = round_to_half(my_rating.level) if my_rating else None
+
+    rows = []
+    for league in leagues:
+        level_min = league.level_min if league.level_min is not None else models.RATING_MIN
+        level_max = league.level_max if league.level_max is not None else models.RATING_MAX
+        if ntrp_min is not None and level_max < ntrp_min:
+            continue
+        if ntrp_max is not None and level_min > ntrp_max:
+            continue
+
+        joined = len(league.memberships)
+        is_full = league.capacity is not None and joined >= league.capacity
+        distance_km = (
+            round(_haversine_km(lat, lng, league.lat, league.lng), 1)
+            if lat is not None and lng is not None and league.lat is not None and league.lng is not None
+            else None
+        )
+        level_fit = abs(my_level - (level_min + level_max) / 2) if my_level is not None else None
+        spots_remaining = (league.capacity - joined) if league.capacity is not None else 10_000
+
+        rows.append(
+            {
+                "league": league,
+                "level_min": level_min,
+                "level_max": level_max,
+                "joined": joined,
+                "is_full": is_full,
+                "distance_km": distance_km,
+                "level_fit": level_fit,
+                "spots_remaining": spots_remaining,
+            }
+        )
+
+    def sort_key(row):
+        return (
+            row["is_full"],
+            row["level_fit"] if row["level_fit"] is not None else 999,
+            row["distance_km"] if row["distance_km"] is not None else 999_999,
+            -row["spots_remaining"],
+        )
+
+    rows.sort(key=sort_key)
+
+    best_fit_id = None
+    if my_level is not None:
+        eligible = [r for r in rows if not r["is_full"]]
+        if eligible:
+            best_fit_id = eligible[0]["league"].id
+
+    return [
+        schemas.OpenLeagueOut(
+            id=row["league"].id,
+            name=row["league"].name,
+            location_name=row["league"].location_name,
+            distance_km=row["distance_km"],
+            rounds=row["league"].planned_rounds,
+            round_length_days=row["league"].round_length_days or 7,
+            level_min=row["level_min"],
+            level_max=row["level_max"],
+            joined=row["joined"],
+            capacity=row["league"].capacity,
+            starts_at=row["league"].starts_at,
+            is_full=row["is_full"],
+            best_fit=row["league"].id == best_fit_id,
+        )
+        for row in rows
+    ]
+
+
+@router.post("/join-by-code", response_model=schemas.LeagueOut)
+def join_league_by_code(
+    payload: schemas.JoinByCodeRequest,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    code = (payload.code or "").strip().upper()
+    league = db.query(models.League).filter(models.League.join_code == code).first()
+    if not league:
+        raise HTTPException(status_code=404, detail="קוד הזמנה לא נמצא")
+    return _join_league_core(db, league, current_user, code)
+
+
 @router.post("/", response_model=schemas.LeagueOut)
 def create_league(
     league_in: schemas.LeagueCreate,
@@ -297,6 +418,7 @@ def create_league(
     _validate_rules(league_in.best_of, league_in.round_length_days)
     _validate_level_range(league_in.level_min, league_in.level_max)
     _validate_capacity(league_in.capacity)
+    _validate_planned_rounds(league_in.planned_rounds)
 
     league = models.League(
         name=league_in.name,
@@ -304,12 +426,17 @@ def create_league(
         sport_id=league_in.sport_id,
         created_by=current_user.id,
         join_code=None if league_in.is_open else _generate_join_code(db),
+        is_open=league_in.is_open,
         best_of=league_in.best_of or 3,
         round_length_days=league_in.round_length_days or 7,
         level_min=league_in.level_min if league_in.level_min is not None else models.RATING_MIN,
         level_max=league_in.level_max if league_in.level_max is not None else models.RATING_MAX,
         capacity=league_in.capacity,
         starts_at=league_in.starts_at,
+        location_name=league_in.location_name,
+        lat=league_in.lat,
+        lng=league_in.lng,
+        planned_rounds=league_in.planned_rounds,
     )
     db.add(league)
     db.commit()
@@ -350,6 +477,8 @@ def update_league_rules(
     _validate_level_range(rules_in.level_min, rules_in.level_max)
     if not rules_in.clear_capacity:
         _validate_capacity(rules_in.capacity, len(league.memberships))
+    if not rules_in.clear_planned_rounds:
+        _validate_planned_rounds(rules_in.planned_rounds)
 
     if rules_in.best_of is not None:
         league.best_of = rules_in.best_of
@@ -367,6 +496,16 @@ def update_league_rules(
         league.starts_at = None
     elif rules_in.starts_at is not None:
         league.starts_at = rules_in.starts_at
+    if rules_in.location_name is not None:
+        league.location_name = rules_in.location_name
+    if rules_in.lat is not None:
+        league.lat = rules_in.lat
+    if rules_in.lng is not None:
+        league.lng = rules_in.lng
+    if rules_in.clear_planned_rounds:
+        league.planned_rounds = None
+    elif rules_in.planned_rounds is not None:
+        league.planned_rounds = rules_in.planned_rounds
 
     db.commit()
     db.refresh(league)
@@ -378,19 +517,82 @@ def get_league(league_id: int, db: Session = Depends(get_db)):
     return _to_league_out(_get_league_or_404(db, league_id))
 
 
-@router.post("/{league_id}/join", response_model=schemas.LeagueOut)
-def join_league(
+@router.get("/{league_id}/preview", response_model=schemas.LeaguePreviewOut)
+def preview_league(
     league_id: int,
-    join_in: schemas.JoinLeagueRequest = schemas.JoinLeagueRequest(),
+    lat: float | None = None,
+    lng: float | None = None,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
+    """The "before you join" gate — see joinpublicleague110.md section 2.
+    level_histogram buckets every current member's rating across the
+    league's own level range so the viewer can see "will I sink or swim"
+    (their own bucket highlighted client-side via my_bucket_index)."""
     league = _get_league_or_404(db, league_id)
+    level_min = league.level_min if league.level_min is not None else models.RATING_MIN
+    level_max = league.level_max if league.level_max is not None else models.RATING_MAX
+    joined = len(league.memberships)
+    is_member = any(m.user_id == current_user.id for m in league.memberships)
 
+    distance_km = (
+        round(_haversine_km(lat, lng, league.lat, league.lng), 1)
+        if lat is not None and lng is not None and league.lat is not None and league.lng is not None
+        else None
+    )
+
+    ratings_by_user = {
+        r.user_id: round_to_half(r.level)
+        for r in db.query(models.PlayerRating).filter(
+            models.PlayerRating.sport_id == league.sport_id,
+            models.PlayerRating.user_id.in_([m.user_id for m in league.memberships]),
+        )
+    }
+
+    bucket_count = 5
+    span = max(level_max - level_min, 0.5)
+
+    def bucket_for(level: float) -> int:
+        idx = int((level - level_min) / span * bucket_count)
+        return max(0, min(bucket_count - 1, idx))
+
+    histogram = [0] * bucket_count
+    for m in league.memberships:
+        level = ratings_by_user.get(m.user_id)
+        if level is not None:
+            histogram[bucket_for(level)] += 1
+
+    my_rating = get_rating(db, current_user.id, league.sport_id)
+    my_level = round_to_half(my_rating.level) if my_rating else None
+    my_bucket_index = bucket_for(my_level) if my_level is not None else None
+
+    return schemas.LeaguePreviewOut(
+        id=league.id,
+        name=league.name,
+        location_name=league.location_name,
+        distance_km=distance_km,
+        starts_at=league.starts_at,
+        rounds=league.planned_rounds,
+        round_length_days=league.round_length_days or 7,
+        best_of=league.best_of or 3,
+        joined=joined,
+        capacity=league.capacity,
+        level_min=level_min,
+        level_max=level_max,
+        level_histogram=histogram,
+        my_level=my_level,
+        my_bucket_index=my_bucket_index,
+        is_member=is_member,
+    )
+
+
+def _join_league_core(
+    db: Session, league: models.League, current_user: models.User, code: str | None = None
+) -> schemas.LeagueOut:
     existing = (
         db.query(models.LeagueMembership)
         .filter(
-            models.LeagueMembership.league_id == league_id,
+            models.LeagueMembership.league_id == league.id,
             models.LeagueMembership.user_id == current_user.id,
         )
         .first()
@@ -398,7 +600,7 @@ def join_league(
     if existing:
         return _to_league_out(league)
 
-    if league.join_code and league.join_code != (join_in.code or "").strip().upper():
+    if league.join_code and league.join_code != (code or "").strip().upper():
         raise HTTPException(status_code=403, detail="קוד הזמנה שגוי")
 
     if league.capacity is not None and len(league.memberships) >= league.capacity:
@@ -412,7 +614,7 @@ def join_league(
     if not (level_min <= round_to_half(rating.level) <= level_max):
         raise HTTPException(status_code=403, detail="הדירוג שלך מחוץ לטווח הרמות של הליגה הזו")
 
-    membership = models.LeagueMembership(league_id=league_id, user_id=current_user.id)
+    membership = models.LeagueMembership(league_id=league.id, user_id=current_user.id)
     db.add(membership)
     db.commit()
 
@@ -424,10 +626,21 @@ def join_league(
             league.created_by,
             "חבר חדש הצטרף לליגה",
             f"{current_user.name} הצטרף/ה לליגה {league.name}",
-            f"/leagues/{league_id}",
+            f"/leagues/{league.id}",
         )
 
     return _to_league_out(league)
+
+
+@router.post("/{league_id}/join", response_model=schemas.LeagueOut)
+def join_league(
+    league_id: int,
+    join_in: schemas.JoinLeagueRequest = schemas.JoinLeagueRequest(),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    league = _get_league_or_404(db, league_id)
+    return _join_league_core(db, league, current_user, join_in.code)
 
 
 @router.post("/{league_id}/leave", status_code=204)

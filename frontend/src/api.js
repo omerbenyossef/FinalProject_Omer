@@ -85,6 +85,21 @@ export const api = {
   getInviteCode: (id) => request(`/leagues/${id}/invite-code`),
   deleteLeague: (id) => request(`/leagues/${id}`, { method: "DELETE" }),
   updateLeagueRules: (id, data) => request(`/leagues/${id}/rules`, { method: "PATCH", body: data }),
+  getOpenLeagues: (sportId, { lat, lng, ntrpMin, ntrpMax } = {}) =>
+    request(
+      `/leagues/open?sport_id=${sportId}` +
+        (lat != null ? `&lat=${lat}` : "") +
+        (lng != null ? `&lng=${lng}` : "") +
+        (ntrpMin != null ? `&ntrp_min=${ntrpMin}` : "") +
+        (ntrpMax != null ? `&ntrp_max=${ntrpMax}` : "")
+    ),
+  getLeaguePreview: (id, { lat, lng } = {}) =>
+    request(
+      `/leagues/${id}/preview?` +
+        (lat != null ? `lat=${lat}&` : "") +
+        (lng != null ? `lng=${lng}` : "")
+    ),
+  joinLeagueByCode: (code) => request("/leagues/join-by-code", { method: "POST", body: { code } }),
 
   headToHead: (opponentId) => request(`/players/${opponentId}/head-to-head`),
   playerProfile: (playerId, sportId) => request(`/players/${playerId}?sport_id=${sportId}`),

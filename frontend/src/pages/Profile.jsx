@@ -260,7 +260,7 @@ function NoLeagueBlock({ t, navigate, openCount }) {
           <span className="home-nolg-tag">{t("{n} OPEN", { n: openCount })}</span>
         </div>
         <p className="home-nolg-option-sub">{t("כל אחד יכול להצטרף, בלי קוד הזמנה.")}</p>
-        <button type="button" className="home-nolg-action" onClick={() => navigate("/leagues")}>
+        <button type="button" className="home-nolg-action" onClick={() => navigate("/leagues/open")}>
           <span className="home-nolg-dot" aria-hidden="true" />
           {t("עיין בליגות פתוחות")}
           <ChevronIcon aria-hidden="true" />
