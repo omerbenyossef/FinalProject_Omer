@@ -79,6 +79,7 @@ export const api = {
   myLeagues: () => request("/leagues/mine"),
   myNextMatches: () => request("/leagues/mine/next-matches"),
   myOpenItems: () => request("/leagues/mine/open-items"),
+  opsOverview: (range) => request(`/ops/overview?range=${range}`),
   createLeague: (data) => request("/leagues/", { method: "POST", body: data }),
   getLeague: (id) => request(`/leagues/${id}`, { auth: false }),
   joinLeague: (id, code) => request(`/leagues/${id}/join`, { method: "POST", body: { code } }),

@@ -522,3 +522,42 @@ class MatchDetailOut(BaseModel):
     disputed_at: Optional[datetime] = None
     auto_confirm_at: Optional[datetime] = None
     prediction: Optional[ResultPrediction] = None
+
+
+class OpsFlaggedLeague(BaseModel):
+    league_id: int
+    league_name: str
+    flag: str  # stalled | never_started | voided
+    round_number: Optional[int] = None
+    round_length_days: Optional[int] = None
+    schedule_started_at: Optional[datetime] = None
+    created_at: datetime
+    member_count: int
+    capacity: Optional[int] = None
+    round_matches_total: int = 0
+    round_matches_played: int = 0
+    league_matches_total: int = 0
+    voided_count: int = 0
+    same_pair_voided: bool = False
+
+
+class OpsHealthyLeague(BaseModel):
+    league_id: int
+    league_name: str
+    round_number: Optional[int] = None
+    round_length_days: Optional[int] = None
+    schedule_started_at: Optional[datetime] = None
+    created_at: datetime
+    member_count: int
+    matches_total: int = 0
+    matches_played: int = 0
+
+
+class OpsOverviewOut(BaseModel):
+    range: str
+    leagues_count: int
+    players_count: int
+    matches_count: int
+    voided_count: int
+    flagged: list[OpsFlaggedLeague]
+    healthy: list[OpsHealthyLeague]

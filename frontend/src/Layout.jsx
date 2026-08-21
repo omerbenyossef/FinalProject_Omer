@@ -71,7 +71,7 @@ export default function Layout({ children }) {
       {user && <InstallPrompt />}
       {user && <SelfRatingPrompt />}
       <main className="content">{children}</main>
-      {user && (
+      {user && location.pathname !== "/ops" && (
         <nav className="tabbar">
           <div className="tabbar-row">
             <div className={`tabbar-inner${openAction ? "" : " wide"}`}>

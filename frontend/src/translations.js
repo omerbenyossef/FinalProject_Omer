@@ -690,6 +690,28 @@ const PAIRS = [
   ["טרם נקבעה", "not set"],
   ["הציעו {time}", "they suggested {time}"],
   ["מפגש ראשון", "first meeting"],
+
+  // Operator overview (113a)
+  ["OPERATOR", "OPERATOR"],
+  ["טווח", "Range"],
+  ["THIS WEEK", "THIS WEEK"],
+  ["THIS MONTH", "THIS MONTH"],
+  ["ALL TIME", "ALL TIME"],
+  ["LEAGUES", "LEAGUES"],
+  ["MATCHES", "MATCHES"],
+  ["VOIDED", "VOIDED"],
+  ["NEEDS A LOOK", "NEEDS A LOOK"],
+  ["RUNNING FINE", "RUNNING FINE"],
+  ["STALLED", "STALLED"],
+  ["NEVER STARTED", "NEVER STARTED"],
+  ["{n} VOIDED", "{n} VOIDED"],
+  ["ROUND ENDED", "ROUND ENDED"],
+  ["CREATED", "CREATED"],
+  ["SAME PAIR TWICE · WORTH A LOOK", "SAME PAIR TWICE · WORTH A LOOK"],
+  ["{n} MATCHES VOIDED", "{n} MATCHES VOIDED"],
+  ["+{n} more · ALL ON PACE", "+{n} more · ALL ON PACE"],
+  ["READ ONLY", "READ ONLY"],
+  ["UPDATED", "UPDATED"],
 ];
 
 const heToEn = {};

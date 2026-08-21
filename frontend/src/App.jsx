@@ -24,6 +24,7 @@ import ProposeSchedule from "./pages/ProposeSchedule.jsx";
 import MatchSchedule from "./pages/MatchSchedule.jsx";
 import ConfirmResult from "./pages/ConfirmResult.jsx";
 import CorrectScore from "./pages/CorrectScore.jsx";
+import Operator from "./pages/Operator.jsx";
 import { SkeletonPageHeader, SkeletonHeroStat } from "./Skeleton.jsx";
 
 function ProtectedRoute({ children }) {
@@ -40,6 +41,26 @@ function ProtectedRoute({ children }) {
   if (!user) {
     const redirectTo = encodeURIComponent(location.pathname + location.search);
     return <Navigate to={`/login?redirect=${redirectTo}`} replace />;
+  }
+  return children;
+}
+
+// operatoroverview113a.md — internal-only screen, gated on the operator account
+function AdminRoute({ children }) {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div>
+        <SkeletonPageHeader />
+        <SkeletonHeroStat />
+      </div>
+    );
+  }
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  if (!user.is_admin) {
+    return <Navigate to="/profile" replace />;
   }
   return children;
 }
@@ -196,6 +217,14 @@ export default function App() {
             <ProtectedRoute>
               <Settings />
             </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ops"
+          element={
+            <AdminRoute>
+              <Operator />
+            </AdminRoute>
           }
         />
       </Routes>
