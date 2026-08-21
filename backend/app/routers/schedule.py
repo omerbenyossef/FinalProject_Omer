@@ -8,6 +8,7 @@ from .. import models, schemas
 from ..auth import get_current_user
 from ..database import get_db
 from ..push_utils import notify_user
+from ..rating_utils import round_to_half
 from .matches import _auto_confirm_overdue, _to_naive_utc
 
 router = APIRouter(prefix="/matches", tags=["schedule"])
@@ -71,7 +72,7 @@ def get_match_detail(
     my_ntrp = opp_ntrp = None
     if sport_id:
         ratings = {
-            r.user_id: r.level
+            r.user_id: round_to_half(r.level)
             for r in db.query(models.PlayerRating).filter(
                 models.PlayerRating.sport_id == sport_id,
                 models.PlayerRating.user_id.in_([current_user.id, opponent.id]),

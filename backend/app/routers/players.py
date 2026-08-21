@@ -9,6 +9,7 @@ from ..auth import get_current_user
 from ..database import get_db
 from .matches import _auto_confirm_overdue
 from .leagues import get_standings
+from ..rating_utils import round_to_half
 
 router = APIRouter(prefix="/players", tags=["players"])
 
@@ -60,7 +61,7 @@ def _ntrp_ranked_entries(db, sport_id):
             {
                 "id": uid,
                 "display_name": rating.user.name,
-                "ntrp": rating.level,
+                "ntrp": round_to_half(rating.level),
                 "wins": wins,
                 "losses": losses,
                 "matches_played": played,
@@ -120,7 +121,7 @@ def rankings(
         me_out = schemas.RankingsMeOut(
             rank=None,
             display_name=current_user.name,
-            ntrp=my_rating.level if my_rating else None,
+            ntrp=round_to_half(my_rating.level) if my_rating else None,
             wins=my_record["wins"],
             losses=my_record["losses"],
             win_pct=round(my_record["wins"] / played * 100) if played else 0,

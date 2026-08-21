@@ -285,6 +285,18 @@ export default function Profile() {
       .catch((err) => setError(err.message));
   }, [selectedSportId]);
 
+  // Reporting/confirming a score can finalize a match immediately (friendly
+  // matches without confirmation, or the opponent's confirm/dispute action),
+  // which moves the NTRP rating server-side right away. myRatings is only
+  // fetched once on mount, so refresh it here too or the header keeps
+  // showing the pre-match number until the page is reloaded.
+  function reloadRatings() {
+    api
+      .myRatings()
+      .then(setMyRatings)
+      .catch(() => {});
+  }
+
   async function handleReportScore(entry, matchId, sets) {
     setBusy(true);
     try {
@@ -295,6 +307,7 @@ export default function Profile() {
       }
       setReportingMatchId(null);
       loadNextMatches();
+      reloadRatings();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -313,6 +326,7 @@ export default function Profile() {
       }
       setConfirmEntry(null);
       loadNextMatches();
+      reloadRatings();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -330,6 +344,7 @@ export default function Profile() {
         await api.reportScore(confirmEntry.league_id, confirmEntry.match.id, sets);
       }
       setConfirmEntry(null);
+      reloadRatings();
       loadNextMatches();
     } catch (err) {
       setError(err.message);
