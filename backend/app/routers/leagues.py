@@ -46,6 +46,15 @@ def _validate_rules(best_of: int | None, round_length_days: int | None) -> None:
         raise HTTPException(status_code=400, detail="תדירות לוח המשחקים חייבת להיות שבועית או דו-שבועית")
 
 
+def _validate_capacity(capacity: int | None, current_member_count: int | None = None) -> None:
+    if capacity is None:
+        return
+    if capacity < 2:
+        raise HTTPException(status_code=400, detail="בליגה צריכים להיות לפחות 2 מקומות")
+    if current_member_count is not None and capacity < current_member_count:
+        raise HTTPException(status_code=400, detail="אי אפשר לקבוע קיבולת נמוכה ממספר החברים הנוכחי")
+
+
 def _validate_level_range(level_min: float | None, level_max: float | None) -> None:
     for value in (level_min, level_max):
         if value is None:
@@ -287,6 +296,7 @@ def create_league(
 
     _validate_rules(league_in.best_of, league_in.round_length_days)
     _validate_level_range(league_in.level_min, league_in.level_max)
+    _validate_capacity(league_in.capacity)
 
     league = models.League(
         name=league_in.name,
@@ -298,6 +308,8 @@ def create_league(
         round_length_days=league_in.round_length_days or 7,
         level_min=league_in.level_min if league_in.level_min is not None else models.RATING_MIN,
         level_max=league_in.level_max if league_in.level_max is not None else models.RATING_MAX,
+        capacity=league_in.capacity,
+        starts_at=league_in.starts_at,
     )
     db.add(league)
     db.commit()
@@ -336,6 +348,8 @@ def update_league_rules(
 
     _validate_rules(rules_in.best_of, rules_in.round_length_days)
     _validate_level_range(rules_in.level_min, rules_in.level_max)
+    if not rules_in.clear_capacity:
+        _validate_capacity(rules_in.capacity, len(league.memberships))
 
     if rules_in.best_of is not None:
         league.best_of = rules_in.best_of
@@ -345,6 +359,14 @@ def update_league_rules(
         league.level_min = rules_in.level_min
     if rules_in.level_max is not None:
         league.level_max = rules_in.level_max
+    if rules_in.clear_capacity:
+        league.capacity = None
+    elif rules_in.capacity is not None:
+        league.capacity = rules_in.capacity
+    if rules_in.clear_starts_at:
+        league.starts_at = None
+    elif rules_in.starts_at is not None:
+        league.starts_at = rules_in.starts_at
 
     db.commit()
     db.refresh(league)
@@ -378,6 +400,9 @@ def join_league(
 
     if league.join_code and league.join_code != (join_in.code or "").strip().upper():
         raise HTTPException(status_code=403, detail="קוד הזמנה שגוי")
+
+    if league.capacity is not None and len(league.memberships) >= league.capacity:
+        raise HTTPException(status_code=403, detail="הליגה מלאה")
 
     rating = get_rating(db, current_user.id, league.sport_id)
     if not rating:

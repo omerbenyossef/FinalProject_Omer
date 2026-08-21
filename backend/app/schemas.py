@@ -106,6 +106,8 @@ class LeagueCreate(BaseModel):
     round_length_days: Optional[int] = None
     level_min: Optional[float] = None
     level_max: Optional[float] = None
+    capacity: Optional[int] = None
+    starts_at: Optional[datetime] = None
 
 
 class LeagueRulesUpdate(BaseModel):
@@ -113,6 +115,10 @@ class LeagueRulesUpdate(BaseModel):
     round_length_days: Optional[int] = None
     level_min: Optional[float] = None
     level_max: Optional[float] = None
+    capacity: Optional[int] = None
+    starts_at: Optional[datetime] = None
+    clear_capacity: bool = False
+    clear_starts_at: bool = False
 
 
 class MyNextMatchSummary(BaseModel):
@@ -134,6 +140,8 @@ class LeagueOut(BaseModel):
     round_length_days: Optional[int] = None
     level_min: Optional[float] = None
     level_max: Optional[float] = None
+    capacity: Optional[int] = None
+    starts_at: Optional[datetime] = None
     my_rank: Optional[int] = None
     my_members_total: Optional[int] = None
     my_wins: Optional[int] = None

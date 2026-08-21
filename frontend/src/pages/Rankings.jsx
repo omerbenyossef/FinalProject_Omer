@@ -6,6 +6,7 @@ import { useLanguage } from "../LanguageContext.jsx";
 import { api } from "../api.js";
 import { SkeletonBar } from "../Skeleton.jsx";
 import EmptyState from "../EmptyState.jsx";
+import EmptyLine from "../EmptyLine.jsx";
 import { ChevronDownIcon, CheckIcon, RanksIcon } from "../Icons.jsx";
 
 const SORT_KEY = "rally.ranks.sort";
@@ -147,23 +148,30 @@ export default function Rankings() {
           {t("YOUR PLACE")} · <span dir="auto">{me?.display_name ?? user.name}</span>
         </p>
 
-        <div className="rk-place">
-          <span className="rk-place-num">
-            {loading || !sportReady ? <SkeletonBar width={70} height={50} /> : me?.rank ?? "—"}
-          </span>
-          {!loading && sportReady && (
-            <span className="rk-place-of" dir="ltr">
-              {t("מתוך {n}", { n: fmtNum(total) })}
-            </span>
-          )}
-        </div>
+        {!loading && sportReady && meNoRating ? (
+          <EmptyLine
+            sentence={t("אתה עוד לא מדורג.")}
+            meta={`${Math.max(0, minMatches - (me?.matches_played ?? 0))} MATCHES UNTIL YOU ENTER THE TABLE`}
+          />
+        ) : (
+          <>
+            <div className="rk-place">
+              <span className="rk-place-num">
+                {loading || !sportReady ? <SkeletonBar width={70} height={50} /> : me?.rank}
+              </span>
+              {!loading && sportReady && (
+                <span className="rk-place-of" dir="ltr">
+                  {t("מתוך {n}", { n: fmtNum(total) })}
+                </span>
+              )}
+            </div>
 
-        {!loading && sportReady && me && (
-          <p className="rk-mine" dir="ltr">
-            {meNoRating
-              ? t("זמני למשך 3 משחקים")
-              : `NTRP ${me.ntrp.toFixed(1)} · ${me.wins}-${me.losses} · ${me.win_pct}% ${t("WINS")}`}
-          </p>
+            {!loading && sportReady && me && (
+              <p className="rk-mine" dir="ltr">
+                {`NTRP ${me.ntrp.toFixed(1)} · ${me.wins}-${me.losses} · ${me.win_pct}% ${t("WINS")}`}
+              </p>
+            )}
+          </>
         )}
 
         <p className="rk-sortline" dir="ltr">
@@ -274,27 +282,31 @@ export default function Rankings() {
                 {t("עוד {n} משחקים ותיכנס לדירוג לפי מאזן", { n: Math.max(0, minMatches - me.matches_played) })}
               </p>
             </div>
+          ) : meNoRating ? (
+            <div className="rk-me-note">
+              <p className="rk-me-note-text" dir="ltr">
+                {`${Math.max(0, minMatches - me.matches_played)} MATCHES UNTIL YOU ENTER THE TABLE`}
+              </p>
+            </div>
           ) : (
             <button type="button" className="rk-me" onClick={scrollToMe}>
               <span className="rk-rank" dir="ltr">
-                {me.rank ?? "—"}
+                {me.rank}
               </span>
               <span className="rk-who">
                 <span className="rk-name" dir="auto">
                   {me.display_name}
                   <span className="rk-you"> · you</span>
                 </span>
-                {!meNoRating && (
-                  <span className="rk-sub" dir="ltr">
-                    {sort === "ntrp" ? `${me.wins}-${me.losses}` : `NTRP ${me.ntrp.toFixed(1)}`}
-                  </span>
-                )}
+                <span className="rk-sub" dir="ltr">
+                  {sort === "ntrp" ? `${me.wins}-${me.losses}` : `NTRP ${me.ntrp.toFixed(1)}`}
+                </span>
               </span>
               <span className="rk-bar">
-                <i style={{ width: `${meNoRating ? 0 : barPct(me, sort)}%` }} />
+                <i style={{ width: `${barPct(me, sort)}%` }} />
               </span>
               <span className="rk-val" dir="ltr">
-                {meNoRating ? "—" : sort === "ntrp" ? me.ntrp.toFixed(1) : `${me.win_pct}%`}
+                {sort === "ntrp" ? me.ntrp.toFixed(1) : `${me.win_pct}%`}
               </span>
             </button>
           )}

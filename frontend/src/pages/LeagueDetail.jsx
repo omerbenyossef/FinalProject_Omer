@@ -23,6 +23,7 @@ import {
 } from "../matchUtils.js";
 import { SkeletonPageHeader, SkeletonHeroStat, SkeletonStandingsTable } from "../Skeleton.jsx";
 import PageHelp from "../PageHelp.jsx";
+import EmptyLine from "../EmptyLine.jsx";
 
 function groupMatchesByRound(matches) {
   const groups = new Map();
@@ -276,6 +277,15 @@ export default function LeagueDetail() {
   const myRankIndex = standings.findIndex((row) => row.user.id === user?.id);
   const myRank = myRankIndex >= 0 ? myRankIndex + 1 : null;
   const roundsClosed = existingRoundNumbers.length;
+  // 109c: standings rows exist (zeroed) for every member before anyone has
+  // played — don't show a hero full of dashes for that, and don't show a
+  // full standings table of zeros either (see the standings tab below).
+  const myPlayedNone = !myStanding || myStanding.played === 0;
+  const noResultsYet = standings.length > 0 && standings.every((row) => row.played === 0);
+  const myFirstPendingMatch =
+    allMatches
+      .filter((m) => (m.player1.id === user?.id || m.player2.id === user?.id) && m.status === "pending")
+      .sort((a, b) => (a.round_number ?? 0) - (b.round_number ?? 0))[0] ?? null;
   const myRoundRows = allMatches
     .filter((m) => m.player1.id === user?.id || m.player2.id === user?.id)
     .filter((m) => m.round_number)
@@ -472,65 +482,84 @@ export default function LeagueDetail() {
       <div>
         {activeTab === "stats" && isMember && (
           <div className="my-stats">
-            <div className="ms-slab">
-              <div className="ms-cell">
-                <div className="ms-label">{t("מקום")}</div>
-                <div className="ms-big" dir="ltr">
-                  {myRank !== null ? (
-                    <>
-                      <span className="n">{myRank}</span>
-                      <span className="unit">/{members.length}</span>
-                      {rankDelta !== 0 && (
-                        <span className="delta">
-                          {rankDelta > 0 ? "▲" : "▼"}
-                          {Math.abs(rankDelta)}
-                        </span>
-                      )}
-                    </>
-                  ) : (
-                    <span className="n">–</span>
-                  )}
+            {myPlayedNone ? (
+              <EmptyLine
+                sentence={t("עוד לא שיחקת בליגה הזאת.")}
+                action={
+                  !leagueOpenAction &&
+                  myFirstPendingMatch && (
+                    <button
+                      type="button"
+                      className="empty-line-action"
+                      onClick={() => navigate(`/matches/${myFirstPendingMatch.id}/schedule`)}
+                    >
+                      <span className="empty-line-dot" aria-hidden="true" />
+                      {t("קבע שעה למשחק הראשון")}
+                    </button>
+                  )
+                }
+              />
+            ) : (
+              <div className="ms-slab">
+                <div className="ms-cell">
+                  <div className="ms-label">{t("מקום")}</div>
+                  <div className="ms-big" dir="ltr">
+                    {myRank !== null ? (
+                      <>
+                        <span className="n">{myRank}</span>
+                        <span className="unit">/{members.length}</span>
+                        {rankDelta !== 0 && (
+                          <span className="delta">
+                            {rankDelta > 0 ? "▲" : "▼"}
+                            {Math.abs(rankDelta)}
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      <span className="n">–</span>
+                    )}
+                  </div>
+                </div>
+                <div className="ms-cell">
+                  <div className="ms-label">{t("אחוז ניצחונות")}</div>
+                  <div className="ms-big" dir="ltr">
+                    {myWinRate !== null ? (
+                      <>
+                        <span className="n">{myWinRate}</span>
+                        <span className="unit">%</span>
+                      </>
+                    ) : (
+                      <span className="n">–</span>
+                    )}
+                  </div>
+                </div>
+                <div className="ms-cell">
+                  <div className="ms-label">{t("מאזן")}</div>
+                  <div className="ms-mid" dir="ltr">
+                    <span className="n">{myStanding?.wins ?? 0}</span>
+                    <span className="unit">W</span>
+                    <span className="n dim">{myStanding?.losses ?? 0}</span>
+                    <span className="unit dim">L</span>
+                  </div>
+                </div>
+                <div className="ms-cell">
+                  <div className="ms-label">{t("רצף")}</div>
+                  <div className="ms-mid" dir="ltr">
+                    {myStreak > 0 ? (
+                      <>
+                        <span className="n">{myStreak}</span>
+                        <span className="unit">{myLastWon ? "W" : "L"}</span>
+                      </>
+                    ) : (
+                      <span className="n">–</span>
+                    )}
+                  </div>
+                </div>
+                <div className="ms-slab-foot" dir="ltr">
+                  {footLine}
                 </div>
               </div>
-              <div className="ms-cell">
-                <div className="ms-label">{t("אחוז ניצחונות")}</div>
-                <div className="ms-big" dir="ltr">
-                  {myWinRate !== null ? (
-                    <>
-                      <span className="n">{myWinRate}</span>
-                      <span className="unit">%</span>
-                    </>
-                  ) : (
-                    <span className="n">–</span>
-                  )}
-                </div>
-              </div>
-              <div className="ms-cell">
-                <div className="ms-label">{t("מאזן")}</div>
-                <div className="ms-mid" dir="ltr">
-                  <span className="n">{myStanding?.wins ?? 0}</span>
-                  <span className="unit">W</span>
-                  <span className="n dim">{myStanding?.losses ?? 0}</span>
-                  <span className="unit dim">L</span>
-                </div>
-              </div>
-              <div className="ms-cell">
-                <div className="ms-label">{t("רצף")}</div>
-                <div className="ms-mid" dir="ltr">
-                  {myStreak > 0 ? (
-                    <>
-                      <span className="n">{myStreak}</span>
-                      <span className="unit">{myLastWon ? "W" : "L"}</span>
-                    </>
-                  ) : (
-                    <span className="n">–</span>
-                  )}
-                </div>
-              </div>
-              <div className="ms-slab-foot" dir="ltr">
-                {footLine}
-              </div>
-            </div>
+            )}
 
             {leagueOpenAction && (
               <div className="my-match-row" style={{ marginTop: 20 }}>
@@ -597,7 +626,10 @@ export default function LeagueDetail() {
 
         {activeTab === "standings" && (
           <>
-            {standings.length > 0 && (
+            {noResultsYet && (
+              <EmptyLine sentence={t("אין עדיין תוצאות. הטבלה תיפתח אחרי המשחק הראשון.")} />
+            )}
+            {standings.length > 0 && !noResultsYet && (
               <div className="standings-panel">
                 <div className="standings-panel-head">
                   <span />
@@ -655,7 +687,7 @@ export default function LeagueDetail() {
               </div>
             )}
 
-            {standings.length > 0 && (
+            {standings.length > 0 && !noResultsYet && (
               <p className="standings-hint">{t("הקשה על שחקן פותחת ראש בראש מולו")}</p>
             )}
           </>

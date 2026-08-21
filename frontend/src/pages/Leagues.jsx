@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import { useSport } from "../SportContext.jsx";
@@ -137,6 +137,8 @@ export default function Leagues() {
   const [isOpen, setIsOpen] = useState(false);
   const [levelMin, setLevelMin] = useState(1.5);
   const [levelMax, setLevelMax] = useState(5.5);
+  const [capacity, setCapacity] = useState("");
+  const [startsAt, setStartsAt] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [sheetError, setSheetError] = useState("");
   const [active, setActive] = useState(0);
@@ -149,6 +151,8 @@ export default function Leagues() {
   const { sports, selectedSportId } = useSport();
   const { t } = useLanguage();
   const { nextMatches } = useOpenAction();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const autoOpenedRef = useRef(false);
 
   async function loadData() {
     setLoading(true);
@@ -177,6 +181,20 @@ export default function Leagues() {
   useEffect(() => {
     if (showSheet) inputRef.current?.focus();
   }, [showSheet]);
+
+  // 109a's "start your own league" action links here with ?create=1 so the
+  // creation sheet opens directly instead of just landing on this page.
+  useEffect(() => {
+    if (autoOpenedRef.current || !user || searchParams.get("create") !== "1") return;
+    autoOpenedRef.current = true;
+    openSheet();
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete("create");
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, searchParams]);
 
   useEffect(() => {
     setActive(0);
@@ -209,6 +227,8 @@ export default function Leagues() {
     setIsOpen(false);
     setLevelMin(1.5);
     setLevelMax(5.5);
+    setCapacity("");
+    setStartsAt("");
     setSheetError("");
     setShowSheet(true);
   }
@@ -231,6 +251,8 @@ export default function Leagues() {
         round_length_days: roundLen,
         level_min: levelMin,
         level_max: levelMax,
+        capacity: capacity.trim() ? Number(capacity) : null,
+        starts_at: startsAt ? new Date(startsAt).toISOString() : null,
       });
       navigate(`/leagues/${league.id}`);
     } catch (err) {
@@ -466,6 +488,30 @@ export default function Leagues() {
                 max: levelMax.toFixed(1),
               })}
             </p>
+
+            <label className="sheet-label" htmlFor="league-capacity">
+              {t("קיבולת (אופציונלי)")}
+            </label>
+            <input
+              id="league-capacity"
+              type="number"
+              min="2"
+              className="sheet-input"
+              value={capacity}
+              onChange={(e) => setCapacity(e.target.value)}
+              placeholder={t("ללא הגבלה")}
+            />
+
+            <label className="sheet-label" htmlFor="league-starts-at">
+              {t("תאריך פתיחה (אופציונלי)")}
+            </label>
+            <input
+              id="league-starts-at"
+              type="date"
+              className="sheet-input"
+              value={startsAt}
+              onChange={(e) => setStartsAt(e.target.value)}
+            />
 
             {sheetError && <p className="error">{t(sheetError)}</p>}
 

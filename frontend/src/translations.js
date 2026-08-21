@@ -556,6 +556,26 @@ const PAIRS = [
   ["HE ACCEPTED YOUR CORRECTION · TABLE UPDATED", "HE ACCEPTED YOUR CORRECTION · TABLE UPDATED"],
   ["NOT COUNTED · NEITHER SIDE GETS THE WIN", "NOT COUNTED · NEITHER SIDE GETS THE WIN"],
 
+  // First day and empty states (109)
+  ["עוד אין לך ליגה. שתי דרכים להתחיל.", "You don't have a league yet. Two ways to start."],
+  ["{n} OPEN", "{n} OPEN"],
+  ["כל אחד יכול להצטרף, בלי קוד הזמנה.", "Anyone can join, no invite code needed."],
+  ["פתח ליגה משלך", "Start your own league"],
+  ["הזמן חברים וקבע את חוקי הליגה.", "Invite friends and set the league's rules."],
+  ["OR PLAY A FRIENDLY WITHOUT A LEAGUE", "OR PLAY A FRIENDLY WITHOUT A LEAGUE"],
+  ["STARTS IN", "STARTS IN"],
+  ["יום", "day"],
+  ["ימים", "days"],
+  ["WHO IS IN", "WHO IS IN"],
+  ["עוד לא שיחקת בליגה הזאת.", "You haven't played in this league yet."],
+  ["קבע שעה למשחק הראשון", "Schedule the first match"],
+  ["אין עדיין תוצאות. הטבלה תיפתח אחרי המשחק הראשון.", "No results yet. The table will open after the first match."],
+  ["כל המשחקים של המחזור שוחקו.", "All matches of the round have been played."],
+  ["אתה עוד לא מדורג.", "You're not ranked yet."],
+  ["קיבולת (אופציונלי)", "Capacity (optional)"],
+  ["ללא הגבלה", "No limit"],
+  ["תאריך פתיחה (אופציונלי)", "Start date (optional)"],
+
   // Delete account
   ["מחיקת חשבון", "Delete account"],
   ["מחיקה סופית של החשבון וכל הנתונים שלך", "Permanently delete your account and your data"],

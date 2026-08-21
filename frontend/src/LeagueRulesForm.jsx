@@ -8,6 +8,10 @@ export default function LeagueRulesForm({ league, onUpdate, onCancel }) {
   const [roundLengthDays, setRoundLengthDays] = useState(league.round_length_days);
   const [levelMin, setLevelMin] = useState(league.level_min ?? 1.5);
   const [levelMax, setLevelMax] = useState(league.level_max ?? 5.5);
+  const [capacity, setCapacity] = useState(league.capacity != null ? String(league.capacity) : "");
+  const [startsAt, setStartsAt] = useState(
+    league.starts_at ? new Date(league.starts_at).toISOString().slice(0, 10) : ""
+  );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -21,6 +25,10 @@ export default function LeagueRulesForm({ league, onUpdate, onCancel }) {
         round_length_days: roundLengthDays,
         level_min: levelMin,
         level_max: levelMax,
+        capacity: capacity.trim() ? Number(capacity) : null,
+        clear_capacity: !capacity.trim(),
+        starts_at: startsAt ? new Date(startsAt).toISOString() : null,
+        clear_starts_at: !startsAt,
       });
     } catch (err) {
       setError(err.message);
@@ -72,6 +80,20 @@ export default function LeagueRulesForm({ league, onUpdate, onCancel }) {
             </option>
           ))}
         </select>
+      </label>
+      <label>
+        {t("קיבולת (אופציונלי)")}
+        <input
+          type="number"
+          min="2"
+          value={capacity}
+          onChange={(e) => setCapacity(e.target.value)}
+          placeholder={t("ללא הגבלה")}
+        />
+      </label>
+      <label>
+        {t("תאריך פתיחה (אופציונלי)")}
+        <input type="date" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} />
       </label>
       {error && <p className="error">{t(error)}</p>}
       <div className="inline-form">

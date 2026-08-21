@@ -41,6 +41,21 @@ export function formatWeekdayTime(date) {
   return `${WEEKDAY_SHORT[date.getDay()]} ${h}:${m}`;
 }
 
+// Same always-Latin weekday abbreviation on its own, for spots like 109b's
+// "R1 OPENS SUN" that don't also need a time.
+export function weekdayShort(date) {
+  return WEEKDAY_SHORT[date.getDay()];
+}
+
+// Whole days between now and a future date, or null if it's already passed —
+// callers drop the countdown entirely rather than show a negative/zero one
+// (firstdayandemptystates109.md rule 1: no content, no placeholder).
+export function daysUntil(date) {
+  if (!date) return null;
+  const days = Math.ceil((date.getTime() - Date.now()) / 86400000);
+  return days > 0 ? days : null;
+}
+
 // Translatable equivalent of daysLeftLabel, for spots in the UI that render
 // in the app's own language rather than always-English numeric labels.
 export function daysLeftPhrase(daysLeft, t) {

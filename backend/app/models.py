@@ -88,6 +88,8 @@ class League(Base):
     round_length_days = Column(Integer, nullable=True, default=7)
     level_min = Column(Float, nullable=False, default=RATING_MIN)
     level_max = Column(Float, nullable=False, default=RATING_MAX)
+    capacity = Column(Integer, nullable=True)
+    starts_at = Column(DateTime, nullable=True)
 
     sport = relationship("Sport", back_populates="leagues")
     memberships = relationship("LeagueMembership", back_populates="league", order_by="LeagueMembership.id")
