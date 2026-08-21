@@ -56,7 +56,7 @@ export default function SetScoreForm({
 
       {rows.map((row, index) => (
         <div className="score-row" key={index}>
-          <span className="score-row-label">{t("סט {n}", { n: index + 1 })}</span>
+          <span className="score-row-label">{t("SET {n}", { n: index + 1 })}</span>
           <input
             className="score-input"
             type="text"

@@ -564,7 +564,7 @@ export default function LeagueDetail() {
             {leagueOpenAction && (
               <div className="my-match-row" style={{ marginTop: 20 }}>
                 <div className="my-match-body">
-                  <div className="my-match-name">
+                  <div className="my-match-name" dir="rtl">
                     {leagueOpenAction.match.round_number != null && (
                       <>{t("מחזור {n}", { n: leagueOpenAction.match.round_number })} · </>
                     )}

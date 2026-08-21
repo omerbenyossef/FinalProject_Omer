@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "./api";
 import { useLanguage } from "./LanguageContext.jsx";
-import { ChevronIcon } from "./Icons.jsx";
+import { ChevronIcon, CheckIcon } from "./Icons.jsx";
 import { NTRP_STEPS } from "./matchUtils.js";
 
 // Picking this q3 option ("College, national or professional") swaps the
@@ -254,7 +254,7 @@ export default function RatingQuestionnaire({ league, sportName, existingResult,
           <span key={q.key} className={`rating-progress-seg${i < step ? " done" : ""}`} />
         ))}
       </div>
-      <div className="rating-step-label">{t("שלב {n} מתוך {total}", { n: stepNum, total: questions.length })}</div>
+      <div className="rating-step-label">{t("STEP {n} OF {total}", { n: stepNum, total: questions.length })}</div>
       <div className="rating-join-line">
         {t("מצטרפ/ת ל-{league} · {sport}", { league: league.name, sport: t(sportName) })}
       </div>
@@ -279,7 +279,7 @@ export default function RatingQuestionnaire({ league, sportName, existingResult,
                 <span className="rating-option-label">{t(optionLabel(opt))}</span>
                 {desc && <span className="rating-option-desc">{t(desc)}</span>}
               </span>
-              <span className="rating-option-dot" aria-hidden="true" />
+              {selected && <CheckIcon aria-hidden="true" />}
             </button>
           );
         })}
