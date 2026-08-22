@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import Avatar from "../Avatar.jsx";
 import SetScoreForm from "../SetScoreForm.jsx";
-import ScheduleForm from "../ScheduleForm.jsx";
 import { ChevronIcon } from "../Icons.jsx";
 import { formatDayMonth, formatDayMonthTime, roundDueDateObj, matchScheduleState } from "../matchUtils.js";
 import { SkeletonPageHeader, SkeletonHeroStat } from "../Skeleton.jsx";
@@ -23,6 +22,7 @@ export default function RoundDetail() {
   const { leagueId, round } = useParams();
   const { user } = useAuth();
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const roundNumber = Number(round);
 
   const [league, setLeague] = useState(null);
@@ -32,7 +32,6 @@ export default function RoundDetail() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [reminded, setReminded] = useState({});
-  const [scheduling, setScheduling] = useState(false);
 
   async function loadAll() {
     try {
@@ -85,13 +84,12 @@ export default function RoundDetail() {
     }
   }
 
-  async function handleProposeSchedule(scheduledAt) {
+  async function handleConfirmSchedule() {
     if (!myMatch) return;
     setBusy(true);
     setError("");
     try {
-      await api.proposeSchedule(leagueId, myMatch.id, scheduledAt);
-      setScheduling(false);
+      await api.confirmMatchSchedule(myMatch.id);
       await loadAll();
     } catch (err) {
       setError(err.message);
@@ -100,12 +98,12 @@ export default function RoundDetail() {
     }
   }
 
-  async function handleConfirmSchedule() {
+  async function handleDeclineSchedule() {
     if (!myMatch) return;
     setBusy(true);
     setError("");
     try {
-      await api.confirmSchedule(leagueId, myMatch.id);
+      await api.declineMatchSchedule(myMatch.id);
       await loadAll();
     } catch (err) {
       setError(err.message);
@@ -185,7 +183,12 @@ export default function RoundDetail() {
             <div className="round-my-match-info">
               <div className="round-my-match-name">{t("מול {name}", { name: myOpponent.name })}</div>
               {myScheduleState === "proposed_by_me" && (
-                <div className="round-my-match-h2h">{t("ממתין לאישור שעה")}</div>
+                <div className="round-my-match-h2h">
+                  {t("ממתין לאישור שעה")} ·{" "}
+                  <button type="button" className="fx-cancel-link" onClick={handleDeclineSchedule} disabled={busy}>
+                    {t("ביטול")}
+                  </button>
+                </div>
               )}
               {myScheduleState === "proposed_by_them" && (
                 <div className="round-my-match-h2h">
@@ -205,8 +208,12 @@ export default function RoundDetail() {
             </div>
           </div>
 
-          {myScheduleState === "unscheduled" && !scheduling && (
-            <button type="button" className="my-match-report" onClick={() => setScheduling(true)}>
+          {myScheduleState === "unscheduled" && (
+            <button
+              type="button"
+              className="my-match-report"
+              onClick={() => navigate(`/matches/${myMatch.id}/schedule`)}
+            >
               <span className="my-match-dot" aria-hidden="true" />
               {t("קבע שעה")}
             </button>
@@ -216,13 +223,14 @@ export default function RoundDetail() {
               <button type="button" onClick={handleConfirmSchedule} disabled={busy}>
                 {t("אשר שעה")}
               </button>
-              <button type="button" className="decline" onClick={() => setScheduling(true)}>
+              <button
+                type="button"
+                className="decline"
+                onClick={() => navigate(`/matches/${myMatch.id}/schedule`)}
+              >
                 {t("הצע שעה אחרת")}
               </button>
             </div>
-          )}
-          {scheduling && (
-            <ScheduleForm busy={busy} onSubmit={handleProposeSchedule} onCancel={() => setScheduling(false)} />
           )}
           {myScheduleState === "ready" && (
             <SetScoreForm

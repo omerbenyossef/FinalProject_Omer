@@ -169,6 +169,7 @@ class Match(Base):
     corrected_sets = Column(JSON, nullable=True)
     dispute_note = Column(String, nullable=True)
     disputed_at = Column(DateTime, nullable=True)
+    last_reminded_at = Column(DateTime, nullable=True)
 
     league = relationship("League", back_populates="matches")
     sport = relationship("Sport")

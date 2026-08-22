@@ -10,7 +10,7 @@ from ..auth import get_current_user
 from ..database import get_db
 from ..push_utils import notify_user
 from ..rating_utils import match_winner_id, update_ratings_for_match
-from .matches import CONFIRMATION_WINDOW, _auto_confirm_overdue, _to_naive_utc
+from .matches import CONFIRMATION_WINDOW, REMIND_COOLDOWN, _auto_confirm_overdue, _to_naive_utc
 
 router = APIRouter(prefix="/friendly", tags=["friendly"])
 
@@ -221,6 +221,8 @@ def remind_friendly(
     match = _get_friendly_match(db, match_id)
     if current_user.id not in (match.player1_id, match.player2_id):
         raise HTTPException(status_code=403, detail="Not a participant in this match")
+    if match.last_reminded_at is not None and datetime.utcnow() - match.last_reminded_at < REMIND_COOLDOWN:
+        raise HTTPException(status_code=429, detail="כבר נשלחה תזכורת למשחק הזה לאחרונה")
 
     opponent_id = match.player2_id if current_user.id == match.player1_id else match.player1_id
     if match.invite_status == models.FriendlyInviteStatus.pending:
@@ -230,6 +232,8 @@ def remind_friendly(
     else:
         title, body = "תזכורת למשחק", f"{current_user.name} מזכיר/ה לך לשחק ולדווח את המשחק הידידותי שלכם"
     notify_user(db, opponent_id, title, body, "/profile")
+    match.last_reminded_at = datetime.utcnow()
+    db.commit()
 
 
 @router.post("/matches/{match_id}/score", response_model=schemas.MatchOut)

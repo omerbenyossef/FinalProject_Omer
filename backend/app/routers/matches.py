@@ -13,6 +13,7 @@ from ..rating_utils import update_ratings_for_match
 router = APIRouter(prefix="/leagues/{league_id}/matches", tags=["matches"])
 
 CONFIRMATION_WINDOW = timedelta(hours=48)
+REMIND_COOLDOWN = timedelta(hours=1)
 
 
 def _to_naive_utc(dt: datetime) -> datetime:
@@ -47,6 +48,19 @@ def _auto_confirm_overdue(db: Session) -> None:
         db.commit()
         for match in overdue:
             update_ratings_for_match(db, match)
+            # Neither player asked for this to happen (that's the point of
+            # auto-confirm — silence past the 48h window finalizes it) so
+            # both, not just whoever didn't report, learn their match is
+            # now final instead of finding out only if they check back.
+            url = f"/leagues/{match.league_id}" if match.league_id else "/profile"
+            for player_id in (match.player1_id, match.player2_id):
+                notify_user(
+                    db,
+                    player_id,
+                    "המשחק אושר אוטומטית",
+                    "התוצאה לא אושרה בזמן, אז המשחק שלכם ננעל אוטומטית ונספר בתוצאות",
+                    url,
+                )
 
 
 def _round_robin_rounds(player_ids: list[int]) -> list[list[tuple[int, int]]]:
@@ -207,88 +221,6 @@ def create_match(
     return match
 
 
-@router.post("/{match_id}/schedule", response_model=schemas.MatchOut)
-def propose_schedule(
-    league_id: int,
-    match_id: int,
-    proposal: schemas.MatchScheduleProposal,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
-):
-    match = (
-        db.query(models.Match)
-        .filter(models.Match.id == match_id, models.Match.league_id == league_id)
-        .first()
-    )
-    if not match:
-        raise HTTPException(status_code=404, detail="Match not found")
-    if current_user.id not in (match.player1_id, match.player2_id):
-        raise HTTPException(status_code=403, detail="Not a participant in this match")
-    if match.status != models.MatchStatus.pending:
-        raise HTTPException(status_code=400, detail="אי אפשר לתאם זמן למשחק שכבר דווח")
-
-    scheduled_at = _to_naive_utc(proposal.scheduled_at)
-    if scheduled_at <= datetime.utcnow():
-        raise HTTPException(status_code=400, detail="זמן המשחק חייב להיות בעתיד")
-
-    match.scheduled_at = scheduled_at
-    match.scheduled_by = current_user.id
-    match.schedule_confirmed = False
-    match.schedule_proposed_at = datetime.utcnow()
-    match.court = proposal.court
-    db.commit()
-    db.refresh(match)
-
-    opponent_id = match.player2_id if current_user.id == match.player1_id else match.player1_id
-    notify_user(
-        db,
-        opponent_id,
-        "הצעת זמן למשחק",
-        f"{current_user.name} הציע/ה שעה למשחק שלכם, ומחכה לאישור שלך",
-        f"/leagues/{league_id}",
-    )
-
-    return match
-
-
-@router.post("/{match_id}/schedule/confirm", response_model=schemas.MatchOut)
-def confirm_schedule(
-    league_id: int,
-    match_id: int,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
-):
-    match = (
-        db.query(models.Match)
-        .filter(models.Match.id == match_id, models.Match.league_id == league_id)
-        .first()
-    )
-    if not match:
-        raise HTTPException(status_code=404, detail="Match not found")
-    if current_user.id not in (match.player1_id, match.player2_id):
-        raise HTTPException(status_code=403, detail="Not a participant in this match")
-    if match.scheduled_at is None:
-        raise HTTPException(status_code=400, detail="אין הצעת זמן לאשר")
-    if match.schedule_confirmed:
-        raise HTTPException(status_code=400, detail="הזמן כבר מאושר")
-    if match.scheduled_by == current_user.id:
-        raise HTTPException(status_code=400, detail="לא ניתן לאשר הצעת זמן שהצעת בעצמך")
-
-    match.schedule_confirmed = True
-    db.commit()
-    db.refresh(match)
-
-    notify_user(
-        db,
-        match.scheduled_by,
-        "הזמן למשחק אושר",
-        f"{current_user.name} אישר/ה את הזמן שהצעת למשחק שלכם",
-        f"/leagues/{league_id}",
-    )
-
-    return match
-
-
 @router.post("/{match_id}/score", response_model=schemas.MatchOut)
 def report_score(
     league_id: int,
@@ -362,6 +294,8 @@ def remind_score(
         raise HTTPException(status_code=403, detail="Not a participant in this match")
     if match.status not in (models.MatchStatus.pending, models.MatchStatus.pending_confirmation):
         raise HTTPException(status_code=400, detail="אין מה להזכיר במשחק הזה")
+    if match.last_reminded_at is not None and datetime.utcnow() - match.last_reminded_at < REMIND_COOLDOWN:
+        raise HTTPException(status_code=429, detail="כבר נשלחה תזכורת למשחק הזה לאחרונה")
 
     opponent_id = match.player2_id if current_user.id == match.player1_id else match.player1_id
     if match.status == models.MatchStatus.pending_confirmation:
@@ -369,6 +303,8 @@ def remind_score(
     else:
         title, body = "תזכורת למשחק", f"{current_user.name} מזכיר/ה לך לשחק ולדווח את המשחק שלכם"
     notify_user(db, opponent_id, title, body, f"/leagues/{league_id}")
+    match.last_reminded_at = datetime.utcnow()
+    db.commit()
 
     return match
 
