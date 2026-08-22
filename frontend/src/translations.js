@@ -751,6 +751,17 @@ const PAIRS = [
   ["PROVISIONAL · {n} MATCHES LEFT", "PROVISIONAL · {n} MATCHES LEFT"],
   ["FINAL SINCE {month}", "FINAL SINCE {month}"],
   ["FINAL", "FINAL"],
+
+  // Home FORM strip + rating chart (125a)
+  ["PROVISIONAL", "PROVISIONAL"],
+  ["עוד {n} משחקים והדירוג נקבע", "{n} matches until your rating is final"],
+  ["FORM · LAST 5", "FORM · LAST 5"],
+  ["MY RATING · 12 MONTHS", "MY RATING · 12 MONTHS"],
+  ["UP", "UP"],
+  ["DOWN", "DOWN"],
+  ["FLAT", "FLAT"],
+  ["{n} MONTHLY SAMPLES", "{n} MONTHLY SAMPLES"],
+  ["הגרף נפתח אחרי 3 משחקים", "The chart opens after 3 matches"],
   ["קובע/ת מחדש את הרמה שלך · {sport}", "Retaking your level · {sport}"],
   ["סיום", "Done"],
   ["NOTIFICATIONS", "NOTIFICATIONS"],

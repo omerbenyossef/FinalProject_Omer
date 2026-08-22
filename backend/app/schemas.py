@@ -429,6 +429,19 @@ class RatingRetakeOut(BaseModel):
     provisional: bool
 
 
+class RatingHistorySample(BaseModel):
+    month: str
+    level: float
+
+
+class RatingHistoryOut(BaseModel):
+    samples: list[RatingHistorySample]
+    current: float
+    current_level: float
+    provisional: bool
+    matches_played: int
+
+
 class LeagueLevelOption(BaseModel):
     id: int
     name: str

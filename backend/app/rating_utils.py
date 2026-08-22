@@ -92,8 +92,11 @@ def _expected_score(my_level: float, opponent_level: float) -> float:
     return 1 / (1 + 10 ** ((opponent_level - my_level) / 2.0))
 
 
-def _apply_result(rating: models.PlayerRating, opponent_level: float, won: bool) -> None:
+def _apply_result(
+    db: Session, match: models.Match, rating: models.PlayerRating, opponent_level: float, won: bool
+) -> None:
     ceiling = models.RATING_MAX if rating.competitive else QUESTIONNAIRE_STANDARD_MAX
+    level_before = rating.level
 
     # Competitive-route players correct downward in full steps during their
     # provisional window instead of the usual ELO nudge — the error this
@@ -106,16 +109,27 @@ def _apply_result(rating: models.PlayerRating, opponent_level: float, won: bool)
         if rating.matches_played >= models.PROVISIONAL_MATCHES:
             rating.provisional = False
             rating.finalized_at = datetime.utcnow()
-        return
+    else:
+        expected = _expected_score(rating.level, opponent_level)
+        actual = 1.0 if won else 0.0
+        k = RATING_K_PROVISIONAL if rating.provisional else RATING_K_STABLE
+        rating.level = clamp_rating(rating.level + k * (actual - expected), max_value=ceiling)
+        rating.matches_played += 1
+        if rating.provisional and rating.matches_played >= models.PROVISIONAL_MATCHES:
+            rating.provisional = False
+            rating.finalized_at = datetime.utcnow()
 
-    expected = _expected_score(rating.level, opponent_level)
-    actual = 1.0 if won else 0.0
-    k = RATING_K_PROVISIONAL if rating.provisional else RATING_K_STABLE
-    rating.level = clamp_rating(rating.level + k * (actual - expected), max_value=ceiling)
-    rating.matches_played += 1
-    if rating.provisional and rating.matches_played >= models.PROVISIONAL_MATCHES:
-        rating.provisional = False
-        rating.finalized_at = datetime.utcnow()
+    db.add(
+        models.RatingSample(
+            user_id=rating.user_id,
+            sport_id=rating.sport_id,
+            match_id=match.id,
+            level_before=level_before,
+            level_after=rating.level,
+            opponent_level=opponent_level,
+            won=won,
+        )
+    )
 
 
 def update_ratings_for_match(db: Session, match: models.Match) -> None:
@@ -136,6 +150,6 @@ def update_ratings_for_match(db: Session, match: models.Match) -> None:
 
     p1_won = match.player1_score > match.player2_score
     r1_level_before, r2_level_before = r1.level, r2.level
-    _apply_result(r1, r2_level_before, p1_won)
-    _apply_result(r2, r1_level_before, not p1_won)
+    _apply_result(db, match, r1, r2_level_before, p1_won)
+    _apply_result(db, match, r2, r1_level_before, not p1_won)
     db.commit()

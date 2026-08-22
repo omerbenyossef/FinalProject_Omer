@@ -176,6 +176,25 @@ class Match(Base):
     player2 = relationship("User", foreign_keys=[player2_id])
 
 
+class RatingSample(Base):
+    """homeformandratingchart125a.md — one row per rating change (plus an
+    opening row from the questionnaire, match_id=None) so the home screen's
+    12-month chart has something to draw. PlayerRating itself only ever
+    stores the current level."""
+
+    __tablename__ = "rating_samples"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    sport_id = Column(Integer, ForeignKey("sports.id"), nullable=False, index=True)
+    match_id = Column(Integer, ForeignKey("matches.id"), nullable=True)
+    level_before = Column(Float, nullable=False)
+    level_after = Column(Float, nullable=False)
+    opponent_level = Column(Float, nullable=True)
+    won = Column(Boolean, nullable=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+
 class PushSubscription(Base):
     __tablename__ = "push_subscriptions"
     __table_args__ = (UniqueConstraint("endpoint", name="uq_push_endpoint"),)

@@ -450,6 +450,8 @@ a { color: var(--court); text-decoration: none; }
   bottom: 0;
   padding: 0 16px calc(14px + env(safe-area-inset-bottom));
   pointer-events: none;
+  background: #161d26;
+  border-top: 1px solid rgba(148, 163, 184, .10);
 }
 
 .tabbar-row {
@@ -3293,6 +3295,111 @@ button:active { transform: translateY(1px); }
 
 .home-rating.compact .home-rating-head { margin-top: 0; }
 
+/* homeformandratingchart125a.md — everything below the top block sits on a
+   raised surface. .content already gives 18px horizontal insets, so this
+   bleeds out to the edges with a negative margin and restores that same
+   inset with its own padding, rather than the doc's literal zero-inset
+   snippet (written for a from-scratch mockup page, not this app's shell). */
+.home-sheet {
+  margin: 14px -18px 0;
+  flex: 1;
+  background: #161d26;
+  border-radius: 28px 28px 0 0;
+  padding: 18px 18px 92px;
+}
+
+.home-form { padding: 0; }
+.home-form-head { display: flex; align-items: baseline; justify-content: space-between; }
+.home-form-label {
+  font: 500 11px "IBM Plex Mono", var(--mono);
+  letter-spacing: .16em;
+  color: var(--muted);
+}
+.home-form-record {
+  font: 500 11px "IBM Plex Mono", var(--mono);
+  letter-spacing: .12em;
+  color: var(--ink-dim);
+}
+.home-form-row { margin-top: 10px; display: flex; gap: 5px; height: 26px; }
+.home-form-cell {
+  flex: 1;
+  border-radius: 4px;
+  background: #242c37;
+  display: flex; align-items: center; justify-content: center;
+  font: 500 12px "IBM Plex Mono", var(--mono);
+  color: var(--muted);
+}
+.home-form-cell.win { background: var(--court); color: #0e1116; }
+
+.home-chart {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(148, 163, 184, .10);
+}
+.home-chart-head { display: flex; align-items: baseline; justify-content: space-between; }
+.home-chart-label {
+  font: 500 11px "IBM Plex Mono", var(--mono);
+  letter-spacing: .16em;
+  color: var(--muted);
+}
+.home-chart-delta {
+  font: 500 11px "IBM Plex Mono", var(--mono);
+  letter-spacing: .1em;
+  color: var(--court);
+}
+.home-chart-delta.down { color: var(--muted); }
+.home-chart svg {
+  margin-top: 12px; display: block; width: 100%; height: auto;
+  /* SVG text-anchor is direction-aware — under the page's RTL Hebrew
+     direction, "start"/"end" flip, which mis-anchors the axis labels. Force
+     LTR so the chart reads the same regardless of UI language. */
+  direction: ltr;
+}
+.home-chart-foot {
+  margin-top: 6px;
+  font: 500 11px "IBM Plex Mono", var(--mono);
+  letter-spacing: .1em;
+  color: #6f7787;
+}
+.home-chart-empty {
+  margin: 12px 0 0;
+  font: 500 12px "IBM Plex Mono", var(--mono);
+  letter-spacing: .04em;
+  color: var(--muted);
+}
+.home-chart-axis-y, .home-chart-axis-x {
+  font-family: "IBM Plex Mono", var(--mono);
+  font-size: 9.5px;
+  fill: #6f7787;
+}
+.home-chart-axis-now { fill: var(--ink-dim); }
+
+.home-empty-rating { padding: 4px 0; }
+.home-empty-rating-line {
+  font: 500 13px "IBM Plex Mono", var(--mono);
+  letter-spacing: .08em;
+  color: var(--ink);
+}
+.home-empty-rating-sub {
+  margin-top: 4px;
+  font-family: "IBM Plex Sans", var(--sans);
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.home-leagues-row {
+  margin-top: 16px;
+  width: 100%;
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 0;
+  border: 0; background: none; text-align: start;
+  border-top: 1px solid rgba(148,163,184,.12);
+  cursor: pointer; color: inherit;
+}
+.home-leagues-label { flex: 1; font: 600 14px "IBM Plex Sans Hebrew", var(--sans); color: var(--ink-dim); }
+.home-leagues-ranks { font: 500 11.5px "IBM Plex Mono", var(--mono); color: var(--muted); }
+.home-leagues-row svg { flex: none; width: 13px; height: 13px; }
+
 /* 109a — no league yet */
 .home-nolg { margin-top: 22px; }
 .home-nolg-title {
@@ -3587,38 +3694,6 @@ button:active { transform: translateY(1px); }
   background: var(--court);
 }
 
-.home-section-head {
-  margin-top: 22px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(148, 163, 184, 0.14);
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  font-family: "IBM Plex Sans", var(--sans);
-  font-weight: 600;
-  font-size: 12.5px;
-  color: var(--muted);
-}
-
-.home-section-head a {
-  color: #8b93a6;
-  text-decoration: none;
-}
-
-.home-section-head .num {
-  font-family: "IBM Plex Mono", var(--mono);
-}
-
-.home-section-title {
-  font-family: "Anton", var(--display);
-  font-weight: 400;
-  font-size: 21px;
-  line-height: 1;
-  letter-spacing: 0.01em;
-  text-transform: uppercase;
-  color: var(--ink);
-}
-
 .profile-section-header {
   display: flex;
   align-items: center;
@@ -3782,22 +3857,6 @@ button:active { transform: translateY(1px); }
   font-size: 11px;
   color: #8b93a6;
   margin-top: 2px;
-}
-
-.home-league-row-sub {
-  font-family: "IBM Plex Mono", var(--mono);
-  font-weight: 500;
-  font-size: 11.5px;
-  color: var(--muted);
-  margin-top: 3px;
-}
-
-.home-league-row-sub .mono-num {
-  font-family: "IBM Plex Mono", var(--mono);
-}
-
-.home-league-list {
-  margin-top: 12px;
 }
 
 .league-row-trend {
@@ -5664,8 +5723,8 @@ button:active { transform: translateY(1px); }
 .tp-card {
   box-sizing: border-box; flex: none; width: 305px;
   scroll-snap-align: start;
-  border-radius: 20px; background: rgba(148, 163, 184, .06);
-  padding: 18px 17px 15px;
+  border-radius: 20px; background: #0e1116;
+  padding: 15px 17px 13px;
 }
 .tp-card.single { width: 100%; }
 
@@ -5676,20 +5735,16 @@ button:active { transform: translateY(1px); }
 .tp-card-top { display: flex; align-items: center; gap: 12px; }
 .tp-id { flex: 1; min-width: 0; }
 .tp-name {
-  display: block; font: 700 20px/1.2 "IBM Plex Sans", sans-serif; letter-spacing: -.01em; color: #eef1f7;
+  display: block; font: 700 19px/1.2 "IBM Plex Sans", sans-serif; letter-spacing: -.01em; color: #eef1f7;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-decoration: none;
 }
-.tp-state { margin-top: 4px; font: 500 11.5px "IBM Plex Mono", monospace; letter-spacing: .1em; color: #8b93a6; }
-.tp-state-sans {
-  font-family: "IBM Plex Sans", var(--sans); font-weight: 500; letter-spacing: normal;
-  text-transform: none;
-}
 
-.tp-facts { margin-top: 16px; padding-top: 13px; border-top: 1px solid rgba(148, 163, 184, .14);
-  display: flex; flex-direction: column; gap: 9px; }
-.tp-fact { display: flex; align-items: center; justify-content: space-between;
-  font: 500 12px "IBM Plex Mono", monospace; color: #8b93a6; }
-.tp-fact span:last-child { color: #c9cfdb; }
+/* homeformandratingchart125a.md section 5 — NTRP/HEAD TO HEAD/TIME collapse
+   into this one compact meta line so the card fits in ~120px. */
+.tp-card-meta {
+  margin-top: 12px; padding-top: 11px; border-top: 1px solid rgba(148, 163, 184, .14);
+  font: 500 11.5px "IBM Plex Mono", monospace; letter-spacing: .06em; color: #8b93a6;
+}
 
 .tp-action {
   margin-top: 15px; padding: 13px 0 0; width: 100%;

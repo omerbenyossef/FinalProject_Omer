@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -143,7 +145,77 @@ def submit_rating(
     db.commit()
     db.refresh(rating)
 
+    db.add(
+        models.RatingSample(
+            user_id=current_user.id,
+            sport_id=league.sport_id,
+            match_id=None,
+            level_before=rating.level,
+            level_after=rating.level,
+        )
+    )
+    db.commit()
+
     return _build_result(db, league, rating.level, rating.provisional, current_user.id)
+
+
+@router.get("/ratings/history", response_model=schemas.RatingHistoryOut)
+def rating_history(
+    sport_id: int,
+    months: int = 12,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """homeformandratingchart125a.md section 7.3 — one aggregated point per
+    calendar month (the last sample within that month); a month with no
+    matches carries forward the previous month's value so the line stays
+    continuous instead of gapping."""
+    rating = get_rating(db, current_user.id, sport_id)
+    if not rating:
+        raise HTTPException(status_code=404, detail="אין לך דירוג בענף הזה")
+
+    samples = (
+        db.query(models.RatingSample)
+        .filter(models.RatingSample.user_id == current_user.id, models.RatingSample.sport_id == sport_id)
+        .order_by(models.RatingSample.created_at.asc())
+        .all()
+    )
+
+    monthly: list[dict] = []
+    if samples:
+        by_month: dict[str, float] = {}
+        for s in samples:
+            by_month[s.created_at.strftime("%Y-%m")] = s.level_after
+
+        def month_index(dt: datetime) -> int:
+            return dt.year * 12 + (dt.month - 1)
+
+        now = datetime.utcnow()
+        start_idx = max(month_index(samples[0].created_at), month_index(now) - (months - 1))
+        end_idx = month_index(now)
+
+        carry = samples[0].level_after
+        for s in samples:
+            if month_index(s.created_at) <= start_idx:
+                carry = s.level_after
+            else:
+                break
+
+        for idx in range(start_idx, end_idx + 1):
+            y, m = divmod(idx, 12)
+            key = f"{y:04d}-{m + 1:02d}"
+            if key in by_month:
+                carry = by_month[key]
+            monthly.append({"month": key, "level": round(carry, 2)})
+        monthly = monthly[-months:]
+
+    return schemas.RatingHistoryOut(
+        samples=[schemas.RatingHistorySample(month=m["month"], level=m["level"]) for m in monthly],
+        current=round_to_half(rating.level),
+        current_level=round(rating.level, 2),
+        provisional=rating.provisional,
+        matches_played=rating.matches_played,
+    )
 
 
 @router.post("/ratings/{sport_id}/retake", response_model=schemas.RatingRetakeOut)

@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import Enum, inspect, text
@@ -201,6 +203,38 @@ def backfill_notification_preferences() -> None:
 
 
 backfill_notification_preferences()
+
+
+def backfill_rating_samples() -> None:
+    """homeformandratingchart125a.md — rating_samples is a brand-new table, so
+    create_all() makes it but leaves it empty; existing ratings have no history
+    to reconstruct, so each gets one opening sample (current level, at the
+    point it was finalized if known) as the chart's starting point."""
+    db = SessionLocal()
+    try:
+        has_sample = {
+            (s.user_id, s.sport_id)
+            for s in db.query(models.RatingSample.user_id, models.RatingSample.sport_id).all()
+        }
+        for rating in db.query(models.PlayerRating).all():
+            if (rating.user_id, rating.sport_id) in has_sample:
+                continue
+            db.add(
+                models.RatingSample(
+                    user_id=rating.user_id,
+                    sport_id=rating.sport_id,
+                    match_id=None,
+                    level_before=rating.level,
+                    level_after=rating.level,
+                    created_at=rating.finalized_at or datetime.utcnow(),
+                )
+            )
+        db.commit()
+    finally:
+        db.close()
+
+
+backfill_rating_samples()
 
 app = FastAPI(title="Amateur Sports League API")
 

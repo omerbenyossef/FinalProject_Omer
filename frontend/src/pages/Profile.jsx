@@ -9,10 +9,8 @@ import SetScoreForm from "../SetScoreForm.jsx";
 import Avatar from "../Avatar.jsx";
 import { ChevronIcon } from "../Icons.jsx";
 import {
-  formatDayMonthTime,
   roundDueDateObj,
   matchScheduleState,
-  hasHebrewChars,
   NTRP_STEPS,
   activeRoundStatus,
   daysUntil,
@@ -21,6 +19,7 @@ import {
 import { SkeletonMatchRow } from "../Skeleton.jsx";
 import PageHelp from "../PageHelp.jsx";
 import EmptyLine from "../EmptyLine.jsx";
+import RatingChart from "../RatingChart.jsx";
 
 const TP_CARD_WIDTH = 305;
 const TP_CARD_GAP = 12;
@@ -87,10 +86,6 @@ function formatMySets(sets) {
   return sets.map((s) => `${s.player1_games}-${s.player2_games}`).join(" ");
 }
 
-function playersLabel(n, t) {
-  return n === 1 ? t("שחקן אחד") : `${n} ${t("שחקנים")}`;
-}
-
 function ToPlayCard({
   entry,
   userId,
@@ -121,12 +116,15 @@ function ToPlayCard({
   const needsMyConfirm = m.status === "pending_confirmation" && m.reported_by !== userId;
   const scheduleState = pendingInvite || needsMyConfirm ? null : matchScheduleState(m, userId);
 
-  const scheduledText = m.scheduled_at ? formatDayMonthTime(new Date(m.scheduled_at)) : "";
-  let timeLabel;
-  if (needsMyConfirm) timeLabel = scheduledText || t("טרם נקבעה");
-  else if (pendingInvite || scheduleState === "unscheduled") timeLabel = t("טרם נקבעה");
-  else if (scheduleState === "proposed_by_them") timeLabel = t("הציעו {time}", { time: scheduledText });
-  else timeLabel = scheduledText;
+  // homeformandratingchart125a.md section 5 — the card drops its NTRP/HEAD
+  // TO HEAD/TIME rows (and the league-name state line) for one compact meta
+  // line, freeing up the height the chart needs.
+  const cardMetaParts = [
+    isFriendly ? `FRIENDLY · ${pendingInvite ? "INVITED" : "ACCEPTED"}` : `R${m.round_number}`,
+  ];
+  if (oppNtrp != null) cardMetaParts.push(`NTRP ${oppNtrp.toFixed(1)}`);
+  if (h2h && h2h.wins + h2h.losses > 0) cardMetaParts.push(`H2H ${h2h.wins}-${h2h.losses}`);
+  const cardMeta = cardMetaParts.join(" · ");
 
   let action = null;
   if (needsMyConfirm) {
@@ -172,49 +170,18 @@ function ToPlayCard({
   return (
     <div className={`tp-card${single ? " single" : ""}`}>
       <div className="tp-card-top">
-        <Avatar name={opponent.name} size={42} dim={pendingInvite} />
+        <Avatar name={opponent.name} size={38} dim={pendingInvite} />
         <div className="tp-id">
           <Link to={`/players/${opponent.id}`} className="tp-name">
             <span dir="auto" style={{ unicodeBidi: "isolate" }}>
               {opponent.name}
             </span>
           </Link>
-          <div className="tp-state" dir="ltr">
-            {isFriendly ? (
-              <>FRIENDLY · {pendingInvite ? "INVITED" : "ACCEPTED"}</>
-            ) : hasHebrewChars(entry.league_name) ? (
-              <>
-                <span className="tp-state-sans" dir="auto">
-                  {entry.league_name}
-                </span>{" "}
-                · R{m.round_number}
-              </>
-            ) : (
-              <>
-                {entry.league_name?.toUpperCase()} · R{m.round_number}
-              </>
-            )}
-          </div>
         </div>
       </div>
 
-      <div className="tp-facts">
-        {(myNtrp != null || oppNtrp != null) && (
-          <div className="tp-fact">
-            <span>NTRP</span>
-            <span dir="ltr">
-              {myNtrp != null ? myNtrp.toFixed(1) : "—"} · {oppNtrp != null ? oppNtrp.toFixed(1) : "—"}
-            </span>
-          </div>
-        )}
-        <div className="tp-fact">
-          <span>HEAD TO HEAD</span>
-          <span dir="ltr">{h2h && h2h.wins + h2h.losses > 0 ? `${h2h.wins}-${h2h.losses}` : t("מפגש ראשון")}</span>
-        </div>
-        <div className="tp-fact">
-          <span>TIME</span>
-          <span dir="ltr">{timeLabel}</span>
-        </div>
+      <div className="tp-card-meta" dir="ltr">
+        {cardMeta}
       </div>
 
       {pendingInvite && !isInviter ? (
@@ -369,6 +336,7 @@ export default function Profile() {
   const [h2hByOpponent, setH2hByOpponent] = useState({});
   const [allLeagues, setAllLeagues] = useState([]);
   const [soloMembers, setSoloMembers] = useState([]);
+  const [ratingHistory, setRatingHistory] = useState(null);
   const carouselRef = useRef(null);
   const requestedLeagueStandingsRef = useRef(new Set());
   const requestedH2hRef = useRef(new Set());
@@ -400,6 +368,19 @@ export default function Profile() {
       .catch((err) => setError(err.message));
   }, [selectedSportId]);
 
+  // homeformandratingchart125a.md section 4 — the chart draws the continuous
+  // rating, so it needs its own fetch; myRatings only carries the current
+  // (stepped) level. A player with no rating yet in this sport gets a 404,
+  // which just leaves the chart in its empty state.
+  useEffect(() => {
+    if (!selectedSportId) return;
+    setRatingHistory(null);
+    api
+      .ratingHistory(selectedSportId, 12)
+      .then(setRatingHistory)
+      .catch(() => {});
+  }, [selectedSportId]);
+
   // Reporting/confirming a score can finalize a match immediately (friendly
   // matches without confirmation, or the opponent's confirm/dispute action),
   // which moves the NTRP rating server-side right away. myRatings is only
@@ -410,6 +391,12 @@ export default function Profile() {
       .myRatings()
       .then(setMyRatings)
       .catch(() => {});
+    if (selectedSportId) {
+      api
+        .ratingHistory(selectedSportId, 12)
+        .then(setRatingHistory)
+        .catch(() => {});
+    }
   }
 
   async function handleReportScore(entry, matchId, sets) {
@@ -423,6 +410,7 @@ export default function Profile() {
       setReportingMatchId(null);
       loadNextMatches();
       reloadRatings();
+      if (selectedSportId) api.myStats(selectedSportId).then(setStats).catch(() => {});
     } catch (err) {
       setError(err.message);
     } finally {
@@ -569,9 +557,49 @@ export default function Profile() {
 
   const winRate =
     stats && stats.matches_played > 0 ? Math.round((stats.wins / stats.matches_played) * 100) : null;
-  const myLeaguesPreview = myLeaguesForSport.slice(0, 2);
   const myRating = myRatings.find((r) => r.sport_id === selectedSportId) || null;
   const sportName = sports.find((s) => s.id === selectedSportId)?.name;
+
+  // homeformandratingchart125a.md section 3 — the last 5 completed matches
+  // (already sport-filtered, newest-first, from /auth/me/stats) read oldest
+  // to newest, W/L only. Friendly matches count; unresolved disputes and
+  // cancellations never reach `completed` status so they're excluded already.
+  const recentForForm = (stats?.recent_matches ?? []).slice(0, 5);
+  const formResults = [...recentForForm].reverse().map((m) => (m.won ? "W" : "L"));
+  const formWins = recentForForm.filter((m) => m.won).length;
+  const formLosses = recentForForm.length - formWins;
+  const hasNoMatches = !!stats && stats.matches_played === 0;
+
+  // section 4 — the chart needs 3+ aggregated monthly points to read as a
+  // line; fewer than that (very new players) gets the "opens after 3
+  // matches" message instead.
+  const chartSamples = ratingHistory?.samples ?? [];
+  const showChart = chartSamples.length >= 3;
+  let deltaLabel = null;
+  if (showChart) {
+    if (ratingHistory.provisional) {
+      deltaLabel = { text: t("PROVISIONAL"), down: false };
+    } else {
+      const delta = Math.round((chartSamples[chartSamples.length - 1].level - chartSamples[0].level) * 10) / 10;
+      if (delta > 0) deltaLabel = { text: `${t("UP")} ${delta.toFixed(1)}`, down: false };
+      else if (delta < 0) deltaLabel = { text: `${t("DOWN")} ${Math.abs(delta).toFixed(1)}`, down: true };
+      else deltaLabel = { text: t("FLAT"), down: false };
+    }
+  }
+  const chartLevels = chartSamples.map((s) => s.level);
+  const chartLo = chartLevels.length ? Math.min(...chartLevels) : 0;
+  const chartHi = chartLevels.length ? Math.max(...chartLevels) : 0;
+
+  // section 6 — "my leagues" collapses to one summary row: up to two
+  // ranked leagues by short name + place, "+{n}" beyond that. A league with
+  // no rank yet (schedule not started) doesn't count toward it.
+  const rankedLeagues = myLeaguesForSport.filter((l) => l.my_rank != null);
+  const ranksLabelParts = rankedLeagues.slice(0, 2).map((l) => `${l.name.split(" ")[0].toUpperCase()} #${l.my_rank}`);
+  const extraRanked = rankedLeagues.length - ranksLabelParts.length;
+  const ranksLabel =
+    ranksLabelParts.length > 0
+      ? ranksLabelParts.join(" · ") + (extraRanked > 0 ? ` +${extraRanked}` : "")
+      : t("{n} ליגות", { n: myLeaguesForSport.length });
 
   function oppNtrpFor(entry) {
     if (entry.kind === "friendly") return null;
@@ -663,6 +691,7 @@ export default function Profile() {
 
       {error && <p className="error">{t(error)}</p>}
 
+      <div className="home-sheet">
       {isNoLeague ? (
         <NoLeagueBlock t={t} navigate={navigate} openCount={openLeagueCount} />
       ) : isRoundNotOpened ? (
@@ -710,6 +739,59 @@ export default function Profile() {
             </button>
           );
         })}
+
+      {stats &&
+        (hasNoMatches ? (
+          <div className="home-empty-rating">
+            <div className="home-empty-rating-line" dir="ltr">
+              NTRP {myRating ? myRating.level.toFixed(1) : "—"} · {t("PROVISIONAL")}
+            </div>
+            <div className="home-empty-rating-sub">
+              {t("עוד {n} משחקים והדירוג נקבע", {
+                n: myRating ? Math.max(0, 3 - myRating.rated_matches) : 3,
+              })}
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="home-form">
+              <div className="home-form-head">
+                <span className="home-form-label">{t("FORM · LAST 5")}</span>
+                <span className="home-form-record">
+                  {formWins}W-{formLosses}L
+                </span>
+              </div>
+              <div className="home-form-row" dir="ltr">
+                {formResults.map((r, i) => (
+                  <span key={i} className={`home-form-cell${r === "W" ? " win" : ""}`}>
+                    {r}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="home-chart">
+              <div className="home-chart-head">
+                <span className="home-chart-label">{t("MY RATING · 12 MONTHS")}</span>
+                {deltaLabel && (
+                  <span className={`home-chart-delta${deltaLabel.down ? " down" : ""}`}>
+                    {deltaLabel.text}
+                  </span>
+                )}
+              </div>
+              {showChart ? (
+                <>
+                  <RatingChart samples={chartSamples} />
+                  <div className="home-chart-foot" dir="ltr">
+                    {chartLo.toFixed(2)} → {chartHi.toFixed(2)} · {t("{n} MONTHLY SAMPLES", { n: chartSamples.length })}
+                  </div>
+                </>
+              ) : (
+                <p className="home-chart-empty">{t("הגרף נפתח אחרי 3 משחקים")}</p>
+              )}
+            </div>
+          </>
+        ))}
 
       {(matchesLoading || combinedToPlay.length > 0) && (
         <div className="tp-head">
@@ -786,61 +868,16 @@ export default function Profile() {
         )
       )}
 
-      <div className="home-section-head">
-        <span className="home-section-title">{t("הליגות שלי")}</span>
-        {myLeaguesForSport.length > myLeaguesPreview.length ? (
-          <Link to="/leagues" className="profile-section-header-link">
-            {t("כל ה-{n}", { n: myLeaguesForSport.length })}
-          </Link>
-        ) : (
-          <span>{t("דירוג")}</span>
-        )}
-      </div>
-      <div className="rank-row-list home-league-list">
-        {myLeaguesPreview.map((league) => {
-          const wins = league.my_wins ?? 0;
-          const losses = league.my_losses ?? 0;
-          const members = league.my_members_total ?? 0;
-          return (
-            <Link to={`/leagues/${league.id}`} key={league.id} className="league-row">
-              <div className="league-row-body">
-                <div className="league-row-name">
-                  <span dir="auto" style={{ unicodeBidi: "isolate" }}>
-                    {league.name}
-                  </span>
-                </div>
-                <div className="home-league-row-sub" dir="ltr">
-                  {wins + losses > 0 ? (
-                    <>
-                      <span className="mono-num">
-                        {wins}W-{losses}L
-                      </span>{" "}
-                      · {playersLabel(members, t)}
-                      {league.my_rank != null && (
-                        <>
-                          {" "}
-                          · <span className="mono-num">#{league.my_rank}</span>
-                        </>
-                      )}
-                    </>
-                  ) : members <= 1 ? (
-                    <>
-                      {playersLabel(members, t)} · {t("ממתין לשחקנים")}
-                    </>
-                  ) : (
-                    <>
-                      {playersLabel(members, t)} · {t("עדיין אין משחקים")}
-                    </>
-                  )}
-                </div>
-              </div>
-              <ChevronIcon className="league-row-chevron chevron-icon" aria-hidden="true" />
-            </Link>
-          );
-        })}
-      </div>
+      <button type="button" className="home-leagues-row" onClick={() => navigate("/leagues")}>
+        <span className="home-leagues-label">{t("הליגות שלי")}</span>
+        <span className="home-leagues-ranks" dir="ltr">
+          {ranksLabel}
+        </span>
+        <ChevronIcon className="chevron-icon" aria-hidden="true" />
+      </button>
         </>
       )}
+      </div>
     </div>
   );
 }
