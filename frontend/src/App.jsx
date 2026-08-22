@@ -1,8 +1,8 @@
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import Layout from "./Layout.jsx";
 import { useAuth } from "./AuthContext.jsx";
-import Login from "./pages/Login.jsx";
-import Register from "./pages/Register.jsx";
+import SignIn from "./pages/SignIn.jsx";
+import SignUp from "./pages/SignUp.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
 import ResetPassword from "./pages/ResetPassword.jsx";
 import Leagues from "./pages/Leagues.jsx";
@@ -40,7 +40,7 @@ function ProtectedRoute({ children }) {
   }
   if (!user) {
     const redirectTo = encodeURIComponent(location.pathname + location.search);
-    return <Navigate to={`/login?redirect=${redirectTo}`} replace />;
+    return <Navigate to={`/signin?redirect=${redirectTo}`} replace />;
   }
   return children;
 }
@@ -57,7 +57,7 @@ function AdminRoute({ children }) {
     );
   }
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/signin" replace />;
   }
   if (!user.is_admin) {
     return <Navigate to="/profile" replace />;
@@ -70,8 +70,8 @@ export default function App() {
     <Layout>
       <Routes>
         <Route path="/" element={<Navigate to="/profile" replace />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        <Route path="/signin" element={<SignIn />} />
+        <Route path="/signup" element={<SignUp />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/leagues" element={<Leagues />} />

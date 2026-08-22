@@ -26,6 +26,8 @@ def register(user_in: schemas.UserCreate, db: Session = Depends(get_db)):
         name=user_in.name,
         email=user_in.email,
         hashed_password=hash_password(user_in.password),
+        area=user_in.area,
+        travel_radius_km=user_in.travel_radius_km,
     )
     db.add(user)
     db.commit()

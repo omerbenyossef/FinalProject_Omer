@@ -36,7 +36,7 @@ export default function Settings() {
 
   function handleLogout() {
     logout();
-    navigate("/login");
+    navigate("/signin");
   }
 
   const sportName = sports.find((s) => s.id === selectedSportId)?.name;
@@ -659,7 +659,7 @@ function EndActionsRow({ onLogout }) {
     try {
       await api.deleteAccount(password);
       logout();
-      navigate("/login");
+      navigate("/signin");
     } catch (err) {
       setError(err.message);
       setSubmitting(false);

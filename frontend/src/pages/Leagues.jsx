@@ -301,7 +301,7 @@ export default function Leagues() {
         <EmptyState
           icon={<TrophyIcon aria-hidden="true" />}
           action={
-            <Link to="/login" className="btn-secondary btn-small">
+            <Link to="/signin" className="btn-secondary btn-small">
               {t("כניסה")}
             </Link>
           }

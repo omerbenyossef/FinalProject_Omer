@@ -47,7 +47,7 @@ export default function ForgotPassword() {
           </form>
         )}
         <p className="muted" style={{ marginTop: 14 }}>
-          <Link to="/login">{t("חזרה לכניסה")}</Link>
+          <Link to="/signin">{t("חזרה לכניסה")}</Link>
         </p>
       </div>
     </AuthShell>

@@ -9,7 +9,7 @@ import Onboarding from "./Onboarding.jsx";
 import SelfRatingPrompt from "./SelfRatingPrompt.jsx";
 import { translate } from "./translations.js";
 
-const AUTH_PATHS = ["/login", "/register", "/forgot-password", "/reset-password"];
+const AUTH_PATHS = ["/signin", "/signup", "/forgot-password", "/reset-password"];
 
 export default function Layout({ children }) {
   const { user } = useAuth();
@@ -61,8 +61,8 @@ export default function Layout({ children }) {
               Rally
             </Link>
             <nav>
-              <Link to="/login">{t("כניסה")}</Link>
-              <Link to="/register">{t("הרשמה")}</Link>
+              <Link to="/signin">{t("כניסה")}</Link>
+              <Link to="/signup">{t("הרשמה")}</Link>
             </nav>
           </>
         )}

@@ -53,7 +53,7 @@ export default function ResetPassword() {
             type="button"
             className="btn-primary"
             style={{ width: "100%" }}
-            onClick={() => navigate("/login")}
+            onClick={() => navigate("/signin")}
           >
             {t("מעבר לכניסה")}
           </button>

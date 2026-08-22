@@ -1,15 +1,17 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 from .models import MatchStatus, MatchKind, FriendlyInviteStatus
 
 
 class UserCreate(BaseModel):
-    name: str
+    name: str = Field(min_length=1)
     email: EmailStr
-    password: str
+    password: str = Field(min_length=8)
+    area: Optional[str] = None
+    travel_radius_km: Optional[float] = None
 
 
 class UserLogin(BaseModel):
