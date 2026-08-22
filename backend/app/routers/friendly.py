@@ -9,7 +9,7 @@ from .. import models, schemas
 from ..auth import get_current_user
 from ..database import get_db
 from ..push_utils import notify_user
-from ..rating_utils import update_ratings_for_match
+from ..rating_utils import match_winner_id, update_ratings_for_match
 from .matches import CONFIRMATION_WINDOW, _auto_confirm_overdue, _to_naive_utc
 
 router = APIRouter(prefix="/friendly", tags=["friendly"])
@@ -38,14 +38,11 @@ def _played_stats(db: Session, me_id: int, opponent_id: int, sport_id: int):
     for m in matches:
         if _match_sport_id(m) != sport_id:
             continue
-        i_am_p1 = m.player1_id == me_id
-        my_score = m.player1_score if i_am_p1 else m.player2_score
-        opp_score = m.player2_score if i_am_p1 else m.player1_score
-        if my_score is not None and opp_score is not None:
-            if my_score > opp_score:
-                wins += 1
-            else:
-                losses += 1
+        winner_id = match_winner_id(m)
+        if winner_id == me_id:
+            wins += 1
+        elif winner_id is not None:
+            losses += 1
         if m.played_at and (last_played is None or m.played_at > last_played):
             last_played = m.played_at
 

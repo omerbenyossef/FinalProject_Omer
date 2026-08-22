@@ -9,7 +9,7 @@ from .. import models, schemas
 from ..auth import get_current_user
 from ..database import get_db
 from ..push_utils import notify_user
-from ..rating_utils import round_to_half, update_ratings_for_match
+from ..rating_utils import match_winner_id, round_to_half, update_ratings_for_match
 from .friendly import MAX_SETS as FRIENDLY_MAX_SETS
 from .leagues import _accumulate_stats, _empty_stats
 from .matches import CONFIRMATION_WINDOW, _auto_confirm_overdue, _to_naive_utc
@@ -84,6 +84,7 @@ def _compute_prediction(
         player2_id=match.player2_id,
         player1_score=sum(1 for s in sets_to_evaluate if s["player1_games"] > s["player2_games"]),
         player2_score=sum(1 for s in sets_to_evaluate if s["player2_games"] > s["player1_games"]),
+        sets=sets_to_evaluate,
     )
     stats_after = _empty_stats(league)
     _accumulate_stats(stats_after, completed + [fake_match])
@@ -91,12 +92,7 @@ def _compute_prediction(
     rows_after = sorted(stats_after.values(), key=lambda r: (-r["points"], -r["wins"]))
     rank_after = next((i + 1 for i, r in enumerate(rows_after) if r["user"].id == current_user_id), None)
 
-    i_am_player1 = match.player1_id == current_user_id
-    i_won = (
-        fake_match.player1_score > fake_match.player2_score
-        if i_am_player1
-        else fake_match.player2_score > fake_match.player1_score
-    )
+    i_won = match_winner_id(fake_match) == current_user_id
 
     return schemas.ResultPrediction(
         my_wins_before=my_before["wins"],
@@ -171,11 +167,10 @@ def get_match_detail(
     last_match_sets = None
     for i, m in enumerate(h2h_matches):
         i_am_player1 = m.player1_id == current_user.id
-        my_score = m.player1_score if i_am_player1 else m.player2_score
-        opp_score = m.player2_score if i_am_player1 else m.player1_score
-        if my_score > opp_score:
+        winner_id = match_winner_id(m)
+        if winner_id == current_user.id:
             h2h_wins += 1
-        else:
+        elif winner_id is not None:
             h2h_losses += 1
         if i == 0:
             sets = m.sets

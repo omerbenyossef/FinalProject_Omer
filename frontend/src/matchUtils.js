@@ -167,7 +167,10 @@ export function roundDueDate(scheduleStartedAt, roundNumber, roundLengthDays = 7
 }
 
 export function leagueRuleLabels(league, t) {
-  const bestOfLabels = { 1: t("עד סט אחד"), 3: t("עד 3 סטים"), 5: t("עד 5 סטים") };
+  // "Best of 1" was dropped as a choice (courts are booked by the hour, and
+  // a single set isn't a real slot length) but a league created before that
+  // still needs a sensible label.
+  const bestOfLabels = { 1: t("סט אחד"), 3: t("שעה"), 5: t("שעתיים") };
   const bestOfLabel = bestOfLabels[league.best_of] || bestOfLabels[3];
   const frequencyLabel = league.round_length_days === 14 ? t("מחזור דו-שבועי") : t("מחזור שבועי");
   return { bestOfLabel, frequencyLabel };

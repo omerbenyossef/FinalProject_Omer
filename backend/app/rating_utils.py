@@ -132,14 +132,36 @@ def _apply_result(
     )
 
 
+def match_winner_id(match: models.Match) -> int | None:
+    """Who actually won this match — decoupled from the raw set score
+    because courts here are booked by the hour, so a "best of 5" match very
+    often can't reach the 3-set majority before time runs out and gets
+    reported short (e.g. 1 set each). The primary criterion is still sets
+    won; if that's tied, this falls back to total games won across the
+    reported sets, the standard amateur-tennis convention for resolving a
+    match that got cut short by time. Returns None only if that's *also*
+    tied — every caller must treat that as "don't count this match for
+    either player", not as a loss for both."""
+    if match.player1_score != match.player2_score:
+        return match.player1_id if match.player1_score > match.player2_score else match.player2_id
+
+    p1_games = sum(s["player1_games"] for s in (match.sets or []))
+    p2_games = sum(s["player2_games"] for s in (match.sets or []))
+    if p1_games != p2_games:
+        return match.player1_id if p1_games > p2_games else match.player2_id
+    return None
+
+
 def update_ratings_for_match(db: Session, match: models.Match) -> None:
     """Called once a match is finalized (confirmed or auto-confirmed). Moves
     both players' ratings for the league's sport. Silently does nothing for a
     player with no rating yet (shouldn't happen once join-gating is in place,
-    but matches created before this feature shipped may lack one)."""
+    but matches created before this feature shipped may lack one), or for a
+    match match_winner_id can't decide."""
     if match.player1_score is None or match.player2_score is None:
         return
-    if match.player1_score == match.player2_score:
+    winner_id = match_winner_id(match)
+    if winner_id is None:
         return
 
     sport_id = match.league.sport_id if match.league_id else match.sport_id
@@ -148,7 +170,7 @@ def update_ratings_for_match(db: Session, match: models.Match) -> None:
     if not r1 or not r2:
         return
 
-    p1_won = match.player1_score > match.player2_score
+    p1_won = winner_id == match.player1_id
     r1_level_before, r2_level_before = r1.level, r2.level
     _apply_result(db, match, r1, r2_level_before, p1_won)
     _apply_result(db, match, r2, r1_level_before, not p1_won)

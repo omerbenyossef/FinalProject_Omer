@@ -9,7 +9,7 @@ from ..auth import get_current_user
 from ..database import get_db
 from .matches import _auto_confirm_overdue
 from .leagues import get_standings
-from ..rating_utils import round_to_half
+from ..rating_utils import match_winner_id, round_to_half
 
 router = APIRouter(prefix="/players", tags=["players"])
 
@@ -45,11 +45,14 @@ def _ntrp_ranked_entries(db, sport_id):
 
     record = {uid: {"wins": 0, "losses": 0} for uid in user_ids}
     for m in matches:
-        player1_won = m.player1_score > m.player2_score
-        if m.player1_id in record:
-            record[m.player1_id]["wins" if player1_won else "losses"] += 1
-        if m.player2_id in record:
-            record[m.player2_id]["losses" if player1_won else "wins"] += 1
+        winner_id = match_winner_id(m)
+        if winner_id is None:
+            continue
+        loser_id = m.player2_id if winner_id == m.player1_id else m.player1_id
+        if winner_id in record:
+            record[winner_id]["wins"] += 1
+        if loser_id in record:
+            record[loser_id]["losses"] += 1
 
     entries = []
     for uid in user_ids:
@@ -183,9 +186,10 @@ def head_to_head(
                 for s in sets
             ]
 
-        if my_score > opponent_score:
+        winner_id = match_winner_id(m)
+        if winner_id == current_user.id:
             wins += 1
-        else:
+        elif winner_id is not None:
             losses += 1
 
         match_list.append(
@@ -246,7 +250,10 @@ def get_player_profile(
     streak = 0
     streak_won = None
     for m in matches:
-        won = (m.player1_id == player_id) == (m.player1_score > m.player2_score)
+        winner_id = match_winner_id(m)
+        if winner_id is None:
+            continue  # undecided match — doesn't break or extend the streak
+        won = winner_id == player_id
         if streak_won is None:
             streak_won = won
         if won != streak_won:

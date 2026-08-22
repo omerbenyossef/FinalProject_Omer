@@ -12,7 +12,7 @@ from .. import models, schemas
 from ..auth import get_current_user
 from ..database import get_db
 from ..push_utils import notify_user
-from ..rating_utils import get_rating, round_to_half
+from ..rating_utils import get_rating, match_winner_id, round_to_half
 from .matches import _auto_confirm_overdue
 
 router = APIRouter(prefix="/leagues", tags=["leagues"])
@@ -37,13 +37,18 @@ def _current_round_number(schedule_started_at, round_length_days: int = 7, now: 
     return 2 + (offset_days - 1) // round_length_days
 
 
-VALID_BEST_OF = (1, 3, 5)
+# "Best of 1" was dropped as a choice — courts here are booked by the hour,
+# so the format is picked by how long the slot is (an hour ≈ best of 3, two
+# hours ≈ best of 5), and "best of 1" doesn't correspond to a real booking
+# increment. Leagues created before this change may still have best_of=1;
+# they keep working, this only blocks it going forward.
+VALID_BEST_OF = (3, 5)
 VALID_ROUND_LENGTH_DAYS = (7, 14)
 
 
 def _validate_rules(best_of: int | None, round_length_days: int | None) -> None:
     if best_of is not None and best_of not in VALID_BEST_OF:
-        raise HTTPException(status_code=400, detail="מספר הסטים למשחק חייב להיות 1, 3 או 5")
+        raise HTTPException(status_code=400, detail="פורמט המשחק חייב להיות שעה (עד 3 סטים) או שעתיים (עד 5 סטים)")
     if round_length_days is not None and round_length_days not in VALID_ROUND_LENGTH_DAYS:
         raise HTTPException(status_code=400, detail="תדירות לוח המשחקים חייבת להיות שבועית או דו-שבועית")
 
@@ -95,11 +100,14 @@ def _compute_my_standing(league: models.League, user_id: int, matches: list[mode
         p1, p2 = stats.get(match.player1_id), stats.get(match.player2_id)
         if not p1 or not p2:
             continue
-        if match.player1_score > match.player2_score:
+        winner_id = match_winner_id(match)
+        if winner_id is None:
+            continue
+        if winner_id == match.player1_id:
             p1["wins"] += 1
             p1["points"] += 3
             p2["losses"] += 1
-        elif match.player2_score > match.player1_score:
+        else:
             p2["wins"] += 1
             p2["points"] += 3
             p1["losses"] += 1
@@ -902,11 +910,14 @@ def _accumulate_stats(stats, matches):
             continue
         p1["played"] += 1
         p2["played"] += 1
-        if match.player1_score > match.player2_score:
+        winner_id = match_winner_id(match)
+        if winner_id is None:
+            continue
+        if winner_id == match.player1_id:
             p1["wins"] += 1
             p1["points"] += 3
             p2["losses"] += 1
-        elif match.player2_score > match.player1_score:
+        else:
             p2["wins"] += 1
             p2["points"] += 3
             p1["losses"] += 1

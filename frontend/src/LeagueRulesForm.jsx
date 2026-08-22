@@ -54,9 +54,8 @@ export default function LeagueRulesForm({ league, onUpdate, onCancel }) {
       <label>
         {t("פורמט משחק")}
         <select value={bestOf} onChange={(e) => setBestOf(Number(e.target.value))}>
-          <option value={1}>{t("עד סט אחד")}</option>
-          <option value={3}>{t("עד 3 סטים")}</option>
-          <option value={5}>{t("עד 5 סטים")}</option>
+          <option value={3}>{t("שעה")}</option>
+          <option value={5}>{t("שעתיים")}</option>
         </select>
       </label>
       <label>

@@ -9,6 +9,7 @@ from .. import models, schemas
 from ..auth import create_access_token, hash_password, verify_password, get_current_user
 from ..database import get_db
 from ..email_utils import send_reset_email
+from ..rating_utils import match_winner_id
 from .matches import _auto_confirm_overdue
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -122,23 +123,25 @@ def my_stats(
         )
     matches = matches_query.order_by(models.Match.played_at.desc()).all()
 
+    # A match_winner_id() of None (sets *and* total games both tied — only
+    # possible when a court-time cutoff ends a match early) counts toward
+    # neither wins nor losses rather than a loss for both players.
     wins = 0
+    losses = 0
     for match in matches:
-        if match.player1_id == current_user.id and match.player1_score > match.player2_score:
+        winner_id = match_winner_id(match)
+        if winner_id is None:
+            continue
+        if winner_id == current_user.id:
             wins += 1
-        elif match.player2_id == current_user.id and match.player2_score > match.player1_score:
-            wins += 1
-    losses = len(matches) - wins
+        else:
+            losses += 1
 
     recent_matches = []
     for match in matches[:8]:
         i_am_player1 = match.player1_id == current_user.id
         opponent = match.player2 if i_am_player1 else match.player1
-        won = (
-            match.player1_score > match.player2_score
-            if i_am_player1
-            else match.player2_score > match.player1_score
-        )
+        won = match_winner_id(match) == current_user.id
         my_sets = [
             schemas.SetScore(
                 player1_games=s["player1_games"] if i_am_player1 else s["player2_games"],

@@ -112,10 +112,12 @@ function LeagueCarouselCard({ league, standingsRows, openAction, userId, t, navi
   );
 }
 
+// Courts here are booked by the hour, so the format is chosen by slot
+// length rather than an abstract set count — an hour fits roughly a
+// best-of-3, two hours roughly a best-of-5.
 const FORMAT_OPTIONS = [
-  [3, "עד 3 סטים"],
-  [1, "סט אחד"],
-  [5, "עד 5"],
+  [3, "שעה"],
+  [5, "שעתיים"],
 ];
 const ROUND_LEN_OPTIONS = [
   [7, "שבועי"],
