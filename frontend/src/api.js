@@ -156,8 +156,6 @@ export const api = {
     request(`/leagues/${leagueId}/rate`, { method: "POST", body: answers }),
   retakeRating: (sportId, answers) =>
     request(`/ratings/${sportId}/retake`, { method: "POST", body: answers }),
-  ratingHistory: (sportId, months = 12) =>
-    request(`/ratings/history?sport_id=${sportId}&months=${months}`),
 
   searchFriendlyPlayers: (sportId, q) =>
     request(`/friendly/players/search?sport_id=${sportId}${q ? `&q=${encodeURIComponent(q)}` : ""}`),

@@ -13,13 +13,13 @@ import {
   matchScheduleState,
   NTRP_STEPS,
   activeRoundStatus,
+  currentRoundNumber,
   daysUntil,
   weekdayShort,
 } from "../matchUtils.js";
 import { SkeletonMatchRow } from "../Skeleton.jsx";
 import PageHelp from "../PageHelp.jsx";
 import EmptyLine from "../EmptyLine.jsx";
-import RatingChart from "../RatingChart.jsx";
 
 const TP_CARD_WIDTH = 305;
 const TP_CARD_GAP = 12;
@@ -336,7 +336,6 @@ export default function Profile() {
   const [h2hByOpponent, setH2hByOpponent] = useState({});
   const [allLeagues, setAllLeagues] = useState([]);
   const [soloMembers, setSoloMembers] = useState([]);
-  const [ratingHistory, setRatingHistory] = useState(null);
   const carouselRef = useRef(null);
   const requestedLeagueStandingsRef = useRef(new Set());
   const requestedH2hRef = useRef(new Set());
@@ -368,19 +367,6 @@ export default function Profile() {
       .catch((err) => setError(err.message));
   }, [selectedSportId]);
 
-  // homeformandratingchart125a.md section 4 — the chart draws the continuous
-  // rating, so it needs its own fetch; myRatings only carries the current
-  // (stepped) level. A player with no rating yet in this sport gets a 404,
-  // which just leaves the chart in its empty state.
-  useEffect(() => {
-    if (!selectedSportId) return;
-    setRatingHistory(null);
-    api
-      .ratingHistory(selectedSportId, 12)
-      .then(setRatingHistory)
-      .catch(() => {});
-  }, [selectedSportId]);
-
   // Reporting/confirming a score can finalize a match immediately (friendly
   // matches without confirmation, or the opponent's confirm/dispute action),
   // which moves the NTRP rating server-side right away. myRatings is only
@@ -391,12 +377,6 @@ export default function Profile() {
       .myRatings()
       .then(setMyRatings)
       .catch(() => {});
-    if (selectedSportId) {
-      api
-        .ratingHistory(selectedSportId, 12)
-        .then(setRatingHistory)
-        .catch(() => {});
-    }
   }
 
   async function handleReportScore(entry, matchId, sets) {
@@ -570,36 +550,18 @@ export default function Profile() {
   const formLosses = recentForForm.length - formWins;
   const hasNoMatches = !!stats && stats.matches_played === 0;
 
-  // section 4 — the chart needs 3+ aggregated monthly points to read as a
-  // line; fewer than that (very new players) gets the "opens after 3
-  // matches" message instead.
-  const chartSamples = ratingHistory?.samples ?? [];
-  const showChart = chartSamples.length >= 3;
-  let deltaLabel = null;
-  if (showChart) {
-    if (ratingHistory.provisional) {
-      deltaLabel = { text: t("PROVISIONAL"), down: false };
-    } else {
-      const delta = Math.round((chartSamples[chartSamples.length - 1].level - chartSamples[0].level) * 10) / 10;
-      if (delta > 0) deltaLabel = { text: `${t("UP")} ${delta.toFixed(1)}`, down: false };
-      else if (delta < 0) deltaLabel = { text: `${t("DOWN")} ${Math.abs(delta).toFixed(1)}`, down: true };
-      else deltaLabel = { text: t("FLAT"), down: false };
-    }
-  }
-  const chartLevels = chartSamples.map((s) => s.level);
-  const chartLo = chartLevels.length ? Math.min(...chartLevels) : 0;
-  const chartHi = chartLevels.length ? Math.max(...chartLevels) : 0;
-
-  // section 6 — "my leagues" collapses to one summary row: up to two
-  // ranked leagues by short name + place, "+{n}" beyond that. A league with
-  // no rank yet (schedule not started) doesn't count toward it.
-  const rankedLeagues = myLeaguesForSport.filter((l) => l.my_rank != null);
-  const ranksLabelParts = rankedLeagues.slice(0, 2).map((l) => `${l.name.split(" ")[0].toUpperCase()} #${l.my_rank}`);
-  const extraRanked = rankedLeagues.length - ranksLabelParts.length;
-  const ranksLabel =
-    ranksLabelParts.length > 0
-      ? ranksLabelParts.join(" · ") + (extraRanked > 0 ? ` +${extraRanked}` : "")
-      : t("{n} ליגות", { n: myLeaguesForSport.length });
+  // homeformstripandleagues126a.md section 3 — "my leagues" is a row list,
+  // one row per league (name, meta line, my rank). A league whose round is
+  // already active sorts to the top; ties keep myLeagues' own order
+  // (already newest-league-first from the server). Cap at 3 rows + "N more".
+  const cycleLabelEn = (l) => (l.round_length_days === 14 ? "Bi-weekly cycle" : "Weekly cycle");
+  const sortedHomeLeagues = [...myLeaguesForSport].sort((a, b) => {
+    const ra = currentRoundNumber(a.schedule_started_at, a.round_length_days || 7) !== null ? 0 : 1;
+    const rb = currentRoundNumber(b.schedule_started_at, b.round_length_days || 7) !== null ? 0 : 1;
+    return ra - rb;
+  });
+  const shownHomeLeagues = sortedHomeLeagues.slice(0, 3);
+  const extraHomeLeagues = sortedHomeLeagues.length - shownHomeLeagues.length;
 
   function oppNtrpFor(entry) {
     if (entry.kind === "friendly") return null;
@@ -769,27 +731,6 @@ export default function Profile() {
                 ))}
               </div>
             </div>
-
-            <div className="home-chart">
-              <div className="home-chart-head">
-                <span className="home-chart-label">{t("MY RATING · 12 MONTHS")}</span>
-                {deltaLabel && (
-                  <span className={`home-chart-delta${deltaLabel.down ? " down" : ""}`}>
-                    {deltaLabel.text}
-                  </span>
-                )}
-              </div>
-              {showChart ? (
-                <>
-                  <RatingChart samples={chartSamples} />
-                  <div className="home-chart-foot" dir="ltr">
-                    {chartLo.toFixed(2)} → {chartHi.toFixed(2)} · {t("{n} MONTHLY SAMPLES", { n: chartSamples.length })}
-                  </div>
-                </>
-              ) : (
-                <p className="home-chart-empty">{t("הגרף נפתח אחרי 3 משחקים")}</p>
-              )}
-            </div>
           </>
         ))}
 
@@ -868,13 +809,52 @@ export default function Profile() {
         )
       )}
 
-      <button type="button" className="home-leagues-row" onClick={() => navigate("/leagues")}>
-        <span className="home-leagues-label">{t("הליגות שלי")}</span>
-        <span className="home-leagues-ranks" dir="ltr">
-          {ranksLabel}
-        </span>
-        <ChevronIcon className="chevron-icon" aria-hidden="true" />
-      </button>
+      {shownHomeLeagues.length > 0 && (
+        <div className="home-leagues">
+          <div className="home-leagues-head">
+            <h2 className="home-leagues-title">{t("הליגות שלי")}</h2>
+            <span className="home-leagues-count">{sortedHomeLeagues.length}</span>
+          </div>
+          <ul className="home-leagues-list">
+            {shownHomeLeagues.map((l) => {
+              const round = currentRoundNumber(l.schedule_started_at, l.round_length_days || 7);
+              const metaParts = [
+                `${l.member_count} players`,
+                cycleLabelEn(l),
+                round !== null ? `R${round}` : null,
+                `NTRP ${(l.level_min ?? 1.5).toFixed(1)}–${(l.level_max ?? 5.5).toFixed(1)}`,
+              ].filter(Boolean);
+              return (
+                <li key={l.id}>
+                  <button
+                    type="button"
+                    className="home-league-row"
+                    onClick={() => navigate(`/leagues/${l.id}`)}
+                  >
+                    <span className="home-league-main">
+                      <span className="home-league-name" dir="auto">
+                        {l.name}
+                      </span>
+                      <span className="home-league-meta" dir="ltr">
+                        {metaParts.join(" · ")}
+                      </span>
+                    </span>
+                    <span className="home-league-rank">{l.my_rank ? `#${l.my_rank}` : "—"}</span>
+                  </button>
+                </li>
+              );
+            })}
+            {extraHomeLeagues > 0 && (
+              <li>
+                <button type="button" className="home-league-more" onClick={() => navigate("/leagues")}>
+                  {t("עוד {n}", { n: extraHomeLeagues })}
+                  <ChevronIcon className="chevron-icon" aria-hidden="true" />
+                </button>
+              </li>
+            )}
+          </ul>
+        </div>
+      )}
         </>
       )}
       </div>
