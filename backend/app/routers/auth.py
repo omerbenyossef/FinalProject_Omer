@@ -229,6 +229,7 @@ def _delete_user_account(db: Session, user: models.User) -> None:
     ).delete(synchronize_session=False)
 
     db.query(models.PlayerRating).filter(models.PlayerRating.user_id == user.id).delete(synchronize_session=False)
+    db.query(models.RatingSample).filter(models.RatingSample.user_id == user.id).delete(synchronize_session=False)
     db.query(models.PushSubscription).filter(models.PushSubscription.user_id == user.id).delete(
         synchronize_session=False
     )

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from .models import MatchStatus, MatchKind, FriendlyInviteStatus
 
@@ -67,6 +67,28 @@ class UpdateNotificationPreferencesRequest(BaseModel):
 class SetScore(BaseModel):
     player1_games: int
     player2_games: int
+
+
+# A generous sanity ceiling, not a real tennis rule (the app doesn't model
+# per-set formats/tiebreaks) — just enough to reject obviously-garbage input
+# like a 999-game set without rejecting any real match.
+MAX_GAMES_PER_SET = 30
+
+
+def _validate_submitted_sets(sets: list[SetScore]) -> list[SetScore]:
+    """Shared by every *input* schema that accepts reported/corrected/disputed
+    set scores. Deliberately not attached to SetScore itself — that class is
+    also used to read back already-stored historical matches, and a validator
+    there would 500 any old row that happened to predate this check instead
+    of just rejecting new bad input."""
+    for s in sets:
+        if s.player1_games < 0 or s.player2_games < 0:
+            raise ValueError("תוצאת סט לא יכולה להיות שלילית")
+        if s.player1_games == s.player2_games:
+            raise ValueError("סט חייב להסתיים עם מנצח, לא בתיקו")
+        if s.player1_games > MAX_GAMES_PER_SET or s.player2_games > MAX_GAMES_PER_SET:
+            raise ValueError("תוצאת הסט לא סבירה")
+    return sets
 
 
 class RecentMatchEntry(BaseModel):
@@ -264,10 +286,20 @@ class PushUnsubscribeIn(BaseModel):
 class MatchScoreUpdate(BaseModel):
     sets: list[SetScore]
 
+    @field_validator("sets")
+    @classmethod
+    def _validate_sets(cls, sets: list[SetScore]) -> list[SetScore]:
+        return _validate_submitted_sets(sets)
+
 
 class MatchCorrection(BaseModel):
     sets: list[SetScore]
     note: Optional[str] = None
+
+    @field_validator("sets")
+    @classmethod
+    def _validate_sets(cls, sets: list[SetScore]) -> list[SetScore]:
+        return _validate_submitted_sets(sets)
 
 
 class MatchScheduleProposal(BaseModel):
@@ -351,6 +383,11 @@ class FriendlyInviteCreate(BaseModel):
 class FriendlyScoreUpdate(BaseModel):
     sets: list[SetScore]
     require_confirmation: bool = True
+
+    @field_validator("sets")
+    @classmethod
+    def _validate_sets(cls, sets: list[SetScore]) -> list[SetScore]:
+        return _validate_submitted_sets(sets)
 
 
 class FriendlyPlayerOut(BaseModel):
