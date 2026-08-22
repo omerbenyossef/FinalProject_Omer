@@ -97,9 +97,12 @@ def _generate_join_code(db: Session) -> str:
 def _compute_my_standing(league: models.League, user_id: int, matches: list[models.Match]):
     stats = {m.user_id: {"wins": 0, "losses": 0, "points": 0} for m in league.memberships}
     for match in matches:
-        p1, p2 = stats.get(match.player1_id), stats.get(match.player2_id)
-        if not p1 or not p2:
-            continue
+        # A finished match stays part of both players' standing even after
+        # one of them leaves the league — leaving only drops future
+        # scheduling, not history that already happened.
+        for uid in (match.player1_id, match.player2_id):
+            stats.setdefault(uid, {"wins": 0, "losses": 0, "points": 0})
+        p1, p2 = stats[match.player1_id], stats[match.player2_id]
         winner_id = match_winner_id(match)
         if winner_id is None:
             continue
@@ -778,7 +781,16 @@ def _join_league_core(
     if league.join_code and league.join_code != (code or "").strip().upper():
         raise HTTPException(status_code=403, detail="קוד הזמנה שגוי")
 
-    if league.capacity is not None and len(league.memberships) >= league.capacity:
+    # Lock the league row for the capacity check + insert so two joins
+    # racing for the last open spot can't both pass the check before either
+    # commits (a no-op on SQLite, which serializes writes anyway; it matters
+    # on Postgres). Count fresh from the membership table rather than
+    # league.memberships, which may be a stale cached collection.
+    db.query(models.League).filter(models.League.id == league.id).with_for_update().first()
+    member_count = (
+        db.query(models.LeagueMembership).filter(models.LeagueMembership.league_id == league.id).count()
+    )
+    if league.capacity is not None and member_count >= league.capacity:
         raise HTTPException(status_code=403, detail="הליגה מלאה")
 
     rating = get_rating(db, current_user.id, league.sport_id)
@@ -905,9 +917,13 @@ def _empty_stats(league):
 
 def _accumulate_stats(stats, matches):
     for match in matches:
-        p1, p2 = stats.get(match.player1_id), stats.get(match.player2_id)
-        if not p1 or not p2:
-            continue
+        # A finished match stays part of both players' standing even after
+        # one of them leaves the league — leaving only drops future
+        # scheduling, not history that already happened.
+        for uid, user in ((match.player1_id, match.player1), (match.player2_id, match.player2)):
+            if uid not in stats:
+                stats[uid] = {"user": user, "played": 0, "wins": 0, "losses": 0, "points": 0}
+        p1, p2 = stats[match.player1_id], stats[match.player2_id]
         p1["played"] += 1
         p2["played"] += 1
         winner_id = match_winner_id(match)
