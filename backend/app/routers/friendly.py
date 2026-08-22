@@ -315,7 +315,16 @@ def redeem_invite_link(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    link = db.query(models.FriendlyInviteLink).filter(models.FriendlyInviteLink.token == token).first()
+    # Lock the link row before checking `used` so two redemptions racing on
+    # the same one-time token can't both pass the check before either
+    # commits (mirrors _join_league_core's capacity-race fix; a no-op on
+    # SQLite, which serializes writes anyway, but matters on Postgres).
+    link = (
+        db.query(models.FriendlyInviteLink)
+        .filter(models.FriendlyInviteLink.token == token)
+        .with_for_update()
+        .first()
+    )
     if not link or link.used:
         raise HTTPException(status_code=404, detail="קישור ההזמנה לא תקין או שכבר נוצל")
     if link.inviter_id == current_user.id:

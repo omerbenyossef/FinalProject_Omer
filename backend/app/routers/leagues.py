@@ -896,6 +896,17 @@ def delete_league(
     if league.created_by != current_user.id and not current_user.is_admin:
         raise HTTPException(status_code=403, detail="רק יוצר הליגה יכול למחוק אותה")
 
+    match_ids = [
+        m.id for m in db.query(models.Match.id).filter(models.Match.league_id == league_id).all()
+    ]
+    if match_ids:
+        # A completed, rated match has a RatingSample row pointing at it
+        # (match_id FK) — deleting the match first would violate that
+        # constraint on Postgres (SQLite doesn't enforce FKs by default,
+        # which is why this only ever showed up in production).
+        db.query(models.RatingSample).filter(models.RatingSample.match_id.in_(match_ids)).delete(
+            synchronize_session=False
+        )
     db.query(models.Match).filter(models.Match.league_id == league_id).delete()
     db.query(models.LeagueMembership).filter(models.LeagueMembership.league_id == league_id).delete()
     db.delete(league)
