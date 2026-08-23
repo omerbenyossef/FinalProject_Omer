@@ -768,6 +768,7 @@ const PAIRS = [
   ["{n} MONTHLY SAMPLES", "{n} MONTHLY SAMPLES"],
   ["הגרף נפתח אחרי 3 משחקים", "The chart opens after 3 matches"],
   ["קובע/ת מחדש את הרמה שלך · {sport}", "Retaking your level · {sport}"],
+  ["קובע/ת את הרמה שלך · {sport}", "Setting your level · {sport}"],
   ["סיום", "Done"],
   ["NOTIFICATIONS", "NOTIFICATIONS"],
   ["תוצאה לאישור", "Result to confirm"],

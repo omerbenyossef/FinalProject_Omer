@@ -218,6 +218,45 @@ def rating_history(
     )
 
 
+@router.post("/ratings/{sport_id}/submit", response_model=schemas.RatingRetakeOut)
+def submit_rating_for_sport(
+    sport_id: int,
+    answers: schemas.RatingAnswers,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Initial rating submission with no league to anchor to — needed before
+    creating the first league in a sport, when no league exists yet to hang
+    /leagues/{league_id}/rate off of."""
+    sport = db.query(models.Sport).filter(models.Sport.id == sport_id).first()
+    if not sport:
+        raise HTTPException(status_code=404, detail="Sport not found")
+    if get_rating(db, current_user.id, sport_id):
+        raise HTTPException(status_code=400, detail="כבר יש לך דירוג בענף הזה")
+
+    level, competitive = _compute_level_from_answers(answers)
+
+    rating = models.PlayerRating(user_id=current_user.id, sport_id=sport_id, level=level, competitive=competitive)
+    db.add(rating)
+    db.commit()
+    db.refresh(rating)
+
+    db.add(
+        models.RatingSample(
+            user_id=current_user.id,
+            sport_id=sport_id,
+            match_id=None,
+            level_before=rating.level,
+            level_after=rating.level,
+        )
+    )
+    db.commit()
+
+    return schemas.RatingRetakeOut(
+        level=round_to_half(rating.level), band=band_name(rating.level), provisional=rating.provisional
+    )
+
+
 @router.post("/ratings/{sport_id}/retake", response_model=schemas.RatingRetakeOut)
 def retake_rating(
     sport_id: int,

@@ -96,6 +96,7 @@ export default function RatingQuestionnaire({
   onClose,
   onJoined,
   retake,
+  initial,
   sportId,
 }) {
   const { t } = useLanguage();
@@ -123,7 +124,11 @@ export default function RatingQuestionnaire({
         next.q3 === COMPETITIVE_Q3_INDEX
           ? { q1: next.q1, q2: next.q2, q3: next.q3, venue: next.venue }
           : { q1: next.q1, q2: next.q2, q3: next.q3, q4: next.q4, q5: next.q5, q6: next.q6 };
-      const res = retake ? await api.retakeRating(sportId, payload) : await api.submitRating(league.id, payload);
+      const res = retake
+        ? await api.retakeRating(sportId, payload)
+        : initial
+        ? await api.submitInitialRating(sportId, payload)
+        : await api.submitRating(league.id, payload);
       setResult(res);
       setStep("result");
     } catch (err) {
@@ -145,7 +150,7 @@ export default function RatingQuestionnaire({
   }
 
   if (step === "result" && result) {
-    if (retake) {
+    if (retake || initial) {
       return (
         <div className="rating-overlay">
           <button type="button" className="rating-back" onClick={onClose}>
@@ -302,6 +307,8 @@ export default function RatingQuestionnaire({
       <div className="rating-join-line">
         {retake
           ? t("קובע/ת מחדש את הרמה שלך · {sport}", { sport: t(sportName) })
+          : initial
+          ? t("קובע/ת את הרמה שלך · {sport}", { sport: t(sportName) })
           : t("מצטרפ/ת ל-{league} · {sport}", { league: league.name, sport: t(sportName) })}
       </div>
 

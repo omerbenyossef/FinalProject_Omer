@@ -6,7 +6,6 @@ import { useOpenAction } from "./OpenActionContext.jsx";
 import { ChevronIcon, PersonIcon, RanksIcon, SettingsIcon, TrophyIcon } from "./Icons.jsx";
 import InstallPrompt from "./InstallPrompt.jsx";
 import Onboarding from "./Onboarding.jsx";
-import SelfRatingPrompt from "./SelfRatingPrompt.jsx";
 import { translate } from "./translations.js";
 
 const AUTH_PATHS = ["/signin", "/signup", "/forgot-password", "/reset-password"];
@@ -69,7 +68,6 @@ export default function Layout({ children }) {
       </header>
       {user && <Onboarding />}
       {user && <InstallPrompt />}
-      {user && <SelfRatingPrompt />}
       <main className="content">{children}</main>
       {user && location.pathname !== "/ops" && (
         <nav className="tabbar">

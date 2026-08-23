@@ -19,6 +19,7 @@ import {
 } from "../matchUtils.js";
 import PageHelp from "../PageHelp.jsx";
 import { getCurrentPosition } from "../geo.js";
+import RatingQuestionnaire from "../RatingQuestionnaire.jsx";
 
 const CARD_WIDTH = 305;
 const CARD_GAP = 12;
@@ -147,6 +148,7 @@ export default function Leagues() {
   const [sheetError, setSheetError] = useState("");
   const [active, setActive] = useState(0);
   const [standingsCache, setStandingsCache] = useState({});
+  const [showRatingGate, setShowRatingGate] = useState(false);
   const inputRef = useRef(null);
   const carouselRef = useRef(null);
   const requestedStandingsRef = useRef(new Set());
@@ -191,7 +193,7 @@ export default function Leagues() {
   useEffect(() => {
     if (autoOpenedRef.current || !user || searchParams.get("create") !== "1") return;
     autoOpenedRef.current = true;
-    openSheet();
+    requestCreate();
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       next.delete("create");
@@ -240,6 +242,24 @@ export default function Leagues() {
 
   function closeSheet() {
     setShowSheet(false);
+  }
+
+  async function requestCreate() {
+    try {
+      const ratings = await api.myRatings();
+      if (ratings.some((r) => r.sport_id === selectedSportId)) {
+        openSheet();
+      } else {
+        setShowRatingGate(true);
+      }
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  function handleRatingGateDone() {
+    setShowRatingGate(false);
+    openSheet();
   }
 
   async function handleCreate(e) {
@@ -291,7 +311,7 @@ export default function Leagues() {
 
       {user ? (
         <div className="leagues-actions">
-          <button type="button" className="btn-create-league" onClick={openSheet}>
+          <button type="button" className="btn-create-league" onClick={requestCreate}>
             {t("צור ליגה חדשה")}
           </button>
           <Link to="/friendly/new" className="btn-friendly">
@@ -543,6 +563,15 @@ export default function Leagues() {
             <p className="sheet-hint">{t("אפשר לשנות את הפורמט אחר כך בהגדרות הליגה")}</p>
           </form>
         </div>
+      )}
+
+      {showRatingGate && (
+        <RatingQuestionnaire
+          initial
+          sportId={selectedSportId}
+          sportName={selectedSport?.name}
+          onClose={handleRatingGateDone}
+        />
       )}
     </div>
   );
