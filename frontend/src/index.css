@@ -3296,17 +3296,10 @@ button:active { transform: translateY(1px); }
 
 .home-rating.compact .home-rating-head { margin-top: 0; }
 
-/* homeformandratingchart125a.md — everything below the top block sits on a
-   raised surface. .content already gives 18px horizontal insets, so this
-   bleeds out to the edges with a negative margin and restores that same
-   inset with its own padding, rather than the doc's literal zero-inset
-   snippet (written for a from-scratch mockup page, not this app's shell). */
 .home-sheet {
-  margin: 14px -18px 0;
+  margin-top: 14px;
   flex: 1;
-  background: #161d26;
-  border-radius: 28px 28px 0 0;
-  padding: 18px 18px 92px;
+  padding-bottom: 92px;
 }
 
 .home-form { margin-top: 26px; margin-bottom: 28px; }
