@@ -3309,25 +3309,25 @@ button:active { transform: translateY(1px); }
   padding: 18px 18px 92px;
 }
 
-.home-form { padding: 0; }
-.home-form-head { display: flex; align-items: baseline; justify-content: space-between; }
+.home-form { margin-top: 26px; margin-bottom: 28px; }
+.home-form-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; }
 .home-form-label {
   font: 500 11px "IBM Plex Mono", var(--mono);
   letter-spacing: .16em;
   color: var(--muted);
 }
 .home-form-record {
-  font: 500 11px "IBM Plex Mono", var(--mono);
+  font: 600 12px "IBM Plex Mono", var(--mono);
   letter-spacing: .12em;
-  color: var(--ink-dim);
+  color: var(--ink);
 }
-.home-form-row { margin-top: 10px; display: flex; gap: 5px; height: 26px; }
+.home-form-row { display: flex; gap: 12px; height: 34px; }
 .home-form-cell {
   flex: 1;
-  border-radius: 4px;
-  background: #242c37;
+  border-radius: 8px;
+  background: #1a2029;
   display: flex; align-items: center; justify-content: center;
-  font: 500 12px "IBM Plex Mono", var(--mono);
+  font: 600 13px "IBM Plex Mono", var(--mono);
   color: var(--muted);
 }
 .home-form-cell.win { background: var(--court); color: #0e1116; }

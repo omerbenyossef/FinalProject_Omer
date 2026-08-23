@@ -546,6 +546,7 @@ export default function Profile() {
   // cancellations never reach `completed` status so they're excluded already.
   const recentForForm = (stats?.recent_matches ?? []).slice(0, 5);
   const formResults = [...recentForForm].reverse().map((m) => (m.won ? "W" : "L"));
+  const paddedFormResults = [...Array(Math.max(0, 5 - formResults.length)).fill(null), ...formResults];
   const formWins = recentForForm.filter((m) => m.won).length;
   const formLosses = recentForForm.length - formWins;
   const hasNoMatches = !!stats && stats.matches_played === 0;
@@ -717,14 +718,14 @@ export default function Profile() {
         ) : (
           <>
             <div className="home-form">
-              <div className="home-form-head">
+              <div className="home-form-head" dir="ltr">
                 <span className="home-form-label">{t("FORM · LAST 5")}</span>
                 <span className="home-form-record">
                   {formWins}W-{formLosses}L
                 </span>
               </div>
               <div className="home-form-row" dir="ltr">
-                {formResults.map((r, i) => (
+                {paddedFormResults.map((r, i) => (
                   <span key={i} className={`home-form-cell${r === "W" ? " win" : ""}`}>
                     {r}
                   </span>
