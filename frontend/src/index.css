@@ -5714,7 +5714,7 @@ button:active { transform: translateY(1px); }
 .tp-card {
   box-sizing: border-box; flex: none; width: 305px;
   scroll-snap-align: start;
-  border-radius: 20px; background: #0e1116;
+  border-radius: 20px; background: #161d26;
   padding: 15px 17px 13px;
 }
 .tp-card.single { width: 100%; }
