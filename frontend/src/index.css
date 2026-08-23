@@ -2802,7 +2802,7 @@ button:active { transform: translateY(1px); }
 }
 
 .btn-bright {
-  background: var(--ink);
+  background: #c6f24e;
   color: var(--paper);
   border: none;
   border-radius: 999px;
@@ -2816,7 +2816,7 @@ button:active { transform: translateY(1px); }
 .btn-bright:hover { opacity: 0.9; }
 .btn-bright:disabled { opacity: 0.55; cursor: not-allowed; }
 
-/* signinsignup115.md — /signin, /signup: no lime, underline-only fields */
+/* signinsignup115update.md — /signin, /signup: lime CTA buttons, underline-only fields */
 .signscreen {
   max-width: 380px;
   margin: 0 auto;
@@ -2915,7 +2915,7 @@ button:active { transform: translateY(1px); }
 
 .signfield-input {
   font-family: "IBM Plex Mono", var(--mono);
-  font-size: 22px;
+  font-size: 17px;
   letter-spacing: normal;
   background: transparent;
   border: none;
@@ -2931,10 +2931,11 @@ button:active { transform: translateY(1px); }
 .signfield-input-name {
   font-family: var(--sans);
   font-weight: 700;
-  font-size: 24px;
+  font-size: 17px;
 }
 
 .signfield-input-password {
+  font-size: 18px;
   letter-spacing: 0.3em;
   border-bottom-color: var(--line);
 }
@@ -2944,7 +2945,7 @@ button:active { transform: translateY(1px); }
 }
 
 .signfield-input-small {
-  font-size: 20px;
+  font-size: 17px;
 }
 
 .signfield-password-wrap {
