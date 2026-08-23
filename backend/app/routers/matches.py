@@ -192,6 +192,7 @@ def generate_schedule(
                 "לוח משחקים חדש",
                 f"נוצר לוח משחקים חדש בליגה {league.name}",
                 f"/leagues/{league_id}",
+                category="round_open",
             )
 
     return created

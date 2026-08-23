@@ -259,6 +259,7 @@ def propose_match_schedule(
         "הצעת זמן למשחק",
         f"{current_user.name} הציע/ה שעה למשחק שלכם, ומחכה לאישור שלך",
         f"/matches/{match.id}",
+        category="time_proposal",
     )
 
     return match
@@ -288,6 +289,7 @@ def confirm_match_schedule(
         "הזמן למשחק אושר",
         f"{current_user.name} אישר/ה את הזמן שהצעת למשחק שלכם",
         f"/matches/{match.id}",
+        category="time_proposal",
     )
 
     return match
@@ -320,6 +322,7 @@ def decline_match_schedule(
         "הצעת הזמן בוטלה",
         f"{current_user.name} ביטל/ה את הצעת הזמן למשחק שלכם",
         f"/matches/{match.id}/schedule",
+        category="time_proposal",
     )
 
     return match
