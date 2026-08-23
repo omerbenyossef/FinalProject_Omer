@@ -5714,8 +5714,8 @@ button:active { transform: translateY(1px); }
 .tp-card {
   box-sizing: border-box; flex: none; width: 305px;
   scroll-snap-align: start;
-  border-radius: 20px; background: #161d26;
-  padding: 15px 17px 13px;
+  border-radius: 18px; background: #161b22;
+  padding: 18px 18px 0;
 }
 .tp-card.single { width: 100%; }
 
@@ -5723,34 +5723,38 @@ button:active { transform: translateY(1px); }
 .tp-dot { width: 5px; height: 5px; border-radius: 3px; background: #2b323d; transition: width .18s; }
 .tp-dot.is-on { width: 18px; background: var(--court); }
 
-.tp-card-top { display: flex; align-items: center; gap: 12px; }
+.tp-card-top {
+  display: flex; align-items: center; gap: 14px;
+  padding-bottom: 16px; border-bottom: 1px solid rgba(148, 163, 184, .12);
+}
 .tp-id { flex: 1; min-width: 0; }
 .tp-name {
-  display: block; font: 700 19px/1.2 "IBM Plex Sans", sans-serif; letter-spacing: -.01em; color: #eef1f7;
+  display: block; font: 700 21px "IBM Plex Sans Hebrew", var(--sans); color: #eef1f7;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-decoration: none;
 }
-
-/* homeformandratingchart125a.md section 5 — NTRP/HEAD TO HEAD/TIME collapse
-   into this one compact meta line so the card fits in ~120px. */
-.tp-card-meta {
-  margin-top: 12px; padding-top: 11px; border-top: 1px solid rgba(148, 163, 184, .14);
-  font: 500 11.5px "IBM Plex Mono", monospace; letter-spacing: .06em; color: #8b93a6;
+.tp-league-line {
+  margin-top: 5px; font: 500 12px "IBM Plex Mono", monospace; letter-spacing: .1em; color: #8b93a6;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+
+.tp-table {
+  padding: 14px 0; border-bottom: 1px solid rgba(148, 163, 184, .12);
+}
+.tp-row { display: flex; align-items: center; justify-content: space-between; height: 26px; }
+.tp-row-label { font: 500 12.5px "IBM Plex Mono", monospace; letter-spacing: .1em; color: #8b93a6; }
+.tp-row-value { font: 600 13.5px "IBM Plex Mono", monospace; color: #eef1f7; }
 
 .tp-action {
-  margin-top: 15px; padding: 13px 0 0; width: 100%;
-  border: 0; border-top: 1px solid rgba(148, 163, 184, .14); background: none;
+  padding: 15px 0; width: 100%;
+  border: 0; background: none;
   display: flex; align-items: center; gap: 10px; text-align: start; cursor: pointer; color: inherit;
 }
-.tp-dot-lime { flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--court); }
-.tp-action-label { flex: 1; font: 700 14.5px "IBM Plex Sans", sans-serif; color: #eef1f7; }
-.tp-action svg { flex: none; width: 15px; height: 15px; stroke: #eef1f7; stroke-width: 2.2; }
-
-.tp-action.is-waiting .tp-action-label { font-weight: 600; color: #a3abbb; }
-.tp-action.is-waiting svg { stroke: #6f7787; }
+.tp-dot-lime { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--court); }
+.tp-action-label { flex: 1; font: 700 16px "IBM Plex Sans Hebrew", var(--sans); color: #eef1f7; }
+.tp-action svg { flex: none; width: 18px; height: 18px; stroke: #8b93a6; stroke-width: 2.2; }
 
 .tp-invite-actions {
-  margin-top: 15px; padding-top: 13px; border-top: 1px solid rgba(148, 163, 184, .14);
+  padding: 15px 0; border-top: 1px solid rgba(148, 163, 184, .12);
 }
 
 /* Shared reset for a player name that links to /players/:id (105a) */

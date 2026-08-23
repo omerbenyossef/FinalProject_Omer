@@ -16,6 +16,7 @@ import {
   currentRoundNumber,
   daysUntil,
   weekdayShort,
+  formatWeekdayTime,
 } from "../matchUtils.js";
 import { SkeletonMatchRow } from "../Skeleton.jsx";
 import PageHelp from "../PageHelp.jsx";
@@ -116,31 +117,36 @@ function ToPlayCard({
   const needsMyConfirm = m.status === "pending_confirmation" && m.reported_by !== userId;
   const scheduleState = pendingInvite || needsMyConfirm ? null : matchScheduleState(m, userId);
 
-  // homeformandratingchart125a.md section 5 — the card drops its NTRP/HEAD
-  // TO HEAD/TIME rows (and the league-name state line) for one compact meta
-  // line, freeing up the height the chart needs.
-  const cardMetaParts = [
-    isFriendly ? `FRIENDLY · ${pendingInvite ? "INVITED" : "ACCEPTED"}` : `R${m.round_number}`,
-  ];
-  if (oppNtrp != null) cardMetaParts.push(`NTRP ${oppNtrp.toFixed(1)}`);
-  if (h2h && h2h.wins + h2h.losses > 0) cardMetaParts.push(`H2H ${h2h.wins}-${h2h.losses}`);
-  const cardMeta = cardMetaParts.join(" · ");
+  // hometoplaycardfix.md — the card is a full NTRP/HEAD TO HEAD/TIME table
+  // (quick scanning across the carousel), not a single compact meta line.
+  const leagueLine = isFriendly ? (
+    `FRIENDLY · ${pendingInvite ? "INVITED" : "ACCEPTED"}`
+  ) : (
+    <>
+      R{m.round_number} ·{" "}
+      <span dir="auto" style={{ unicodeBidi: "isolate" }}>
+        {(entry.league_name || "").toUpperCase()}
+      </span>
+    </>
+  );
+  const myNtrpText = myNtrp != null ? myNtrp.toFixed(1) : "—";
+  const oppNtrpText = oppNtrp != null ? oppNtrp.toFixed(1) : "—";
+  const h2hText = `${h2h?.wins ?? 0}-${h2h?.losses ?? 0}`;
+  const timeText = m.scheduled_at ? formatWeekdayTime(new Date(m.scheduled_at)) : "not set";
 
   let action = null;
   if (needsMyConfirm) {
-    action = { title: t("אשר תוצאה"), dependsOnMe: true, onPress: onOpenConfirmScore };
+    action = { title: t("אשר תוצאה"), onPress: onOpenConfirmScore };
   } else if (pendingInvite) {
-    if (isInviter) action = { title: t("תזכר"), dependsOnMe: false, onPress: onRemind };
+    if (isInviter) action = { title: t("תזכורת"), onPress: onRemind };
   } else if (scheduleState === "unscheduled") {
-    // No lime dot for scheduling actions — see scheduleflow107.md's color
-    // rule: proposing/confirming a time is a response, not a score.
-    action = { title: t("קבע שעה"), dependsOnMe: true, noDot: true, onPress: onStartSchedule };
+    action = { title: t("קבע שעה"), onPress: onStartSchedule };
   } else if (scheduleState === "proposed_by_them") {
-    action = { title: t("אשר את השעה"), dependsOnMe: true, noDot: true, onPress: onOpenProposal };
+    action = { title: t("אשר את השעה"), onPress: onOpenProposal };
   } else if (scheduleState === "proposed_by_me") {
-    action = { title: t("תזכר"), dependsOnMe: false, onPress: onRemind };
+    action = { title: t("תזכורת"), onPress: onRemind };
   } else if (scheduleState === "ready") {
-    action = { title: t("דווח תוצאה"), dependsOnMe: true, onPress: onStartReport };
+    action = { title: t("דווח תוצאה"), onPress: onStartReport };
   }
 
   if (isReporting && scheduleState === "ready") {
@@ -170,18 +176,42 @@ function ToPlayCard({
   return (
     <div className={`tp-card${single ? " single" : ""}`}>
       <div className="tp-card-top">
-        <Avatar name={opponent.name} size={38} dim={pendingInvite} />
+        <Avatar
+          name={opponent.name}
+          size={52}
+          dim={pendingInvite}
+          background="#232a35"
+          color="#c9cfdb"
+          fontFamily="'IBM Plex Mono', monospace"
+          fontSize={17}
+        />
         <div className="tp-id">
           <Link to={`/players/${opponent.id}`} className="tp-name">
             <span dir="auto" style={{ unicodeBidi: "isolate" }}>
               {opponent.name}
             </span>
           </Link>
+          <div className="tp-league-line" dir="ltr">
+            {leagueLine}
+          </div>
         </div>
       </div>
 
-      <div className="tp-card-meta" dir="ltr">
-        {cardMeta}
+      <div className="tp-table" dir="ltr">
+        <div className="tp-row">
+          <span className="tp-row-label">NTRP</span>
+          <span className="tp-row-value">
+            {myNtrpText} · {oppNtrpText}
+          </span>
+        </div>
+        <div className="tp-row">
+          <span className="tp-row-label">HEAD TO HEAD</span>
+          <span className="tp-row-value">{h2hText}</span>
+        </div>
+        <div className="tp-row">
+          <span className="tp-row-label">TIME</span>
+          <span className="tp-row-value">{timeText}</span>
+        </div>
       </div>
 
       {pendingInvite && !isInviter ? (
@@ -195,13 +225,8 @@ function ToPlayCard({
         </div>
       ) : (
         action && (
-          <button
-            type="button"
-            className={`tp-action${action.dependsOnMe ? "" : " is-waiting"}`}
-            onClick={action.onPress}
-            disabled={busy}
-          >
-            {action.dependsOnMe && !action.noDot && <span className="tp-dot-lime" aria-hidden="true" />}
+          <button type="button" className="tp-action" onClick={action.onPress} disabled={busy}>
+            <span className="tp-dot-lime" aria-hidden="true" />
             <span className="tp-action-label">{action.title}</span>
             <ChevronIcon aria-hidden="true" />
           </button>
