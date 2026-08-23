@@ -593,6 +593,9 @@ def create_league(
     if league_in.is_open and not current_user.is_admin:
         raise HTTPException(status_code=403, detail="רק המנהל יכול ליצור ליגה פתוחה")
 
+    if not get_rating(db, current_user.id, league_in.sport_id):
+        raise HTTPException(status_code=400, detail="צריך למלא שאלון דירוג לענף הזה לפני יצירת ליגה")
+
     _validate_rules(league_in.best_of, league_in.round_length_days)
     _validate_level_range(league_in.level_min, league_in.level_max)
     _validate_capacity(league_in.capacity)

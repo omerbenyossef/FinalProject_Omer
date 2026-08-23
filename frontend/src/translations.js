@@ -507,6 +507,7 @@ const PAIRS = [
   ["רמת המשחק שלך גבוהה ותחרותית ברמה הגבוהה ביותר.",
    "Your level of play is high and competitive at the top tier."],
   ["צריך למלא שאלון דירוג לענף הזה לפני ההצטרפות", "You need to fill out a level questionnaire for this sport before joining"],
+  ["צריך למלא שאלון דירוג לענף הזה לפני יצירת ליגה", "You need to fill out a level questionnaire for this sport before creating a league"],
   ["הדירוג שלך מחוץ לטווח הרמות של הליגה הזו", "Your rating is outside this league's level range"],
   ["טווח הדירוג חייב להיות בין 1.5 ל-7.0 בקפיצות של חצי", "The level range must be between 1.5 and 7.0, in half-point steps"],
   ["לא מדורג", "Unrated"],
