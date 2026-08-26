@@ -115,7 +115,9 @@ function ToPlayCard({
   const pendingInvite = isFriendly && m.invite_status === "pending";
   const isInviter = isFriendly && m.player1.id === userId;
   const needsMyConfirm = m.status === "pending_confirmation" && m.reported_by !== userId;
-  const scheduleState = pendingInvite || needsMyConfirm ? null : matchScheduleState(m, userId);
+  const awaitingOpponentConfirm = m.status === "pending_confirmation" && m.reported_by === userId;
+  const scheduleState =
+    pendingInvite || needsMyConfirm || awaitingOpponentConfirm ? null : matchScheduleState(m, userId);
 
   // hometoplaycardfix.md — the card is a full NTRP/HEAD TO HEAD/TIME table
   // (quick scanning across the carousel), not a single compact meta line.
@@ -137,6 +139,8 @@ function ToPlayCard({
   let action = null;
   if (needsMyConfirm) {
     action = { title: t("אשר תוצאה"), onPress: onOpenConfirmScore };
+  } else if (awaitingOpponentConfirm) {
+    action = { title: t("תזכורת"), onPress: onRemind };
   } else if (pendingInvite) {
     if (isInviter) action = { title: t("תזכורת"), onPress: onRemind };
   } else if (scheduleState === "unscheduled") {
@@ -508,11 +512,12 @@ export default function Profile() {
   const confirmationEntries = relevantEntries.filter(
     (entry) => entry.match.status === "pending_confirmation" && entry.match.reported_by !== user?.id
   );
+  const isToPlayStatus = (status) => status === "pending" || status === "pending_confirmation";
   const leagueMatchesForSport = relevantEntries.filter(
-    (entry) => entry.kind !== "friendly" && entry.match.status === "pending"
+    (entry) => entry.kind !== "friendly" && isToPlayStatus(entry.match.status)
   );
   const friendlyMatchesForSport = relevantEntries.filter(
-    (entry) => entry.kind === "friendly" && entry.match.status === "pending"
+    (entry) => entry.kind === "friendly" && isToPlayStatus(entry.match.status)
   );
   const combinedToPlay = [...leagueMatchesForSport, ...friendlyMatchesForSport];
   const sortedToPlay = user ? sortToPlay(combinedToPlay, user.id, roundLengthById) : [];
