@@ -82,6 +82,7 @@ export default function MatchSchedule() {
     : null;
   const daysUntilMatch = scheduledDate ? Math.ceil((scheduledDate.getTime() - Date.now()) / 86400000) : null;
   const daysUntilRoundEnd = roundEnd ? Math.max(0, Math.ceil((roundEnd.getTime() - Date.now()) / 86400000)) : null;
+  const proposalExpired = scheduledDate ? scheduledDate.getTime() < Date.now() : false;
 
   if (detail.status === "asked_you") {
     return (
@@ -120,8 +121,10 @@ export default function MatchSchedule() {
           </div>
           {detail.court && <div className="sched-hero-court">{detail.court}</div>}
           <div className="sched-hero-meta" dir="ltr">
-            {daysUntilMatch != null && `IN ${daysUntilMatch} ${daysWord(daysUntilMatch)}`}
-            {daysUntilRoundEnd !== null && ` · ROUND ENDS IN ${daysUntilRoundEnd}`}
+            {proposalExpired
+              ? "TIME HAS PASSED"
+              : daysUntilMatch != null && `IN ${daysUntilMatch} ${daysWord(daysUntilMatch)}`}
+            {!proposalExpired && daysUntilRoundEnd !== null && ` · ROUND ENDS IN ${daysUntilRoundEnd}`}
           </div>
         </div>
 
@@ -138,9 +141,13 @@ export default function MatchSchedule() {
         </div>
 
         <div className="sched-bottom">
-          <button type="button" className="sched-send" disabled={busy} onClick={handleConfirm}>
-            {t("מאשר, נשחק")}
-          </button>
+          {proposalExpired ? (
+            <p className="sched-expired-note">{t("הזמן שהוצע כבר עבר, צריך להציע שעה חדשה")}</p>
+          ) : (
+            <button type="button" className="sched-send" disabled={busy} onClick={handleConfirm}>
+              {t("מאשר, נשחק")}
+            </button>
+          )}
           <div className="sched-bottom-row">
             <button
               type="button"

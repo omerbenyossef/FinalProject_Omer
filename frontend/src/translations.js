@@ -550,6 +550,7 @@ const PAIRS = [
   ["אין הצעת זמן לאשר", "There's no time proposal to confirm"],
   ["הזמן כבר מאושר", "The time is already confirmed"],
   ["לא ניתן לאשר הצעת זמן שהצעת בעצמך", "You can't confirm a time proposal you made yourself"],
+  ["הזמן שהוצע כבר עבר, צריך להציע שעה חדשה", "That proposed time has already passed — propose a new time"],
   ["אי אפשר לתאם זמן למשחק שכבר דווח", "You can't schedule a time for a match that's already been reported"],
   ["ההזמנה עדיין לא אושרה", "The invite hasn't been accepted yet"],
   ["אין הצעת זמן לבטל", "There's no time proposal to cancel"],

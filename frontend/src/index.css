@@ -5903,6 +5903,10 @@ button:active { transform: translateY(1px); }
 }
 .sched-send:disabled { opacity: .45; cursor: default; }
 .sched-pending { margin: 10px 0 0; text-align: center; font: 600 11px "IBM Plex Mono", monospace; letter-spacing: .08em; color: #8b93a6; text-transform: uppercase; }
+.sched-expired-note {
+  margin: 0; padding: 14px; border-radius: 12px; background: #1a2029; text-align: center;
+  font: 600 13px "IBM Plex Sans Hebrew", var(--sans); color: #8b93a6;
+}
 
 .sched-bottom-row { margin-top: 16px; display: flex; align-items: center; justify-content: space-between; }
 .sched-other-link {

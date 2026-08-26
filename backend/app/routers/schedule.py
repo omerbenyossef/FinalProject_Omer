@@ -278,6 +278,8 @@ def confirm_match_schedule(
         raise HTTPException(status_code=400, detail="הזמן כבר מאושר")
     if match.scheduled_by == current_user.id:
         raise HTTPException(status_code=400, detail="לא ניתן לאשר הצעת זמן שהצעת בעצמך")
+    if _to_naive_utc(match.scheduled_at) < datetime.utcnow():
+        raise HTTPException(status_code=400, detail="הזמן שהוצע כבר עבר, צריך להציע שעה חדשה")
 
     match.schedule_confirmed = True
     db.commit()
