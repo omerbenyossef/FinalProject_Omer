@@ -16,7 +16,7 @@ import {
   currentRoundNumber,
   daysUntil,
   weekdayShort,
-  formatWeekdayTime,
+  formatWeekdayDateTime,
 } from "../matchUtils.js";
 import { SkeletonMatchRow } from "../Skeleton.jsx";
 import PageHelp from "../PageHelp.jsx";
@@ -132,7 +132,7 @@ function ToPlayCard({
   const myNtrpText = myNtrp != null ? myNtrp.toFixed(1) : "—";
   const oppNtrpText = oppNtrp != null ? oppNtrp.toFixed(1) : "—";
   const h2hText = `${h2h?.wins ?? 0}-${h2h?.losses ?? 0}`;
-  const timeText = m.scheduled_at ? formatWeekdayTime(new Date(m.scheduled_at)) : "not set";
+  const timeText = m.scheduled_at ? formatWeekdayDateTime(new Date(m.scheduled_at)) : "not set";
 
   let action = null;
   if (needsMyConfirm) {
