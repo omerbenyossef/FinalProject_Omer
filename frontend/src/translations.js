@@ -539,7 +539,7 @@ const PAIRS = [
   // Match scheduling
   ["קבע שעה", "Schedule"],
   ["הצע שעה", "Suggest a time"],
-  ["ממתין לאישור שעה", "Waiting for time to be confirmed"],
+  ["ממתין לאישור שעה: {datetime}", "Waiting for confirmation: {datetime}"],
   ["הוצע זמן: {datetime}", "Time proposed: {datetime}"],
   ["מתוזמן ל-{datetime}", "Scheduled for {datetime}"],
   ["אשר שעה", "Confirm time"],

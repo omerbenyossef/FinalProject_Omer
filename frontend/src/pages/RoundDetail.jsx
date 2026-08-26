@@ -184,7 +184,10 @@ export default function RoundDetail() {
               <div className="round-my-match-name">{t("מול {name}", { name: myOpponent.name })}</div>
               {myScheduleState === "proposed_by_me" && (
                 <div className="round-my-match-h2h">
-                  {t("ממתין לאישור שעה")} ·{" "}
+                  {t("ממתין לאישור שעה: {datetime}", {
+                    datetime: formatDayMonthTime(new Date(myMatch.scheduled_at)),
+                  })}{" "}
+                  ·{" "}
                   <button type="button" className="fx-cancel-link" onClick={handleDeclineSchedule} disabled={busy}>
                     {t("ביטול")}
                   </button>
