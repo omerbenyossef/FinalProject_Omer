@@ -4,7 +4,14 @@ import { api } from "../api";
 import { useLanguage } from "../LanguageContext.jsx";
 import { ChevronIcon } from "../Icons.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
-import { formatSets, formatWeekdayTime, hasHebrewChars, roundDueDateObj, timeAgoLabel, daysWord } from "../matchUtils.js";
+import {
+  formatSets,
+  formatWeekdayDateTime,
+  hasHebrewChars,
+  roundDueDateObj,
+  timeAgoLabel,
+  daysWord,
+} from "../matchUtils.js";
 
 export default function MatchSchedule() {
   const { matchId } = useParams();
@@ -109,7 +116,7 @@ export default function MatchSchedule() {
 
         <div className="sched-hero">
           <div className="sched-hero-time" dir="ltr">
-            {formatWeekdayTime(scheduledDate)}
+            {formatWeekdayDateTime(scheduledDate)}
           </div>
           {detail.court && <div className="sched-hero-court">{detail.court}</div>}
           <div className="sched-hero-meta" dir="ltr">
@@ -162,7 +169,7 @@ export default function MatchSchedule() {
         <h1 className="sched-title">{t("מול {name}", { name: detail.opponent.name })}</h1>
         <div className="sched-hero">
           <div className="sched-hero-time" dir="ltr">
-            {formatWeekdayTime(scheduledDate)}
+            {formatWeekdayDateTime(scheduledDate)}
           </div>
           {detail.court && <div className="sched-hero-court">{detail.court}</div>}
         </div>
@@ -187,7 +194,7 @@ export default function MatchSchedule() {
       <h1 className="sched-title">{t("מול {name}", { name: detail.opponent.name })}</h1>
       <div className="sched-hero">
         <div className="sched-hero-time" dir="ltr">
-          {formatWeekdayTime(scheduledDate)}
+          {formatWeekdayDateTime(scheduledDate)}
         </div>
         {detail.court && <div className="sched-hero-court">{detail.court}</div>}
       </div>

@@ -47,6 +47,15 @@ export function weekdayShort(date) {
   return WEEKDAY_SHORT[date.getDay()];
 }
 
+// formatWeekdayTime plus the calendar date — for screens where deciding
+// whether you can make it depends on knowing which day it actually is, not
+// just which weekday.
+export function formatWeekdayDateTime(date) {
+  const h = String(date.getHours()).padStart(2, "0");
+  const m = String(date.getMinutes()).padStart(2, "0");
+  return `${WEEKDAY_SHORT[date.getDay()]} ${formatDayMonth(date)} · ${h}:${m}`;
+}
+
 // Whole days between now and a future date, or null if it's already passed —
 // callers drop the countdown entirely rather than show a negative/zero one
 // (firstdayandemptystates109.md rule 1: no content, no placeholder).
