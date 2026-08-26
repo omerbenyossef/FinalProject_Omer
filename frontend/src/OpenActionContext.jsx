@@ -61,9 +61,15 @@ export function OpenActionProvider({ children }) {
     [nextMatches, selectedSportId]
   );
 
+  // Once you're already on the screen an item would send you to, it's not
+  // "something to go do" anymore — drop it so the tabbar button (and its
+  // count) don't keep pointing at the page you're already looking at.
   const relevantItems = useMemo(
-    () => openItems.filter((item) => item.sport_id === selectedSportId),
-    [openItems, selectedSportId]
+    () =>
+      openItems.filter(
+        (item) => item.sport_id === selectedSportId && openItemRoute(item) !== location.pathname
+      ),
+    [openItems, selectedSportId, location.pathname]
   );
 
   const itemCount = relevantItems.length;
