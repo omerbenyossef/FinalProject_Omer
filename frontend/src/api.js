@@ -103,7 +103,7 @@ export const api = {
         (lat != null ? `lat=${lat}&` : "") +
         (lng != null ? `lng=${lng}` : "")
     ),
-  joinLeagueByCode: (code) => request("/leagues/join-by-code", { method: "POST", body: { code } }),
+  resolveJoinCode: (code) => request(`/leagues/resolve-code/${code}`),
 
   headToHead: (opponentId) => request(`/players/${opponentId}/head-to-head`),
   playerProfile: (playerId, sportId) => request(`/players/${playerId}?sport_id=${sportId}`),

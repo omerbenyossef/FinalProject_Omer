@@ -6,6 +6,7 @@ import { getCurrentPosition } from "../geo.js";
 import { ChevronIcon } from "../Icons.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
 import { leagueRuleLabels, weekdayShort } from "../matchUtils.js";
+import RatingQuestionnaire from "../RatingQuestionnaire.jsx";
 
 export default function LeaguePreview() {
   const { leagueId } = useParams();
@@ -17,6 +18,7 @@ export default function LeaguePreview() {
   const [busy, setBusy] = useState(false);
   const [joinedNow, setJoinedNow] = useState(false);
   const [inviteCode, setInviteCode] = useState(null);
+  const [showRatingGate, setShowRatingGate] = useState(false);
 
   useEffect(() => {
     getCurrentPosition().then((position) => {
@@ -38,14 +40,36 @@ export default function LeaguePreview() {
     setBusy(true);
     setError("");
     try {
-      await api.joinLeague(leagueId);
+      const check = await api.checkRating(leagueId);
+      if (check.has_rating) {
+        await finishJoin();
+      } else {
+        setShowRatingGate(true);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function finishJoin() {
+    await api.joinLeague(leagueId);
+    const code = await api.getInviteCode(leagueId);
+    setInviteCode(code.code);
+    setJoinedNow(true);
+  }
+
+  // The questionnaire already calls join itself once it has an answer, so
+  // this only needs to pick up where handleJoin left off.
+  async function handleRatingJoined() {
+    setShowRatingGate(false);
+    try {
       const code = await api.getInviteCode(leagueId);
       setInviteCode(code.code);
       setJoinedNow(true);
     } catch (err) {
       setError(err.message);
-    } finally {
-      setBusy(false);
     }
   }
 
@@ -223,6 +247,15 @@ export default function LeaguePreview() {
         {busy ? t("מצטרף...") : t("הצטרף לליגה")}
       </button>
       <p className="lp-free">{t("FREE · LEAVE ANYTIME BEFORE R1")}</p>
+
+      {showRatingGate && (
+        <RatingQuestionnaire
+          league={{ id: Number(leagueId), name: preview.name }}
+          sportName={preview.sport_name}
+          onClose={() => setShowRatingGate(false)}
+          onJoined={handleRatingJoined}
+        />
+      )}
     </div>
   );
 }

@@ -16,8 +16,8 @@ export default function JoinByCode() {
     setBusy(true);
     setError("");
     try {
-      const league = await api.joinLeagueByCode(code.trim());
-      navigate(`/leagues/${league.id}`);
+      const league = await api.resolveJoinCode(code.trim());
+      navigate(`/leagues/${league.id}?code=${code.trim()}`);
     } catch (err) {
       setError(err.message);
     } finally {

@@ -567,6 +567,22 @@ def list_open_leagues(
     ]
 
 
+@router.get("/resolve-code/{code}", response_model=schemas.LeagueCodeLookupOut)
+def resolve_join_code(
+    code: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Looks a join code up without joining, so the frontend can route to
+    the league's own page (and its rating-questionnaire gate) instead of
+    calling /join-by-code blind and hitting the rating requirement as a
+    dead-end error."""
+    league = db.query(models.League).filter(models.League.join_code == code.strip().upper()).first()
+    if not league:
+        raise HTTPException(status_code=404, detail="קוד הזמנה לא נמצא")
+    return schemas.LeagueCodeLookupOut(id=league.id)
+
+
 @router.post("/join-by-code", response_model=schemas.LeagueOut)
 def join_league_by_code(
     payload: schemas.JoinByCodeRequest,
@@ -750,6 +766,8 @@ def preview_league(
     return schemas.LeaguePreviewOut(
         id=league.id,
         name=league.name,
+        sport_id=league.sport_id,
+        sport_name=league.sport.name,
         location_name=league.location_name,
         distance_km=distance_km,
         starts_at=league.starts_at,

@@ -229,6 +229,8 @@ class OpenLeagueOut(BaseModel):
 class LeaguePreviewOut(BaseModel):
     id: int
     name: str
+    sport_id: int
+    sport_name: str
     location_name: Optional[str] = None
     distance_km: Optional[float] = None
     starts_at: Optional[datetime] = None
@@ -247,6 +249,10 @@ class LeaguePreviewOut(BaseModel):
 
 class JoinByCodeRequest(BaseModel):
     code: str
+
+
+class LeagueCodeLookupOut(BaseModel):
+    id: int
 
 
 class MemberOut(BaseModel):
