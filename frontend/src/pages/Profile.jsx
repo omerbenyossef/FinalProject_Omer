@@ -880,8 +880,10 @@ export default function Profile() {
                     onClick={() => navigate(`/leagues/${l.id}`)}
                   >
                     <span className="home-league-main">
-                      <span className="home-league-name" dir="auto">
-                        {l.name}
+                      <span className="home-league-name">
+                        <span dir="auto" style={{ unicodeBidi: "isolate" }}>
+                          {l.name}
+                        </span>
                       </span>
                       <span className="home-league-meta" dir="ltr">
                         {metaParts.join(" · ")}
