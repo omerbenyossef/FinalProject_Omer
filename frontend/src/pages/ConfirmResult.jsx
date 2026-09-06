@@ -113,7 +113,7 @@ export default function ConfirmResult() {
         {detail.round_number ? (
           <>
             {hasHebrewChars(detail.league_name) ? (
-              <span className="sched-sub-sans" dir="auto">
+              <span className="sched-sub-sans" dir="auto" style={{ unicodeBidi: "isolate" }}>
                 {detail.league_name}
               </span>
             ) : (
@@ -141,7 +141,7 @@ export default function ConfirmResult() {
           </div>
         </div>
         <div className="res-score-row">
-          <span className="res-score-name" dir="auto">
+          <span className="res-score-name" dir="auto" style={{ unicodeBidi: "isolate" }}>
             {detail.opponent.name}
           </span>
           <div className="res-score-sets" dir="ltr">

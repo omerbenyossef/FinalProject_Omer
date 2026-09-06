@@ -111,7 +111,7 @@ export default function ProposeSchedule() {
         {detail.round_number ? (
           <>
             {hasHebrewChars(detail.league_name) ? (
-              <span className="sched-sub-sans" dir="auto">
+              <span className="sched-sub-sans" dir="auto" style={{ unicodeBidi: "isolate" }}>
                 {detail.league_name}
               </span>
             ) : (

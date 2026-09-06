@@ -205,8 +205,8 @@ function IdentityRow({ label, value, placeholder, unit, type = "text", required,
           dir={type === "number" ? "ltr" : undefined}
         />
       ) : (
-        <button type="button" className="settings-id-value" onClick={startEdit} disabled={saving} dir="auto">
-          {displayValue}
+        <button type="button" className="settings-id-value" onClick={startEdit} disabled={saving}>
+          <span dir="auto" style={{ unicodeBidi: "isolate" }}>{displayValue}</span>
         </button>
       )}
       {error && <p className="error">{t(error)}</p>}
@@ -595,7 +595,7 @@ function LeaveLeagueRow() {
                     setTarget(l);
                   }}
                 >
-                  <span dir="auto">{l.name}</span>
+                  <span dir="auto" style={{ unicodeBidi: "isolate" }}>{l.name}</span>
                 </button>
               ))}
             </div>

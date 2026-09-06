@@ -160,7 +160,7 @@ export default function PlayerProfile() {
                         context
                       ) : (
                         <>
-                          <span dir="auto">{m.league_name}</span> · R{m.round_number}
+                          <span dir="auto" style={{ unicodeBidi: "isolate" }}>{m.league_name}</span> · R{m.round_number}
                         </>
                       )}
                     </span>

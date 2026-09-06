@@ -219,7 +219,7 @@ export default function RatingQuestionnaire({
             </p>
             <Link to={`/leagues/${result.league_id}`} className="rating-league-row">
               <span className="rating-league-name">
-                <span dir="auto">{result.league_name}</span>
+                <span dir="auto" style={{ unicodeBidi: "isolate" }}>{result.league_name}</span>
               </span>
               <span className="rating-league-range" dir="ltr">
                 NTRP {result.league_level_min.toFixed(1)}–{result.league_level_max.toFixed(1)}
@@ -267,7 +267,7 @@ export default function RatingQuestionnaire({
                 {result.other_leagues.map((l) => (
                   <Link to={`/leagues/${l.id}`} key={l.id} className="rating-league-row">
                     <span className="rating-league-name">
-                      <span dir="auto">{l.name}</span>
+                      <span dir="auto" style={{ unicodeBidi: "isolate" }}>{l.name}</span>
                     </span>
                     <span className="rating-league-range" dir="ltr">
                       NTRP {l.level_min.toFixed(1)}–{l.level_max.toFixed(1)}

@@ -325,8 +325,8 @@ function SoloLeagueHero({ league, members, standings, t }) {
         <div className="home-solo-who-label">{t("WHO IS IN")}</div>
         {shown.map((m) => (
           <div className="home-solo-who-row" key={m.id}>
-            <span className="home-solo-who-name" dir="auto">
-              {m.name}
+            <span className="home-solo-who-name">
+              <span dir="auto" style={{ unicodeBidi: "isolate" }}>{m.name}</span>
             </span>
             {levelByUser.get(m.id) != null && (
               <span className="home-solo-who-ntrp" dir="ltr">

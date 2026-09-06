@@ -118,8 +118,8 @@ export default function CorrectScore() {
           ))}
         </div>
         <div className="corr-row">
-          <span className="corr-name" dir="auto">
-            {detail.opponent.name}
+          <span className="corr-name">
+            <span dir="auto" style={{ unicodeBidi: "isolate" }}>{detail.opponent.name}</span>
           </span>
           {theirs.map((v, i) => (
             <input

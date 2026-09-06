@@ -112,7 +112,7 @@ export default function Layout({ children }) {
                     {openAction.subParts.map((part, i) => (
                       <span key={i} style={{ display: "contents" }}>
                         {i > 0 && <span aria-hidden="true">·</span>}
-                        <span dir="auto">{part}</span>
+                        <span dir="auto" style={{ unicodeBidi: "isolate" }}>{part}</span>
                       </span>
                     ))}
                   </span>

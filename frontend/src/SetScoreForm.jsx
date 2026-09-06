@@ -47,10 +47,10 @@ export default function SetScoreForm({
       <div className="score-head">
         <span className="score-head-spacer" />
         <span className="score-head-name">
-          <span dir="auto">{player1Name}</span>
+          <span dir="auto" style={{ unicodeBidi: "isolate" }}>{player1Name}</span>
         </span>
         <span className="score-head-name">
-          <span dir="auto">{player2Name}</span>
+          <span dir="auto" style={{ unicodeBidi: "isolate" }}>{player2Name}</span>
         </span>
       </div>
 

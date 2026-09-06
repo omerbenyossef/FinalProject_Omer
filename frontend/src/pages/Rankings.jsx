@@ -145,7 +145,7 @@ export default function Rankings() {
     <div className="rk-page" ref={pageWrapRef} style={pageHeight ? { height: `${pageHeight}px` } : undefined}>
       <header className="rk-head">
         <p className="rk-eyebrow" dir="ltr">
-          {t("YOUR PLACE")} · <span dir="auto">{me?.display_name ?? user.name}</span>
+          {t("YOUR PLACE")} · <span dir="auto" style={{ unicodeBidi: "isolate" }}>{me?.display_name ?? user.name}</span>
         </p>
 
         {!loading && sportReady && meNoRating ? (
@@ -250,12 +250,12 @@ export default function Rankings() {
               </span>
               <span className="rk-who">
                 {p.id === user.id ? (
-                  <span className="rk-name" dir="auto">
-                    {p.display_name}
+                  <span className="rk-name">
+                    <span dir="auto" style={{ unicodeBidi: "isolate" }}>{p.display_name}</span>
                   </span>
                 ) : (
-                  <Link to={`/players/${p.id}`} className="rk-name player-name-link" dir="auto">
-                    {p.display_name}
+                  <Link to={`/players/${p.id}`} className="rk-name player-name-link">
+                    <span dir="auto" style={{ unicodeBidi: "isolate" }}>{p.display_name}</span>
                   </Link>
                 )}
                 <span className="rk-sub" dir="ltr">
@@ -294,8 +294,8 @@ export default function Rankings() {
                 {me.rank}
               </span>
               <span className="rk-who">
-                <span className="rk-name" dir="auto">
-                  {me.display_name}
+                <span className="rk-name">
+                  <span dir="auto" style={{ unicodeBidi: "isolate" }}>{me.display_name}</span>
                   <span className="rk-you"> · you</span>
                 </span>
                 <span className="rk-sub" dir="ltr">

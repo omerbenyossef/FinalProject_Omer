@@ -69,7 +69,7 @@ export default function LeagueRounds() {
       <header className="page-head">
         <Link to={`/leagues/${leagueId}`} className="back-link">
           <ChevronIcon aria-hidden="true" />
-          <span dir="auto">{league.name}</span>
+          <span dir="auto" style={{ unicodeBidi: "isolate" }}>{league.name}</span>
         </Link>
         <h1 className="rounds-title">{t("מחזורים")}</h1>
         <div className="rounds-summary">

@@ -40,7 +40,7 @@ function LeagueCarouselCard({ league, standingsRows, openAction, userId, t, navi
       <div className="lg-card-top">
         <div className="lg-card-id">
           <Link to={`/leagues/${league.id}`} className="lg-card-name">
-            <span dir="auto">{league.name}</span>
+            <span dir="auto" style={{ unicodeBidi: "isolate" }}>{league.name}</span>
           </Link>
           <div className="lg-card-meta" dir="ltr">
             {currentRound !== null
@@ -80,10 +80,10 @@ function LeagueCarouselCard({ league, standingsRows, openAction, userId, t, navi
                 </span>
                 <span className="lg-sname">
                   {row.user.id === userId ? (
-                    <span dir="auto">{row.user.name}</span>
+                    <span dir="auto" style={{ unicodeBidi: "isolate" }}>{row.user.name}</span>
                   ) : (
-                    <Link to={`/players/${row.user.id}`} className="player-name-link" dir="auto">
-                      {row.user.name}
+                    <Link to={`/players/${row.user.id}`} className="player-name-link">
+                      <span dir="auto" style={{ unicodeBidi: "isolate" }}>{row.user.name}</span>
                     </Link>
                   )}
                 </span>
@@ -103,7 +103,7 @@ function LeagueCarouselCard({ league, standingsRows, openAction, userId, t, navi
               {openAction.subParts.map((part, i) => (
                 <span key={i} style={{ display: "contents" }}>
                   {i > 0 && <span aria-hidden="true"> · </span>}
-                  <span dir="auto">{part}</span>
+                  <span dir="auto" style={{ unicodeBidi: "isolate" }}>{part}</span>
                 </span>
               ))}
             </span>
@@ -401,7 +401,7 @@ export default function Leagues() {
               <Link to={`/leagues/${league.id}/preview`} key={league.id} className="open-league-row">
                 <div className="open-league-body">
                   <div className="open-league-name">
-                    <span dir="auto">{league.name}</span>
+                    <span dir="auto" style={{ unicodeBidi: "isolate" }}>{league.name}</span>
                   </div>
                   <div className="open-league-meta" dir="ltr">
                     {league.member_count} {t("שחקנים")} · {ruleLabels.frequencyLabel} · {ruleLabels.bestOfLabel} · NTRP{" "}
