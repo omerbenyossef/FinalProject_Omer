@@ -2757,6 +2757,24 @@ input, select {
 
 input:hover, select:hover { border-color: var(--court); }
 
+/* Undo the browser/password-manager's default yellow autofill background —
+   WebKit ignores a plain `background` on an autofilled field, so an inset
+   box-shadow is the only way to override it. The long transition kills the
+   yellow flash that otherwise shows for a moment right on load. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+select:-webkit-autofill {
+  -webkit-text-fill-color: var(--ink);
+  -webkit-box-shadow: 0 0 0 1000px var(--card-alt) inset;
+  box-shadow: 0 0 0 1000px var(--card-alt) inset;
+  caret-color: var(--ink);
+  transition: background-color 9999s ease-out 0s;
+  font: inherit;
+  font-size: 15.5px;
+}
+
 button {
   cursor: pointer;
   font: inherit;
@@ -2927,6 +2945,16 @@ button:active { transform: translateY(1px); }
 }
 
 .signfield-input:hover { border-color: var(--ink); }
+
+/* These fields are transparent, sitting right on the sign-in/sign-up page
+   background — override the general autofill fix's card color to match. */
+.signfield-input:-webkit-autofill,
+.signfield-input:-webkit-autofill:hover,
+.signfield-input:-webkit-autofill:focus,
+.signfield-input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px var(--paper) inset;
+  box-shadow: 0 0 0 1000px var(--paper) inset;
+}
 
 .signfield-input-name {
   font-family: var(--sans);
@@ -5001,6 +5029,16 @@ button:active { transform: translateY(1px); }
   outline: none;
 }
 
+/* Transparent field on the #151a21 bottom sheet, not the page background —
+   override the general autofill fix's card color to match. */
+.sheet-input:-webkit-autofill,
+.sheet-input:-webkit-autofill:hover,
+.sheet-input:-webkit-autofill:focus,
+.sheet-input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #151a21 inset;
+  box-shadow: 0 0 0 1000px #151a21 inset;
+}
+
 .sheet-chips {
   display: flex;
   flex-wrap: wrap;
@@ -5594,6 +5632,15 @@ button:active { transform: translateY(1px); }
 .schedule-form-input:focus {
   outline: none;
   border-bottom-color: var(--court);
+}
+
+/* Transparent field sitting on the page background, same as .signfield-input. */
+.schedule-form-input:-webkit-autofill,
+.schedule-form-input:-webkit-autofill:hover,
+.schedule-form-input:-webkit-autofill:focus,
+.schedule-form-input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px var(--paper) inset;
+  box-shadow: 0 0 0 1000px var(--paper) inset;
 }
 
 /* Rankings screen (99b) */
