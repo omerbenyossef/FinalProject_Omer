@@ -60,7 +60,7 @@ export default function FriendlyNew() {
     setError("");
     try {
       const { token } = await api.createFriendlyInviteLink(selectedSportId);
-      const url = `${window.location.origin}/register?friendly=${token}`;
+      const url = `${window.location.origin}/signup?friendly=${token}`;
       if (navigator.share) {
         await navigator.share({ url });
       } else if (navigator.clipboard) {
