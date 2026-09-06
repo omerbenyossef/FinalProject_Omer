@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { useLanguage } from "../LanguageContext.jsx";
 import { ChevronIcon } from "../Icons.jsx";
@@ -101,7 +101,11 @@ export default function Operator() {
                 {data.flagged.map((item) => {
                   const progress = opsProgress(item, t);
                   return (
-                    <div className={`ops-flagged-row ops-flag-${item.flag}`} key={item.league_id}>
+                    <Link
+                      to={`/leagues/${item.league_id}`}
+                      className={`ops-flagged-row ops-flag-${item.flag}`}
+                      key={item.league_id}
+                    >
                       <div className="ops-flagged-name">{item.league_name}</div>
                       <div className="ops-flagged-tag" dir="ltr">
                         {opsTagText(item, t)}
@@ -126,7 +130,7 @@ export default function Operator() {
                       <div className="ops-flagged-reason" dir="ltr">
                         {opsReasonLine(item, t)}
                       </div>
-                    </div>
+                    </Link>
                   );
                 })}
               </div>
@@ -138,12 +142,12 @@ export default function Operator() {
               <div className="ops-section-title">{t("RUNNING FINE")}</div>
               <div className="ops-healthy-list">
                 {visibleHealthy.map((league) => (
-                  <div className="ops-healthy-row" key={league.league_id}>
+                  <Link to={`/leagues/${league.league_id}`} className="ops-healthy-row" key={league.league_id}>
                     <div className="ops-healthy-name">{league.league_name}</div>
                     <div className="ops-healthy-meta" dir="ltr">
                       {opsHealthyLine(league, t)}
                     </div>
-                  </div>
+                  </Link>
                 ))}
                 {extraHealthy > 0 && (
                   <div className="ops-healthy-more" dir="ltr">

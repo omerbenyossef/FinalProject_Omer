@@ -6236,7 +6236,10 @@ button:active { transform: translateY(1px); }
 }
 
 .ops-flagged-list { display: flex; flex-direction: column; }
-.ops-flagged-row { padding: 14px 0; border-top: 1px solid rgba(148, 163, 184, .14); }
+.ops-flagged-row {
+  display: block; padding: 14px 0; border-top: 1px solid rgba(148, 163, 184, .14);
+  color: inherit; text-decoration: none;
+}
 .ops-flagged-row:first-child { border-top: 0; }
 .ops-flagged-name { font: 700 18px "IBM Plex Sans", var(--sans); color: #eef1f7; }
 .ops-flagged-tag {
@@ -6257,6 +6260,7 @@ button:active { transform: translateY(1px); }
 .ops-healthy-row {
   display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
   padding: 9px 0; border-top: 1px solid rgba(148, 163, 184, .1);
+  color: inherit; text-decoration: none;
 }
 .ops-healthy-row:first-child { border-top: 0; }
 .ops-healthy-name {

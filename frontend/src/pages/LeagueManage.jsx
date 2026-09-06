@@ -45,15 +45,20 @@ export default function LeagueManage() {
   }, [leagueId]);
 
   const isCreator = !!(league && user && league.created_by === user.id);
+  // Backend-wise, only the creator can edit rules or see the invite code
+  // (get_invite_code requires membership); delete is the one action the
+  // admin can also take, on any league, so that's what canAccess unlocks
+  // for a non-creator admin — everything else below still checks isCreator.
+  const canAccess = isCreator || !!user?.is_admin;
 
   useEffect(() => {
-    if (league && user && !isCreator) {
+    if (league && user && !canAccess) {
       navigate(`/leagues/${leagueId}`, { replace: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [league, user, isCreator]);
+  }, [league, user, canAccess]);
 
-  if (!league || !isCreator) {
+  if (!league || !canAccess) {
     return (
       <div>
         <SkeletonPageHeader />
@@ -133,6 +138,13 @@ export default function LeagueManage() {
 
       {error && <p className="error">{t(error)}</p>}
 
+      {!isCreator && (
+        <p className="muted">
+          {t("אתה נכנס לכאן כמנהל המערכת — הליגה הזו אינה שלך, ואפשר רק למחוק אותה.")}
+        </p>
+      )}
+
+      {isCreator && (
       <div className="manage-nav-list">
         <button type="button" className="manage-nav-row" onClick={() => toggle("rules")}>
           <div>
@@ -191,6 +203,7 @@ export default function LeagueManage() {
           <ChevronIcon className="manage-nav-chevron chevron-icon" aria-hidden="true" />
         </Link>
       </div>
+      )}
 
       <div className="danger-zone">
         <div className="danger-zone-title">{t("אזור מסוכן")}</div>

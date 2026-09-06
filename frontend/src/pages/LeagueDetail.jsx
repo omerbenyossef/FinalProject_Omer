@@ -408,7 +408,7 @@ export default function LeagueDetail() {
               title="עמוד הליגה"
               text="כאן תראו את טבלת הדירוג, את המשחקים שלכם ושל שאר חברי הליגה, ואת הסטטיסטיקה האישית שלכם בליגה הזו."
             />
-            {isCreator && (
+            {(isCreator || user?.is_admin) && (
               <Link to={`/leagues/${leagueId}/manage`} className="ld-head-settings" aria-label={t("הגדרות הליגה")}>
                 <SettingsIcon aria-hidden="true" />
               </Link>
