@@ -647,10 +647,15 @@ def create_league(
     db.commit()
     db.refresh(league)
 
-    membership = models.LeagueMembership(league_id=league.id, user_id=current_user.id)
-    db.add(membership)
-    db.commit()
-    db.refresh(league)
+    # A private league is a friends group the creator obviously plays in
+    # too, so they join it like anyone else would. An open league is the
+    # admin curating something for other people to join and play — not a
+    # personal signup, so it starts empty instead of auto-seating them.
+    if not league_in.is_open:
+        membership = models.LeagueMembership(league_id=league.id, user_id=current_user.id)
+        db.add(membership)
+        db.commit()
+        db.refresh(league)
 
     return _to_league_out(league)
 
