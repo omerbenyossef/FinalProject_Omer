@@ -489,10 +489,18 @@ def list_open_leagues(
     full leagues always last, at most one BEST_FIT (needs a real rating —
     never fabricated for an unrated viewer)."""
     _auto_confirm_overdue(db)
+    member_league_ids = {
+        m.league_id
+        for m in db.query(models.LeagueMembership).filter(models.LeagueMembership.user_id == current_user.id).all()
+    }
     leagues = (
         db.query(models.League)
         .options(joinedload(models.League.sport), joinedload(models.League.memberships))
-        .filter(models.League.sport_id == sport_id, models.League.is_open.is_(True))
+        .filter(
+            models.League.sport_id == sport_id,
+            models.League.is_open.is_(True),
+            models.League.id.notin_(member_league_ids) if member_league_ids else True,
+        )
         .all()
     )
 

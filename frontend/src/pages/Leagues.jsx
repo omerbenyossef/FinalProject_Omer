@@ -46,6 +46,8 @@ function LeagueCarouselCard({ league, standingsRows, openAction, userId, t, navi
             {currentRound !== null
               ? `${t("מחזור {n}", { n: currentRound })} · ${daysLeftPhrase(daysLeft, t)}`
               : `${league.my_members_total} ${t("שחקנים")}`}
+            {" · "}
+            {league.is_open ? "PUBLIC" : "PRIVATE"}
           </div>
         </div>
         <div className="lg-card-rank">
@@ -291,7 +293,8 @@ export default function Leagues() {
   }
 
   const bySelectedSport = (l) => l.sport.id === selectedSportId;
-  const openLeagues = leagues.filter((l) => l.is_open && bySelectedSport(l));
+  const myLeagueIds = new Set(myLeagues.map((l) => l.id));
+  const openLeagues = leagues.filter((l) => l.is_open && bySelectedSport(l) && !myLeagueIds.has(l.id));
   const myLeaguesForSport = myLeagues.filter(bySelectedSport);
   const selectedSport = sports.find((s) => s.id === selectedSportId);
 
@@ -339,7 +342,7 @@ export default function Leagues() {
       {user && !loading && myLeaguesForSport.length > 0 && (
         <>
           <div className="lg-head">
-            <h2 className="lg-title">{t("ליגות")}</h2>
+            <h2 className="lg-title">{t("הליגות שלי")}</h2>
             {myLeaguesForSport.length > 1 && (
               <span className="lg-count" dir="ltr">
                 {active + 1} / {myLeaguesForSport.length}
