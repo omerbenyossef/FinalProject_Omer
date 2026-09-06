@@ -363,11 +363,13 @@ export default function Profile() {
   const [activeToPlay, setActiveToPlay] = useState(0);
   const [standingsByLeague, setStandingsByLeague] = useState({});
   const [h2hByOpponent, setH2hByOpponent] = useState({});
+  const [friendlyNtrpByOpponent, setFriendlyNtrpByOpponent] = useState({});
   const [allLeagues, setAllLeagues] = useState([]);
   const [soloMembers, setSoloMembers] = useState([]);
   const carouselRef = useRef(null);
   const requestedLeagueStandingsRef = useRef(new Set());
   const requestedH2hRef = useRef(new Set());
+  const requestedFriendlyNtrpRef = useRef(new Set());
 
   useEffect(() => {
     api
@@ -560,6 +562,19 @@ export default function Profile() {
         .then((data) => setH2hByOpponent((prev) => ({ ...prev, [id]: data })))
         .catch(() => {});
     });
+
+    const friendlyOpponentIds = [
+      ...new Set(sortedToPlay.filter((e) => e.kind === "friendly").map(opponentIdFor)),
+    ];
+    friendlyOpponentIds.forEach((id) => {
+      const cacheKey = `${id}:${selectedSportId}`;
+      if (requestedFriendlyNtrpRef.current.has(cacheKey)) return;
+      requestedFriendlyNtrpRef.current.add(cacheKey);
+      api
+        .playerProfile(id, selectedSportId)
+        .then((data) => setFriendlyNtrpByOpponent((prev) => ({ ...prev, [cacheKey]: data.ntrp ?? null })))
+        .catch(() => {});
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortedToPlay.map((e) => e.match.id).join(",")]);
 
@@ -595,7 +610,9 @@ export default function Profile() {
   const extraHomeLeagues = sortedHomeLeagues.length - shownHomeLeagues.length;
 
   function oppNtrpFor(entry) {
-    if (entry.kind === "friendly") return null;
+    if (entry.kind === "friendly") {
+      return friendlyNtrpByOpponent[`${opponentIdFor(entry)}:${selectedSportId}`] ?? null;
+    }
     const rows = standingsByLeague[entry.league_id];
     const row = rows?.find((r) => r.user.id === opponentIdFor(entry));
     return row?.level ?? null;
