@@ -48,6 +48,8 @@ function LeagueCarouselCard({ league, standingsRows, openAction, userId, t, navi
               : `${league.my_members_total} ${t("שחקנים")}`}
             {" · "}
             {league.is_open ? "PUBLIC" : "PRIVATE"}
+            {league.is_open &&
+              ` · NTRP ${(league.level_min ?? 1.5).toFixed(1)}–${(league.level_max ?? 7.0).toFixed(1)}`}
           </div>
         </div>
         <div className="lg-card-rank">

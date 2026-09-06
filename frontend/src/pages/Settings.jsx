@@ -542,7 +542,7 @@ function LeaveLeagueRow() {
     api
       .myLeagues()
       .then((data) => {
-        setLeagues(data.filter((l) => l.created_by !== user.id));
+        setLeagues(data);
         setLoaded(true);
       })
       .catch(() => setLoaded(true));
@@ -612,7 +612,9 @@ function LeaveLeagueRow() {
             <div className="confirm-sheet-handle" />
             <div className="confirm-sheet-title">{t("לצאת מהליגה?")}</div>
             <p className="add-round-subtitle">
-              {t("התוצאות שלך יישארו בטבלה עד סוף המחזור. כדי לחזור תצטרך הזמנה חדשה.")}
+              {target.created_by === user.id
+                ? t("תמשיך לנהל את הליגה כרגיל, פשוט לא תהיה בה כשחקן.")
+                : t("התוצאות שלך יישארו בטבלה עד סוף המחזור. כדי לחזור תצטרך הזמנה חדשה.")}
             </p>
             {error && <p className="error">{t(error)}</p>}
             <div className="add-round-actions">

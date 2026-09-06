@@ -876,11 +876,9 @@ def leave_league(
 ):
     league = _get_league_or_404(db, league_id)
 
-    if league.created_by == current_user.id:
-        raise HTTPException(
-            status_code=400, detail="יוצר הליגה לא יכול לעזוב אותה, אפשר למחוק את הליגה"
-        )
-
+    # The creator can leave (stop being a player) without giving up
+    # ownership — created_by is untouched, so they keep managing/deleting
+    # the league; that's separate from whether they're also a participant.
     membership = (
         db.query(models.LeagueMembership)
         .filter(
@@ -913,7 +911,10 @@ def get_invite_code(
 ):
     league = _get_league_or_404(db, league_id)
     is_member = any(m.user_id == current_user.id for m in league.memberships)
-    if not is_member:
+    # The creator manages invites regardless of whether they're also a
+    # player — otherwise leaving their own league (allowed since they keep
+    # ownership) would lock them out of its own invite code.
+    if not is_member and league.created_by != current_user.id:
         raise HTTPException(status_code=403, detail="רק חברי הליגה יכולים לראות את קוד ההזמנה")
 
     if not league.join_code:
