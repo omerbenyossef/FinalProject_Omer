@@ -870,7 +870,7 @@ export default function Profile() {
                 `${l.member_count} players`,
                 cycleLabelEn(l),
                 round !== null ? `R${round}` : null,
-                `NTRP ${(l.level_min ?? 1.5).toFixed(1)}–${(l.level_max ?? 5.5).toFixed(1)}`,
+                l.is_open ? `NTRP ${(l.level_min ?? 1.5).toFixed(1)}–${(l.level_max ?? 5.5).toFixed(1)}` : null,
               ].filter(Boolean);
               return (
                 <li key={l.id}>

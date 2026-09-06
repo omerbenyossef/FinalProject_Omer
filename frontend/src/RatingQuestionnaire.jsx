@@ -185,6 +185,49 @@ export default function RatingQuestionnaire({
       );
     }
 
+    // A private league is joined by invite, not by matching a level range —
+    // its NTRP range is never enforced (see _join_league_core) and, per the
+    // same reasoning, shouldn't be shown here either. Skip straight to a
+    // plain "join" button instead of the range/fit messaging below.
+    if (league?.is_open === false) {
+      return (
+        <div className="rating-overlay">
+          <button type="button" className="rating-back" onClick={onClose}>
+            <ChevronIcon aria-hidden="true" />
+          </button>
+
+          <div className="rating-result-hero">
+            <div className="rating-hero-num" dir="ltr">
+              {result.level.toFixed(1)}
+            </div>
+            <div className="rating-hero-band">{t(result.band)}</div>
+            <div className="rating-hero-meta" dir="ltr">
+              NTRP · {t(sportName)} {result.provisional && <>· {t("זמני")}</>}
+            </div>
+          </div>
+
+          <div className="rating-bar">
+            {NTRP_STEPS.map((step_) => (
+              <span
+                key={step_}
+                className={`rating-bar-step${Math.abs(step_ - result.level) < 0.01 ? " current" : ""}${
+                  step_ <= result.level ? " filled" : ""
+                }`}
+              />
+            ))}
+          </div>
+
+          {result.provisional && <p className="rating-provisional-note">{t("זמני למשך 3 משחקים")}</p>}
+
+          {error && <p className="error">{t(error)}</p>}
+
+          <button type="button" className="rating-primary-btn" onClick={handleJoinClick} disabled={joining}>
+            {joining ? t("מצטרף...") : t("הצטרפ/י ל-{league}", { league: result.league_name })}
+          </button>
+        </div>
+      );
+    }
+
     return (
       <div className="rating-overlay">
         <button type="button" className="rating-back" onClick={onClose}>
