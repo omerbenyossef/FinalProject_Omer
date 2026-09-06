@@ -249,22 +249,21 @@ def report_friendly_score(
         raise HTTPException(status_code=403, detail="Not a participant in this match")
     if match.invite_status != models.FriendlyInviteStatus.accepted:
         raise HTTPException(status_code=400, detail="ההזמנה עדיין לא אושרה")
-    if match.status == models.MatchStatus.pending:
-        if match.scheduled_at is None or not match.schedule_confirmed:
-            raise HTTPException(status_code=400, detail="צריך לתאם ולאשר שעה למשחק לפני דיווח תוצאה")
-        if datetime.utcnow() < match.scheduled_at:
-            raise HTTPException(status_code=400, detail="אפשר לדווח תוצאה רק אחרי השעה שנקבעה למשחק")
+    if match.status != models.MatchStatus.pending:
+        raise HTTPException(status_code=400, detail="כבר יש תוצאה למשחק הזה — אפשר רק לאשר אותה או לערער עליה")
+    if match.scheduled_at is None or not match.schedule_confirmed:
+        raise HTTPException(status_code=400, detail="צריך לתאם ולאשר שעה למשחק לפני דיווח תוצאה")
+    if datetime.utcnow() < match.scheduled_at:
+        raise HTTPException(status_code=400, detail="אפשר לדווח תוצאה רק אחרי השעה שנקבעה למשחק")
     if not score_in.sets:
         raise HTTPException(status_code=400, detail="צריך לדווח לפחות סט אחד")
     if len(score_in.sets) > MAX_SETS:
         raise HTTPException(status_code=400, detail=f"אפשר לדווח עד {MAX_SETS} סטים במשחק ידידותי")
 
-    was_reported = match.status != models.MatchStatus.pending
     match.sets = [s.model_dump() for s in score_in.sets]
     match.player1_score = sum(1 for s in score_in.sets if s.player1_games > s.player2_games)
     match.player2_score = sum(1 for s in score_in.sets if s.player2_games > s.player1_games)
-    if not was_reported:
-        match.played_at = datetime.utcnow()
+    match.played_at = datetime.utcnow()
     match.reported_by = current_user.id
     match.requires_confirmation = score_in.require_confirmation
 
