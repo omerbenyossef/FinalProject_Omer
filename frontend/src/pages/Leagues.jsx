@@ -462,24 +462,28 @@ export default function Leagues() {
               ))}
             </div>
 
-            <div className="sheet-label">{t("מי יכול להצטרף")}</div>
-            <div className="sheet-chips">
-              {OPEN_OPTIONS.map(([v, label]) => (
-                <button
-                  type="button"
-                  key={String(v)}
-                  onClick={() => setIsOpen(v)}
-                  className={`sheet-chip${isOpen === v ? " on" : ""}`}
-                >
-                  {t(label)}
-                </button>
-              ))}
-            </div>
-            <p className="sheet-sub">
-              {isOpen
-                ? t("הליגה תופיע ברשימת הליגות הפתוחות וכל אחד יכול להצטרף בלי קוד.")
-                : t("רק מי שקיבל ממך קישור הזמנה יכול להצטרף.")}
-            </p>
+            {user?.is_admin && (
+              <>
+                <div className="sheet-label">{t("מי יכול להצטרף")}</div>
+                <div className="sheet-chips">
+                  {OPEN_OPTIONS.map(([v, label]) => (
+                    <button
+                      type="button"
+                      key={String(v)}
+                      onClick={() => setIsOpen(v)}
+                      className={`sheet-chip${isOpen === v ? " on" : ""}`}
+                    >
+                      {t(label)}
+                    </button>
+                  ))}
+                </div>
+                <p className="sheet-sub">
+                  {isOpen
+                    ? t("הליגה תופיע ברשימת הליגות הפתוחות וכל אחד יכול להצטרף בלי קוד.")
+                    : t("רק מי שקיבל ממך קישור הזמנה יכול להצטרף.")}
+                </p>
+              </>
+            )}
 
             <div className="sheet-label">{t("טווח רמות (NTRP)")}</div>
             <div className="sheet-level-row" dir="ltr">
