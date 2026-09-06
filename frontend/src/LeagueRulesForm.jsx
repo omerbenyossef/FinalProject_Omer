@@ -30,8 +30,11 @@ export default function LeagueRulesForm({ league, onUpdate, onCancel }) {
       await onUpdate({
         best_of: bestOf,
         round_length_days: roundLengthDays,
-        level_min: levelMin,
-        level_max: levelMax,
+        // A private league is joined by personal invite, not by matching a
+        // level range, so the range fields are hidden for it — save the
+        // full range rather than whatever was set before (or left default).
+        level_min: league.is_open ? levelMin : NTRP_STEPS[0],
+        level_max: league.is_open ? levelMax : NTRP_STEPS[NTRP_STEPS.length - 1],
         capacity: capacity.trim() ? Number(capacity) : null,
         clear_capacity: !capacity.trim(),
         starts_at: startsAt ? new Date(startsAt).toISOString() : null,
@@ -65,33 +68,37 @@ export default function LeagueRulesForm({ league, onUpdate, onCancel }) {
           <option value={14}>{t("דו-שבועי")}</option>
         </select>
       </label>
-      <label>
-        {t("רמה מינימלית (NTRP)")}
-        <select
-          value={levelMin}
-          onChange={(e) => {
-            const v = Number(e.target.value);
-            setLevelMin(v);
-            if (v > levelMax) setLevelMax(v);
-          }}
-        >
-          {NTRP_STEPS.map((v) => (
-            <option key={v} value={v}>
-              {v.toFixed(1)}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label>
-        {t("רמה מקסימלית (NTRP)")}
-        <select value={levelMax} onChange={(e) => setLevelMax(Number(e.target.value))}>
-          {NTRP_STEPS.filter((v) => v >= levelMin).map((v) => (
-            <option key={v} value={v}>
-              {v.toFixed(1)}
-            </option>
-          ))}
-        </select>
-      </label>
+      {league.is_open && (
+        <>
+          <label>
+            {t("רמה מינימלית (NTRP)")}
+            <select
+              value={levelMin}
+              onChange={(e) => {
+                const v = Number(e.target.value);
+                setLevelMin(v);
+                if (v > levelMax) setLevelMax(v);
+              }}
+            >
+              {NTRP_STEPS.map((v) => (
+                <option key={v} value={v}>
+                  {v.toFixed(1)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            {t("רמה מקסימלית (NTRP)")}
+            <select value={levelMax} onChange={(e) => setLevelMax(Number(e.target.value))}>
+              {NTRP_STEPS.filter((v) => v >= levelMin).map((v) => (
+                <option key={v} value={v}>
+                  {v.toFixed(1)}
+                </option>
+              ))}
+            </select>
+          </label>
+        </>
+      )}
       <label>
         {t("קיבולת (אופציונלי)")}
         <input

@@ -825,10 +825,14 @@ def _join_league_core(
     rating = get_rating(db, current_user.id, league.sport_id)
     if not rating:
         raise HTTPException(status_code=400, detail="צריך למלא שאלון דירוג לענף הזה לפני ההצטרפות")
-    level_min = league.level_min if league.level_min is not None else models.RATING_MIN
-    level_max = league.level_max if league.level_max is not None else models.RATING_MAX
-    if not (level_min <= round_to_half(rating.level) <= level_max):
-        raise HTTPException(status_code=403, detail="הדירוג שלך מחוץ לטווח הרמות של הליגה הזו")
+    # A private league is joined by a personal invite (link or code), not by
+    # matching a level range — that range only means anything for a public
+    # league listing itself for strangers to browse and pick a fit from.
+    if league.is_open:
+        level_min = league.level_min if league.level_min is not None else models.RATING_MIN
+        level_max = league.level_max if league.level_max is not None else models.RATING_MAX
+        if not (level_min <= round_to_half(rating.level) <= level_max):
+            raise HTTPException(status_code=403, detail="הדירוג שלך מחוץ לטווח הרמות של הליגה הזו")
 
     membership = models.LeagueMembership(league_id=league.id, user_id=current_user.id)
     db.add(membership)

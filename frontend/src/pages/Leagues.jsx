@@ -277,8 +277,11 @@ export default function Leagues() {
         is_open: isOpen,
         best_of: bestOf,
         round_length_days: roundLen,
-        level_min: levelMin,
-        level_max: levelMax,
+        // A private league is joined by personal invite, not by matching a
+        // level range, so the range picker is hidden for it — send the full
+        // range rather than whatever was left over from a prior open toggle.
+        level_min: isOpen ? levelMin : NTRP_STEPS[0],
+        level_max: isOpen ? levelMax : NTRP_STEPS[NTRP_STEPS.length - 1],
         capacity: capacity.trim() ? Number(capacity) : null,
         starts_at: startsAt ? new Date(startsAt).toISOString() : null,
         location_name: locationName.trim() || null,
@@ -488,42 +491,46 @@ export default function Leagues() {
               </>
             )}
 
-            <div className="sheet-label">{t("טווח רמות (NTRP)")}</div>
-            <div className="sheet-level-row" dir="ltr">
-              <select
-                className="sheet-select"
-                value={levelMin}
-                onChange={(e) => {
-                  const v = Number(e.target.value);
-                  setLevelMin(v);
-                  if (v > levelMax) setLevelMax(v);
-                }}
-              >
-                {NTRP_STEPS.map((v) => (
-                  <option key={v} value={v}>
-                    {v.toFixed(1)}
-                  </option>
-                ))}
-              </select>
-              <span className="sheet-level-dash">–</span>
-              <select
-                className="sheet-select"
-                value={levelMax}
-                onChange={(e) => setLevelMax(Number(e.target.value))}
-              >
-                {NTRP_STEPS.filter((v) => v >= levelMin).map((v) => (
-                  <option key={v} value={v}>
-                    {v.toFixed(1)}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <p className="sheet-sub">
-              {t("רק שחקנים בדירוג {min}–{max} יוכלו להצטרף", {
-                min: levelMin.toFixed(1),
-                max: levelMax.toFixed(1),
-              })}
-            </p>
+            {isOpen && (
+              <>
+                <div className="sheet-label">{t("טווח רמות (NTRP)")}</div>
+                <div className="sheet-level-row" dir="ltr">
+                  <select
+                    className="sheet-select"
+                    value={levelMin}
+                    onChange={(e) => {
+                      const v = Number(e.target.value);
+                      setLevelMin(v);
+                      if (v > levelMax) setLevelMax(v);
+                    }}
+                  >
+                    {NTRP_STEPS.map((v) => (
+                      <option key={v} value={v}>
+                        {v.toFixed(1)}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="sheet-level-dash">–</span>
+                  <select
+                    className="sheet-select"
+                    value={levelMax}
+                    onChange={(e) => setLevelMax(Number(e.target.value))}
+                  >
+                    {NTRP_STEPS.filter((v) => v >= levelMin).map((v) => (
+                      <option key={v} value={v}>
+                        {v.toFixed(1)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <p className="sheet-sub">
+                  {t("רק שחקנים בדירוג {min}–{max} יוכלו להצטרף", {
+                    min: levelMin.toFixed(1),
+                    max: levelMax.toFixed(1),
+                  })}
+                </p>
+              </>
+            )}
 
             <label className="sheet-label" htmlFor="league-location">
               {t("מיקום (אופציונלי)")}
