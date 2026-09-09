@@ -636,7 +636,7 @@ export default function LeagueDetail() {
                         {rank}
                       </span>
                       <span className="standings-td-avatar">
-                        <Avatar name={row.user.name} size={24} />
+                        <Avatar name={row.user.name} size={30} />
                       </span>
                       <span className="standings-td-name">
                         {row.user.name}

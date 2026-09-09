@@ -555,7 +555,7 @@ a { color: var(--court); text-decoration: none; }
 .wordmark-sport {
   font-family: "IBM Plex Mono", var(--mono);
   font-weight: 500;
-  font-size: 12px;
+  font-size: 12.5px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--muted);
@@ -771,7 +771,7 @@ a { color: var(--court); text-decoration: none; }
 .tab-label {
   font-family: "Anton", var(--display);
   font-weight: 400;
-  font-size: 14px;
+  font-size: 14.5px;
   line-height: 1;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -1571,15 +1571,15 @@ a { color: var(--court); text-decoration: none; }
   gap: 6px;
   font-family: "IBM Plex Sans", var(--sans);
   font-weight: 700;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--muted);
   text-decoration: none;
   margin-bottom: 12px;
 }
 
 .back-link .chevron-icon {
-  width: 14px;
-  height: 14px;
+  width: 15px;
+  height: 15px;
   transform: scaleX(-1);
 }
 
@@ -1661,13 +1661,13 @@ a { color: var(--court); text-decoration: none; }
   color: #8b93a6;
 }
 .ld-head-settings svg {
-  width: 17px;
-  height: 17px;
+  width: 19px;
+  height: 19px;
 }
 
 .ld-title {
   margin: 14px 0 0;
-  font: 700 32px/1.1 "IBM Plex Sans", sans-serif;
+  font: 700 29px/1.1 "IBM Plex Sans", sans-serif;
   letter-spacing: -0.025em;
   color: #eef1f7;
   overflow: hidden;
@@ -1680,8 +1680,8 @@ a { color: var(--court); text-decoration: none; }
   display: flex;
   align-items: center;
   gap: 8px;
-  font: 500 11px "IBM Plex Mono", monospace;
-  letter-spacing: 0.06em;
+  font: 500 13px "IBM Plex Mono", monospace;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: #8b93a6;
 }
@@ -1700,18 +1700,18 @@ a { color: var(--court); text-decoration: none; }
 }
 .ld-tabs button {
   flex: 1;
-  padding: 13px 0;
+  padding: 14px 0;
   border: 0;
   background: none;
   cursor: pointer;
-  font: 500 11px "IBM Plex Mono", monospace;
+  font: 500 13.5px "IBM Plex Mono", monospace;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: #7b8496;
 }
 :lang(he) .ld-tabs button {
   font-family: "IBM Plex Sans", monospace;
-  letter-spacing: 0.04em;
+  letter-spacing: 0em;
 }
 .ld-tabs button.is-on {
   color: #eef1f7;
@@ -1745,7 +1745,7 @@ a { color: var(--court); text-decoration: none; }
 .ms-open-title {
   font-family: "IBM Plex Sans", var(--sans);
   font-weight: 700;
-  font-size: 16.5px;
+  font-size: 17.5px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1754,20 +1754,20 @@ a { color: var(--court); text-decoration: none; }
   margin-top: 4px;
   font-family: "IBM Plex Sans", var(--sans);
   font-weight: 500;
-  font-size: 11.5px;
+  font-size: 12.5px;
   color: var(--muted);
 }
 .ms-open-btn {
   flex: none;
-  height: 36px;
-  padding: 0 16px;
+  height: 38px;
+  padding: 0 17px;
   border: 0;
   border-radius: 18px;
   background: var(--court);
   color: var(--court-contrast);
   font-family: "IBM Plex Sans", var(--sans);
   font-weight: 700;
-  font-size: 13px;
+  font-size: 14px;
   cursor: pointer;
 }
 
@@ -1792,8 +1792,8 @@ a { color: var(--court); text-decoration: none; }
 .ms-quad-label {
   font-family: "IBM Plex Mono", var(--mono);
   font-weight: 500;
-  font-size: 10px;
-  letter-spacing: 0.16em;
+  font-size: 12px;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: #6f7787;
 }
@@ -1804,7 +1804,7 @@ a { color: var(--court); text-decoration: none; }
   gap: 5px;
   font-family: "Anton", var(--display);
   font-weight: 400;
-  font-size: 34px;
+  font-size: 36px;
   line-height: 0.9;
   font-variant-numeric: tabular-nums;
   color: var(--ink);
@@ -1812,14 +1812,14 @@ a { color: var(--court); text-decoration: none; }
 .ms-quad-unit {
   font-family: "IBM Plex Mono", var(--mono);
   font-weight: 500;
-  font-size: 12px;
+  font-size: 13px;
   color: #6f7787;
 }
 .ms-quad-sub {
   margin-top: 8px;
   font-family: "IBM Plex Sans", var(--sans);
   font-weight: 500;
-  font-size: 11.5px;
+  font-size: 12.5px;
   color: #7b8496;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1834,15 +1834,15 @@ a { color: var(--court); text-decoration: none; }
   justify-content: space-between;
   font-family: "IBM Plex Mono", var(--mono);
   font-weight: 500;
-  font-size: 10px;
-  letter-spacing: 0.16em;
+  font-size: 12px;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: #6f7787;
 }
 :lang(he) .ms-strip-head > span:first-child {
   font-family: "IBM Plex Sans", var(--sans);
   font-weight: 600;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.1em;
 }
 .ms-strip {
@@ -1858,7 +1858,7 @@ a { color: var(--court); text-decoration: none; }
 .ms-strip-cell {
   flex: 0 0 62px;
   border-radius: 12px;
-  padding: 10px 0 9px;
+  padding: 11px 0 10px;
   text-align: center;
   background: rgba(148, 163, 184, 0.06);
 }
@@ -1870,7 +1870,7 @@ a { color: var(--court); text-decoration: none; }
   display: block;
   font-family: "Anton", var(--display);
   font-weight: 400;
-  font-size: 20px;
+  font-size: 22px;
   line-height: 1;
   color: var(--muted);
 }
@@ -1885,8 +1885,8 @@ a { color: var(--court); text-decoration: none; }
   margin-top: 6px;
   font-family: "IBM Plex Mono", var(--mono);
   font-weight: 500;
-  font-size: 9.5px;
-  letter-spacing: 0.1em;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
   color: #6f7787;
 }
 
@@ -2045,7 +2045,7 @@ a { color: var(--court); text-decoration: none; }
   gap: 10px;
 }
 .round-line-num {
-  font: 400 22px/1 "Anton", sans-serif;
+  font: 400 24px/1 "Anton", sans-serif;
   letter-spacing: 0.02em;
   text-transform: uppercase;
   color: #eef1f7;
@@ -2078,7 +2078,7 @@ a { color: var(--court); text-decoration: none; }
   cursor: default;
 }
 .round-line-closes {
-  font: 500 11px "IBM Plex Mono", monospace;
+  font: 500 12px "IBM Plex Mono", monospace;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: #6f7787;
@@ -2115,7 +2115,7 @@ button.fx-row {
 .fx-name {
   flex: 1;
   min-width: 0;
-  font: 500 14.5px "IBM Plex Sans", sans-serif;
+  font: 500 15.5px "IBM Plex Sans", sans-serif;
   color: #8b93a6;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2130,11 +2130,11 @@ button.fx-row {
   text-align: center;
 }
 .fx-mid .score {
-  font: 500 12.5px "IBM Plex Mono", monospace;
+  font: 500 13.5px "IBM Plex Mono", monospace;
   color: #c9cfdb;
 }
 .fx-mid .state {
-  font: 600 11.5px "IBM Plex Sans", sans-serif;
+  font: 600 12.5px "IBM Plex Sans", sans-serif;
   color: #8b93a6;
 }
 .fx-mid .state.open {
@@ -2187,7 +2187,7 @@ button.fx-row {
   background: var(--lime, #c6f24e);
 }
 .fx-secondary {
-  font: 600 12px "IBM Plex Sans", sans-serif;
+  font: 600 12.5px "IBM Plex Sans", sans-serif;
   color: #8b93a6;
 }
 button.fx-secondary {
@@ -2197,7 +2197,7 @@ button.fx-secondary {
   cursor: pointer;
 }
 .fx-sched-tag {
-  font: 600 11px "IBM Plex Mono", monospace;
+  font: 600 12px "IBM Plex Mono", monospace;
   letter-spacing: 0.02em;
   color: #8b93a6;
 }
@@ -2245,13 +2245,13 @@ a.fx-report svg {
   display: flex;
   align-items: center;
   gap: 9px;
-  font: 600 13px "IBM Plex Sans", sans-serif;
+  font: 600 14px "IBM Plex Sans", sans-serif;
   color: #c9cfdb;
   text-decoration: none;
 }
 .all-rounds-meta {
   margin-inline-start: auto;
-  font: 500 11px "IBM Plex Mono", monospace;
+  font: 500 12px "IBM Plex Mono", monospace;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: #6f7787;
@@ -2507,7 +2507,7 @@ a.fx-report svg {
 .round-row-name {
   font-family: "IBM Plex Sans", var(--sans);
   font-weight: 700;
-  font-size: 13.5px;
+  font-size: 15px;
   color: var(--ink-dim);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2521,7 +2521,7 @@ a.fx-report svg {
 .round-row-sub {
   font-family: "IBM Plex Mono", var(--mono);
   font-weight: 500;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--muted);
   margin-top: 3px;
 }
@@ -2530,7 +2530,7 @@ a.fx-report svg {
   flex: none;
   font-family: "IBM Plex Mono", var(--mono);
   font-weight: 500;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--ink-dim);
 }
 
@@ -2540,7 +2540,7 @@ a.fx-report svg {
   text-align: right;
   font-family: "IBM Plex Mono", var(--mono);
   font-weight: 700;
-  font-size: 12px;
+  font-size: 13px;
   color: #7b8496;
 }
 
@@ -2567,7 +2567,7 @@ a.fx-report svg {
   margin-top: 14px;
   font-family: "IBM Plex Sans", var(--sans);
   font-weight: 500;
-  font-size: 12px;
+  font-size: 12.5px;
   color: #6f7787;
 }
 
@@ -4657,17 +4657,17 @@ button:active { transform: translateY(1px); }
 .standings-panel-head,
 .standings-tr {
   display: grid;
-  grid-template-columns: 16px 24px 1fr 30px 30px 30px 34px;
+  grid-template-columns: 18px 30px 1fr 32px 32px 32px 40px;
   gap: 6px;
   align-items: center;
   padding: 0 12px;
 }
 
 .standings-panel-head {
-  height: 32px;
-  font: 600 10px "IBM Plex Mono", monospace;
+  height: 38px;
+  font: 600 12px "IBM Plex Mono", monospace;
   color: #6f7787;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.12em;
 }
 
 .standings-panel-head span {
@@ -4687,7 +4687,7 @@ button:active { transform: translateY(1px); }
 
 .standings-td-rank {
   text-align: center;
-  font: 700 12px "IBM Plex Mono", monospace;
+  font: 700 14px "IBM Plex Mono", monospace;
   color: #8b93a6;
   font-variant-numeric: tabular-nums;
 }
@@ -4701,18 +4701,18 @@ button:active { transform: translateY(1px); }
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font: 600 14.5px "IBM Plex Sans", sans-serif;
+  font: 600 16.5px "IBM Plex Sans", sans-serif;
   color: #8b93a6;
 }
 
 .standings-you {
-  font: 500 11px "IBM Plex Sans", sans-serif;
+  font: 500 12px "IBM Plex Sans", sans-serif;
   color: #a3abbb;
 }
 
 .standings-td-num {
   text-align: center;
-  font: 500 12.5px "IBM Plex Mono", monospace;
+  font: 500 14px "IBM Plex Mono", monospace;
   color: #8b93a6;
   font-variant-numeric: tabular-nums;
 }
@@ -4723,14 +4723,14 @@ button:active { transform: translateY(1px); }
 
 .standings-td-pts {
   text-align: center;
-  font: 400 17px "Anton", sans-serif;
+  font: 400 23px "Anton", sans-serif;
   color: #8b93a6;
   font-variant-numeric: tabular-nums;
 }
 
 .standings-hint {
   margin-top: 12px;
-  font: 500 11.5px "IBM Plex Sans", sans-serif;
+  font: 500 12.5px "IBM Plex Sans", sans-serif;
   color: #6f7787;
 }
 
