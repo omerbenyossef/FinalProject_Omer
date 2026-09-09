@@ -33,13 +33,17 @@ async function request(path, { method = "GET", body, auth = true } = {}) {
 
   if (!res.ok) {
     let detail = res.statusText;
+    let data = null;
     try {
-      const data = await res.json();
+      data = await res.json();
       detail = data.detail || detail;
     } catch {
       /* ignore */
     }
-    throw new Error(detail);
+    const err = new Error(detail);
+    err.status = res.status;
+    err.data = data;
+    throw err;
   }
 
   if (res.status === 204) return null;
@@ -130,12 +134,21 @@ export const api = {
     request(`/leagues/${leagueId}/matches/${matchId}`, { method: "DELETE" }),
 
   getMatchDetail: (matchId) => request(`/matches/${matchId}`),
-  proposeMatchSchedule: (matchId, scheduledAt, court) =>
+  proposeMatchSchedule: (matchId, scheduledAt, court, { durationMinutes, overrideConflictWarning } = {}) =>
     request(`/matches/${matchId}/schedule`, {
       method: "POST",
-      body: { scheduled_at: scheduledAt, court: court || null },
+      body: {
+        scheduled_at: scheduledAt,
+        court: court || null,
+        duration_minutes: durationMinutes || null,
+        override_conflict_warning: !!overrideConflictWarning,
+      },
     }),
-  confirmMatchSchedule: (matchId) => request(`/matches/${matchId}/schedule/confirm`, { method: "POST" }),
+  confirmMatchSchedule: (matchId, overrideConflictWarning = false) =>
+    request(`/matches/${matchId}/schedule/confirm`, {
+      method: "POST",
+      body: { override_conflict_warning: !!overrideConflictWarning },
+    }),
   declineMatchSchedule: (matchId) => request(`/matches/${matchId}/schedule/decline`, { method: "POST" }),
   confirmMatchResult: (matchId) => request(`/matches/${matchId}/confirm`, { method: "POST" }),
   disputeMatchResult: (matchId, sets, note) =>

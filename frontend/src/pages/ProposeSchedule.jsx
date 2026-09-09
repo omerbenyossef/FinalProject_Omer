@@ -36,6 +36,13 @@ function buildTimeSlots() {
 
 const TIME_SLOTS = buildTimeSlots();
 
+const DURATION_OPTIONS = [60, 90, 120];
+function durationLabel(minutes) {
+  if (minutes === 60) return "1H";
+  if (minutes === 90) return "1H30";
+  return "2H";
+}
+
 export default function ProposeSchedule() {
   const { matchId } = useParams();
   const { t } = useLanguage();
@@ -43,9 +50,11 @@ export default function ProposeSchedule() {
 
   const [detail, setDetail] = useState(null);
   const [error, setError] = useState("");
+  const [conflictWarning, setConflictWarning] = useState(null);
   const [busy, setBusy] = useState(false);
   const [selectedDay, setSelectedDay] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
+  const [duration, setDuration] = useState(null);
   const [court, setCourt] = useState("");
   const [editingCourt, setEditingCourt] = useState(false);
 
@@ -79,19 +88,28 @@ export default function ProposeSchedule() {
     ? roundDueDateObj(detail.schedule_started_at, detail.round_number, detail.round_length_days || 7)
     : null;
   const days = buildDayOptions(roundEnd);
+  const isFriendly = !detail.round_number;
 
-  async function handleSend() {
+  async function handleSend(overrideConflictWarning = false) {
     if (!selectedDay || !selectedTime) return;
+    if (isFriendly && !duration) return;
     setBusy(true);
     setError("");
     try {
       const [h, m] = selectedTime.split(":").map(Number);
       const dt = new Date(selectedDay);
       dt.setHours(h, m, 0, 0);
-      await api.proposeMatchSchedule(matchId, dt.toISOString(), court.trim() || null);
+      await api.proposeMatchSchedule(matchId, dt.toISOString(), court.trim() || null, {
+        durationMinutes: isFriendly ? duration : null,
+        overrideConflictWarning,
+      });
       navigate(-1);
     } catch (err) {
-      setError(err.message);
+      if (err.status === 409) {
+        setConflictWarning(err.message);
+      } else {
+        setError(err.message);
+      }
     } finally {
       setBusy(false);
     }
@@ -167,6 +185,24 @@ export default function ProposeSchedule() {
         })}
       </div>
 
+      {isFriendly && (
+        <>
+          <div className="sched-section-label">{t("DURATION")}</div>
+          <div className="sched-durations">
+            {DURATION_OPTIONS.map((mins) => (
+              <button
+                type="button"
+                key={mins}
+                className={`sched-duration${duration === mins ? " on" : ""}`}
+                onClick={() => setDuration(mins)}
+              >
+                {t(durationLabel(mins))}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
       <div className="sched-section-label">{t("COURT")}</div>
       <div className="sched-court-row">
         {editingCourt ? (
@@ -190,13 +226,43 @@ export default function ProposeSchedule() {
         <button
           type="button"
           className="sched-send"
-          disabled={!selectedDay || !selectedTime || busy}
-          onClick={handleSend}
+          disabled={!selectedDay || !selectedTime || busy || (isFriendly && !duration)}
+          onClick={() => handleSend(false)}
         >
           {t("שלח הצעה ל{name}", { name: detail.opponent.name })}
         </button>
         <p className="sched-pending">{t("HE CONFIRMS · THEN IT IS SET")}</p>
       </div>
+
+      {conflictWarning && (
+        <div className="confirm-sheet-overlay" onClick={() => setConflictWarning(null)}>
+          <div className="confirm-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="confirm-sheet-handle" />
+            <div className="confirm-sheet-title">{t("שים לב")}</div>
+            <p className="add-round-subtitle">{t(conflictWarning)}</p>
+            <div className="add-round-actions">
+              <button
+                type="button"
+                className="confirm-sheet-btn-confirm"
+                disabled={busy}
+                onClick={() => {
+                  setConflictWarning(null);
+                  handleSend(true);
+                }}
+              >
+                {t("כן, לתאם בכל זאת")}
+              </button>
+              <button
+                type="button"
+                className="link-btn add-round-cancel"
+                onClick={() => setConflictWarning(null)}
+              >
+                {t("ביטול")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

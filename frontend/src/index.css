@@ -6205,6 +6205,13 @@ button:active { transform: translateY(1px); }
 .sched-day.on { background: #eef1f7; }
 .sched-day.on .sched-day-weekday, .sched-day.on .sched-day-date { color: #0e1116; }
 
+.sched-durations { display: flex; gap: 8px; }
+.sched-duration {
+  flex: 1; padding: 12px 4px; border-radius: 12px; border: 0; background: rgba(148, 163, 184, .07);
+  font: 400 15px "Anton", sans-serif; color: #eef1f7; cursor: pointer;
+}
+.sched-duration.on { background: #eef1f7; color: #0e1116; }
+
 .sched-times { max-height: 260px; overflow-y: auto; }
 .sched-time-row {
   width: 100%; padding: 12px 2px; border: 0; border-bottom: 1px solid rgba(148, 163, 184, .1); background: none;

@@ -92,7 +92,11 @@ export default function RoundDetail() {
       await api.confirmMatchSchedule(myMatch.id);
       await loadAll();
     } catch (err) {
-      setError(err.message);
+      if (err.status === 409) {
+        navigate(`/matches/${myMatch.id}`);
+      } else {
+        setError(err.message);
+      }
     } finally {
       setBusy(false);
     }

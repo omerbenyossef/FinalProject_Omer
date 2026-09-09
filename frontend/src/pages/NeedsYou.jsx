@@ -25,14 +25,18 @@ export default function NeedsYou() {
   const needCount = openItems.filter((i) => i.type !== "waiting").length;
   const waitingCount = openItems.filter((i) => i.type === "waiting").length;
 
-  async function run(matchId, fn) {
+  async function run(matchId, fn, { onConflict } = {}) {
     setBusyId(matchId);
     setError("");
     try {
       await fn();
       await reload();
     } catch (err) {
-      setError(err.message);
+      if (err.status === 409 && onConflict) {
+        onConflict();
+      } else {
+        setError(err.message);
+      }
     } finally {
       setBusyId(null);
     }
@@ -43,7 +47,9 @@ export default function NeedsYou() {
     if (item.type === "confirm") {
       run(matchId, () => api.confirmMatchResult(matchId));
     } else if (item.type === "proposed") {
-      run(matchId, () => api.confirmMatchSchedule(matchId));
+      run(matchId, () => api.confirmMatchSchedule(matchId), {
+        onConflict: () => navigate(`/matches/${matchId}`),
+      });
     } else if (item.type === "report") {
       navigate(`/matches/${matchId}`);
     }

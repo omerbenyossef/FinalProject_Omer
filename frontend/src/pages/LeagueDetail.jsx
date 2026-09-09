@@ -203,7 +203,11 @@ export default function LeagueDetail() {
       await loadAll();
       reloadOpenAction();
     } catch (err) {
-      setError(err.message);
+      if (err.status === 409) {
+        navigate(`/matches/${matchId}`);
+      } else {
+        setError(err.message);
+      }
     } finally {
       setBusy(false);
     }

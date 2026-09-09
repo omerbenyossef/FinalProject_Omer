@@ -557,6 +557,21 @@ const PAIRS = [
   ["הצעת הזמן בוטלה", "The time proposal was cancelled"],
   ["אשר", "Confirm"],
 
+  // Schedule conflict detection
+  ["כבר יש משחק מתואם בזמן הזה", "You already have a match scheduled at that time"],
+  [
+    "יש לך משחק נוסף קרוב לשעה הזאת ביום הזה, לאשר בכל זאת?",
+    "You have another match close to this time on the same day — schedule it anyway?",
+  ],
+  ["יש לבחור משך זמן למשחק", "Choose how long the match will take"],
+  ["שים לב", "Heads up"],
+  ["כן, לתאם בכל זאת", "Yes, schedule anyway"],
+  ["כן, לאשר בכל זאת", "Yes, confirm anyway"],
+  ["DURATION", "DURATION"],
+  ["1H", "1H"],
+  ["1H30", "1H30"],
+  ["2H", "2H"],
+
   // Schedule flow (107)
   ["SCHEDULE", "SCHEDULE"],
   ["DAY", "DAY"],

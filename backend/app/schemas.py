@@ -311,6 +311,12 @@ class MatchCorrection(BaseModel):
 class MatchScheduleProposal(BaseModel):
     scheduled_at: datetime
     court: Optional[str] = None
+    duration_minutes: Optional[int] = None
+    override_conflict_warning: bool = False
+
+
+class ScheduleConfirmRequest(BaseModel):
+    override_conflict_warning: bool = False
 
 
 class MatchOut(BaseModel):
@@ -323,6 +329,7 @@ class MatchOut(BaseModel):
     scheduled_by: Optional[int] = None
     schedule_confirmed: bool = False
     court: Optional[str] = None
+    duration_minutes: Optional[int] = None
     player1: MemberOut
     player2: MemberOut
     player1_score: Optional[int]
@@ -591,6 +598,7 @@ class MatchDetailOut(BaseModel):
     schedule_proposed_at: Optional[datetime] = None
     court: Optional[str] = None
     default_court: Optional[str] = None
+    duration_minutes: Optional[int] = None
     max_sets: int = 3
     my_ntrp: Optional[float] = None
     opponent_ntrp: Optional[float] = None

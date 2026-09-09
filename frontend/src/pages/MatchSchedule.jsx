@@ -20,6 +20,7 @@ export default function MatchSchedule() {
 
   const [detail, setDetail] = useState(null);
   const [error, setError] = useState("");
+  const [conflictWarning, setConflictWarning] = useState(null);
   const [busy, setBusy] = useState(false);
 
   function reload() {
@@ -50,14 +51,18 @@ export default function MatchSchedule() {
     return <Navigate to={`/matches/${matchId}/schedule`} replace />;
   }
 
-  async function handleConfirm() {
+  async function handleConfirm(overrideConflictWarning = false) {
     setBusy(true);
     setError("");
     try {
-      await api.confirmMatchSchedule(matchId);
+      await api.confirmMatchSchedule(matchId, overrideConflictWarning);
       navigate(-1);
     } catch (err) {
-      setError(err.message);
+      if (err.status === 409) {
+        setConflictWarning(err.message);
+      } else {
+        setError(err.message);
+      }
     } finally {
       setBusy(false);
     }
@@ -144,7 +149,7 @@ export default function MatchSchedule() {
           {proposalExpired ? (
             <p className="sched-expired-note">{t("הזמן שהוצע כבר עבר, צריך להציע שעה חדשה")}</p>
           ) : (
-            <button type="button" className="sched-send" disabled={busy} onClick={handleConfirm}>
+            <button type="button" className="sched-send" disabled={busy} onClick={() => handleConfirm(false)}>
               {t("מאשר, נשחק")}
             </button>
           )}
@@ -161,6 +166,36 @@ export default function MatchSchedule() {
             </button>
           </div>
         </div>
+
+        {conflictWarning && (
+          <div className="confirm-sheet-overlay" onClick={() => setConflictWarning(null)}>
+            <div className="confirm-sheet" onClick={(e) => e.stopPropagation()}>
+              <div className="confirm-sheet-handle" />
+              <div className="confirm-sheet-title">{t("שים לב")}</div>
+              <p className="add-round-subtitle">{t(conflictWarning)}</p>
+              <div className="add-round-actions">
+                <button
+                  type="button"
+                  className="confirm-sheet-btn-confirm"
+                  disabled={busy}
+                  onClick={() => {
+                    setConflictWarning(null);
+                    handleConfirm(true);
+                  }}
+                >
+                  {t("כן, לאשר בכל זאת")}
+                </button>
+                <button
+                  type="button"
+                  className="link-btn add-round-cancel"
+                  onClick={() => setConflictWarning(null)}
+                >
+                  {t("ביטול")}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
