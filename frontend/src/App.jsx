@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import Layout from "./Layout.jsx";
+import Splash from "./Splash.jsx";
 import { useAuth } from "./AuthContext.jsx";
 import SignIn from "./pages/SignIn.jsx";
 import SignUp from "./pages/SignUp.jsx";
@@ -66,8 +68,17 @@ function AdminRoute({ children }) {
 }
 
 export default function App() {
+  // Plain component state, not localStorage — the splash is meant to run
+  // on every cold start of the app, never on an in-app route navigation
+  // (this state lives for the lifetime of this mount, same as the rest of
+  // the app shell). Layout/Routes mount immediately underneath so auth and
+  // data fetching aren't blocked waiting on the animation.
+  const [showSplash, setShowSplash] = useState(true);
+
   return (
-    <Layout>
+    <>
+      {showSplash && <Splash onDone={() => setShowSplash(false)} />}
+      <Layout>
       <Routes>
         <Route path="/" element={<Navigate to="/profile" replace />} />
         <Route path="/signin" element={<SignIn />} />
@@ -228,6 +239,7 @@ export default function App() {
           }
         />
       </Routes>
-    </Layout>
+      </Layout>
+    </>
   );
 }
