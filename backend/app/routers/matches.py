@@ -16,6 +16,7 @@ CONFIRMATION_WINDOW = timedelta(hours=48)
 REMIND_COOLDOWN = timedelta(hours=1)
 AUTO_REMIND_INTERVAL = timedelta(hours=24)
 MAX_AUTO_REMINDS = 3
+AUTO_VOID_INTERVAL = timedelta(days=4)
 
 
 def _to_naive_utc(dt: datetime) -> datetime:
@@ -99,6 +100,7 @@ def _auto_confirm_overdue(db: Session) -> None:
                 )
 
     _auto_remind_overdue_matches(db)
+    _auto_void_abandoned_friendlies(db)
 
 
 def _auto_remind_overdue_matches(db: Session) -> None:
@@ -139,6 +141,45 @@ def _auto_remind_overdue_matches(db: Session) -> None:
                     "תזכורת: יש משחק לדווח",
                     "המשחק שלכם כבר היה אמור להתקיים ועדיין לא דיווחתם תוצאה",
                     url,
+                )
+
+
+def _auto_void_abandoned_friendlies(db: Session) -> None:
+    """Companion sweep, called from _auto_confirm_overdue above: a friendly
+    match that's sat completely unreported (no score, not even a "didn't
+    happen" claim) for AUTO_VOID_INTERVAL past its scheduled time is
+    abandoned — auto-void it the same way a mutually-agreed "didn't happen"
+    report would, so it doesn't linger in "to play" lists forever. Scoped
+    to friendly matches only: a stale league match instead surfaces to the
+    league's admin via the ops "stalled" flag rather than disappearing on
+    its own, since it affects that league's schedule and standings."""
+    now = datetime.utcnow()
+    threshold = now - AUTO_VOID_INTERVAL
+    abandoned = (
+        db.query(models.Match)
+        .filter(
+            models.Match.kind == models.MatchKind.friendly,
+            models.Match.status == models.MatchStatus.pending,
+            models.Match.schedule_confirmed.is_(True),
+            models.Match.scheduled_at.isnot(None),
+            models.Match.scheduled_at <= threshold,
+        )
+        .all()
+    )
+    for match in abandoned:
+        match.status = models.MatchStatus.disputed
+        match.void_reason = "not_played"
+        match.disputed_at = now
+    if abandoned:
+        db.commit()
+        for match in abandoned:
+            for player_id in (match.player1_id, match.player2_id):
+                notify_user(
+                    db,
+                    player_id,
+                    "המשחק בוטל אוטומטית",
+                    "המשחק שלכם עבר זמן רב מהמועד שנקבע ואף אחד לא דיווח עליו, אז הוא בוטל ולא ייספר",
+                    "/profile",
                 )
 
 

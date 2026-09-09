@@ -515,11 +515,21 @@ export default function Profile() {
     (entry) => entry.match.status === "pending_confirmation" && entry.match.reported_by !== user?.id
   );
   const isToPlayStatus = (status) => status === "pending" || status === "pending_confirmation";
+  // A friendly match whose scheduled time is more than a week gone has
+  // stopped being "this week" business — it stays fully actionable (report
+  // a score, report it wasn't played, get reminded) via NEEDS YOU, just not
+  // cluttering this carousel forever. League matches aren't touched here:
+  // their staleness already surfaces to the league's admin separately.
+  const STALE_FRIENDLY_MS = 7 * 86400000;
+  const isStaleFriendly = (entry) =>
+    entry.kind === "friendly" &&
+    entry.match.scheduled_at != null &&
+    Date.now() - new Date(entry.match.scheduled_at).getTime() > STALE_FRIENDLY_MS;
   const leagueMatchesForSport = relevantEntries.filter(
     (entry) => entry.kind !== "friendly" && isToPlayStatus(entry.match.status)
   );
   const friendlyMatchesForSport = relevantEntries.filter(
-    (entry) => entry.kind === "friendly" && isToPlayStatus(entry.match.status)
+    (entry) => entry.kind === "friendly" && isToPlayStatus(entry.match.status) && !isStaleFriendly(entry)
   );
   const combinedToPlay = [...leagueMatchesForSport, ...friendlyMatchesForSport];
   const sortedToPlay = user ? sortToPlay(combinedToPlay, user.id, roundLengthById) : [];
