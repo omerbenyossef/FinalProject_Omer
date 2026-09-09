@@ -629,7 +629,7 @@ a { color: var(--court); text-decoration: none; }
 
 .content {
   flex: 1;
-  padding: 24px 18px 96px;
+  padding: 24px 20px 96px;
 }
 
 .page-head {
@@ -1645,7 +1645,7 @@ a { color: var(--court); text-decoration: none; }
 }
 
 .ld-head {
-  padding: 14px 20px 0;
+  padding: 14px 0 0;
 }
 .ld-head-nav {
   display: flex;
@@ -4375,8 +4375,8 @@ button:active { transform: translateY(1px); }
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
-  margin-inline: -18px;
-  padding-inline: 18px;
+  margin-inline: -20px;
+  padding-inline: 20px;
 }
 .lg-carousel::-webkit-scrollbar {
   display: none;
@@ -6152,7 +6152,7 @@ button:active { transform: translateY(1px); }
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
-  margin-inline: -18px; padding-inline: 18px;
+  margin-inline: -20px; padding-inline: 20px;
 }
 .tp-carousel::-webkit-scrollbar { display: none; }
 .tp-carousel.single { margin-inline: 0; padding-inline: 0; }
