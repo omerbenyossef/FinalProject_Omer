@@ -1733,10 +1733,12 @@ a { color: var(--court); text-decoration: none; }
   padding: 15px 17px;
   border-radius: 20px;
   background: rgba(198, 242, 78, 0.05);
-  box-shadow: inset 3px 0 0 0 var(--court);
+  /* inset +x paints the band on the LEFT inner edge, so RTL (start = right)
+     needs the negative offset and LTR the positive one, not the reverse. */
+  box-shadow: inset -3px 0 0 0 var(--court);
 }
 [dir="ltr"] .ms-open {
-  box-shadow: inset -3px 0 0 0 var(--court);
+  box-shadow: inset 3px 0 0 0 var(--court);
 }
 .ms-open-body {
   flex: 1;
@@ -2090,10 +2092,10 @@ a { color: var(--court); text-decoration: none; }
   padding: 16px 17px;
   border-radius: 20px;
   background: rgba(198, 242, 78, 0.05);
-  box-shadow: inset 3px 0 0 0 var(--court);
+  box-shadow: inset -3px 0 0 0 var(--court);
 }
 [dir="ltr"] .mm-block {
-  box-shadow: inset -3px 0 0 0 var(--court);
+  box-shadow: inset 3px 0 0 0 var(--court);
 }
 
 .mm-label {
@@ -2265,6 +2267,9 @@ button.fx-row {
 
 .fx-row.is-mine {
   background: rgba(198, 242, 78, 0.04);
+  box-shadow: inset -3px 0 0 0 var(--lime, #c6f24e);
+}
+[dir="ltr"] .fx-row.is-mine {
   box-shadow: inset 3px 0 0 0 var(--lime, #c6f24e);
 }
 .fx-row.is-mine .fx-name {
@@ -4814,10 +4819,10 @@ button:active { transform: translateY(1px); }
 
 .standings-tr.mine {
   background: rgba(198, 242, 78, 0.05);
-  box-shadow: inset 3px 0 0 0 var(--court);
+  box-shadow: inset -3px 0 0 0 var(--court);
 }
 [dir="ltr"] .standings-tr.mine {
-  box-shadow: inset -3px 0 0 0 var(--court);
+  box-shadow: inset 3px 0 0 0 var(--court);
 }
 
 .standings-td-rank {

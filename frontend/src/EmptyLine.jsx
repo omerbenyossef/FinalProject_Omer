@@ -7,7 +7,7 @@ export default function EmptyLine({ label, sentence, meta, action }) {
   return (
     <div className="empty-line">
       {label && <div className="empty-line-label">{label}</div>}
-      <p className="empty-line-sentence" dir="rtl">
+      <p className="empty-line-sentence" dir="auto">
         {sentence}
       </p>
       {meta && (
