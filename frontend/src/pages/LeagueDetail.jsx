@@ -619,8 +619,7 @@ export default function LeagueDetail() {
                   <span />
                   <span />
                   <span>{t("מש׳")}</span>
-                  <span>{t("נצ׳")}</span>
-                  <span>{t("הפ׳")}</span>
+                  <span>{t("מאזן")}</span>
                   <span>{t("נק׳")}</span>
                 </div>
 
@@ -629,7 +628,9 @@ export default function LeagueDetail() {
                   const isMe = row.user.id === user?.id;
                   const isLeader = rank === 1;
                   const shortOfMatches = row.played < roundsClosed;
-                  const cls = `standings-tr${isMe ? " mine" : ""}${isLeader ? " leader" : ""}`;
+                  const cls =
+                    `standings-tr${isMe ? " mine" : ""}${isLeader ? " leader" : ""}` +
+                    (rank === 4 ? " zone-break" : "");
                   const body = (
                     <>
                       <span className="standings-td-rank" dir="ltr">
@@ -638,18 +639,12 @@ export default function LeagueDetail() {
                       <span className="standings-td-avatar">
                         <Avatar name={row.user.name} size={30} />
                       </span>
-                      <span className="standings-td-name">
-                        {row.user.name}
-                        {isMe && <span className="standings-you"> · {t("אתה")}</span>}
-                      </span>
+                      <span className="standings-td-name">{row.user.name}</span>
                       <span className={`standings-td-num${shortOfMatches ? " short" : ""}`} dir="ltr">
                         {row.played}
                       </span>
                       <span className="standings-td-num" dir="ltr">
-                        {row.wins}
-                      </span>
-                      <span className="standings-td-num" dir="ltr">
-                        {row.losses}
+                        {row.wins}-{row.losses}
                       </span>
                       <span className="standings-td-pts" dir="ltr">
                         {row.points}

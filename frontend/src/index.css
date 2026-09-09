@@ -4649,47 +4649,74 @@ button:active { transform: translateY(1px); }
 }
 
 .standings-panel {
-  background: #12171e;
-  border-radius: 16px;
+  margin-top: 18px;
+  background: none;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 22px;
   overflow: hidden;
 }
 
 .standings-panel-head,
 .standings-tr {
   display: grid;
-  grid-template-columns: 18px 30px 1fr 32px 32px 32px 40px;
-  gap: 6px;
+  grid-template-columns: 20px 30px 1fr 34px 48px 34px;
   align-items: center;
-  padding: 0 12px;
+  gap: 10px;
+  padding: 0 15px;
 }
 
 .standings-panel-head {
   height: 38px;
-  font: 600 12px "IBM Plex Mono", monospace;
-  color: #6f7787;
+  font-family: "IBM Plex Mono", var(--mono);
+  font-weight: 500;
+  font-size: 11.5px;
   letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #6f7787;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
 }
 
 .standings-panel-head span {
   text-align: center;
+  white-space: nowrap;
 }
 
 .standings-tr {
   height: 54px;
-  border-top: 1px solid rgba(148, 163, 184, 0.09);
+  border-top: 1px solid rgba(148, 163, 184, 0.08);
   text-decoration: none;
   color: inherit;
 }
 
+.standings-tr:first-of-type {
+  border-top: 0;
+}
+
+/* הקו שמפריד את שלושת הראשונים — עבה יותר, בלי תווית */
+.standings-tr.zone-break {
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
+}
+
 .standings-tr.mine {
-  background: rgba(148, 163, 184, 0.07);
+  background: rgba(198, 242, 78, 0.05);
+  box-shadow: inset 3px 0 0 0 var(--court);
+}
+[dir="ltr"] .standings-tr.mine {
+  box-shadow: inset -3px 0 0 0 var(--court);
 }
 
 .standings-td-rank {
   text-align: center;
-  font: 700 14px "IBM Plex Mono", monospace;
-  color: #8b93a6;
+  font-family: "IBM Plex Mono", var(--mono);
+  font-weight: 500;
+  font-size: 14px;
   font-variant-numeric: tabular-nums;
+  color: #8b93a6;
+}
+
+.standings-tr.leader .standings-td-rank,
+.standings-tr.mine .standings-td-rank {
+  color: var(--ink-dim);
 }
 
 .standings-td-avatar {
@@ -4701,64 +4728,57 @@ button:active { transform: translateY(1px); }
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font: 600 16.5px "IBM Plex Sans", sans-serif;
-  color: #8b93a6;
+  font-family: "IBM Plex Sans", var(--sans);
+  font-weight: 600;
+  font-size: 16.5px;
+  color: var(--ink-dim);
 }
 
-.standings-you {
-  font: 500 12px "IBM Plex Sans", sans-serif;
-  color: #a3abbb;
+.standings-tr.leader .standings-td-name {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.standings-tr.mine .standings-td-name {
+  color: var(--ink);
+  font-weight: 700;
 }
 
 .standings-td-num {
   text-align: center;
-  font: 500 14px "IBM Plex Mono", monospace;
-  color: #8b93a6;
+  font-family: "IBM Plex Mono", var(--mono);
+  font-weight: 500;
+  font-size: 14px;
   font-variant-numeric: tabular-nums;
+  color: var(--muted);
 }
 
+/* מי שחסר לו משחק — אותו גופן, בלי בהירות מלאה. לא מתחת ל-#6f7787 */
 .standings-td-num.short {
   color: #6f7787;
 }
 
 .standings-td-pts {
   text-align: center;
-  font: 400 23px "Anton", sans-serif;
-  color: #8b93a6;
+  font-family: "Anton", var(--display);
+  font-weight: 400;
+  font-size: 23px;
+  line-height: 1;
   font-variant-numeric: tabular-nums;
-}
-
-.standings-hint {
-  margin-top: 12px;
-  font: 500 12.5px "IBM Plex Sans", sans-serif;
-  color: #6f7787;
-}
-
-.standings-tr.leader .standings-td-name {
-  color: #eef1f7;
-  font-weight: 700;
+  color: var(--ink-dim);
 }
 
 .standings-tr.leader .standings-td-pts,
 .standings-tr.mine .standings-td-pts {
-  color: #eef1f7;
+  color: var(--ink);
 }
 
-.standings-tr.leader .standings-td-rank {
-  color: #c9cfdb;
-}
-
-.standings-tr.mine .standings-td-name {
-  color: #eef1f7;
-  font-weight: 800;
-}
-
-.standings-tr.mine .standings-td-rank {
-  color: #eef1f7;
-}
-
-.standings-tr.mine .standings-td-num {
-  color: #c9cfdb;
+.standings-hint {
+  margin-top: 12px;
+  font-family: "IBM Plex Sans", var(--sans);
+  font-weight: 500;
+  font-size: 12.5px;
+  color: #6f7787;
 }
 
 .avatar {
