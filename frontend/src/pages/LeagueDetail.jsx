@@ -343,20 +343,29 @@ export default function LeagueDetail() {
     roundLengthDays
   );
   const rankDelta = myStanding?.rank_delta ?? 0;
-  const leaderName = standings[0]?.user.name ?? "";
   // A points tie at the bottom of the table still means "behind" even though
   // the win-count gap rounds to 0 — only rank 1 counts as actually leading.
   const winsBehindDisplay = Math.max(myWinsBehind, 1);
-  const footLine =
+  const plannedRounds = existingRoundNumbers.length + roundsToCreate;
+  const stripRounds = myRoundRows;
+  const rankDeltaLabel =
+    rankDelta > 0
+      ? rankDelta === 1
+        ? t("עלית מקום אחד")
+        : t("עלית {n} מקומות", { n: rankDelta })
+      : rankDelta < 0
+      ? Math.abs(rankDelta) === 1
+        ? t("ירדת מקום אחד")
+        : t("ירדת {n} מקומות", { n: Math.abs(rankDelta) })
+      : t("בלי שינוי");
+  const behindLabel =
     myRank === 1
-      ? t("אתה מוביל · {n} מחזורים נותרו", { n: roundsToCreate })
+      ? t("אתה מוביל")
       : winsBehindDisplay === 1
-      ? t("ניצחון אחד מאחורי {name} · {n} מחזורים נותרו", { name: leaderName, n: roundsToCreate })
-      : t("{count} ניצחונות מאחורי {name} · {n} מחזורים נותרו", {
-          count: winsBehindDisplay,
-          name: leaderName,
-          n: roundsToCreate,
-        });
+      ? t("ניצחון אחד מהמוביל")
+      : t("{n} ניצחונות מהמוביל", { n: winsBehindDisplay });
+  const lastCompleted = myCompletedRounds[myCompletedRounds.length - 1] ?? null;
+  const streakSub = lastCompleted ? t("מול {name}", { name: lastCompleted.opponentName }) : "";
 
   const leagueEntries = nextMatches.filter((e) => e.league_id === Number(leagueId));
   const leagueOpenAction = buildOpenAction(getActionCandidates(leagueEntries, user?.id), user?.id, t);
@@ -504,115 +513,85 @@ export default function LeagueDetail() {
                 }
               />
             ) : (
-              <div className="ms-slab">
-                <div className="ms-cell">
-                  <div className="ms-label">{t("מקום")}</div>
-                  <div className="ms-big" dir="ltr">
-                    {myRank !== null ? (
-                      <>
-                        <span className="n">{myRank}</span>
-                        <span className="unit">/{members.length}</span>
-                        {rankDelta !== 0 && (
-                          <span className="delta">
-                            {rankDelta > 0 ? "▲" : "▼"}
-                            {Math.abs(rankDelta)}
-                          </span>
+              <>
+                {leagueOpenAction && (
+                  <div className="ms-open">
+                    <div className="ms-open-body">
+                      <div className="ms-open-title">
+                        {leagueOpenAction.match.round_number != null && (
+                          <>{t("מחזור {n}", { n: leagueOpenAction.match.round_number })} · </>
                         )}
-                      </>
-                    ) : (
-                      <span className="n">–</span>
-                    )}
-                  </div>
-                </div>
-                <div className="ms-cell">
-                  <div className="ms-label">{t("אחוז ניצחונות")}</div>
-                  <div className="ms-big" dir="ltr">
-                    {myWinRate !== null ? (
-                      <>
-                        <span className="n">{myWinRate}</span>
-                        <span className="unit">%</span>
-                      </>
-                    ) : (
-                      <span className="n">–</span>
-                    )}
-                  </div>
-                </div>
-                <div className="ms-cell">
-                  <div className="ms-label">{t("מאזן")}</div>
-                  <div className="ms-mid" dir="ltr">
-                    <span className="n">{myStanding?.wins ?? 0}</span>
-                    <span className="unit">W</span>
-                    <span className="n dim">{myStanding?.losses ?? 0}</span>
-                    <span className="unit dim">L</span>
-                  </div>
-                </div>
-                <div className="ms-cell">
-                  <div className="ms-label">{t("רצף")}</div>
-                  <div className="ms-mid" dir="ltr">
-                    {myStreak > 0 ? (
-                      <>
-                        <span className="n">{myStreak}</span>
-                        <span className="unit">{myLastWon ? "W" : "L"}</span>
-                      </>
-                    ) : (
-                      <span className="n">–</span>
-                    )}
-                  </div>
-                </div>
-                <div className="ms-slab-foot" dir="ltr">
-                  {footLine}
-                </div>
-              </div>
-            )}
-
-            {leagueOpenAction && (
-              <div className="my-match-row" style={{ marginTop: 20 }}>
-                <div className="my-match-body">
-                  <div className="my-match-name" dir="rtl">
-                    {leagueOpenAction.match.round_number != null && (
-                      <>{t("מחזור {n}", { n: leagueOpenAction.match.round_number })} · </>
-                    )}
-                    <span dir="auto" style={{ unicodeBidi: "isolate" }}>
-                      {leagueActionOpponent?.name}
-                    </span>
-                  </div>
-                  <div className="my-match-h2h">{leagueActionSub}</div>
-                </div>
-                <button type="button" className="my-match-report" onClick={handleOpenLeagueAction}>
-                  <span className="my-match-dot" aria-hidden="true" />
-                  {leagueActionBtnLabel}
-                </button>
-              </div>
-            )}
-
-            <div className="ms-label ms-rounds-label">{t("מחזור אחרי מחזור")}</div>
-            {myRoundRows.length > 0 ? (
-              <div className="my-stats-rounds">
-                {myRoundRows.map((r) => (
-                  <div className="my-stats-round" key={r.round}>
-                    <span className="my-stats-round-num" dir="ltr">
-                      {r.round}
-                    </span>
-                    <div className="my-stats-round-name">{r.opponentName}</div>
-                    {r.status === "completed" ? (
-                      <>
-                        <span className="my-stats-round-score" dir="ltr">
-                          {formatSets(r.mySets)}
+                        <span dir="auto" style={{ unicodeBidi: "isolate" }}>
+                          {leagueActionOpponent?.name}
                         </span>
-                        <span className={`my-stats-round-badge${r.won ? " win" : ""}`}>
-                          {r.won ? "W" : "L"}
-                        </span>
-                      </>
-                    ) : r.status === "pending_confirmation" ? (
-                      <span className="my-stats-round-state">{t("ממתין לאישור")}</span>
-                    ) : (
-                      <span className="my-stats-round-state open">{t("לשחק")}</span>
-                    )}
+                      </div>
+                      <div className="ms-open-sub">{leagueActionSub}</div>
+                    </div>
+                    <button type="button" className="ms-open-btn" onClick={handleOpenLeagueAction}>
+                      {leagueActionBtnLabel}
+                    </button>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <p className="muted">{t("עוד לא שובצו לך משחקים בליגה הזו")}</p>
+                )}
+
+                <div className="ms-quad">
+                  <div className="ms-quad-cell">
+                    <div className="ms-quad-label">{t("מקום")}</div>
+                    <div className="ms-quad-value" dir="ltr">
+                      {myRank ?? "–"}
+                      {myRank != null && <span className="ms-quad-unit">/{members.length}</span>}
+                    </div>
+                    <div className="ms-quad-sub">{rankDeltaLabel}</div>
+                  </div>
+
+                  <div className="ms-quad-cell">
+                    <div className="ms-quad-label">{t("נקודות")}</div>
+                    <div className="ms-quad-value" dir="ltr">
+                      {myStanding?.points ?? 0}
+                    </div>
+                    <div className="ms-quad-sub">{behindLabel}</div>
+                  </div>
+
+                  <div className="ms-quad-cell">
+                    <div className="ms-quad-label">{t("מאזן")}</div>
+                    <div className="ms-quad-value" dir="ltr">
+                      {myStanding?.wins ?? 0}-{myStanding?.losses ?? 0}
+                    </div>
+                    <div className="ms-quad-sub">
+                      {myWinRate != null ? t("{n}% ניצחונות", { n: myWinRate }) : ""}
+                    </div>
+                  </div>
+
+                  <div className="ms-quad-cell">
+                    <div className="ms-quad-label">{t("רצף")}</div>
+                    <div className="ms-quad-value" dir="ltr">
+                      {myStreak > 0 ? `${myLastWon ? "W" : "L"}${myStreak}` : "–"}
+                    </div>
+                    <div className="ms-quad-sub">{streakSub}</div>
+                  </div>
+                </div>
+
+                <div className="ms-strip-head">
+                  <span>{t("מחזור אחרי מחזור")}</span>
+                  <span dir="ltr">
+                    {myCompletedRounds.length} / {plannedRounds}
+                  </span>
+                </div>
+                <div className="ms-strip">
+                  {stripRounds.map((r) => (
+                    <div
+                      className={`ms-strip-cell${r.status === "pending" ? " next" : ""}`}
+                      key={r.round}
+                    >
+                      <span className={`ms-strip-wl${r.won ? " win" : ""}`}>
+                        {r.status === "completed" ? (r.won ? "W" : "L") : "–"}
+                      </span>
+                      <span className="ms-strip-num" dir="ltr">
+                        R{r.round}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
 
             {isMember && !isCreator && (
