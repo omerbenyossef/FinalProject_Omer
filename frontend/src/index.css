@@ -291,6 +291,167 @@ body {
   }
 }
 
+/* Loading screen (138b) — a pulsing ball while the app's initial data
+   (the auth check) is still in flight. See Loading.jsx. Sits below the
+   splash's z-index (9999) so if both are ever mounted at once the splash
+   wins; in practice they're sequential, never simultaneous. */
+.ld {
+  position: fixed;
+  inset: 0;
+  background: var(--paper);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 38px;
+  overflow: hidden;
+  z-index: 9000;
+}
+.ld.is-leaving {
+  opacity: 0;
+  transition: opacity 0.24s ease-out;
+}
+
+.ld-ball-wrap {
+  position: relative;
+  width: 170px;
+  height: 170px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ld-halo {
+  position: absolute;
+  width: 118px;
+  height: 118px;
+  border-radius: 50%;
+  border: 2px solid var(--court);
+  animation: ld-halo 1.8s ease-out infinite;
+  will-change: transform, opacity;
+}
+.ld-halo--2 {
+  animation-delay: 0.9s;
+}
+
+.ld-ball {
+  position: relative;
+  animation: ld-pulse 1.8s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+.ld-ball svg {
+  display: block;
+}
+
+.ld-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+.ld-word {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+}
+.ld-word span {
+  font: 400 32px/1 "Anton", sans-serif;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.ld-word i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--court);
+}
+.ld-status {
+  font: 500 10.5px "IBM Plex Mono", monospace;
+  letter-spacing: 0.22em;
+  color: #6f7787;
+  text-transform: uppercase;
+  animation: ld-word 1.8s ease-in-out infinite;
+}
+.ld-status-stuck {
+  animation: none;
+  color: var(--muted);
+  text-align: center;
+}
+.ld-retry {
+  font: 600 13px "IBM Plex Sans", var(--sans);
+  color: var(--paper);
+  background: var(--court);
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 20px;
+  cursor: pointer;
+}
+
+.ld-track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: rgba(198, 242, 78, 0.12);
+  overflow: hidden;
+}
+.ld-fill {
+  width: 31%;
+  height: 100%;
+  background: var(--court);
+  animation: ld-bar 1.5s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+}
+
+@keyframes ld-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.07);
+    opacity: 0.86;
+  }
+}
+
+@keyframes ld-halo {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+@keyframes ld-bar {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}
+
+@keyframes ld-word {
+  0%, 100% {
+    opacity: 0.42;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ld-ball, .ld-halo, .ld-fill, .ld-status {
+    animation: none;
+  }
+  .ld-halo {
+    opacity: 0.18;
+  }
+}
+
 h1, h2, h3 {
   color: var(--ink);
   margin: 0 0 6px;

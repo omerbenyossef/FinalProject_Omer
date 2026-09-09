@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import Layout from "./Layout.jsx";
 import Splash from "./Splash.jsx";
+import Loading from "./Loading.jsx";
 import { useAuth } from "./AuthContext.jsx";
 import SignIn from "./pages/SignIn.jsx";
 import SignUp from "./pages/SignUp.jsx";
@@ -27,18 +28,19 @@ import MatchSchedule from "./pages/MatchSchedule.jsx";
 import ConfirmResult from "./pages/ConfirmResult.jsx";
 import CorrectScore from "./pages/CorrectScore.jsx";
 import Operator from "./pages/Operator.jsx";
-import { SkeletonPageHeader, SkeletonHeroStat } from "./Skeleton.jsx";
 
+// loading138b.md: the app-wide Loading overlay already covers this whole
+// window (it's the same auth loading flag), so there's nothing useful to
+// paint here — rendering nothing avoids a flash of stale skeleton content
+// underneath it. The early return still matters: without it, `!user`
+// would be true for an instant even for an already-logged-in visitor
+// (their token just hasn't been validated yet) and this would redirect
+// them to /signin prematurely.
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
   const location = useLocation();
   if (loading) {
-    return (
-      <div>
-        <SkeletonPageHeader />
-        <SkeletonHeroStat />
-      </div>
-    );
+    return null;
   }
   if (!user) {
     const redirectTo = encodeURIComponent(location.pathname + location.search);
@@ -51,12 +53,7 @@ function ProtectedRoute({ children }) {
 function AdminRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) {
-    return (
-      <div>
-        <SkeletonPageHeader />
-        <SkeletonHeroStat />
-      </div>
-    );
+    return null;
   }
   if (!user) {
     return <Navigate to="/signin" replace />;
@@ -73,11 +70,22 @@ export default function App() {
   // (this state lives for the lifetime of this mount, same as the rest of
   // the app shell). Layout/Routes mount immediately underneath so auth and
   // data fetching aren't blocked waiting on the animation.
+  const { loading: authLoading } = useAuth();
   const [showSplash, setShowSplash] = useState(true);
+  const [showLoading, setShowLoading] = useState(false);
+
+  // loading138b.md: splash always plays its fixed 2.6s regardless of
+  // whether auth has resolved yet; only if it's still pending once splash
+  // ends does the loading screen pick up and cover the gap until it is.
+  function handleSplashDone() {
+    setShowSplash(false);
+    if (authLoading) setShowLoading(true);
+  }
 
   return (
     <>
-      {showSplash && <Splash onDone={() => setShowSplash(false)} />}
+      {showSplash && <Splash onDone={handleSplashDone} />}
+      {showLoading && <Loading ready={!authLoading} onDone={() => setShowLoading(false)} />}
       <Layout>
       <Routes>
         <Route path="/" element={<Navigate to="/profile" replace />} />
