@@ -604,6 +604,20 @@ const PAIRS = [
   ["1H30", "1H30"],
   ["2H", "2H"],
 
+  // Matches tab — my match block (149a)
+  ["המשחק שלך", "Your match"],
+  ["שאר המחזור", "Rest of the round"],
+  ["עוד לא נקבעה שעה", "No time set yet"],
+  ["ממתין לאישור השעה שהצעת", "Waiting on them to confirm your time"],
+  ["הציע לך {when}", "Proposed {when}"],
+  ["היריב דיווח {score}", "They reported {score}"],
+  ["דיווחת {score} · ממתין ליריב", "You reported {score} · waiting for them"],
+  ["תקן תוצאה", "Fix result"],
+  ["התוצאות לא תואמות · המשחק לא נספר", "The results don't match · this match doesn't count"],
+  ["ניצחת", "You won"],
+  ["הפסדת", "You lost"],
+  ["בטל", "Cancel"],
+
   // Schedule flow (107)
   ["SCHEDULE", "SCHEDULE"],
   ["DAY", "DAY"],

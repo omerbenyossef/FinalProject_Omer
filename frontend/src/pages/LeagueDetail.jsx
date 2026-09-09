@@ -61,7 +61,6 @@ export default function LeagueDetail() {
   const [inviteLoading, setInviteLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("standings");
   const [showAddRoundConfirm, setShowAddRoundConfirm] = useState(false);
-  const [reportingMyMatch, setReportingMyMatch] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [selectedRound, setSelectedRound] = useState(null);
   const [ratingFlow, setRatingFlow] = useState(null); // { existingResult, joinCode } | null
@@ -330,9 +329,20 @@ export default function LeagueDetail() {
   );
   const isLatestRound = shownRound === latestRound;
   const shownRoundMatches = groupedRounds.find((g) => g.round === shownRound)?.matches || [];
+  // My match leads the tab as its own block (149a); the list below is
+  // everyone else's, which is also why FixtureRow gets no handlers there.
+  const myShownMatch =
+    shownRoundMatches.find((m) => m.player1.id === user?.id || m.player2.id === user?.id) ?? null;
+  const otherMatches = shownRoundMatches.filter((m) => m !== myShownMatch);
   const shownRoundCloses = shownRound
     ? roundDueDate(league.schedule_started_at, shownRound, league.round_length_days)
     : "";
+  const shownRoundDue = shownRound
+    ? roundDueDateObj(league.schedule_started_at, shownRound, league.round_length_days || 7)
+    : null;
+  const shownRoundDaysLeft = shownRoundDue
+    ? Math.max(0, Math.ceil((shownRoundDue.getTime() - Date.now()) / 86400000))
+    : null;
   const prevRound = existingRoundNumbers.filter((r) => r < shownRound).sort((a, b) => b - a)[0] ?? null;
   const nextRoundNav = existingRoundNumbers.filter((r) => r > shownRound).sort((a, b) => a - b)[0] ?? null;
   const legacyMatches = allMatches.filter((m) => !m.round_number);
@@ -778,29 +788,41 @@ export default function LeagueDetail() {
                     )}
                   </>
                 ) : (
-                  <div className="fixtures">
-                    {shownRoundMatches.map((match) => (
-                      <FixtureRow
-                        key={match.id}
-                        match={match}
+                  <>
+                    {myShownMatch ? (
+                      <MyMatchBlock
+                        match={myShownMatch}
                         userId={user?.id}
                         busy={busy}
-                        isReporting={reportingMyMatch}
-                        onStartReport={() => setReportingMyMatch(true)}
-                        onQuickConfirmSchedule={() => handleQuickConfirmSchedule(match.id)}
-                        onCancelSchedule={() => handleCancelSchedule(match.id)}
-                        onSubmitScore={(sets) => {
-                          handleReportScore(match.id, sets);
-                          setReportingMyMatch(false);
-                        }}
-                        onCancelForm={() => setReportingMyMatch(false)}
-                        onCancelMatch={() => handleCancelMatch(match.id)}
-                        onEditScore={(sets) => handleReportScore(match.id, sets)}
-                        onNeedsConfirm={() => navigate(`/matches/${match.id}/confirm`)}
                         maxSets={league.best_of}
+                        daysLeft={shownRoundDaysLeft}
+                        onSchedule={() => navigate(`/matches/${myShownMatch.id}/schedule`)}
+                        onQuickConfirmSchedule={() => handleQuickConfirmSchedule(myShownMatch.id)}
+                        onCancelSchedule={() => handleCancelSchedule(myShownMatch.id)}
+                        onReport={(sets) => handleReportScore(myShownMatch.id, sets)}
+                        onCancelMatch={() => handleCancelMatch(myShownMatch.id)}
+                        onNeedsConfirm={() => navigate(`/matches/${myShownMatch.id}/confirm`)}
                       />
-                    ))}
-                  </div>
+                    ) : (
+                      <p className="mm-none">{t("אין לך משחק במחזור הזה")}</p>
+                    )}
+
+                    {otherMatches.length > 0 && (
+                      <>
+                        <div className="fx-head">{t("שאר המחזור")}</div>
+                        <div className="fixtures">
+                          {otherMatches.map((match) => (
+                            <FixtureRow
+                              key={match.id}
+                              match={match}
+                              userId={user?.id}
+                              maxSets={league.best_of}
+                            />
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </>
                 )}
 
                 {!isLatestRound && (
@@ -970,6 +992,162 @@ function AddRoundConfirmSheet({ nextRound, roundsToCreate, pairs, dueDate, busy,
 
 
 const FX_STATUS_TAG = { no_time: "NO TIME", sent: "SENT", asked_you: "ASKED YOU", set: "SET" };
+
+// 149a — my own match in the shown round, lifted out of the fixtures list into
+// its own block at the top of the tab. Every action that used to live inside
+// FixtureRow for `mine` rows lives here instead, which is why the list below
+// renders FixtureRow with no handlers at all.
+function MyMatchBlock({
+  match,
+  userId,
+  busy,
+  maxSets,
+  daysLeft,
+  onSchedule,
+  onQuickConfirmSchedule,
+  onCancelSchedule,
+  onReport,
+  onCancelMatch,
+  onNeedsConfirm,
+}) {
+  const { t } = useLanguage();
+  const [reporting, setReporting] = useState(false);
+  const [editing, setEditing] = useState(false);
+
+  const iAmPlayer1 = match.player1.id === userId;
+  const opponent = iAmPlayer1 ? match.player2 : match.player1;
+  const mine = (sets) =>
+    sets && !iAmPlayer1
+      ? sets.map((s) => ({ player1_games: s.player2_games, player2_games: s.player1_games }))
+      : sets;
+  const rowStatus = scheduleRowStatus(match, userId);
+  const scheduleState = matchScheduleState(match, userId);
+  const inCorrectionRound = match.corrected_sets != null;
+  const iNeedToConfirm =
+    match.status === "pending_confirmation" &&
+    (inCorrectionRound ? match.reported_by === userId : match.reported_by !== userId);
+
+  if (reporting || editing) {
+    return (
+      <div className="mm-block">
+        <SetScoreForm
+          player1Name={match.player1.name}
+          player2Name={match.player2.name}
+          initialSets={editing ? match.sets : undefined}
+          onSubmit={(sets) => {
+            onReport(sets);
+            setReporting(false);
+            setEditing(false);
+          }}
+          onCancel={() => {
+            setReporting(false);
+            setEditing(false);
+          }}
+          onCancelMatch={reporting ? onCancelMatch : undefined}
+          busy={busy}
+          maxSets={maxSets}
+          submitLabel={editing ? "עדכן תוצאה" : undefined}
+        />
+      </div>
+    );
+  }
+
+  const when = match.scheduled_at ? formatWeekdayTime(new Date(match.scheduled_at)) : "";
+  const claimSets = mine(match.corrected_sets ?? match.sets);
+  const finalSets = mine(match.sets);
+  const iWon =
+    finalSets && finalSets.length > 0
+      ? finalSets.filter((s) => s.player1_games > s.player2_games).length >
+        finalSets.filter((s) => s.player2_games > s.player1_games).length
+      : null;
+
+  let meta = null;
+  let action = null;
+
+  if (match.status === "disputed") {
+    meta = t("התוצאות לא תואמות · המשחק לא נספר");
+    action = (
+      <button type="button" className="mm-btn ghost" onClick={onNeedsConfirm}>
+        {t("הצג")}
+      </button>
+    );
+  } else if (match.status === "completed") {
+    meta = [formatSets(finalSets), iWon === null ? null : iWon ? t("ניצחת") : t("הפסדת")]
+      .filter(Boolean)
+      .join(" · ");
+    action = (
+      <button type="button" className="mm-btn ghost" onClick={() => setEditing(true)}>
+        {t("תקן תוצאה")}
+      </button>
+    );
+  } else if (match.status === "pending_confirmation") {
+    if (iNeedToConfirm) {
+      meta = t("היריב דיווח {score}", { score: formatSets(claimSets) });
+      action = (
+        <button type="button" className="mm-btn" onClick={onNeedsConfirm}>
+          {t("אשר תוצאה")}
+        </button>
+      );
+    } else {
+      meta = t("דיווחת {score} · ממתין ליריב", { score: formatSets(claimSets) });
+    }
+  } else if (rowStatus === "no_time") {
+    meta = [t("עוד לא נקבעה שעה"), daysLeft != null ? daysLeftPhrase(daysLeft, t) : null]
+      .filter(Boolean)
+      .join(" · ");
+    action = (
+      <button type="button" className="mm-btn" onClick={onSchedule}>
+        {t("קבע שעה")}
+      </button>
+    );
+  } else if (rowStatus === "sent") {
+    meta = t("ממתין לאישור השעה שהצעת");
+    action = (
+      <button type="button" className="mm-secondary" onClick={onCancelSchedule} disabled={busy}>
+        {t("בטל")}
+      </button>
+    );
+  } else if (rowStatus === "asked_you") {
+    meta = t("הציע לך {when}", { when });
+    action = (
+      <div className="mm-actions">
+        <button type="button" className="mm-btn" onClick={onQuickConfirmSchedule} disabled={busy}>
+          {t("אשר")}
+        </button>
+        <button type="button" className="mm-secondary" onClick={onSchedule}>
+          {t("הצע שעה אחרת")}
+        </button>
+      </div>
+    );
+  } else {
+    meta = [when, match.court].filter(Boolean).join(" · ");
+    if (scheduleState === "ready") {
+      action = (
+        <button type="button" className="mm-btn" onClick={() => setReporting(true)}>
+          {t("דווח")}
+        </button>
+      );
+    }
+  }
+
+  return (
+    <div className="mm-block">
+      <div className="mm-label">{t("המשחק שלך")}</div>
+      <div className="mm-row">
+        <Avatar name={opponent.name} size={36} />
+        <div className="mm-body">
+          <div className="mm-name">
+            <span dir="auto" style={{ unicodeBidi: "isolate" }}>
+              {opponent.name}
+            </span>
+          </div>
+          <div className="mm-meta">{meta}</div>
+        </div>
+        {action}
+      </div>
+    </div>
+  );
+}
 
 function FixtureRow({
   match,

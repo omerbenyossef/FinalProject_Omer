@@ -2051,8 +2051,8 @@ a { color: var(--court); text-decoration: none; }
   color: #eef1f7;
 }
 .round-arrow {
-  width: 26px;
-  height: 26px;
+  width: 30px;
+  height: 30px;
   padding: 0;
   border-radius: 50%;
   border: 1px solid rgba(148, 163, 184, 0.22);
@@ -2078,18 +2078,132 @@ a { color: var(--court); text-decoration: none; }
   cursor: default;
 }
 .round-line-closes {
-  font: 500 12px "IBM Plex Mono", monospace;
-  letter-spacing: 0.06em;
+  font: 500 11.5px "IBM Plex Mono", monospace;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #6f7787;
 }
 
+/* --- 149a: המשחק שלי בראש הטאב --- */
+.mm-block {
+  margin-top: 16px;
+  padding: 16px 17px;
+  border-radius: 20px;
+  background: rgba(198, 242, 78, 0.05);
+  box-shadow: inset 3px 0 0 0 var(--court);
+}
+[dir="ltr"] .mm-block {
+  box-shadow: inset -3px 0 0 0 var(--court);
+}
+
+.mm-label {
+  font-family: "IBM Plex Mono", var(--mono);
+  font-weight: 500;
+  font-size: 11.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #9aad4e; /* ליים מעומעם, 4.6:1 על הרקע הזה */
+}
+
+.mm-row {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.mm-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.mm-name {
+  font-family: "IBM Plex Sans", var(--sans);
+  font-weight: 700;
+  font-size: 17.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mm-meta {
+  margin-top: 3px;
+  font-family: "IBM Plex Sans", var(--sans);
+  font-weight: 500;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.mm-btn {
+  flex: none;
+  height: 38px;
+  padding: 0 17px;
+  border: 0;
+  border-radius: 19px;
+  background: var(--court);
+  color: var(--court-contrast);
+  font-family: "IBM Plex Sans", var(--sans);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.mm-btn.ghost {
+  background: none;
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  color: var(--ink);
+}
+
+.mm-secondary {
+  background: none;
+  border: 0;
+  padding: 0;
+  font-family: "IBM Plex Sans", var(--sans);
+  font-weight: 600;
+  font-size: 12.5px;
+  color: var(--muted);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* "אשר" עם "הצע שעה אחרת" מתחתיו — המצב היחיד עם שתי פעולות */
+.mm-actions {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.mm-none {
+  margin: 18px 0 0;
+  font-family: "IBM Plex Sans", var(--sans);
+  font-weight: 500;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+
+.fx-head {
+  margin-top: 24px;
+  font-family: "IBM Plex Mono", var(--mono);
+  font-weight: 500;
+  font-size: 11.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #6f7787;
+}
+:lang(he) .fx-head {
+  font-family: "IBM Plex Sans", var(--sans);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+}
+
 .fixtures {
-  margin-top: 18px;
+  margin-top: 4px;
   margin-inline: -20px;
 }
 .fx-row {
-  padding: 16px 20px;
+  padding: 14px 20px;
   border-top: 1px solid rgba(148, 163, 184, 0.12);
   width: 100%;
   background: none;
@@ -2101,8 +2215,9 @@ a { color: var(--court); text-decoration: none; }
   cursor: default;
   display: block;
 }
+/* הרשימה נגמרת בקו של all-rounds */
 .fx-row:last-child {
-  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  border-bottom: 0;
 }
 button.fx-row {
   cursor: pointer;
@@ -2126,15 +2241,15 @@ button.fx-row {
 }
 .fx-mid {
   flex: none;
-  width: 74px;
+  width: 86px;
   text-align: center;
 }
 .fx-mid .score {
-  font: 500 13.5px "IBM Plex Mono", monospace;
+  font: 500 13px "IBM Plex Mono", monospace;
   color: #c9cfdb;
 }
 .fx-mid .state {
-  font: 600 12.5px "IBM Plex Sans", sans-serif;
+  font: 600 12px "IBM Plex Sans", sans-serif;
   color: #8b93a6;
 }
 .fx-mid .state.open {
@@ -2251,8 +2366,8 @@ a.fx-report svg {
 }
 .all-rounds-meta {
   margin-inline-start: auto;
-  font: 500 12px "IBM Plex Mono", monospace;
-  letter-spacing: 0.06em;
+  font: 500 11.5px "IBM Plex Mono", monospace;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #6f7787;
 }
