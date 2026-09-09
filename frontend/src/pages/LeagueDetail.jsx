@@ -16,6 +16,7 @@ import {
   matchScheduleState,
   scheduleRowStatus,
   formatWeekdayTime,
+  formatWeekdayDateTime,
   activeRoundStatus,
   daysLeftPhrase,
   getActionCandidates,
@@ -285,10 +286,6 @@ export default function LeagueDetail() {
   // full standings table of zeros either (see the standings tab below).
   const myPlayedNone = !myStanding || myStanding.played === 0;
   const noResultsYet = standings.length > 0 && standings.every((row) => row.played === 0);
-  const myFirstPendingMatch =
-    allMatches
-      .filter((m) => (m.player1.id === user?.id || m.player2.id === user?.id) && m.status === "pending")
-      .sort((a, b) => (a.round_number ?? 0) - (b.round_number ?? 0))[0] ?? null;
   const myRoundRows = allMatches
     .filter((m) => m.player1.id === user?.id || m.player2.id === user?.id)
     .filter((m) => m.round_number)
@@ -379,11 +376,26 @@ export default function LeagueDetail() {
 
   const leagueEntries = nextMatches.filter((e) => e.league_id === Number(leagueId));
   const leagueOpenAction = buildOpenAction(getActionCandidates(leagueEntries, user?.id), user?.id, t);
+  // buildOpenAction only knows about matches that need doing something, so a
+  // match that's simply scheduled for later — the normal case before you've
+  // played at all — left this block empty and the tab never said when you play
+  // next. Fall back to the soonest match still ahead of me.
+  const myNextMatch =
+    allMatches
+      .filter((m) => (m.player1.id === user?.id || m.player2.id === user?.id) && m.status === "pending")
+      .sort((a, b) => {
+        if (a.scheduled_at && b.scheduled_at) return new Date(a.scheduled_at) - new Date(b.scheduled_at);
+        if (a.scheduled_at) return -1;
+        if (b.scheduled_at) return 1;
+        return (a.round_number ?? 0) - (b.round_number ?? 0);
+      })[0] ?? null;
+  let leagueActionMatch = null;
   let leagueActionOpponent = null;
   let leagueActionSub = "";
   let leagueActionBtnLabel = "";
   if (leagueOpenAction) {
     const actionMatch = leagueOpenAction.match;
+    leagueActionMatch = actionMatch;
     leagueActionOpponent = actionMatch.player1.id === user?.id ? actionMatch.player2 : actionMatch.player1;
     if (leagueOpenAction.kind === "confirm") {
       leagueActionSub = t("יש לך תוצאה לאישור");
@@ -405,10 +417,26 @@ export default function LeagueDetail() {
         daysLeftForAction === 1 ? t("נותר יום אחד לדיווח") : t("נותרו {n} ימים לדיווח", { n: daysLeftForAction });
       leagueActionBtnLabel = t("דווח");
     }
+  } else if (myNextMatch) {
+    leagueActionMatch = myNextMatch;
+    leagueActionOpponent =
+      myNextMatch.player1.id === user?.id ? myNextMatch.player2 : myNextMatch.player1;
+    if (myNextMatch.scheduled_at) {
+      // Already set and still ahead — nothing to press, just say when.
+      leagueActionSub = [formatWeekdayDateTime(new Date(myNextMatch.scheduled_at)), myNextMatch.court]
+        .filter(Boolean)
+        .join(" · ");
+    } else {
+      leagueActionSub = t("עוד לא נקבעה שעה");
+      leagueActionBtnLabel = t("קבע שעה");
+    }
   }
 
   function handleOpenLeagueAction() {
-    if (!leagueOpenAction) return;
+    if (!leagueOpenAction) {
+      if (leagueActionMatch) navigate(`/matches/${leagueActionMatch.id}/schedule`);
+      return;
+    }
     if (leagueOpenAction.kind === "confirm") {
       navigate(`/matches/${leagueOpenAction.match.id}/confirm`);
     } else {
@@ -505,44 +533,31 @@ export default function LeagueDetail() {
       <div>
         {activeTab === "stats" && isMember && (
           <div className="my-stats">
+            {leagueActionMatch && (
+              <div className="ms-open">
+                <div className="ms-open-body">
+                  <div className="ms-open-title">
+                    {leagueActionMatch.round_number != null && (
+                      <>{t("מחזור {n}", { n: leagueActionMatch.round_number })} · </>
+                    )}
+                    <span dir="auto" style={{ unicodeBidi: "isolate" }}>
+                      {leagueActionOpponent?.name}
+                    </span>
+                  </div>
+                  <div className="ms-open-sub">{leagueActionSub}</div>
+                </div>
+                {leagueActionBtnLabel && (
+                  <button type="button" className="ms-open-btn" onClick={handleOpenLeagueAction}>
+                    {leagueActionBtnLabel}
+                  </button>
+                )}
+              </div>
+            )}
+
             {myPlayedNone ? (
-              <EmptyLine
-                sentence={t("עוד לא שיחקת בליגה הזאת.")}
-                action={
-                  !leagueOpenAction &&
-                  myFirstPendingMatch && (
-                    <button
-                      type="button"
-                      className="empty-line-action"
-                      onClick={() => navigate(`/matches/${myFirstPendingMatch.id}/schedule`)}
-                    >
-                      <span className="empty-line-dot" aria-hidden="true" />
-                      {t("קבע שעה למשחק הראשון")}
-                    </button>
-                  )
-                }
-              />
+              <EmptyLine sentence={t("עוד לא שיחקת בליגה הזאת, אז אין עדיין סטטיסטיקה.")} />
             ) : (
               <>
-                {leagueOpenAction && (
-                  <div className="ms-open">
-                    <div className="ms-open-body">
-                      <div className="ms-open-title">
-                        {leagueOpenAction.match.round_number != null && (
-                          <>{t("מחזור {n}", { n: leagueOpenAction.match.round_number })} · </>
-                        )}
-                        <span dir="auto" style={{ unicodeBidi: "isolate" }}>
-                          {leagueActionOpponent?.name}
-                        </span>
-                      </div>
-                      <div className="ms-open-sub">{leagueActionSub}</div>
-                    </div>
-                    <button type="button" className="ms-open-btn" onClick={handleOpenLeagueAction}>
-                      {leagueActionBtnLabel}
-                    </button>
-                  </div>
-                )}
-
                 <div className="ms-quad">
                   <div className="ms-quad-cell">
                     <div className="ms-quad-label">{t("מקום")}</div>

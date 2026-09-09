@@ -604,6 +604,11 @@ const PAIRS = [
   ["1H30", "1H30"],
   ["2H", "2H"],
 
+  [
+    "עוד לא שיחקת בליגה הזאת, אז אין עדיין סטטיסטיקה.",
+    "You haven't played in this league yet, so there are no stats.",
+  ],
+
   // Matches tab — my match block (149a)
   ["המשחק שלך", "Your match"],
   ["שאר המחזור", "Rest of the round"],
