@@ -1099,7 +1099,7 @@ function FixtureRow({
       <span className="fx-mid">
         {isDisputed ? (
           <span className="fx-sched-tag" dir="ltr">
-            {t("DISPUTED")}
+            {match.void_reason === "not_played" ? t("המשחק לא בוצע") : t("DISPUTED")}
           </span>
         ) : isCompleted ? (
           correctionAcceptedFinal ? (
@@ -1180,12 +1180,16 @@ function FixtureRow({
       )}
       {mine && isDisputed && (
         <div className="fx-dispute-block is-asked">
-          <span className="fx-secondary" dir="ltr">
-            YOU {formatSets(myDisputeSets)}
-          </span>
-          <span className="fx-secondary" dir="ltr">
-            HIM {formatSets(theirDisputeSets)}
-          </span>
+          {match.void_reason !== "not_played" && (
+            <>
+              <span className="fx-secondary" dir="ltr">
+                YOU {formatSets(myDisputeSets)}
+              </span>
+              <span className="fx-secondary" dir="ltr">
+                HIM {formatSets(theirDisputeSets)}
+              </span>
+            </>
+          )}
           <span className="fx-secondary">{t("NOT COUNTED · NEITHER SIDE GETS THE WIN")}</span>
         </div>
       )}

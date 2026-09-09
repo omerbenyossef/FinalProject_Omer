@@ -65,6 +65,8 @@ export default function NeedsYou() {
       }
     } else if (item.type === "proposed") {
       navigate(`/matches/${matchId}/schedule`);
+    } else if (item.type === "report") {
+      run(matchId, () => api.reportMatchNotPlayed(matchId));
     } else if (item.type === "waiting") {
       run(matchId, () => api.cancelMatchCorrection(matchId));
     }

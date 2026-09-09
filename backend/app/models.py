@@ -171,6 +171,8 @@ class Match(Base):
     dispute_note = Column(String, nullable=True)
     disputed_at = Column(DateTime, nullable=True)
     last_reminded_at = Column(DateTime, nullable=True)
+    auto_remind_count = Column(Integer, default=0, nullable=False)
+    void_reason = Column(String, nullable=True)
 
     league = relationship("League", back_populates="matches")
     sport = relationship("Sport")

@@ -14,6 +14,8 @@ router = APIRouter(prefix="/leagues/{league_id}/matches", tags=["matches"])
 
 CONFIRMATION_WINDOW = timedelta(hours=48)
 REMIND_COOLDOWN = timedelta(hours=1)
+AUTO_REMIND_INTERVAL = timedelta(hours=24)
+MAX_AUTO_REMINDS = 3
 
 
 def _to_naive_utc(dt: datetime) -> datetime:
@@ -29,7 +31,9 @@ def _to_naive_utc(dt: datetime) -> datetime:
 def _auto_confirm_overdue(db: Session) -> None:
     """Opportunistic sweep run on every match read: there's no background
     scheduler, so a match past its auto_confirm_at is finalized lazily the
-    next time anyone looks at match data, instead of on a timer."""
+    next time anyone looks at match data, instead of on a timer. Also runs
+    the overdue-reminder sweep below, for the same reason — one call site
+    to add wherever match data gets touched."""
     now = datetime.utcnow()
     overdue = (
         db.query(models.Match)
@@ -40,13 +44,35 @@ def _auto_confirm_overdue(db: Session) -> None:
         )
         .all()
     )
+    completed, voided = [], []
     for match in overdue:
-        match.status = models.MatchStatus.completed
-        match.confirmed_by = None
-        match.confirmed_at = now
+        if match.void_reason == "not_played" and match.corrected_sets is None:
+            # A "match didn't happen" claim nobody answered — there's no
+            # score to fall back on (unlike a normal disputed report), so
+            # silence resolves it to voided rather than completed.
+            match.status = models.MatchStatus.disputed
+            match.disputed_at = now
+            voided.append(match)
+        elif match.void_reason == "not_played" and match.corrected_sets is not None:
+            # The other side said "we did play, here's the score" and got
+            # no response — favor that real score over an empty not-played
+            # claim, since there's nothing else to silently keep.
+            match.sets = match.corrected_sets
+            match.player1_score = sum(1 for s in match.corrected_sets if s["player1_games"] > s["player2_games"])
+            match.player2_score = sum(1 for s in match.corrected_sets if s["player2_games"] > s["player1_games"])
+            match.void_reason = None
+            match.status = models.MatchStatus.completed
+            match.confirmed_by = None
+            match.confirmed_at = now
+            completed.append(match)
+        else:
+            match.status = models.MatchStatus.completed
+            match.confirmed_by = None
+            match.confirmed_at = now
+            completed.append(match)
     if overdue:
         db.commit()
-        for match in overdue:
+        for match in completed:
             update_ratings_for_match(db, match)
             # Neither player asked for this to happen (that's the point of
             # auto-confirm — silence past the 48h window finalizes it) so
@@ -59,6 +85,59 @@ def _auto_confirm_overdue(db: Session) -> None:
                     player_id,
                     "המשחק אושר אוטומטית",
                     "התוצאה לא אושרה בזמן, אז המשחק שלכם ננעל אוטומטית ונספר בתוצאות",
+                    url,
+                )
+        for match in voided:
+            url = f"/leagues/{match.league_id}" if match.league_id else "/profile"
+            for player_id in (match.player1_id, match.player2_id):
+                notify_user(
+                    db,
+                    player_id,
+                    "המשחק בוטל אוטומטית",
+                    "הדיווח שהמשחק לא בוצע לא אושר או נדחה בזמן, אז המשחק בוטל ולא ייספר בתוצאות",
+                    url,
+                )
+
+    _auto_remind_overdue_matches(db)
+
+
+def _auto_remind_overdue_matches(db: Session) -> None:
+    """Companion sweep, called from _auto_confirm_overdue above: nags both
+    players on a confirmed, not-yet-reported match once its scheduled time
+    has passed, every 24h, up to 3 times total."""
+    now = datetime.utcnow()
+    threshold = now - AUTO_REMIND_INTERVAL
+    overdue = (
+        db.query(models.Match)
+        .filter(
+            models.Match.status == models.MatchStatus.pending,
+            models.Match.schedule_confirmed.is_(True),
+            models.Match.scheduled_at.isnot(None),
+            models.Match.scheduled_at <= threshold,
+            or_(
+                models.Match.auto_remind_count.is_(None),
+                models.Match.auto_remind_count < MAX_AUTO_REMINDS,
+            ),
+            or_(
+                models.Match.last_reminded_at.is_(None),
+                models.Match.last_reminded_at <= threshold,
+            ),
+        )
+        .all()
+    )
+    for match in overdue:
+        match.auto_remind_count = (match.auto_remind_count or 0) + 1
+        match.last_reminded_at = now
+    if overdue:
+        db.commit()
+        for match in overdue:
+            url = f"/leagues/{match.league_id}" if match.league_id else "/profile"
+            for player_id in (match.player1_id, match.player2_id):
+                notify_user(
+                    db,
+                    player_id,
+                    "תזכורת: יש משחק לדווח",
+                    "המשחק שלכם כבר היה אמור להתקיים ועדיין לא דיווחתם תוצאה",
                     url,
                 )
 

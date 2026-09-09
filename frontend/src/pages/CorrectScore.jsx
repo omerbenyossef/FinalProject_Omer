@@ -88,7 +88,9 @@ export default function CorrectScore() {
 
       <h1 className="sched-title">{t("מה הייתה התוצאה")}</h1>
       <p className="sched-sub" dir="ltr">
-        {t("HE REPORTED {sets} TO HIM", { sets: formatSets(reported) })}
+        {reported.length > 0
+          ? t("HE REPORTED {sets} TO HIM", { sets: formatSets(reported) })
+          : t("הצד השני דיווח שהמשחק לא בוצע — מה הייתה התוצאה בפועל?")}
       </p>
 
       {error && <p className="error">{t(error)}</p>}

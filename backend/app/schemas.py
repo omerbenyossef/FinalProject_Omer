@@ -347,6 +347,7 @@ class MatchOut(BaseModel):
     corrected_sets: Optional[list[SetScore]] = None
     dispute_note: Optional[str] = None
     disputed_at: Optional[datetime] = None
+    void_reason: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -612,6 +613,7 @@ class MatchDetailOut(BaseModel):
     corrected_sets: Optional[list[SetScore]] = None
     dispute_note: Optional[str] = None
     disputed_at: Optional[datetime] = None
+    void_reason: Optional[str] = None
     auto_confirm_at: Optional[datetime] = None
     prediction: Optional[ResultPrediction] = None
 

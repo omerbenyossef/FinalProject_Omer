@@ -150,6 +150,7 @@ export const api = {
       body: { override_conflict_warning: !!overrideConflictWarning },
     }),
   declineMatchSchedule: (matchId) => request(`/matches/${matchId}/schedule/decline`, { method: "POST" }),
+  reportMatchNotPlayed: (matchId) => request(`/matches/${matchId}/report-not-played`, { method: "POST" }),
   confirmMatchResult: (matchId) => request(`/matches/${matchId}/confirm`, { method: "POST" }),
   disputeMatchResult: (matchId, sets, note) =>
     request(`/matches/${matchId}/dispute`, { method: "POST", body: { sets, note: note || null } }),

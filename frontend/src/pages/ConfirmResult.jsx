@@ -47,6 +47,7 @@ export default function ConfirmResult() {
   const mySets = sets.map((s) => s.player1_games);
   const oppSets = sets.map((s) => s.player2_games);
   const noThirdSet = detail.max_sets >= 3 && sets.length < 3;
+  const isNotPlayedClaim = detail.void_reason === "not_played" && detail.corrected_sets == null;
 
   async function handleConfirm() {
     setBusy(true);
@@ -90,11 +91,42 @@ export default function ConfirmResult() {
         <h1 className="sched-title">{t("מול {name}", { name: detail.opponent.name })}</h1>
         <p className="sched-waiting">
           {detail.result_status === "disputed"
-            ? t("DISPUTED")
+            ? detail.void_reason === "not_played"
+              ? t("המשחק לא בוצע")
+              : t("DISPUTED")
             : detail.result_status === "final"
             ? t("התוצאה כבר אושרה")
             : t("WAITING FOR HIM")}
         </p>
+      </div>
+    );
+  }
+
+  if (isNotPlayedClaim) {
+    return (
+      <div className="sched-page">
+        <div className="sched-nav">
+          <button type="button" className="sched-nav-back" onClick={() => navigate(-1)} aria-label={t("חזרה")}>
+            <ChevronIcon aria-hidden="true" />
+          </button>
+          <span className="sched-nav-label">{t("CONFIRM RESULT")}</span>
+        </div>
+
+        <h1 className="sched-title">{t("{name} מדווח/ת שהמשחק לא בוצע", { name: detail.opponent.name })}</h1>
+        <p className="sched-sub" dir="ltr">
+          {detail.scheduled_at && formatWeekdayTime(new Date(detail.scheduled_at))}
+        </p>
+
+        {error && <p className="error">{t(error)}</p>}
+
+        <div className="sched-bottom">
+          <button type="button" className="res-confirm" disabled={busy} onClick={handleConfirm}>
+            {t("מאשר, המשחק לא בוצע")}
+          </button>
+          <button type="button" className="res-wrong-link" disabled={busy} onClick={handleWrong}>
+            {t("לא, המשחק כן בוצע")}
+          </button>
+        </div>
       </div>
     );
   }

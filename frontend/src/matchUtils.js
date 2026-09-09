@@ -407,6 +407,19 @@ export function buildOpenItemDisplay(item, userId, t) {
   }
 
   if (item.type === "confirm") {
+    const isNotPlayedClaim = m.void_reason === "not_played" && m.corrected_sets == null;
+    if (isNotPlayedClaim) {
+      return {
+        typeLabel: t("דיווח: המשחק לא בוצע"),
+        age: compactAge(claimSubmittedAt(m.auto_confirm_at)),
+        opponentName: opponent.name,
+        opponentId: opponent.id,
+        context: [leagueOrFriendly, roundLabel].filter(Boolean).join(" · "),
+        primaryLabel: t("מאשר, המשחק לא בוצע"),
+        primaryLime: true,
+        secondaryLabel: t("לא, המשחק כן בוצע"),
+      };
+    }
     const claimSets = m.corrected_sets ?? m.sets;
     const mySets = iAmPlayer1
       ? claimSets
@@ -466,7 +479,7 @@ export function buildOpenItemDisplay(item, userId, t) {
     context: `${t("PLAYED")} ${formatWeekdayTime(new Date(m.scheduled_at))} · ${t("NEITHER OF YOU REPORTED")}`,
     primaryLabel: t("דווח תוצאה"),
     primaryLime: true,
-    secondaryLabel: null,
+    secondaryLabel: t("המשחק לא בוצע"),
   };
 }
 

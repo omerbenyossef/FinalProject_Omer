@@ -223,6 +223,7 @@ def get_match_detail(
         corrected_sets=_mine_first(match.corrected_sets),
         dispute_note=match.dispute_note,
         disputed_at=match.disputed_at,
+        void_reason=match.void_reason,
         auto_confirm_at=match.auto_confirm_at,
         prediction=prediction,
     )
@@ -472,6 +473,51 @@ def decline_match_schedule(
     return match
 
 
+@router.post("/{match_id}/report-not-played", response_model=schemas.MatchOut)
+def report_match_not_played(
+    match_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Either player can flag that a scheduled match never actually
+    happened, once its time has passed. This doesn't void the match by
+    itself — it goes through the same pending_confirmation/reported_by
+    machinery as a score report, so the other side has to agree before it
+    counts as voided; one side can't unilaterally erase a match that was
+    actually played."""
+    _auto_confirm_overdue(db)
+    match = _get_match_for_participant(db, match_id, current_user.id)
+    if match.status != models.MatchStatus.pending:
+        raise HTTPException(status_code=400, detail="כבר יש תוצאה למשחק הזה — אפשר רק לאשר אותה או לערער עליה")
+    if match.scheduled_at is None or not match.schedule_confirmed:
+        raise HTTPException(status_code=400, detail="צריך לתאם ולאשר שעה למשחק לפני שאפשר לדווח שהוא לא בוצע")
+    if _to_naive_utc(match.scheduled_at) >= datetime.utcnow():
+        raise HTTPException(status_code=400, detail="אפשר לדווח שמשחק לא בוצע רק אחרי השעה שנקבעה לו")
+
+    match.status = models.MatchStatus.pending_confirmation
+    match.reported_by = current_user.id
+    match.sets = None
+    match.player1_score = None
+    match.player2_score = None
+    match.void_reason = "not_played"
+    match.confirmed_by = None
+    match.confirmed_at = None
+    match.auto_confirm_at = datetime.utcnow() + CONFIRMATION_WINDOW
+    db.commit()
+    db.refresh(match)
+
+    opponent_id = match.player2_id if current_user.id == match.player1_id else match.player1_id
+    notify_user(
+        db,
+        opponent_id,
+        "דיווח שהמשחק לא בוצע",
+        f"{current_user.name} מדווח/ת שהמשחק שלכם לא התקיים, וממתין/ה לתשובה שלך",
+        f"/matches/{match.id}/confirm",
+    )
+
+    return match
+
+
 @router.post("/{match_id}/confirm", response_model=schemas.MatchOut)
 def confirm_result(
     match_id: int,
@@ -483,17 +529,43 @@ def confirm_result(
     if match.status != models.MatchStatus.pending_confirmation:
         raise HTTPException(status_code=400, detail="אין תוצאה שממתינה לאישור עבור המשחק הזה")
 
+    confirming_not_played = match.void_reason == "not_played" and match.corrected_sets is None
+
     if match.corrected_sets is not None:
-        # Round 2: only the person who made the original report can accept
-        # the correction that replaces it.
+        # Round 2: only the person who made the original report (or, for a
+        # "didn't happen" claim that got a real-score correction, the person
+        # who made that claim) can accept the correction that replaces it.
         if current_user.id != match.reported_by:
             raise HTTPException(status_code=400, detail="רק מי שדיווח את התוצאה המקורית יכול לאשר את התיקון")
         match.sets = match.corrected_sets
         match.player1_score = sum(1 for s in match.corrected_sets if s["player1_games"] > s["player2_games"])
         match.player2_score = sum(1 for s in match.corrected_sets if s["player2_games"] > s["player1_games"])
+        match.void_reason = None
+    elif confirming_not_played:
+        # Agreeing the match never happened — the opposite side of the
+        # claim confirms it, same as confirming a score, but nothing here
+        # is a self-confirm since the claim has no sets to self-report.
+        if current_user.id == match.reported_by:
+            raise HTTPException(status_code=400, detail="לא ניתן לאשר דיווח שהגשת בעצמך")
     else:
         if current_user.id == match.reported_by:
             raise HTTPException(status_code=400, detail="לא ניתן לאשר תוצאה שדיווחת בעצמך")
+
+    if confirming_not_played:
+        match.status = models.MatchStatus.disputed
+        match.disputed_at = datetime.utcnow()
+        db.commit()
+        db.refresh(match)
+
+        other_id = match.player2_id if current_user.id == match.player1_id else match.player1_id
+        notify_user(
+            db,
+            other_id,
+            "אושר שהמשחק לא בוצע",
+            f"{current_user.name} אישר/ה שהמשחק שלכם לא התקיים — הוא בוטל ולא ייספר בתוצאות",
+            f"/matches/{match.id}",
+        )
+        return match
 
     match.status = models.MatchStatus.completed
     match.confirmed_by = current_user.id
