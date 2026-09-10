@@ -6618,6 +6618,17 @@ button:active { transform: translateY(1px); }
 }
 .sched-time-row.on { color: #eef1f7; font-weight: 600; }
 .sched-time-row svg { width: 16px; height: 16px; stroke: #eef1f7; stroke-width: 2.4; }
+/* A slot one of the players is already committed to, or one that has passed:
+   shown, not hidden, so the grid still reads as a real week. */
+.sched-time-row.off { color: #565e6c; cursor: default; }
+.sched-time-row.tight { color: #a3abbb; }
+.sched-time-end { display: flex; align-items: center; gap: 10px; }
+.sched-time-note {
+  font: 500 12px "IBM Plex Sans", var(--sans); color: #6f7787;
+}
+.sched-time-row.tight .sched-time-note { color: #8b93a6; }
+
+.sched-day.off { opacity: .4; cursor: default; }
 
 .sched-court-row { display: flex; align-items: center; justify-content: space-between; }
 .sched-court-value { font: 600 15px "IBM Plex Sans", var(--sans); color: #eef1f7; }

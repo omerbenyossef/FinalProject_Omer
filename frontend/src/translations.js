@@ -325,6 +325,13 @@ const PAIRS = [
   ["שפה: עברית", "Language: Hebrew"],
   ["שפה: English", "Language: English"],
 
+  // Propose a time — slots the grid already knows are impossible
+  ["עבר", "Passed"],
+  ["יש לך משחק", "You have a match"],
+  ["{name} תפוס", "{name} is busy"],
+  ["שניכם תפוסים", "You are both busy"],
+  ["צמוד למשחק אחר", "Back to back with another match"],
+
   // League preview — who is already in the league (154b)
   ["{count} שחקנים כבר בליגה", "{count} players already in the league"],
   ["שחקן אחד כבר בליגה", "One player already in the league"],

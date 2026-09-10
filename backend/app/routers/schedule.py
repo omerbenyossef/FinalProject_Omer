@@ -226,6 +226,8 @@ def get_match_detail(
         void_reason=match.void_reason,
         auto_confirm_at=match.auto_confirm_at,
         prediction=prediction,
+        busy_windows=_busy_windows(db, match, current_user.id),
+        conflict_gap_minutes=int(CONFLICT_GAP_WINDOW.total_seconds() // 60),
     )
 
 
@@ -246,6 +248,30 @@ def _match_duration_minutes(match: models.Match) -> int:
 def _match_window(match: models.Match) -> tuple[datetime, datetime]:
     start = _to_naive_utc(match.scheduled_at)
     return start, start + timedelta(minutes=_match_duration_minutes(match))
+
+
+def _busy_windows(db: Session, match: models.Match, viewer_id: int) -> list[schemas.BusyWindowOut]:
+    """Every future slot either player is already committed to. The conflict
+    engine checks the same thing at propose time, but only as a rejection —
+    handing the windows to the client lets the grid grey those slots out
+    before anyone taps them."""
+    now = datetime.utcnow()
+    opponent_id = match.player2_id if viewer_id == match.player1_id else match.player1_id
+    by_window: dict[tuple[datetime, datetime], set[str]] = {}
+    for user_id, whose in ((viewer_id, "me"), (opponent_id, "opponent")):
+        for other in _other_confirmed_matches(db, user_id, match.id):
+            start, end = _match_window(other)
+            if end <= now:
+                continue
+            by_window.setdefault((start, end), set()).add(whose)
+    return [
+        schemas.BusyWindowOut(
+            start=start,
+            end=end,
+            whose="both" if len(whose) == 2 else next(iter(whose)),
+        )
+        for (start, end), whose in sorted(by_window.items())
+    ]
 
 
 def _other_confirmed_matches(db: Session, user_id: int, exclude_match_id: int) -> list[models.Match]:

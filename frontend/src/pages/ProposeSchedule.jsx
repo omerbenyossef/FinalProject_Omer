@@ -36,6 +36,28 @@ function buildTimeSlots() {
 
 const TIME_SLOTS = buildTimeSlots();
 
+// A slot is impossible if it overlaps a match either player already has
+// confirmed — the server rejects those anyway (_enforce_schedule_conflicts),
+// so the grid may as well say so before the tap. "tight" is the same engine's
+// soft warning: legal, but back-to-back with another match.
+function slotState(day, time, minutes, busyWindows, gapMs) {
+  const [h, m] = time.split(":").map(Number);
+  const start = new Date(day);
+  start.setHours(h, m, 0, 0);
+  const startMs = start.getTime();
+  if (startMs <= Date.now()) return { kind: "past" };
+  const endMs = startMs + minutes * 60000;
+
+  for (const w of busyWindows) {
+    if (startMs < w.end && w.start < endMs) return { kind: "busy", whose: w.whose };
+  }
+  for (const w of busyWindows) {
+    const gap = w.end <= startMs ? startMs - w.end : w.start - endMs;
+    if (gap >= 0 && gap < gapMs) return { kind: "tight", whose: w.whose };
+  }
+  return { kind: "free" };
+}
+
 const DURATION_OPTIONS = [60, 90, 120];
 function durationLabel(minutes) {
   if (minutes === 60) return "1H";
@@ -89,6 +111,29 @@ export default function ProposeSchedule() {
     : null;
   const days = buildDayOptions(roundEnd);
   const isFriendly = !detail.round_number;
+
+  const busyWindows = (detail.busy_windows ?? []).map((w) => ({
+    start: new Date(w.start).getTime(),
+    end: new Date(w.end).getTime(),
+    whose: w.whose,
+  }));
+  const gapMs = (detail.conflict_gap_minutes ?? 60) * 60000;
+  const slotMinutes = isFriendly ? duration || 60 : detail.duration_minutes || 60;
+  const stateFor = (day, time) => slotState(day, time, slotMinutes, busyWindows, gapMs);
+  const freeSlotsOn = (day) =>
+    TIME_SLOTS.filter((slot) => {
+      const kind = stateFor(day, slot).kind;
+      return kind === "free" || kind === "tight";
+    }).length;
+
+  function slotNote(state) {
+    if (state.kind === "past") return t("עבר");
+    if (state.kind === "tight") return t("צמוד למשחק אחר");
+    if (state.kind !== "busy") return null;
+    if (state.whose === "me") return t("יש לך משחק");
+    if (state.whose === "both") return t("שניכם תפוסים");
+    return t("{name} תפוס", { name: detail.opponent.name });
+  }
 
   async function handleSend(overrideConflictWarning = false) {
     if (!selectedDay || !selectedTime) return;
@@ -153,12 +198,18 @@ export default function ProposeSchedule() {
       <div className="sched-days">
         {days.map((d) => {
           const isSelected = selectedDay && d.getTime() === selectedDay.getTime();
+          const nothingLeft = freeSlotsOn(d) === 0;
           return (
             <button
               type="button"
               key={d.getTime()}
-              className={`sched-day${isSelected ? " on" : ""}`}
-              onClick={() => setSelectedDay(d)}
+              className={`sched-day${isSelected ? " on" : ""}${nothingLeft ? " off" : ""}`}
+              disabled={nothingLeft}
+              onClick={() => {
+                setSelectedDay(d);
+                // Keep the picked hour only if it's still open on the new day.
+                if (selectedTime && stateFor(d, selectedTime).kind !== "free") setSelectedTime(null);
+              }}
             >
               <span className="sched-day-weekday">{WEEKDAY_SHORT[d.getDay()]}</span>
               <span className="sched-day-date">{d.getDate()}</span>
@@ -171,15 +222,24 @@ export default function ProposeSchedule() {
       <div className="sched-times">
         {TIME_SLOTS.map((slot) => {
           const isSelected = selectedTime === slot;
+          const state = selectedDay ? stateFor(selectedDay, slot) : { kind: "free" };
+          const taken = state.kind === "past" || state.kind === "busy";
+          const note = slotNote(state);
           return (
             <button
               type="button"
               key={slot}
-              className={`sched-time-row${isSelected ? " on" : ""}`}
+              className={`sched-time-row${isSelected ? " on" : ""}${taken ? " off" : ""}${
+                state.kind === "tight" ? " tight" : ""
+              }`}
+              disabled={taken}
               onClick={() => setSelectedTime(slot)}
             >
               <span dir="ltr">{slot}</span>
-              {isSelected && <CheckIcon aria-hidden="true" />}
+              <span className="sched-time-end">
+                {note && <span className="sched-time-note">{note}</span>}
+                {isSelected && <CheckIcon aria-hidden="true" />}
+              </span>
             </button>
           );
         })}
@@ -194,7 +254,17 @@ export default function ProposeSchedule() {
                 type="button"
                 key={mins}
                 className={`sched-duration${duration === mins ? " on" : ""}`}
-                onClick={() => setDuration(mins)}
+                onClick={() => {
+                  setDuration(mins);
+                  // A longer match can run into a slot that was free at 1h.
+                  if (
+                    selectedDay &&
+                    selectedTime &&
+                    slotState(selectedDay, selectedTime, mins, busyWindows, gapMs).kind === "busy"
+                  ) {
+                    setSelectedTime(null);
+                  }
+                }}
               >
                 {t(durationLabel(mins))}
               </button>

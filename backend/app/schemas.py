@@ -612,6 +612,16 @@ class ResultPrediction(BaseModel):
     h2h_losses_after: int = 0
 
 
+class BusyWindowOut(BaseModel):
+    """A slot one of the two players already has a confirmed match in, so the
+    propose screen can grey it out instead of letting the server reject the
+    pick after the fact."""
+
+    start: UtcDatetime
+    end: UtcDatetime
+    whose: str  # me | opponent | both
+
+
 class MatchDetailOut(BaseModel):
     id: int
     kind: MatchKind
@@ -644,6 +654,8 @@ class MatchDetailOut(BaseModel):
     void_reason: Optional[str] = None
     auto_confirm_at: Optional[UtcDatetime] = None
     prediction: Optional[ResultPrediction] = None
+    busy_windows: list[BusyWindowOut] = []
+    conflict_gap_minutes: int = 60
 
 
 class OpsFlaggedLeague(BaseModel):
