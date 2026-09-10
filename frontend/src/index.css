@@ -6942,6 +6942,117 @@ button:active { transform: translateY(1px); }
 .lpv-join.is-full { background: #2b323d; color: #8b93a6; }
 
 /* needsyou112a — home name-row counter */
+/* notifications155a — the bell in the home header */
+.home-head-actions { display: flex; align-items: flex-start; gap: 6px; }
+.home-bell {
+  position: relative; flex: none; display: flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; margin-top: 6px; border: 0; background: none; padding: 0;
+  color: var(--ink); cursor: pointer;
+}
+.home-bell svg { width: 19px; height: 19px; }
+.home-bell-count {
+  position: absolute; top: -2px; inset-inline-end: -4px; min-width: 15px; height: 15px;
+  border-radius: 8px; padding: 0 3px; box-sizing: border-box;
+  background: var(--court, #c6f24e); color: #0e1116;
+  font: 700 10px "IBM Plex Mono", monospace; display: flex; align-items: center; justify-content: center;
+}
+
+/* notifications155a — the notifications screen. Two halves: cards that want
+   something from you, and a read-only log. Only the log scrolls, so the count
+   and the cards stay put while you work through them. */
+.app-shell:has(.nt) { height: 100svh; }
+.content:has(.nt) { min-height: 0; padding: 0; display: flex; flex-direction: column; }
+
+.nt {
+  flex: 1; min-height: 0; display: flex; flex-direction: column;
+  background: #0e1116; color: #eef1f7;
+}
+
+.nt-head { flex: none; padding: 14px 20px 0; }
+.nt-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.nt-back {
+  display: flex; align-items: center; justify-content: center; width: 34px; height: 34px;
+  margin-inline-start: -8px; border: 0; background: none; padding: 0; color: #eef1f7; cursor: pointer;
+}
+.nt-back .chevron-icon { width: 26px; height: 26px; transform: scaleX(-1); }
+[dir="ltr"] .nt-back .chevron-icon { transform: none; }
+.nt-nav-label { font: 500 12px "IBM Plex Mono", monospace; letter-spacing: .14em; color: #8b93a6; }
+
+.nt-title-row { margin-top: 30px; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.nt-title { margin: 30px 0 0; font: 700 30px/1.2 "IBM Plex Sans", var(--sans); letter-spacing: -.025em; }
+.nt-title-row .nt-title { margin: 0; }
+.nt-count { flex: none; font: 500 12px "IBM Plex Mono", monospace; letter-spacing: .1em; color: var(--court, #c6f24e); }
+.nt-empty { margin: 10px 0 0; font: 400 15px/1.5 "IBM Plex Sans", var(--sans); color: #8b93a6; max-width: 34ch; }
+.nt-error { margin: 12px 20px 0; }
+
+/* Cards keep their natural height; only a list expanded past three of them
+   starts scrolling on its own. */
+.nt-cards {
+  flex: 0 1 auto; min-height: 0; overflow-y: auto;
+  margin-top: 16px; padding: 0 20px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.nt-card {
+  background: #161d26; border-radius: 20px; padding: 16px 18px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.nt-card-meta { display: flex; align-items: center; gap: 9px; }
+.nt-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--court, #c6f24e); }
+.nt-card-type {
+  flex: 1; min-width: 0; font: 500 11.5px "IBM Plex Mono", monospace; letter-spacing: .12em; color: #8b93a6;
+}
+.nt-card-age { flex: none; font: 500 12px "IBM Plex Mono", monospace; color: #6f7787; }
+.nt-card-body { margin: 0; font: 600 17px/1.4 "IBM Plex Sans", var(--sans); text-wrap: pretty; }
+.nt-mono {
+  font-family: "IBM Plex Mono", monospace; font-weight: 500;
+  direction: ltr; unicode-bidi: isolate;
+  /* A time or a score is one token: let the sentence wrap around it, not
+     through it. */
+  white-space: nowrap;
+}
+.nt-card-actions { display: flex; gap: 9px; }
+.nt-primary {
+  flex: 1; height: 44px; border: 0; border-radius: 22px;
+  background: var(--court, #c6f24e); color: #0e1116;
+  font: 700 15px "IBM Plex Sans", var(--sans); cursor: pointer;
+}
+/* Disagreeing is an answer, not a hazard: no red, no fill. */
+.nt-secondary {
+  flex: none; height: 44px; padding: 0 22px; border-radius: 22px;
+  border: 1px solid rgba(148, 163, 184, .22); background: none; color: #eef1f7;
+  font: 600 15px "IBM Plex Sans", var(--sans); cursor: pointer;
+}
+.nt-primary:disabled, .nt-secondary:disabled { opacity: .55; cursor: default; }
+.nt-more {
+  align-self: center; border: 0; background: none; padding: 4px;
+  font: 600 14px "IBM Plex Sans", var(--sans); color: var(--court, #c6f24e); cursor: pointer;
+}
+
+.nt-updates-head {
+  flex: none; margin: 32px 20px 12px; font: 700 20px "IBM Plex Sans", var(--sans); letter-spacing: -.01em;
+}
+.nt-updates-head.lead { margin-top: 30px; font-size: 30px; letter-spacing: -.025em; }
+.nt-updates { flex: 1; min-height: 0; overflow-y: auto; padding: 0 20px; }
+.nt-row {
+  width: 100%; padding: 15px 0; border: 0; border-top: 1px solid rgba(148, 163, 184, .14);
+  background: none; display: flex; align-items: baseline; gap: 12px; text-align: start; color: inherit;
+}
+.nt-row:last-child { border-bottom: 1px solid rgba(148, 163, 184, .14); }
+.nt-row.is-link { cursor: pointer; }
+.nt-row-text {
+  flex: 1; min-width: 0; font: 400 15.5px/1.45 "IBM Plex Sans", var(--sans); color: #c9cfdb;
+  text-wrap: pretty;
+}
+.nt-row.unread .nt-row-text { color: #eef1f7; }
+.nt-strong { font-weight: 600; color: #eef1f7; }
+.nt-row-stamp { flex: none; font: 500 12px "IBM Plex Mono", monospace; color: #6f7787; }
+
+.nt-foot { flex: none; padding: 16px 20px 30px; display: flex; justify-content: center; }
+.nt-mark-all {
+  border: 0; background: none; padding: 4px; font: 600 14px "IBM Plex Sans", var(--sans);
+  color: #8b93a6; cursor: pointer;
+}
+
 .home-tag-needs {
   border: 0; border-radius: 9px; padding: 2px 7px; background: var(--court-tint);
   color: var(--court); cursor: pointer;

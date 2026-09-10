@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session, joinedload
 from .. import models, schemas
 from ..auth import get_current_user
 from ..database import get_db
-from ..push_utils import notify_user
+from ..push_utils import notify_user, resolve_match_notifications
 from ..rating_utils import match_winner_id, round_to_half, update_ratings_for_match
 from .friendly import MAX_SETS as FRIENDLY_MAX_SETS
 from .leagues import _accumulate_stats, _empty_stats
@@ -396,6 +396,9 @@ def _auto_decline_conflicting_proposals(db: Session, match: models.Match, start:
                 "השעה שהוצעה למשחק שלכם כבר לא פנויה, ההצעה בוטלה אוטומטית",
                 f"/matches/{other.id}/schedule",
                 category="time_proposal",
+                type="time_dropped",
+                league_id=other.league_id,
+                match_id=other.id,
             )
         other.scheduled_at = None
         other.scheduled_by = None
@@ -498,6 +501,10 @@ def propose_match_schedule(
         body,
         f"/matches/{match.id}",
         category="time_proposal",
+        type="time_proposed",
+        actor_name=current_user.name,
+        league_id=match.league_id,
+        match_id=match.id,
     )
 
     return match
@@ -547,6 +554,7 @@ def confirm_match_schedule(
 
     _auto_decline_conflicting_proposals(db, match, start, end)
 
+    proposer = match.player1 if match.scheduled_by == match.player1_id else match.player2
     notify_user(
         db,
         match.scheduled_by,
@@ -554,6 +562,18 @@ def confirm_match_schedule(
         f"{current_user.name} אישר/ה את הזמן שהצעת למשחק שלכם",
         f"/matches/{match.id}",
         category="time_proposal",
+        type="time_confirmed",
+        actor_name=current_user.name,
+        league_id=match.league_id,
+        match_id=match.id,
+    )
+    resolve_match_notifications(
+        db,
+        current_user.id,
+        match.id,
+        f"אישרת את הזמן למשחק מול {proposer.name if proposer else ''}",
+        league_id=match.league_id,
+        actor_name=current_user.name,
     )
 
     return match
@@ -589,6 +609,10 @@ def decline_match_schedule(
         f"{current_user.name} ביטל/ה את הצעת הזמן למשחק שלכם",
         f"/matches/{match.id}/schedule",
         category="time_proposal",
+        type="time_declined",
+        actor_name=current_user.name,
+        league_id=match.league_id,
+        match_id=match.id,
     )
 
     return match
@@ -634,6 +658,19 @@ def report_match_not_played(
         "דיווח שהמשחק לא בוצע",
         f"{current_user.name} מדווח/ת שהמשחק שלכם לא התקיים, וממתין/ה לתשובה שלך",
         f"/matches/{match.id}/confirm",
+        type="not_played_reported",
+        actor_name=current_user.name,
+        league_id=match.league_id,
+        match_id=match.id,
+    )
+    opponent = match.player2 if current_user.id == match.player1_id else match.player1
+    resolve_match_notifications(
+        db,
+        current_user.id,
+        match.id,
+        f"דיווחת שהמשחק מול {opponent.name if opponent else ''} לא התקיים. מחכה לאישור שלו/ה",
+        league_id=match.league_id,
+        actor_name=current_user.name,
     )
 
     return match
@@ -679,12 +716,25 @@ def confirm_result(
         db.refresh(match)
 
         other_id = match.player2_id if current_user.id == match.player1_id else match.player1_id
+        other = match.player2 if current_user.id == match.player1_id else match.player1
         notify_user(
             db,
             other_id,
             "אושר שהמשחק לא בוצע",
             f"{current_user.name} אישר/ה שהמשחק שלכם לא התקיים — הוא בוטל ולא ייספר בתוצאות",
             f"/matches/{match.id}",
+            type="match_voided",
+            actor_name=current_user.name,
+            league_id=match.league_id,
+            match_id=match.id,
+        )
+        resolve_match_notifications(
+            db,
+            current_user.id,
+            match.id,
+            f"אישרת שהמשחק מול {other.name if other else ''} לא התקיים. הוא לא ייספר בתוצאות",
+            league_id=match.league_id,
+            actor_name=current_user.name,
         )
         return match
 
@@ -696,12 +746,40 @@ def confirm_result(
     update_ratings_for_match(db, match)
 
     other_id = match.player2_id if current_user.id == match.player1_id else match.player1_id
+    other = match.player2 if current_user.id == match.player1_id else match.player1
+    # 155a's update line: what changed for the player is their rating, so say
+    # it. update_ratings_for_match just wrote the sample this reads.
+    level_note = ""
+    sample = (
+        db.query(models.RatingSample)
+        .filter(models.RatingSample.user_id == other_id, models.RatingSample.match_id == match.id)
+        .order_by(models.RatingSample.id.desc())
+        .first()
+    )
+    if sample:
+        direction = "עלה" if sample.level_after > sample.level_before else "ירד"
+        if abs(sample.level_after - sample.level_before) < 0.005:
+            level_note = f". הדירוג שלך נשאר {sample.level_after:.1f}"
+        else:
+            level_note = f". הדירוג שלך {direction} ל־{sample.level_after:.1f}"
     notify_user(
         db,
         other_id,
         "התוצאה אושרה",
-        f"{current_user.name} אישר/ה את התוצאה למשחק שלכם",
+        f"התוצאה מול {current_user.name} אושרה{level_note}",
         f"/matches/{match.id}",
+        type="result_confirmed",
+        actor_name=current_user.name,
+        league_id=match.league_id,
+        match_id=match.id,
+    )
+    resolve_match_notifications(
+        db,
+        current_user.id,
+        match.id,
+        f"אישרת את התוצאה מול {other.name if other else ''}",
+        league_id=match.league_id,
+        actor_name=current_user.name,
     )
 
     return match
@@ -746,12 +824,25 @@ def dispute_result(
     db.commit()
     db.refresh(match)
 
+    reporter = match.player1 if match.reported_by == match.player1_id else match.player2
     notify_user(
         db,
         match.reported_by,
         "תיקון לתוצאה",
         f"{current_user.name} שלח/ה תיקון לתוצאה שדיווחת, וממתין/ה לתשובה שלך",
         f"/matches/{match.id}",
+        type="dispute_reported",
+        actor_name=current_user.name,
+        league_id=match.league_id,
+        match_id=match.id,
+    )
+    resolve_match_notifications(
+        db,
+        current_user.id,
+        match.id,
+        f"ביקשת לתקן את התוצאה מול {reporter.name if reporter else ''}. מחכה לתשובה שלו/ה",
+        league_id=match.league_id,
+        actor_name=current_user.name,
     )
 
     return match

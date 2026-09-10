@@ -891,8 +891,11 @@ def _join_league_core(
             db,
             league.created_by,
             "חבר חדש הצטרף לליגה",
-            f"{current_user.name} הצטרף/ה לליגה {league.name}",
+            f"{current_user.name} הצטרף/ה ל{league.name}",
             f"/leagues/{league.id}",
+            type="member_joined",
+            actor_name=current_user.name,
+            league_id=league.id,
         )
 
     return _to_league_out(league)

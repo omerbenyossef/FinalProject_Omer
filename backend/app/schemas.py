@@ -679,6 +679,38 @@ class MatchDetailOut(BaseModel):
     conflict_gap_minutes: int = 60
 
 
+class NotificationItemOut(BaseModel):
+    """One row on the notifications screen. `body` is a finished sentence; the
+    only things the client fills in are the {time} and {score} placeholders,
+    because those have to be formatted in the *viewer's* timezone and rendered
+    as isolated LTR mono runs inside the Hebrew sentence."""
+
+    id: str
+    type: str
+    actor_name: Optional[str] = None
+    league_id: Optional[int] = None
+    match_id: Optional[int] = None
+    body: str
+    # The English wording for the derived cards. The stored update log has no
+    # translation — like the push notifications it mirrors, it is Hebrew.
+    body_en: Optional[str] = None
+    time: Optional[UtcDatetime] = None
+    score: Optional[str] = None
+    count: Optional[int] = None
+    created_at: UtcDatetime
+    read_at: Optional[UtcDatetime] = None
+
+
+class NotificationsOut(BaseModel):
+    action_required: list[NotificationItemOut] = []
+    updates: list[NotificationItemOut] = []
+    unread_count: int = 0
+
+
+class MarkNotificationsReadRequest(BaseModel):
+    ids: list[str] = []
+
+
 class OpsFlaggedLeague(BaseModel):
     league_id: int
     league_name: str

@@ -7,7 +7,7 @@ import { useLanguage } from "../LanguageContext.jsx";
 import { useOpenAction } from "../OpenActionContext.jsx";
 import SetScoreForm from "../SetScoreForm.jsx";
 import Avatar from "../Avatar.jsx";
-import { ChevronIcon } from "../Icons.jsx";
+import { BellIcon, ChevronIcon } from "../Icons.jsx";
 import {
   roundDueDateObj,
   matchScheduleState,
@@ -359,6 +359,9 @@ export default function Profile() {
     useOpenAction();
   const [stats, setStats] = useState(null);
   const [error, setError] = useState("");
+  // The bell counts what needs doing, and it comes from the notifications
+  // endpoint itself so the badge and the screen can never disagree.
+  const [notifCount, setNotifCount] = useState(0);
   const [myLeagues, setMyLeagues] = useState([]);
   const [busy, setBusy] = useState(false);
   const [reportingMatchId, setReportingMatchId] = useState(null);
@@ -388,6 +391,10 @@ export default function Profile() {
     api
       .listLeagues()
       .then(setAllLeagues)
+      .catch(() => {});
+    api
+      .notifications()
+      .then((data) => setNotifCount(data.unread_count))
       .catch(() => {});
   }, []);
 
@@ -655,11 +662,22 @@ export default function Profile() {
               </button>
             )}
           </div>
-          <PageHelp
-            pageKey="profile"
-            title="עמוד הבית"
-            text="כאן תראו את המשחק שצריך לשחק או לאשר השבוע, את הליגות שאתם חברים בהן, ואת התוצאות האחרונות שלכם."
-          />
+          <div className="home-head-actions">
+            <button
+              type="button"
+              className="home-bell"
+              onClick={() => navigate("/notifications")}
+              aria-label={t("התראות")}
+            >
+              <BellIcon aria-hidden="true" />
+              {notifCount > 0 && <span className="home-bell-count">{notifCount}</span>}
+            </button>
+            <PageHelp
+              pageKey="profile"
+              title="עמוד הבית"
+              text="כאן תראו את המשחק שצריך לשחק או לאשר השבוע, את הליגות שאתם חברים בהן, ואת התוצאות האחרונות שלכם."
+            />
+          </div>
         </div>
         {!isNoLeague && !isRoundNotOpened && (
           <div className="home-stats" dir="ltr">

@@ -133,6 +133,10 @@ export const api = {
   cancelMatch: (leagueId, matchId) =>
     request(`/leagues/${leagueId}/matches/${matchId}`, { method: "DELETE" }),
 
+  notifications: () => request("/notifications"),
+  markNotificationsRead: (ids) => request("/notifications/read", { method: "POST", body: { ids } }),
+  markAllNotificationsRead: () => request("/notifications/read-all", { method: "POST" }),
+
   getMatchDetail: (matchId) => request(`/matches/${matchId}`),
   // scheduledAt takes one ISO string or several — a proposal can offer up to
   // five slots for the opponent to pick from.

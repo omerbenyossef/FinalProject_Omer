@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from .. import models, schemas
 from ..auth import get_current_user
 from ..database import get_db
-from ..push_utils import notify_user
+from ..push_utils import notify_user, resolve_match_notifications
 from ..rating_utils import match_winner_id, update_ratings_for_match
 from .matches import CONFIRMATION_WINDOW, REMIND_COOLDOWN, _auto_confirm_overdue, _to_naive_utc
 
@@ -282,6 +282,17 @@ def report_friendly_score(
             "יש תוצאה לאישור",
             f"{current_user.name} דיווח תוצאה למשחק הידידותי שלכם, ומחכה לאישור שלך",
             "/profile",
+            type="result_reported",
+            actor_name=current_user.name,
+            match_id=match.id,
+        )
+        opponent = match.player2 if current_user.id == match.player1_id else match.player1
+        resolve_match_notifications(
+            db,
+            current_user.id,
+            match.id,
+            f"דיווחת תוצאה במשחק הידידותי מול {opponent.name if opponent else ''}. מחכה לאישור שלו/ה",
+            actor_name=current_user.name,
         )
     else:
         match.status = models.MatchStatus.completed

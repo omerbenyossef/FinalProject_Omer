@@ -347,6 +347,19 @@ const PAIRS = [
   ["יש לבחור זמן למשחק", "Pick a time for the match"],
   ["הזמן שבחרת כבר לא מוצע", "The time you picked is no longer on offer"],
 
+  // Notifications screen (155a)
+  ["NOTIFICATIONS", "NOTIFICATIONS"],
+  ["דורש אותך", "Needs you"],
+  ["עדכונים", "Updates"],
+  ["סמן הכל כנקרא", "Mark all as read"],
+  ["אין התראות", "No notifications"],
+  ["כאן יופיעו תוצאות לאישור, הצעות שעה ופתיחת מחזור",
+    "Results to confirm, proposed times and new rounds will show up here"],
+  ["עוד {n} דורשים אותך", "{n} more need you"],
+  ["חולק", "Disagree"],
+  ["מאשר", "Accept"],
+  ["שעה אחרת", "Another time"],
+
   // Propose a time — slots the grid already knows are impossible
   ["עבר", "Passed"],
   ["יש לך משחק", "You have a match"],

@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session, joinedload
 from .. import models, schemas
 from ..auth import get_current_user
 from ..database import get_db
-from ..push_utils import notify_user
+from ..push_utils import notify_user, resolve_match_notifications
 from ..rating_utils import update_ratings_for_match
 
 router = APIRouter(prefix="/leagues/{league_id}/matches", tags=["matches"])
@@ -89,6 +89,9 @@ def _auto_confirm_overdue(db: Session) -> None:
                     "המשחק אושר אוטומטית",
                     "התוצאה לא אושרה בזמן, אז המשחק שלכם ננעל אוטומטית ונספר בתוצאות",
                     url,
+                    type="auto_confirmed",
+                    league_id=match.league_id,
+                    match_id=match.id,
                 )
         for match in voided:
             url = f"/leagues/{match.league_id}" if match.league_id else "/profile"
@@ -99,6 +102,9 @@ def _auto_confirm_overdue(db: Session) -> None:
                     "המשחק בוטל אוטומטית",
                     "הדיווח שהמשחק לא בוצע לא אושר או נדחה בזמן, אז המשחק בוטל ולא ייספר בתוצאות",
                     url,
+                    type="match_voided",
+                    league_id=match.league_id,
+                    match_id=match.id,
                 )
 
     _auto_remind_overdue_matches(db)
@@ -144,6 +150,9 @@ def _auto_remind_overdue_matches(db: Session) -> None:
                     "תזכורת: יש משחק לדווח",
                     "המשחק שלכם כבר היה אמור להתקיים ועדיין לא דיווחתם תוצאה",
                     url,
+                    type="report_reminder",
+                    league_id=match.league_id,
+                    match_id=match.id,
                 )
 
 
@@ -199,6 +208,10 @@ def _auto_remind_pending_proposals(db: Session) -> None:
                 body,
                 f"/matches/{match.id}",
                 category="time_proposal",
+                type="time_reminder",
+                actor_name=name,
+                league_id=match.league_id,
+                match_id=match.id,
             )
 
 
@@ -238,6 +251,8 @@ def _auto_void_abandoned_friendlies(db: Session) -> None:
                     "המשחק בוטל אוטומטית",
                     "המשחק שלכם עבר זמן רב מהמועד שנקבע ואף אחד לא דיווח עליו, אז הוא בוטל ולא ייספר",
                     "/profile",
+                    type="match_voided",
+                    match_id=match.id,
                 )
 
 
@@ -361,16 +376,34 @@ def generate_schedule(
         db.refresh(match)
 
     if created:
+        # notifications155a.md wants this to say what actually changed for the
+        # player, so each one hears their own pairing rather than "a schedule
+        # was created".
+        opponent_by_member: dict[int, str] = {}
+        round_by_member: dict[int, int] = {}
+        for match in created:
+            for player, other in ((match.player1, match.player2), (match.player2, match.player1)):
+                if player and other:
+                    opponent_by_member[player.id] = other.name
+                    round_by_member[player.id] = match.round_number
         for member_id in member_ids:
             if member_id == current_user.id:
                 continue
+            opponent_name = opponent_by_member.get(member_id)
+            round_number = round_by_member.get(member_id)
+            if opponent_name and round_number:
+                body = f"מחזור {round_number} נפתח. היריב שלך: {opponent_name}"
+            else:
+                body = f"נוצר לוח משחקים חדש בליגה {league.name}"
             notify_user(
                 db,
                 member_id,
                 "לוח משחקים חדש",
-                f"נוצר לוח משחקים חדש בליגה {league.name}",
+                body,
                 f"/leagues/{league_id}",
                 category="round_open",
+                type="round_open",
+                league_id=league.id,
             )
 
     return created
@@ -443,12 +476,25 @@ def report_score(
     db.refresh(match)
 
     opponent_id = match.player2_id if current_user.id == match.player1_id else match.player1_id
+    opponent = match.player2 if current_user.id == match.player1_id else match.player1
     notify_user(
         db,
         opponent_id,
         "יש תוצאה לאישור",
         f"{current_user.name} דיווח תוצאה למשחק שלכם, ומחכה לאישור שלך",
         f"/leagues/{league_id}",
+        type="result_reported",
+        actor_name=current_user.name,
+        league_id=league_id,
+        match_id=match.id,
+    )
+    resolve_match_notifications(
+        db,
+        current_user.id,
+        match.id,
+        f"דיווחת תוצאה במשחק מול {opponent.name if opponent else ''}. מחכה לאישור שלו/ה",
+        league_id=league_id,
+        actor_name=current_user.name,
     )
 
     return match

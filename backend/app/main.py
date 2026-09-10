@@ -6,7 +6,19 @@ from sqlalchemy import Enum, inspect, text
 
 from . import models
 from .database import Base, engine, SessionLocal
-from .routers import auth, friendly, leagues, matches, ops, players, push, ratings, schedule, sports
+from .routers import (
+    auth,
+    friendly,
+    leagues,
+    matches,
+    notifications,
+    ops,
+    players,
+    push,
+    ratings,
+    schedule,
+    sports,
+)
 
 Base.metadata.create_all(bind=engine)
 
@@ -255,6 +267,7 @@ app.include_router(ratings.router)
 app.include_router(friendly.router)
 app.include_router(schedule.router)
 app.include_router(ops.router)
+app.include_router(notifications.router)
 
 
 @app.get("/health")

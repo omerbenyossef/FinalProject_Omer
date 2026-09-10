@@ -263,3 +263,31 @@ class FriendlyInviteLink(Base):
 
     inviter = relationship("User")
     sport = relationship("Sport")
+
+
+class Notification(Base):
+    """notifications155a.md — the in-app notification log. Every push the app
+    sends lands here too (including ones the quiet-hours rule mutes, which
+    silences the phone, not the record), plus past-tense rows written when the
+    viewer acts on something. The "needs you" half of the notifications screen
+    is NOT stored: it is derived live from match state, so it can never go
+    stale against the thing it points at."""
+
+    __tablename__ = "notifications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    # Event kind, e.g. round_open / result_confirmed / member_joined / acted.
+    # Only round_open is tappable on the screen.
+    type = Column(String, nullable=False, default="update")
+    actor_name = Column(String, nullable=True)
+    league_id = Column(Integer, ForeignKey("leagues.id"), nullable=True)
+    match_id = Column(Integer, ForeignKey("matches.id"), nullable=True)
+    # A finished sentence, built on the server — the client never assembles
+    # notification copy from parts.
+    body = Column(String, nullable=False)
+    url = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    read_at = Column(DateTime, nullable=True)
+
+    user = relationship("User", foreign_keys=[user_id])
