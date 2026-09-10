@@ -325,6 +325,24 @@ const PAIRS = [
   ["שפה: עברית", "Language: Hebrew"],
   ["שפה: English", "Language: English"],
 
+  ["הזמן שהוצע לא התאים לך — סמן/י מתי כן, והיריב יבחר",
+    "That time didn't work for you — mark when it does, and your opponent picks."],
+
+  // Propose a time — several slots at once
+  ["אפשר לסמן כמה זמנים, והיריב יבחר אחד מהם",
+    "You can mark several times and your opponent picks one of them."],
+  ["שלח {count} זמנים ל{name}", "Send {count} times to {name}"],
+  ["HE PICKS ONE · THEN IT IS SET", "HE PICKS ONE · THEN IT IS SET"],
+  ["{name} הציע {count} זמנים", "{name} proposed {count} times"],
+  ["מאשר את הזמן שבחרתי", "Confirm the time I picked"],
+  ["אף אחד מהזמנים לא פנוי לך, הצע שעה אחרת",
+    "None of these times is open for you — propose another one"],
+  ["יש לבחור אחד מהזמנים שהוצעו", "Pick one of the proposed times"],
+  ["אחד מהזמנים שבחרת כבר תפוס", "One of the times you picked is already taken"],
+  ["אפשר להציע עד חמישה זמנים", "You can propose up to five times"],
+  ["יש לבחור זמן למשחק", "Pick a time for the match"],
+  ["הזמן שבחרת כבר לא מוצע", "The time you picked is no longer on offer"],
+
   // Propose a time — slots the grid already knows are impossible
   ["עבר", "Passed"],
   ["יש לך משחק", "You have a match"],

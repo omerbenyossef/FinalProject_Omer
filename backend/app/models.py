@@ -178,6 +178,37 @@ class Match(Base):
     sport = relationship("Sport")
     player1 = relationship("User", foreign_keys=[player1_id])
     player2 = relationship("User", foreign_keys=[player2_id])
+    time_options = relationship(
+        "MatchTimeOption",
+        back_populates="match",
+        cascade="all, delete-orphan",
+        order_by="MatchTimeOption.start_at",
+    )
+
+    @property
+    def time_options_count(self) -> int:
+        """Read straight off MatchOut, so every screen that offers a one-tap
+        confirm can tell a single proposed time from a pick-one-of-several."""
+        return len(self.time_options)
+
+
+class MatchTimeOption(Base):
+    """One slot inside a time proposal. A proposal can offer several, and the
+    opponent picks one — that pick becomes the match's scheduled_at. A
+    single-option proposal behaves exactly like the old one-time-only flow,
+    and scheduled_at always holds the leading (earliest) option meanwhile, so
+    everything that reads scheduled_at keeps working untouched."""
+
+    __tablename__ = "match_time_options"
+
+    id = Column(Integer, primary_key=True, index=True)
+    match_id = Column(Integer, ForeignKey("matches.id"), nullable=False, index=True)
+    start_at = Column(DateTime, nullable=False)
+    duration_minutes = Column(Integer, nullable=True)
+    proposed_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    match = relationship("Match", back_populates="time_options")
 
 
 class RatingSample(Base):

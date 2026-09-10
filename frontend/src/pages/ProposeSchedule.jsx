@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api";
 import { useLanguage } from "../LanguageContext.jsx";
 import { ChevronIcon, CheckIcon } from "../Icons.jsx";
@@ -58,6 +58,8 @@ function slotState(day, time, minutes, busyWindows, gapMs) {
   return { kind: "free" };
 }
 
+const MAX_PICKS = 5;
+
 const DURATION_OPTIONS = [60, 90, 120];
 function durationLabel(minutes) {
   if (minutes === 60) return "1H";
@@ -69,13 +71,18 @@ export default function ProposeSchedule() {
   const { matchId } = useParams();
   const { t } = useLanguage();
   const navigate = useNavigate();
+  // Set when the player got here by turning down a proposal — a "no" should
+  // arrive with times attached, not empty.
+  const cameFromDecline = !!useLocation().state?.counter;
 
   const [detail, setDetail] = useState(null);
   const [error, setError] = useState("");
   const [conflictWarning, setConflictWarning] = useState(null);
   const [busy, setBusy] = useState(false);
   const [selectedDay, setSelectedDay] = useState(null);
-  const [selectedTime, setSelectedTime] = useState(null);
+  // Several slots can be offered at once, across days — the opponent picks
+  // one. Kept as start timestamps so a pick survives switching days.
+  const [picks, setPicks] = useState([]);
   const [duration, setDuration] = useState(null);
   const [court, setCourt] = useState("");
   const [editingCourt, setEditingCourt] = useState(false);
@@ -126,6 +133,28 @@ export default function ProposeSchedule() {
       return kind === "free" || kind === "tight";
     }).length;
 
+  const slotMs = (day, time) => {
+    const [h, m] = time.split(":").map(Number);
+    const d = new Date(day);
+    d.setHours(h, m, 0, 0);
+    return d.getTime();
+  };
+  const picksOn = (day) => {
+    const from = new Date(day).setHours(0, 0, 0, 0);
+    const to = from + 86400000;
+    return picks.filter((ms) => ms >= from && ms < to).length;
+  };
+  function togglePick(day, time) {
+    const ms = slotMs(day, time);
+    setPicks((prev) =>
+      prev.includes(ms)
+        ? prev.filter((x) => x !== ms)
+        : prev.length >= MAX_PICKS
+          ? prev
+          : [...prev, ms]
+    );
+  }
+
   function slotNote(state) {
     if (state.kind === "past") return t("עבר");
     if (state.kind === "tight") return t("צמוד למשחק אחר");
@@ -136,18 +165,20 @@ export default function ProposeSchedule() {
   }
 
   async function handleSend(overrideConflictWarning = false) {
-    if (!selectedDay || !selectedTime) return;
+    if (picks.length === 0) return;
     if (isFriendly && !duration) return;
     setBusy(true);
     setError("");
     try {
-      const [h, m] = selectedTime.split(":").map(Number);
-      const dt = new Date(selectedDay);
-      dt.setHours(h, m, 0, 0);
-      await api.proposeMatchSchedule(matchId, dt.toISOString(), court.trim() || null, {
-        durationMinutes: isFriendly ? duration : null,
-        overrideConflictWarning,
-      });
+      await api.proposeMatchSchedule(
+        matchId,
+        [...picks].sort((a, b) => a - b).map((ms) => new Date(ms).toISOString()),
+        court.trim() || null,
+        {
+          durationMinutes: isFriendly ? duration : null,
+          overrideConflictWarning,
+        }
+      );
       navigate(-1);
     } catch (err) {
       if (err.status === 409) {
@@ -194,6 +225,10 @@ export default function ProposeSchedule() {
 
       {error && <p className="error">{t(error)}</p>}
 
+      {cameFromDecline && (
+        <p className="sched-counter-note">{t("הזמן שהוצע לא התאים לך — סמן/י מתי כן, והיריב יבחר")}</p>
+      )}
+
       <div className="sched-section-label">{t("DAY")}</div>
       <div className="sched-days">
         {days.map((d) => {
@@ -205,25 +240,29 @@ export default function ProposeSchedule() {
               key={d.getTime()}
               className={`sched-day${isSelected ? " on" : ""}${nothingLeft ? " off" : ""}`}
               disabled={nothingLeft}
-              onClick={() => {
-                setSelectedDay(d);
-                // Keep the picked hour only if it's still open on the new day.
-                if (selectedTime && stateFor(d, selectedTime).kind !== "free") setSelectedTime(null);
-              }}
+              onClick={() => setSelectedDay(d)}
             >
               <span className="sched-day-weekday">{WEEKDAY_SHORT[d.getDay()]}</span>
               <span className="sched-day-date">{d.getDate()}</span>
+              {picksOn(d) > 0 && <span className="sched-day-picks">{picksOn(d)}</span>}
             </button>
           );
         })}
       </div>
 
-      <div className="sched-section-label">{t("TIME")}</div>
+      <div className="sched-section-label">
+        {t("TIME")}
+        {picks.length > 0 && ` · ${picks.length}/${MAX_PICKS}`}
+      </div>
+      {picks.length < 2 && (
+        <p className="sched-multi-hint">{t("אפשר לסמן כמה זמנים, והיריב יבחר אחד מהם")}</p>
+      )}
       <div className="sched-times">
         {TIME_SLOTS.map((slot) => {
-          const isSelected = selectedTime === slot;
+          const isSelected = selectedDay ? picks.includes(slotMs(selectedDay, slot)) : false;
           const state = selectedDay ? stateFor(selectedDay, slot) : { kind: "free" };
-          const taken = state.kind === "past" || state.kind === "busy";
+          const maxed = !isSelected && picks.length >= MAX_PICKS;
+          const taken = state.kind === "past" || state.kind === "busy" || maxed;
           const note = slotNote(state);
           return (
             <button
@@ -233,7 +272,7 @@ export default function ProposeSchedule() {
                 state.kind === "tight" ? " tight" : ""
               }`}
               disabled={taken}
-              onClick={() => setSelectedTime(slot)}
+              onClick={() => togglePick(selectedDay, slot)}
             >
               <span dir="ltr">{slot}</span>
               <span className="sched-time-end">
@@ -257,13 +296,13 @@ export default function ProposeSchedule() {
                 onClick={() => {
                   setDuration(mins);
                   // A longer match can run into a slot that was free at 1h.
-                  if (
-                    selectedDay &&
-                    selectedTime &&
-                    slotState(selectedDay, selectedTime, mins, busyWindows, gapMs).kind === "busy"
-                  ) {
-                    setSelectedTime(null);
-                  }
+                  setPicks((prev) =>
+                    prev.filter((ms) => {
+                      const d = new Date(ms);
+                      const time = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+                      return slotState(d, time, mins, busyWindows, gapMs).kind !== "busy";
+                    })
+                  );
                 }}
               >
                 {t(durationLabel(mins))}
@@ -296,12 +335,16 @@ export default function ProposeSchedule() {
         <button
           type="button"
           className="sched-send"
-          disabled={!selectedDay || !selectedTime || busy || (isFriendly && !duration)}
+          disabled={picks.length === 0 || busy || (isFriendly && !duration)}
           onClick={() => handleSend(false)}
         >
-          {t("שלח הצעה ל{name}", { name: detail.opponent.name })}
+          {picks.length > 1
+            ? t("שלח {count} זמנים ל{name}", { count: picks.length, name: detail.opponent.name })
+            : t("שלח הצעה ל{name}", { name: detail.opponent.name })}
         </button>
-        <p className="sched-pending">{t("HE CONFIRMS · THEN IT IS SET")}</p>
+        <p className="sched-pending">
+          {picks.length > 1 ? t("HE PICKS ONE · THEN IT IS SET") : t("HE CONFIRMS · THEN IT IS SET")}
+        </p>
       </div>
 
       {conflictWarning && (

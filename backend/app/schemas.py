@@ -336,8 +336,21 @@ class MatchCorrection(BaseModel):
         return _validate_submitted_sets(sets)
 
 
+class MatchTimeOptionOut(BaseModel):
+    id: int
+    start_at: UtcDatetime
+    duration_minutes: Optional[int] = None
+
+    class Config:
+        from_attributes = True
+
+
 class MatchScheduleProposal(BaseModel):
-    scheduled_at: UtcDatetime
+    # One proposal, one or more slots. `scheduled_at` is the single-slot form
+    # (still what a one-time proposal sends); `scheduled_at_options` carries
+    # the pick-one-of-several form. At least one of them has to be there.
+    scheduled_at: Optional[UtcDatetime] = None
+    scheduled_at_options: list[UtcDatetime] = []
     court: Optional[str] = None
     duration_minutes: Optional[int] = None
     override_conflict_warning: bool = False
@@ -345,6 +358,9 @@ class MatchScheduleProposal(BaseModel):
 
 class ScheduleConfirmRequest(BaseModel):
     override_conflict_warning: bool = False
+    # Which of the proposed slots the opponent picked. Omitted means "the time
+    # this screen showed me", i.e. the leading option.
+    option_id: Optional[int] = None
 
 
 class MatchOut(BaseModel):
@@ -376,6 +392,7 @@ class MatchOut(BaseModel):
     dispute_note: Optional[str] = None
     disputed_at: Optional[UtcDatetime] = None
     void_reason: Optional[str] = None
+    time_options_count: int = 0
 
     class Config:
         from_attributes = True
@@ -654,6 +671,7 @@ class MatchDetailOut(BaseModel):
     void_reason: Optional[str] = None
     auto_confirm_at: Optional[UtcDatetime] = None
     prediction: Optional[ResultPrediction] = None
+    time_options: list[MatchTimeOptionOut] = []
     busy_windows: list[BusyWindowOut] = []
     conflict_gap_minutes: int = 60
 

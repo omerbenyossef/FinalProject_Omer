@@ -226,6 +226,7 @@ def get_match_detail(
         void_reason=match.void_reason,
         auto_confirm_at=match.auto_confirm_at,
         prediction=prediction,
+        time_options=match.time_options,
         busy_windows=_busy_windows(db, match, current_user.id),
         conflict_gap_minutes=int(CONFLICT_GAP_WINDOW.total_seconds() // 60),
     )
@@ -293,6 +294,22 @@ def _other_confirmed_matches(db: Session, user_id: int, exclude_match_id: int) -
     )
 
 
+def _both_players_confirmed_matches(db: Session, match: models.Match) -> list[models.Match]:
+    others: dict[int, models.Match] = {}
+    for user_id in {match.player1_id, match.player2_id}:
+        for other in _other_confirmed_matches(db, user_id, match.id):
+            others[other.id] = other
+    return list(others.values())
+
+
+def _overlaps_confirmed_match(db: Session, match: models.Match, start: datetime, end: datetime) -> bool:
+    for other in _both_players_confirmed_matches(db, match):
+        other_start, other_end = _match_window(other)
+        if start < other_end and other_start < end:
+            return True
+    return False
+
+
 def _enforce_schedule_conflicts(
     db: Session,
     match: models.Match,
@@ -300,12 +317,9 @@ def _enforce_schedule_conflicts(
     end: datetime,
     override_conflict_warning: bool,
 ) -> None:
-    others: dict[int, models.Match] = {}
-    for user_id in {match.player1_id, match.player2_id}:
-        for other in _other_confirmed_matches(db, user_id, match.id):
-            others[other.id] = other
+    others = _both_players_confirmed_matches(db, match)
 
-    for other in others.values():
+    for other in others:
         other_start, other_end = _match_window(other)
         if start < other_end and other_start < end:
             raise HTTPException(status_code=400, detail="כבר יש משחק מתואם בזמן הזה")
@@ -313,7 +327,7 @@ def _enforce_schedule_conflicts(
     if override_conflict_warning:
         return
 
-    for other in others.values():
+    for other in others:
         other_start, other_end = _match_window(other)
         if other_end <= start:
             gap = start - other_end
@@ -351,6 +365,25 @@ def _auto_decline_conflicting_proposals(db: Session, match: models.Match, start:
             pending[other.id] = other
 
     for other in pending.values():
+        minutes = _match_duration_minutes(other)
+
+        # A proposal offering several slots only loses the ones that actually
+        # collide — the rest stay on the table, and the earliest survivor
+        # takes over as the leading option.
+        survivors = [
+            option
+            for option in other.time_options
+            if not (start < _to_naive_utc(option.start_at) + timedelta(minutes=minutes)
+                    and _to_naive_utc(option.start_at) < end)
+        ]
+        if other.time_options and survivors:
+            for option in list(other.time_options):
+                if option not in survivors:
+                    db.delete(option)
+            other.scheduled_at = min(_to_naive_utc(o.start_at) for o in survivors)
+            db.add(other)
+            continue
+
         other_start, other_end = _match_window(other)
         if not (start < other_end and other_start < end):
             continue
@@ -369,8 +402,18 @@ def _auto_decline_conflicting_proposals(db: Session, match: models.Match, start:
         other.schedule_proposed_at = None
         other.court = None
         other.duration_minutes = None
+        for option in list(other.time_options):
+            db.delete(option)
         db.add(other)
     db.commit()
+
+
+MAX_TIME_OPTIONS = 5
+
+
+def _clear_time_options(db: Session, match: models.Match) -> None:
+    """delete-orphan on the relationship turns this into DELETEs on flush."""
+    match.time_options.clear()
 
 
 @router.post("/{match_id}/schedule", response_model=schemas.MatchOut)
@@ -386,8 +429,13 @@ def propose_match_schedule(
     if match.status != models.MatchStatus.pending:
         raise HTTPException(status_code=400, detail="אי אפשר לתאם זמן למשחק שכבר דווח")
 
-    scheduled_at = _to_naive_utc(proposal.scheduled_at)
-    if scheduled_at <= datetime.utcnow():
+    raw = list(proposal.scheduled_at_options) or ([proposal.scheduled_at] if proposal.scheduled_at else [])
+    starts = sorted({_to_naive_utc(value) for value in raw})
+    if not starts:
+        raise HTTPException(status_code=400, detail="יש לבחור זמן למשחק")
+    if len(starts) > MAX_TIME_OPTIONS:
+        raise HTTPException(status_code=400, detail="אפשר להציע עד חמישה זמנים")
+    if starts[0] <= datetime.utcnow():
         raise HTTPException(status_code=400, detail="זמן המשחק חייב להיות בעתיד")
 
     if match.league_id:
@@ -397,15 +445,37 @@ def propose_match_schedule(
         if not duration_minutes or duration_minutes <= 0:
             raise HTTPException(status_code=400, detail="יש לבחור משך זמן למשחק")
 
-    _enforce_schedule_conflicts(
-        db,
-        match,
-        scheduled_at,
-        scheduled_at + timedelta(minutes=duration_minutes),
-        proposal.override_conflict_warning,
-    )
+    if len(starts) == 1:
+        # One slot is the old flow: the proposer answers the tight-gap warning
+        # here and now, because there is nothing else for the opponent to pick.
+        _enforce_schedule_conflicts(
+            db,
+            match,
+            starts[0],
+            starts[0] + timedelta(minutes=duration_minutes),
+            proposal.override_conflict_warning,
+        )
+    else:
+        # Several slots: only the hard check runs per option — a back-to-back
+        # gap is a judgement call for whoever actually locks one of them in.
+        for start in starts:
+            if _overlaps_confirmed_match(db, match, start, start + timedelta(minutes=duration_minutes)):
+                raise HTTPException(status_code=400, detail="אחד מהזמנים שבחרת כבר תפוס")
 
-    match.scheduled_at = scheduled_at
+    _clear_time_options(db, match)
+    for start in starts:
+        db.add(
+            models.MatchTimeOption(
+                match_id=match.id,
+                start_at=start,
+                duration_minutes=duration_minutes,
+                proposed_by=current_user.id,
+            )
+        )
+
+    # The earliest option leads: scheduled_at drives every existing screen,
+    # notification and sweep, and it is the time those screens display.
+    match.scheduled_at = starts[0]
     match.scheduled_by = current_user.id
     match.schedule_confirmed = False
     match.schedule_proposed_at = datetime.utcnow()
@@ -415,11 +485,16 @@ def propose_match_schedule(
     db.refresh(match)
 
     opponent_id = match.player2_id if current_user.id == match.player1_id else match.player1_id
+    body = (
+        f"{current_user.name} הציע/ה שעה למשחק שלכם, ומחכה לאישור שלך"
+        if len(starts) == 1
+        else f"{current_user.name} הציע/ה {len(starts)} זמנים למשחק שלכם, בחר/י אחד מהם"
+    )
     notify_user(
         db,
         opponent_id,
         "הצעת זמן למשחק",
-        f"{current_user.name} הציע/ה שעה למשחק שלכם, ומחכה לאישור שלך",
+        body,
         f"/matches/{match.id}",
         category="time_proposal",
     )
@@ -441,6 +516,23 @@ def confirm_match_schedule(
         raise HTTPException(status_code=400, detail="הזמן כבר מאושר")
     if match.scheduled_by == current_user.id:
         raise HTTPException(status_code=400, detail="לא ניתן לאשר הצעת זמן שהצעת בעצמך")
+
+    # Picking one of several offered slots. The one-tap confirms on the home,
+    # round and league screens send no option_id — they only ever showed the
+    # leading time, so rather than silently locking that one in, answer 409:
+    # every one of those call sites already routes a 409 to the match screen,
+    # where the player sees all of them and picks.
+    if payload.option_id is None and len(match.time_options) > 1:
+        raise HTTPException(status_code=409, detail="יש לבחור אחד מהזמנים שהוצעו")
+
+    if payload.option_id is not None:
+        chosen = next((o for o in match.time_options if o.id == payload.option_id), None)
+        if chosen is None:
+            raise HTTPException(status_code=400, detail="הזמן שבחרת כבר לא מוצע")
+        match.scheduled_at = _to_naive_utc(chosen.start_at)
+        if not match.league_id and chosen.duration_minutes:
+            match.duration_minutes = chosen.duration_minutes
+
     if _to_naive_utc(match.scheduled_at) < datetime.utcnow():
         raise HTTPException(status_code=400, detail="הזמן שהוצע כבר עבר, צריך להציע שעה חדשה")
 
@@ -448,6 +540,7 @@ def confirm_match_schedule(
     _enforce_schedule_conflicts(db, match, start, end, payload.override_conflict_warning)
 
     match.schedule_confirmed = True
+    _clear_time_options(db, match)
     db.commit()
     db.refresh(match)
 
@@ -484,6 +577,7 @@ def decline_match_schedule(
     match.schedule_proposed_at = None
     match.court = None
     match.duration_minutes = None
+    _clear_time_options(db, match)
     db.commit()
     db.refresh(match)
 

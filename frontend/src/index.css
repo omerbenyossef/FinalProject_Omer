@@ -6630,6 +6630,42 @@ button:active { transform: translateY(1px); }
 
 .sched-day.off { opacity: .4; cursor: default; }
 
+.sched-day-picks {
+  position: absolute; top: 4px; inset-inline-end: 5px; min-width: 14px; height: 14px; border-radius: 7px;
+  background: var(--court, #c6f24e); color: #0e1116;
+  font: 700 10px "IBM Plex Mono", monospace; display: flex; align-items: center; justify-content: center;
+}
+.sched-day { position: relative; }
+
+.sched-counter-note {
+  margin: 16px 0 0; padding: 12px 14px; border-radius: 12px; background: rgba(198, 242, 78, .07);
+  font: 500 13.5px/1.5 "IBM Plex Sans", var(--sans); color: #c9cfdb;
+}
+
+.sched-multi-hint {
+  margin: 0 0 6px; font: 400 12.5px/1.45 "IBM Plex Sans", var(--sans); color: #6f7787;
+}
+
+/* One row per offered slot, on the receiving side. */
+.sched-options { margin-top: 18px; display: flex; flex-direction: column; gap: 8px; }
+.sched-option {
+  width: 100%; padding: 15px 16px; border: 1px solid rgba(148, 163, 184, .14); border-radius: 14px;
+  background: rgba(148, 163, 184, .05); display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; cursor: pointer; color: #c9cfdb;
+}
+.sched-option.on { border-color: var(--court, #c6f24e); background: rgba(198, 242, 78, .08); color: #eef1f7; }
+.sched-option.off { opacity: .5; cursor: default; }
+.sched-option.is-static { cursor: default; }
+.sched-option-time { font: 600 16px "IBM Plex Mono", monospace; }
+.sched-option-note { font: 400 12.5px "IBM Plex Sans", var(--sans); color: #8b93a6; }
+.sched-option-dot {
+  flex: none; width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(148, 163, 184, .35);
+}
+.sched-option.on .sched-option-dot { border-color: var(--court, #c6f24e); background: var(--court, #c6f24e); }
+.sched-options-court {
+  margin: 10px 0 0; font: 600 13px "IBM Plex Sans", var(--sans); color: #8b93a6;
+}
+
 .sched-court-row { display: flex; align-items: center; justify-content: space-between; }
 .sched-court-value { font: 600 15px "IBM Plex Sans", var(--sans); color: #eef1f7; }
 .sched-court-input {

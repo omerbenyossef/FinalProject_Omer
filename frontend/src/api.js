@@ -134,20 +134,22 @@ export const api = {
     request(`/leagues/${leagueId}/matches/${matchId}`, { method: "DELETE" }),
 
   getMatchDetail: (matchId) => request(`/matches/${matchId}`),
+  // scheduledAt takes one ISO string or several — a proposal can offer up to
+  // five slots for the opponent to pick from.
   proposeMatchSchedule: (matchId, scheduledAt, court, { durationMinutes, overrideConflictWarning } = {}) =>
     request(`/matches/${matchId}/schedule`, {
       method: "POST",
       body: {
-        scheduled_at: scheduledAt,
+        scheduled_at_options: Array.isArray(scheduledAt) ? scheduledAt : [scheduledAt],
         court: court || null,
         duration_minutes: durationMinutes || null,
         override_conflict_warning: !!overrideConflictWarning,
       },
     }),
-  confirmMatchSchedule: (matchId, overrideConflictWarning = false) =>
+  confirmMatchSchedule: (matchId, overrideConflictWarning = false, optionId = null) =>
     request(`/matches/${matchId}/schedule/confirm`, {
       method: "POST",
-      body: { override_conflict_warning: !!overrideConflictWarning },
+      body: { override_conflict_warning: !!overrideConflictWarning, option_id: optionId },
     }),
   declineMatchSchedule: (matchId) => request(`/matches/${matchId}/schedule/decline`, { method: "POST" }),
   reportMatchNotPlayed: (matchId) => request(`/matches/${matchId}/report-not-played`, { method: "POST" }),
