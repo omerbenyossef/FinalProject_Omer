@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api";
 import { useLanguage } from "../LanguageContext.jsx";
+import { useAuth } from "../AuthContext.jsx";
 import { ChevronIcon } from "../Icons.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
+import SetScoreForm from "../SetScoreForm.jsx";
 import {
   formatSets,
   formatWeekdayDateTime,
@@ -16,6 +18,7 @@ import {
 export default function MatchSchedule() {
   const { matchId } = useParams();
   const { t } = useLanguage();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   const [detail, setDetail] = useState(null);
@@ -24,6 +27,8 @@ export default function MatchSchedule() {
   const [busy, setBusy] = useState(false);
   // Which of several offered slots this player picked.
   const [pickedOption, setPickedOption] = useState(null);
+  const [reporting, setReporting] = useState(false);
+  const [requireConfirm, setRequireConfirm] = useState(true);
 
   function reload() {
     api
@@ -81,6 +86,36 @@ export default function MatchSchedule() {
         counter ? `/matches/${matchId}/schedule` : -1,
         counter ? { replace: true, state: { counter: true } } : undefined
       );
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleReport(sets) {
+    setBusy(true);
+    setError("");
+    try {
+      if (detail.kind === "friendly") {
+        await api.reportFriendlyScore(matchId, sets, requireConfirm);
+      } else {
+        await api.reportScore(detail.league_id, matchId, sets);
+      }
+      navigate(-1);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleNotPlayed() {
+    setBusy(true);
+    setError("");
+    try {
+      await api.reportMatchNotPlayed(matchId);
+      navigate(-1);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -307,20 +342,117 @@ export default function MatchSchedule() {
     );
   }
 
+  // status "set": the time is agreed. Before the match there is nothing to do
+  // but change it; once it has passed, this is where the result gets reported
+  // (the NEEDS YOU screen's "report" row lands right here).
+  const duePassed = scheduledDate ? scheduledDate.getTime() <= Date.now() : false;
+
   return (
     <div className="sched-page">
       <div className="sched-nav">
         <button type="button" className="sched-nav-back" onClick={() => navigate(-1)} aria-label={t("חזרה")}>
           <ChevronIcon aria-hidden="true" />
         </button>
+        <span className="sched-nav-label">{t(duePassed ? "REPORT THE RESULT" : "MATCH IS SET")}</span>
       </div>
       <h1 className="sched-title">{t("מול {name}", { name: detail.opponent.name })}</h1>
+      <p className="sched-sub" dir="ltr">
+        {detail.round_number ? (
+          <>
+            {hasHebrewChars(detail.league_name) ? (
+              <span className="sched-sub-sans" dir="auto" style={{ unicodeBidi: "isolate" }}>
+                {detail.league_name}
+              </span>
+            ) : (
+              detail.league_name?.toUpperCase()
+            )}{" "}
+            · R{detail.round_number}
+          </>
+        ) : (
+          "FRIENDLY"
+        )}
+      </p>
+
+      {error && <p className="error">{t(error)}</p>}
+
       <div className="sched-hero">
         <div className="sched-hero-time" dir="ltr">
           {formatWeekdayDateTime(scheduledDate)}
         </div>
         {detail.court && <div className="sched-hero-court">{detail.court}</div>}
+        <div className="sched-hero-meta" dir="ltr">
+          {duePassed
+            ? "TIME HAS PASSED"
+            : daysUntilMatch != null && `IN ${daysUntilMatch} ${daysWord(daysUntilMatch)}`}
+          {!duePassed && daysUntilRoundEnd !== null && ` · ROUND ENDS IN ${daysUntilRoundEnd}`}
+        </div>
       </div>
+
+      <div className="sched-h2h">
+        <div className="sched-h2h-score" dir="ltr">
+          {detail.h2h_wins}-{detail.h2h_losses}
+        </div>
+        <div className="sched-h2h-meta" dir="ltr">
+          {detail.last_match_sets && `LAST ${formatSets(detail.last_match_sets)} · `}
+          {detail.my_ntrp != null && detail.opponent_ntrp != null
+            ? `NTRP ${detail.my_ntrp.toFixed(1)} · ${detail.opponent_ntrp.toFixed(1)}`
+            : ""}
+        </div>
+      </div>
+
+      {reporting ? (
+        <SetScoreForm
+          // Columns follow the match's own player1/player2 order, so the sets
+          // come back out of the form already in the orientation the API wants.
+          player1Name={detail.i_am_player1 ? user?.name : detail.opponent.name}
+          player2Name={detail.i_am_player1 ? detail.opponent.name : user?.name}
+          busy={busy}
+          maxSets={detail.max_sets}
+          onSubmit={handleReport}
+          onCancel={() => setReporting(false)}
+          friendlyConfirm={
+            detail.kind === "friendly"
+              ? {
+                  opponentName: detail.opponent.name,
+                  checked: requireConfirm,
+                  onChange: setRequireConfirm,
+                }
+              : undefined
+          }
+        />
+      ) : (
+        <div className="sched-bottom">
+          {duePassed ? (
+            <>
+              <button type="button" className="sched-send" disabled={busy} onClick={() => setReporting(true)}>
+                {t("דווח תוצאה")}
+              </button>
+              <div className="sched-bottom-row">
+                <button
+                  type="button"
+                  className="sched-other-link"
+                  onClick={() => navigate(`/matches/${matchId}/schedule`)}
+                >
+                  {t("קבע זמן חדש")}
+                </button>
+                <button type="button" className="sched-cant" disabled={busy} onClick={handleNotPlayed}>
+                  {t("המשחק לא בוצע")}
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="sched-bottom-row">
+              <button
+                type="button"
+                className="sched-other-link"
+                onClick={() => navigate(`/matches/${matchId}/schedule`)}
+              >
+                {t("הצע שעה אחרת")}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

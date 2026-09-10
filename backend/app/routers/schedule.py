@@ -211,6 +211,7 @@ def get_match_detail(
         default_court=_default_court(db, match),
         duration_minutes=_match_duration_minutes(match),
         max_sets=(match.league.best_of or FRIENDLY_MAX_SETS) if match.league_id else FRIENDLY_MAX_SETS,
+        i_am_player1=i_am_player1,
         my_ntrp=my_ntrp,
         opponent_ntrp=opp_ntrp,
         h2h_wins=h2h_wins,

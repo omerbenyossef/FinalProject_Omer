@@ -656,6 +656,9 @@ class MatchDetailOut(BaseModel):
     default_court: Optional[str] = None
     duration_minutes: Optional[int] = None
     max_sets: int = 3
+    # Which side of the match the viewer is, so a score form on this screen can
+    # send sets in the match's own player1/player2 orientation.
+    i_am_player1: bool = True
     my_ntrp: Optional[float] = None
     opponent_ntrp: Optional[float] = None
     h2h_wins: int = 0

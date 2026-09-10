@@ -328,6 +328,10 @@ const PAIRS = [
   ["הזמן שהוצע לא התאים לך — סמן/י מתי כן, והיריב יבחר",
     "That time didn't work for you — mark when it does, and your opponent picks."],
 
+  ["MATCH IS SET", "MATCH IS SET"],
+  ["REPORT THE RESULT", "REPORT THE RESULT"],
+  ["קבע זמן חדש", "Set a new time"],
+
   // Propose a time — several slots at once
   ["אפשר לסמן כמה זמנים, והיריב יבחר אחד מהם",
     "You can mark several times and your opponent picks one of them."],
