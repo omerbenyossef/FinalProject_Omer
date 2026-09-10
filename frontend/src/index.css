@@ -1445,93 +1445,229 @@ a { color: var(--court); text-decoration: none; }
   }
 }
 
-.onboarding-overlay {
+.ob {
   position: fixed;
   inset: 0;
-  background: rgba(11, 18, 32, 0.55);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  z-index: 50;
-}
-
-.onboarding-card {
-  position: relative;
-  background: var(--card);
-  border-radius: 20px;
-  padding: 36px 28px 28px;
-  max-width: 340px;
-  width: 100%;
-  text-align: center;
+  z-index: 60;
+  background: #0e1116;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  padding: 22px 22px 30px;
+  box-sizing: border-box;
+  overflow-y: auto;
 }
 
-.onboarding-skip {
-  position: absolute;
-  top: 16px;
-  inset-inline-end: 16px;
-  background: none;
-  border: none;
-  color: var(--muted);
-  font-size: 13.5px;
-  font-weight: 600;
-  padding: 4px;
-}
-
-.onboarding-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background: var(--court-tint);
-  color: var(--court);
+.ob-top {
   display: flex;
   align-items: center;
-  justify-content: center;
-  margin-bottom: 18px;
+  justify-content: space-between;
 }
 
-.onboarding-icon svg {
-  width: 30px;
-  height: 30px;
+.ob-brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
 }
 
-.onboarding-title {
-  margin: 0 0 8px;
-  font-size: 17px;
+.ob-wordmark {
+  font: 400 20px/1 "Anton", sans-serif;
+  letter-spacing: 0.03em;
+  color: #eef1f7;
 }
 
-.onboarding-text {
-  color: var(--muted);
-  font-size: 13.5px;
-  line-height: 1.5;
+.ob-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #c6f24e;
+}
+
+.ob-skip {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: 600 14px "IBM Plex Sans Hebrew", sans-serif;
+  color: #8b93a6;
+  cursor: pointer;
+}
+
+.ob-title {
+  margin: 52px 0 0;
+  font: 700 34px/1.18 "IBM Plex Sans Hebrew", sans-serif;
+  letter-spacing: -0.03em;
+  color: #eef1f7;
+  text-wrap: pretty;
+}
+
+.ob-title--lg {
+  font-size: 40px;
+  line-height: 1.15;
+}
+
+/* The product name always reads left to right, isolated so the Hebrew maqaf
+   before it doesn't get pulled to the wrong side. */
+.ob-name {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.ob-lede {
+  margin: 12px 0 0;
+  font: 400 16px/1.6 "IBM Plex Sans Hebrew", sans-serif;
+  color: #a3abbb;
+  max-width: 32ch;
+  text-wrap: pretty;
+}
+
+.ob-body {
+  margin-top: 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  font: 400 16px/1.65 "IBM Plex Sans Hebrew", sans-serif;
+  color: #a3abbb;
+  text-wrap: pretty;
+}
+
+.ob-body p {
   margin: 0;
 }
 
-.onboarding-dots {
+.ob-body .ob-lead {
+  font: 600 18px/1.5 "IBM Plex Sans Hebrew", sans-serif;
+  color: #eef1f7;
+}
+
+.ob-note {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.ob-note-head {
   display: flex;
-  gap: 6px;
-  margin: 22px 0;
+  align-items: baseline;
+  gap: 9px;
 }
 
-.onboarding-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--line);
+.ob-note-tag {
+  font: 500 12px "IBM Plex Mono", monospace;
+  letter-spacing: 0.14em;
+  color: #c6f24e;
 }
 
-.onboarding-dot.active {
-  background: var(--court);
-  width: 18px;
-  border-radius: 4px;
+.ob-note-title {
+  font: 600 15px "IBM Plex Sans Hebrew", sans-serif;
+  color: #eef1f7;
 }
 
-.onboarding-next {
-  width: 100%;
+.ob-note p {
+  margin: 8px 0 0;
+  font: 400 15px/1.6 "IBM Plex Sans Hebrew", sans-serif;
+  color: #a3abbb;
+}
+
+.ob-num {
+  font-family: "IBM Plex Mono", monospace;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.ob-rows {
+  margin-top: 30px;
+  display: flex;
+  flex-direction: column;
+}
+
+.ob-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 22px 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.ob-row:last-child {
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.ob-row-art {
+  flex: none;
+  width: 62px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ob-row-icon {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: #12171e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #8b93a6;
+}
+
+.ob-row-icon.active {
+  color: #c6f24e;
+}
+
+.ob-row-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.ob-row-title {
+  font: 700 18px "IBM Plex Sans Hebrew", sans-serif;
+  color: #eef1f7;
+}
+
+.ob-row-title.quiet {
+  color: #c9cfdb;
+}
+
+.ob-row-desc {
+  margin-top: 5px;
+  font: 400 14.5px/1.5 "IBM Plex Sans Hebrew", sans-serif;
+  color: #8b93a6;
+}
+
+.ob-foot {
+  margin-top: auto;
+  padding-top: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ob-steps {
+  display: flex;
+  justify-content: center;
+  gap: 7px;
+}
+
+.ob-step {
+  width: 22px;
+  height: 4px;
+  border-radius: 2px;
+  background: #2b323d;
+}
+
+.ob-step.active {
+  background: #c6f24e;
+}
+
+.ob-next {
+  height: 56px;
+  border: 0;
+  border-radius: 28px;
+  background: #c6f24e;
+  color: #0e1116;
+  font: 700 17px "IBM Plex Sans Hebrew", sans-serif;
+  cursor: pointer;
 }
 
 .page-title-row {
