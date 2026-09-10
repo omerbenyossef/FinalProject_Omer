@@ -226,6 +226,21 @@ class OpenLeagueOut(BaseModel):
     best_fit: bool = False
 
 
+class LeaguePreviewPlayerOut(BaseModel):
+    """A member of the league as shown before joining — no email, no phone."""
+
+    id: int
+    display_name: str
+    level: Optional[float] = None
+    provisional: bool = True
+    joined_at: Optional[datetime] = None
+
+
+class LevelBucketOut(BaseModel):
+    level: float
+    count: int
+
+
 class LeaguePreviewOut(BaseModel):
     id: int
     name: str
@@ -235,15 +250,15 @@ class LeaguePreviewOut(BaseModel):
     distance_km: Optional[float] = None
     starts_at: Optional[datetime] = None
     rounds: Optional[int] = None
+    weeks: Optional[int] = None
     round_length_days: int = 7
     best_of: int = 3
     joined: int
     capacity: Optional[int] = None
     level_min: float
     level_max: float
-    level_histogram: list[int]
-    my_level: Optional[float] = None
-    my_bucket_index: Optional[int] = None
+    players: list[LeaguePreviewPlayerOut] = []
+    level_buckets: list[LevelBucketOut] = []
     is_member: bool = False
 
 

@@ -6519,19 +6519,6 @@ button:active { transform: translateY(1px); }
 }
 .pp-sub { margin: 8px 0 0; font: 500 11.5px "IBM Plex Mono", monospace; letter-spacing: .04em; color: #8b93a6; }
 
-.pp-stats {
-  margin-top: 20px; padding: 16px 20px;
-  border-top: 1px solid rgba(148, 163, 184, .14); border-bottom: 1px solid rgba(148, 163, 184, .14);
-  display: flex; justify-content: space-between;
-}
-.pp-stat { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
-.pp-stat-num { font: 400 34px/.9 "Anton", sans-serif; color: #eef1f7; font-variant-numeric: tabular-nums; }
-.pp-stat-num.dim { color: #8b93a6; }
-.pp-stat-of { font: 500 19px "IBM Plex Mono", monospace; color: #8b93a6; }
-.pp-stat-label {
-  font: 600 10px "IBM Plex Mono", monospace; letter-spacing: .16em; color: #8b93a6; text-transform: uppercase;
-}
-
 .pp-h2h { margin-top: 24px; }
 .pp-h2h-label {
   font: 600 10px "IBM Plex Mono", monospace; letter-spacing: .16em; color: #8b93a6; text-transform: uppercase;
@@ -6782,38 +6769,11 @@ button:active { transform: translateY(1px); }
 .lp-name { margin: 18px 0 0; font: 700 34px/1.1 "IBM Plex Sans", var(--sans); letter-spacing: -.02em; color: #eef1f7; }
 .lp-meta { margin: 6px 0 0; font: 500 11.5px "IBM Plex Mono", monospace; letter-spacing: .03em; color: #8b93a6; text-transform: uppercase; }
 
-.lp-how { margin-top: 26px; }
-.lp-how-label {
-  margin-bottom: 4px; font: 600 10px "IBM Plex Mono", monospace; letter-spacing: .16em; color: #6f7787; text-transform: uppercase;
-}
-.lp-how-line {
-  margin: 0; padding: 12px 0; border-bottom: 1px solid rgba(148, 163, 184, .14);
-  font: 500 14.5px "IBM Plex Sans", var(--sans); color: #c9cfdb;
-}
-
-.lp-spread { margin-top: 26px; position: relative; }
-.lp-spread-label {
-  margin-bottom: 10px; font: 600 10px "IBM Plex Mono", monospace; letter-spacing: .16em; color: #6f7787; text-transform: uppercase;
-}
-.lp-spread-bars { display: flex; align-items: flex-end; gap: 8px; height: 46px; }
-.lp-spread-col { flex: 1; display: flex; align-items: flex-end; height: 100%; }
-.lp-spread-bar { width: 100%; border-radius: 3px 3px 0 0; background: #2b323d; }
-.lp-spread-bar.is-me { background: var(--court, #c6f24e); }
-.lp-spread-you {
-  margin-top: 6px; position: relative; transform: translateX(50%);
-  font: 600 11px "IBM Plex Mono", monospace; color: var(--court, #c6f24e); white-space: nowrap;
-}
-
 .lp-join-btn {
   width: 100%; margin-top: 28px; height: 48px; border-radius: 24px; border: 0; background: #eef1f7; color: #0e1116;
   font: 700 15px "IBM Plex Sans", var(--sans); cursor: pointer;
 }
 .lp-join-btn:disabled { opacity: .55; cursor: default; }
-.lp-free {
-  margin: 10px 0 0; text-align: center; font: 600 11px "IBM Plex Mono", monospace; letter-spacing: .06em;
-  color: #6f7787; text-transform: uppercase;
-}
-
 .lp-next { margin-top: 26px; }
 .lp-next-label {
   margin-bottom: 10px; font: 600 10px "IBM Plex Mono", monospace; letter-spacing: .16em; color: #6f7787; text-transform: uppercase;
@@ -6841,6 +6801,98 @@ button:active { transform: translateY(1px); }
   width: 100%; margin-top: 18px; border: 0; border-bottom: 1px solid rgba(148, 163, 184, .3); background: none;
   padding: 0 0 10px; font: 600 30px "IBM Plex Mono", monospace; letter-spacing: .22em; color: #eef1f7; text-align: center;
 }
+
+/* leaguerosterbeforejoin154b — who is already in the league. The roster is
+   the part that scrolls, so this screen takes the viewport below the topbar
+   instead of growing the page: the join footer has to stay put under a list
+   of twelve. Layout hides the tab bar here, the footer is the only action. */
+.app-shell:has(.lpv) { height: 100svh; }
+.content:has(.lpv) { min-height: 0; padding: 0; display: flex; flex-direction: column; }
+
+.lpv {
+  flex: 1; min-height: 0; display: flex; flex-direction: column;
+  background: #0e1116; color: #eef1f7;
+}
+
+.lpv-head { flex: none; padding: 14px 20px 0; }
+.lpv-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.lpv-back {
+  display: flex; align-items: center; justify-content: center; width: 34px; height: 34px;
+  margin-inline-start: -8px; border: 0; background: none; padding: 0; color: #eef1f7; cursor: pointer;
+}
+/* Back points the way back: right in RTL, left in LTR — the opposite of the
+   app-wide forward chevron, same as .back-link. */
+.lpv-back .chevron-icon { width: 26px; height: 26px; transform: scaleX(-1); }
+[dir="ltr"] .lpv-back .chevron-icon { transform: none; }
+.lpv-nav-label {
+  font: 500 12px "IBM Plex Mono", monospace; letter-spacing: .14em; color: #8b93a6;
+}
+
+.lpv-title {
+  margin: 34px 0 0; font: 700 32px/1.18 "IBM Plex Sans", var(--sans);
+  letter-spacing: -.025em; color: #eef1f7; text-wrap: pretty;
+}
+.lpv-meta {
+  margin: 10px 0 0; font: 400 15px/1.5 "IBM Plex Sans", var(--sans);
+  color: #8b93a6; max-width: 32ch; text-wrap: pretty;
+}
+
+.lpv-range { margin-top: 26px; }
+.lpv-range-head { display: flex; align-items: center; gap: 10px; }
+.lpv-range-label {
+  font: 500 11.5px "IBM Plex Mono", monospace; letter-spacing: .12em; color: #6f7787;
+}
+.lpv-range-rule { flex: 1; height: 1px; background: rgba(148, 163, 184, .14); }
+.lpv-range-span { font: 500 12px "IBM Plex Mono", monospace; color: var(--court, #c6f24e); }
+.lpv-bars { margin-top: 12px; display: flex; align-items: flex-end; gap: 4px; height: 40px; }
+/* Every column in the range is lime — the league is a range, not one level.
+   An empty half-step stays in the row in grey so the range reads continuous. */
+.lpv-bar { flex: 1; background: var(--court, #c6f24e); border-radius: 3px; }
+.lpv-bar.is-empty { background: #2b323d; }
+.lpv-bar-labels { margin-top: 7px; display: flex; gap: 4px; }
+.lpv-bar-label {
+  flex: 1; text-align: center; font: 500 11.5px "IBM Plex Mono", monospace; color: #8b93a6;
+}
+
+.lpv-roster { flex: 1; min-height: 0; overflow-y: auto; margin-top: 24px; padding: 0 20px; }
+.lpv-row {
+  display: flex; align-items: center; gap: 14px; padding: 12px 0;
+  border-top: 1px solid rgba(148, 163, 184, .14);
+}
+.lpv-row:last-child { border-bottom: 1px solid rgba(148, 163, 184, .14); }
+.lpv-row-num {
+  flex: none; width: 20px; font: 500 12px "IBM Plex Mono", monospace; color: #6f7787;
+}
+.lpv-row-name {
+  flex: 1; min-width: 0; font: 600 16px "IBM Plex Sans", var(--sans); color: #eef1f7;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  /* plaintext, not dir="auto": a Hebrew name still reads right-to-left inside
+     the cell, but the cell keeps the row's own direction, so the name hugs the
+     number instead of drifting to the far side in the English UI. */
+  unicode-bidi: plaintext;
+}
+[dir="rtl"] .lpv-row-name { text-align: right; }
+[dir="ltr"] .lpv-row-name { text-align: left; }
+.lpv-row-level { flex: none; font: 500 13px "IBM Plex Mono", monospace; color: #8b93a6; }
+
+.lpv-error { flex: none; margin: 10px 20px 0; }
+
+/* margin-top:auto matters only for an empty league, where there is no roster
+   to fill the gap. */
+.lpv-foot {
+  flex: none; margin-top: auto; padding: 16px 20px 30px;
+  display: flex; align-items: center; gap: 14px;
+}
+.lpv-foot-text {
+  flex: 1; min-width: 0; font: 400 13px/1.45 "IBM Plex Sans", var(--sans); color: #8b93a6;
+}
+.lpv-join {
+  flex: none; height: 52px; padding: 0 30px; border: 0; border-radius: 26px;
+  background: var(--court, #c6f24e); color: #0e1116;
+  font: 700 16px "IBM Plex Sans", var(--sans); cursor: pointer;
+}
+.lpv-join:disabled { cursor: default; }
+.lpv-join.is-full { background: #2b323d; color: #8b93a6; }
 
 /* needsyou112a — home name-row counter */
 .home-tag-needs {

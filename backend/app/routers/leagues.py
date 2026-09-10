@@ -727,6 +727,47 @@ def get_league(league_id: int, db: Session = Depends(get_db)):
     return _to_league_out(_get_league_or_404(db, league_id))
 
 
+# 154b: one cell per half-step across the league's own level range, zero
+# counts included so the range reads as continuous. A range wider than seven
+# half-steps (the whole 1.0-7.0 scale is thirteen) is folded into pairs so the
+# strip never grows past seven columns.
+MAX_LEVEL_BUCKETS = 7
+
+
+def _level_buckets(level_min: float, level_max: float, levels: list[float | None]) -> list[schemas.LevelBucketOut]:
+    steps = []
+    step = round_to_half(level_min)
+    while step <= level_max + 1e-9:
+        steps.append(round(step, 1))
+        step += 0.5
+    if not steps:
+        steps = [round_to_half(level_min)]
+
+    group_size = 1 if len(steps) <= MAX_LEVEL_BUCKETS else 2
+    groups = [steps[i : i + group_size] for i in range(0, len(steps), group_size)]
+    counts = [0] * len(groups)
+
+    for level in levels:
+        if level is None:
+            continue
+        # Clamp: a member can sit outside the range (their rating moved after
+        # they joined, or the owner narrowed the range since).
+        nearest = min(range(len(steps)), key=lambda i: abs(steps[i] - level))
+        counts[nearest // group_size] += 1
+
+    return [
+        schemas.LevelBucketOut(level=group[0], count=count) for group, count in zip(groups, counts)
+    ]
+
+
+def _league_weeks(league: models.League) -> int | None:
+    """How long the season runs, in weeks — rounds x round length."""
+    if not league.planned_rounds:
+        return None
+    days = league.planned_rounds * (league.round_length_days or 7)
+    return max(1, round(days / 7))
+
+
 @router.get("/{league_id}/preview", response_model=schemas.LeaguePreviewOut)
 def preview_league(
     league_id: int,
@@ -735,10 +776,10 @@ def preview_league(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    """The "before you join" gate — see joinpublicleague110.md section 2.
-    level_histogram buckets every current member's rating across the
-    league's own level range so the viewer can see "will I sink or swim"
-    (their own bucket highlighted client-side via my_bucket_index)."""
+    """The "before you join" gate — see joinpublicleague110.md section 2 and
+    leaguerosterbeforejoin154b.md. The only question a player actually has
+    at this point is who is already in, so the payload is the roster (in
+    join order) plus one cell per half-step of the league's level range."""
     league = _get_league_or_404(db, league_id)
     level_min = league.level_min if league.level_min is not None else models.RATING_MIN
     level_max = league.level_max if league.level_max is not None else models.RATING_MAX
@@ -752,29 +793,29 @@ def preview_league(
     )
 
     ratings_by_user = {
-        r.user_id: round_to_half(r.level)
+        r.user_id: r
         for r in db.query(models.PlayerRating).filter(
             models.PlayerRating.sport_id == league.sport_id,
             models.PlayerRating.user_id.in_([m.user_id for m in league.memberships]),
         )
     }
 
-    bucket_count = 5
-    span = max(level_max - level_min, 0.5)
-
-    def bucket_for(level: float) -> int:
-        idx = int((level - level_min) / span * bucket_count)
-        return max(0, min(bucket_count - 1, idx))
-
-    histogram = [0] * bucket_count
-    for m in league.memberships:
-        level = ratings_by_user.get(m.user_id)
-        if level is not None:
-            histogram[bucket_for(level)] += 1
-
-    my_rating = get_rating(db, current_user.id, league.sport_id)
-    my_level = round_to_half(my_rating.level) if my_rating else None
-    my_bucket_index = bucket_for(my_level) if my_level is not None else None
+    # Join order, not level or name — nobody has a league history to rank by
+    # before round 1. joined_at is nullable on rows that predate the column,
+    # and those memberships are by definition the oldest ones.
+    members = sorted(league.memberships, key=lambda m: m.joined_at or datetime.min)
+    players = []
+    for m in members:
+        rating = ratings_by_user.get(m.user_id)
+        players.append(
+            schemas.LeaguePreviewPlayerOut(
+                id=m.user_id,
+                display_name=m.user.name,
+                level=round_to_half(rating.level) if rating else None,
+                provisional=rating.provisional if rating else True,
+                joined_at=m.joined_at,
+            )
+        )
 
     return schemas.LeaguePreviewOut(
         id=league.id,
@@ -785,15 +826,15 @@ def preview_league(
         distance_km=distance_km,
         starts_at=league.starts_at,
         rounds=league.planned_rounds,
+        weeks=_league_weeks(league),
         round_length_days=league.round_length_days or 7,
         best_of=league.best_of or 3,
         joined=joined,
         capacity=league.capacity,
         level_min=level_min,
         level_max=level_max,
-        level_histogram=histogram,
-        my_level=my_level,
-        my_bucket_index=my_bucket_index,
+        players=players,
+        level_buckets=_level_buckets(level_min, level_max, [p.level for p in players]),
         is_member=is_member,
     )
 

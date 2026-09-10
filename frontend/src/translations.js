@@ -325,6 +325,24 @@ const PAIRS = [
   ["שפה: עברית", "Language: Hebrew"],
   ["שפה: English", "Language: English"],
 
+  // League preview — who is already in the league (154b)
+  ["{count} שחקנים כבר בליגה", "{count} players already in the league"],
+  ["שחקן אחד כבר בליגה", "One player already in the league"],
+  ["עוד אין שחקנים בליגה", "No players in the league yet"],
+  ["{leagueName}, רמות {min}–{max}.", "{leagueName}, levels {min}–{max}."],
+  ["{leagueName}, רמות {min}–{max}. המחזור מתחיל ב־{date}.",
+    "{leagueName}, levels {min}–{max}. The season starts on {date}."],
+  ["{leagueName}, רמות {min}–{max}. המחזור מתחיל ב־{date} ונמשך שבוע אחד.",
+    "{leagueName}, levels {min}–{max}. The season starts on {date} and runs for one week."],
+  ["{leagueName}, רמות {min}–{max}. המחזור מתחיל ב־{date} ונמשך {weeks} שבועות.",
+    "{leagueName}, levels {min}–{max}. The season starts on {date} and runs for {weeks} weeks."],
+  ["{open} מקומות פנויים מתוך {capacity}", "{open} spots open out of {capacity}"],
+  ["מקום פנוי אחד מתוך {capacity}", "One spot open out of {capacity}"],
+  ["{capacity} מתוך {capacity} · אפשר להיכנס לרשימת המתנה",
+    "{capacity} of {capacity} · you can join the waiting list"],
+  ["תהיה הראשון", "Be the first"],
+  ["מלאה", "Full"],
+
   // Head to head
   ["מול", "vs"],
   ["מול {name}", "vs {name}"],

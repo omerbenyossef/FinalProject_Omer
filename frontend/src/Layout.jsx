@@ -17,6 +17,10 @@ export default function Layout({ children }) {
   const location = useLocation();
   const { openAction, hasOtherLeagueActivity, triggerOpenAction } = useOpenAction();
   const isAuthRoute = AUTH_PATHS.includes(location.pathname);
+  // leaguerosterbeforejoin154b — the join screen owns the full height below
+  // the topbar (its roster scrolls, its footer holds the only action), so the
+  // tab bar would just be a second bottom bar competing with it.
+  const isJoinPreview = /^\/leagues\/\d+\/preview$/.test(location.pathname);
 
   if (isAuthRoute) {
     return <main className="content auth-content">{children}</main>;
@@ -69,7 +73,7 @@ export default function Layout({ children }) {
       {user && <Onboarding />}
       {user && <InstallPrompt />}
       <main className="content">{children}</main>
-      {user && location.pathname !== "/ops" && (
+      {user && location.pathname !== "/ops" && !isJoinPreview && (
         <nav className="tabbar">
           <div className="tabbar-row">
             <div className={`tabbar-inner${openAction ? "" : " wide"}`}>
