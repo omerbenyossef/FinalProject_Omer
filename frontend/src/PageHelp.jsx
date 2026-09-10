@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLanguage } from "./LanguageContext.jsx";
 import { QuestionIcon, CloseIcon } from "./Icons.jsx";
+import { hasSeenIntro } from "./onboardingSeen.js";
 
 function seenKey(pageKey) {
   return `pageHelpSeen:${pageKey}`;
@@ -14,7 +15,7 @@ export default function PageHelp({ pageKey, title, text }) {
     if (localStorage.getItem(seenKey(pageKey))) return;
 
     function tryShow() {
-      if (localStorage.getItem("onboardingSeen")) {
+      if (hasSeenIntro()) {
         setOpen(true);
         return true;
       }
@@ -23,8 +24,10 @@ export default function PageHelp({ pageKey, title, text }) {
 
     if (tryShow()) return;
 
-    // Onboarding is a full-screen blocking modal, so wait for it to be
+    // The intro is a full-screen blocking sequence, so wait for it to be
     // dismissed before auto-popping this page's own explanation on top of it.
+    // Players who only saw an older version of the intro are shown it again,
+    // so this has to check the version, not just the key's presence.
     const interval = setInterval(() => {
       if (tryShow()) clearInterval(interval);
     }, 300);

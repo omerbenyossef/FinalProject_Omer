@@ -4,13 +4,9 @@ import { useSport } from "./SportContext.jsx";
 import { api } from "./api";
 import RatingQuestionnaire from "./RatingQuestionnaire.jsx";
 import { PersonIcon, TrophyIcon, RanksIcon } from "./Icons.jsx";
+import { hasSeenIntro, markIntroSeen } from "./onboardingSeen.js";
 
-const SEEN_KEY = "onboardingSeen";
 const STEP_COUNT = 3;
-
-function hasSeenOnboarding() {
-  return !!localStorage.getItem(SEEN_KEY);
-}
 
 // The three sketches on screen 2. Symmetric on purpose — nothing here needs
 // flipping between RTL and LTR.
@@ -111,7 +107,7 @@ function Row({ art, icon, iconActive, title, quiet, desc }) {
 export default function Onboarding() {
   const { t } = useLanguage();
   const { sports, selectedSportId } = useSport();
-  const [dismissed, setDismissed] = useState(hasSeenOnboarding());
+  const [dismissed, setDismissed] = useState(hasSeenIntro());
   const [step, setStep] = useState(0);
   const [showRating, setShowRating] = useState(false);
   const [alreadyRated, setAlreadyRated] = useState(null);
@@ -135,7 +131,7 @@ export default function Onboarding() {
   // included — PageHelp waits on that same flag before popping its own
   // explanation, and it shouldn't land on top of the questionnaire.
   function close() {
-    localStorage.setItem(SEEN_KEY, "1");
+    markIntroSeen();
     setDismissed(true);
   }
 
