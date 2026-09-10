@@ -136,10 +136,27 @@ function ToPlayCard({
   const oppNtrpText = oppNtrp != null ? oppNtrp.toFixed(1) : "—";
   const h2hText = `${h2h?.wins ?? 0}-${h2h?.losses ?? 0}`;
   const timeText = m.scheduled_at ? formatWeekdayDateTime(new Date(m.scheduled_at)) : "not set";
+  // Once a match has been reported the scheduled time is beside the point, and
+  // leaving it there reads as "you still have to play this". Say what is
+  // actually pending instead.
+  const notPlayedClaim = m.void_reason === "not_played" && m.corrected_sets == null;
+  let statusText = null;
+  if (needsMyConfirm) {
+    statusText = notPlayedClaim ? t("מחכה לתשובה שלך") : t("התוצאה מחכה לאישור שלך");
+  } else if (awaitingOpponentConfirm) {
+    statusText = notPlayedClaim
+      ? t("ממתין לאישור שהמשחק לא בוצע")
+      : t("ממתין לאישור התוצאה");
+  }
 
   let action = null;
   if (needsMyConfirm) {
-    action = { title: t("אשר תוצאה"), onPress: onOpenConfirmScore };
+    // A "didn't happen" claim has no score to confirm, and the label
+    // shouldn't presume the answer either way.
+    action = {
+      title: notPlayedClaim ? t("השב לדיווח") : t("אשר תוצאה"),
+      onPress: onOpenConfirmScore,
+    };
   } else if (awaitingOpponentConfirm) {
     action = { title: t("תזכורת"), onPress: onRemind };
   } else if (pendingInvite) {
@@ -214,8 +231,10 @@ function ToPlayCard({
           <span className="tp-row-value">{h2hText}</span>
         </div>
         <div className="tp-row">
-          <span className="tp-row-label">TIME</span>
-          <span className="tp-row-value">{timeText}</span>
+          <span className="tp-row-label">{statusText ? "STATUS" : "TIME"}</span>
+          <span className="tp-row-value" dir={statusText ? "auto" : undefined}>
+            {statusText || timeText}
+          </span>
         </div>
       </div>
 

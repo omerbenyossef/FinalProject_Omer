@@ -347,6 +347,13 @@ const PAIRS = [
   ["יש לבחור זמן למשחק", "Pick a time for the match"],
   ["הזמן שבחרת כבר לא מוצע", "The time you picked is no longer on offer"],
 
+  // Home "to play" card — what is pending on a reported match
+  ["ממתין לאישור התוצאה", "Waiting for the score to be confirmed"],
+  ["ממתין לאישור שהמשחק לא בוצע", "Waiting for confirmation it wasn't played"],
+  ["התוצאה מחכה לאישור שלך", "The score is waiting for you"],
+  ["מחכה לתשובה שלך", "Waiting for your answer"],
+  ["השב לדיווח", "Answer the report"],
+
   // Notifications screen (155a)
   ["NOTIFICATIONS", "NOTIFICATIONS"],
   ["דורש אותך", "Needs you"],
