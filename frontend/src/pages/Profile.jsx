@@ -21,6 +21,7 @@ import {
 import { SkeletonMatchRow } from "../Skeleton.jsx";
 import PageHelp from "../PageHelp.jsx";
 import EmptyLine from "../EmptyLine.jsx";
+import RatingQuestionnaire from "../RatingQuestionnaire.jsx";
 
 const TP_CARD_WIDTH = 305;
 const TP_CARD_GAP = 12;
@@ -240,43 +241,46 @@ function ToPlayCard({
   );
 }
 
-// 109a — a player with no league yet. Two asymmetric paths, not a menu:
-// joining a public league is the recommended one (lime dot), starting your
-// own is the secondary fallback. See firstdayandemptystates109.md section 1.
-function NoLeagueBlock({ t, navigate, openCount }) {
+// 151c — a player with no league yet: one question, three choices, no
+// explanatory copy and no recommended path. Replaces 109a's two asymmetric
+// options. Direction is inherited from <html dir>, which LanguageContext
+// keeps in step with the active language — never hardcoded here.
+function NoLeagueBlock({ t, navigate, openCount, showLevelRow, onSetLevel }) {
   return (
-    <div className="home-nolg">
-      <h2 className="home-nolg-title" dir="rtl">
-        {t("עוד אין לך ליגה. שתי דרכים להתחיל.")}
-      </h2>
+    <div className="nl">
+      <h1 className="nl-q">{t("איך תרצה להתחיל?")}</h1>
 
-      <div className="home-nolg-option is-primary">
-        <div className="home-nolg-option-head">
-          <span className="home-nolg-option-title">{t("הצטרף לליגה ציבורית")}</span>
-          <span className="home-nolg-tag">{t("{n} OPEN", { n: openCount })}</span>
-        </div>
-        <p className="home-nolg-option-sub">{t("כל אחד יכול להצטרף, בלי קוד הזמנה.")}</p>
-        <button type="button" className="home-nolg-action" onClick={() => navigate("/leagues/open")}>
-          <span className="home-nolg-dot" aria-hidden="true" />
-          {t("עיין בליגות פתוחות")}
-          <ChevronIcon aria-hidden="true" />
+      <div className="nl-opts">
+        <button type="button" className="nl-opt" onClick={() => navigate("/leagues/open")}>
+          <span className="nl-opt-label">{t("הצטרף לליגה ציבורית")}</span>
+          {openCount > 0 ? (
+            <span className="nl-opt-count" dir="ltr">
+              {openCount} OPEN
+            </span>
+          ) : (
+            <ChevronIcon className="nl-opt-chev" aria-hidden="true" />
+          )}
+        </button>
+
+        <button type="button" className="nl-opt" onClick={() => navigate("/leagues?create=1")}>
+          <span className="nl-opt-label">{t("פתח ליגה משלך")}</span>
+          <ChevronIcon className="nl-opt-chev" aria-hidden="true" />
+        </button>
+
+        <button type="button" className="nl-opt" onClick={() => navigate("/friendly/new")}>
+          <span className="nl-opt-label nl-opt-label--quiet">{t("משחק ידידותי בלי ליגה")}</span>
+          <ChevronIcon className="nl-opt-chev" aria-hidden="true" />
         </button>
       </div>
 
-      <div className="home-nolg-option">
-        <div className="home-nolg-option-head">
-          <span className="home-nolg-option-title dim">{t("פתח ליגה משלך")}</span>
+      {showLevelRow && (
+        <div className="nl-foot">
+          <span>{t("הרמה שלך עוד לא נקבעה")}</span>
+          <button type="button" className="nl-foot-cta" onClick={onSetLevel}>
+            {t("קבע רמה")}
+          </button>
         </div>
-        <p className="home-nolg-option-sub">{t("הזמן חברים וקבע את חוקי הליגה.")}</p>
-        <button type="button" className="home-nolg-action dim" onClick={() => navigate("/leagues?create=1")}>
-          {t("צור ליגה חדשה")}
-          <ChevronIcon aria-hidden="true" />
-        </button>
-      </div>
-
-      <Link to="/friendly/new" className="home-nolg-friendly">
-        {t("OR PLAY A FRIENDLY WITHOUT A LEAGUE")}
-      </Link>
+      )}
     </div>
   );
 }
@@ -366,6 +370,7 @@ export default function Profile() {
   const [friendlyNtrpByOpponent, setFriendlyNtrpByOpponent] = useState({});
   const [allLeagues, setAllLeagues] = useState([]);
   const [soloMembers, setSoloMembers] = useState([]);
+  const [settingLevel, setSettingLevel] = useState(false);
   const carouselRef = useRef(null);
   const requestedLeagueStandingsRef = useRef(new Set());
   const requestedH2hRef = useRef(new Set());
@@ -636,7 +641,7 @@ export default function Profile() {
   }
 
   return (
-    <div>
+    <div className="home-page">
       <header className="home-head">
         <div className="home-head-top">
           <div className="home-name-row">
@@ -701,7 +706,10 @@ export default function Profile() {
             )}
           </div>
         ) : (
-          !isRoundNotOpened && (
+          // With no league the same message lives in 151c's footer row, so
+          // don't say it twice on one screen.
+          !isRoundNotOpened &&
+          !isNoLeague && (
             <Link to="/leagues" className="home-rating-empty">
               {t("לא מדורג")} · {t("קבע רמה")}
             </Link>
@@ -713,7 +721,13 @@ export default function Profile() {
 
       <div className="home-sheet">
       {isNoLeague ? (
-        <NoLeagueBlock t={t} navigate={navigate} openCount={openLeagueCount} />
+        <NoLeagueBlock
+          t={t}
+          navigate={navigate}
+          openCount={openLeagueCount}
+          showLevelRow={!myRating}
+          onSetLevel={() => setSettingLevel(true)}
+        />
       ) : isRoundNotOpened ? (
         <SoloLeagueHero
           league={soloLeague}
@@ -761,6 +775,7 @@ export default function Profile() {
         })}
 
       {stats &&
+        !isNoLeague &&
         (hasNoMatches ? (
           <div className="home-empty-rating">
             <div className="home-empty-rating-line" dir="ltr">
@@ -918,6 +933,18 @@ export default function Profile() {
         </>
       )}
       </div>
+
+      {settingLevel && selectedSportId && (
+        <RatingQuestionnaire
+          initial
+          sportId={selectedSportId}
+          sportName={sportName}
+          onClose={() => {
+            setSettingLevel(false);
+            reloadRatings();
+          }}
+        />
+      )}
     </div>
   );
 }

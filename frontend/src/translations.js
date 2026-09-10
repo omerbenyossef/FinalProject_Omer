@@ -655,6 +655,12 @@ const PAIRS = [
   ["HE ACCEPTED YOUR CORRECTION · TABLE UPDATED", "HE ACCEPTED YOUR CORRECTION · TABLE UPDATED"],
   ["NOT COUNTED · NEITHER SIDE GETS THE WIN", "NOT COUNTED · NEITHER SIDE GETS THE WIN"],
 
+  // No-league home — one question, three choices (151c)
+  ["איך תרצה להתחיל?", "How do you want to start?"],
+  ["הצטרף לליגה ציבורית", "Join a public league"],
+  ["משחק ידידותי בלי ליגה", "A friendly, no league"],
+  ["הרמה שלך עוד לא נקבעה", "Your level is not set yet"],
+
   // First day and empty states (109)
   ["עוד אין לך ליגה. שתי דרכים להתחיל.", "You don't have a league yet. Two ways to start."],
   ["{n} OPEN", "{n} OPEN"],
