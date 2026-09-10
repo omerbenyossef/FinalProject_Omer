@@ -51,6 +51,17 @@ export function OpenActionProvider({ children }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
+  // The tab-bar button lives in the layout, so it never remounts and used to
+  // keep advertising work that was already done — every screen had to remember
+  // to call reload() after acting, and a screen that forgot (or acted without
+  // navigating) left "REPORT VS ..." sitting there. Refetching on every route
+  // change covers all of them; an action that doesn't navigate still calls
+  // reload() itself.
+  useEffect(() => {
+    if (user) reload();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+
   const currentLeagueId = useMemo(() => {
     const m = location.pathname.match(/^\/leagues\/(\d+)/);
     return m ? Number(m[1]) : null;

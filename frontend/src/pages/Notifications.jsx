@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { useLanguage } from "../LanguageContext.jsx";
+import { useOpenAction } from "../OpenActionContext.jsx";
 import { ChevronIcon } from "../Icons.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
 import { formatWeekdayDateTime } from "../matchUtils.js";
@@ -67,6 +68,7 @@ function renderUpdate(item) {
 
 export default function Notifications() {
   const { t, language } = useLanguage();
+  const { reload: reloadOpenAction } = useOpenAction();
   const navigate = useNavigate();
 
   const [data, setData] = useState(null);
@@ -89,6 +91,8 @@ export default function Notifications() {
     try {
       await run();
       load();
+      // Acting here doesn't navigate, so the tab-bar button has to be told.
+      reloadOpenAction();
     } catch (err) {
       if (err.status === 409) {
         // Something needs a decision the card can't hold (which of several
