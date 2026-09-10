@@ -1,9 +1,22 @@
-from datetime import datetime
-from typing import Optional
+from datetime import datetime, timezone
+from typing import Annotated, Optional
 
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field, PlainSerializer, field_validator
 
 from .models import MatchStatus, MatchKind, FriendlyInviteStatus
+
+
+def _utc_iso(value: datetime) -> str:
+    """Naive datetimes in this codebase are UTC (datetime.utcnow()). Serialize
+    them with an explicit offset: `new Date("2026-09-14T18:00:00")` in the
+    browser means 18:00 *local*, which silently shifted every time the app
+    showed by the viewer's UTC offset."""
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+UtcDatetime = Annotated[datetime, PlainSerializer(_utc_iso, return_type=str, when_used="json")]
 
 
 class UserCreate(BaseModel):
@@ -98,7 +111,7 @@ class RecentMatchEntry(BaseModel):
     won: bool
     kind: MatchKind = MatchKind.league
     league_name: Optional[str] = None
-    played_at: Optional[datetime] = None
+    played_at: Optional[UtcDatetime] = None
 
 
 class UserStats(BaseModel):
@@ -150,7 +163,7 @@ class LeagueCreate(BaseModel):
     level_min: Optional[float] = None
     level_max: Optional[float] = None
     capacity: Optional[int] = None
-    starts_at: Optional[datetime] = None
+    starts_at: Optional[UtcDatetime] = None
     location_name: Optional[str] = None
     lat: Optional[float] = None
     lng: Optional[float] = None
@@ -163,7 +176,7 @@ class LeagueRulesUpdate(BaseModel):
     level_min: Optional[float] = None
     level_max: Optional[float] = None
     capacity: Optional[int] = None
-    starts_at: Optional[datetime] = None
+    starts_at: Optional[UtcDatetime] = None
     clear_capacity: bool = False
     clear_starts_at: bool = False
     location_name: Optional[str] = None
@@ -185,15 +198,15 @@ class LeagueOut(BaseModel):
     sport: SportOut
     member_count: int = 0
     created_by: int
-    created_at: Optional[datetime] = None
-    schedule_started_at: Optional[datetime] = None
+    created_at: Optional[UtcDatetime] = None
+    schedule_started_at: Optional[UtcDatetime] = None
     is_open: bool = False
     best_of: Optional[int] = None
     round_length_days: Optional[int] = None
     level_min: Optional[float] = None
     level_max: Optional[float] = None
     capacity: Optional[int] = None
-    starts_at: Optional[datetime] = None
+    starts_at: Optional[UtcDatetime] = None
     location_name: Optional[str] = None
     lat: Optional[float] = None
     lng: Optional[float] = None
@@ -221,7 +234,7 @@ class OpenLeagueOut(BaseModel):
     level_max: float
     joined: int
     capacity: Optional[int] = None
-    starts_at: Optional[datetime] = None
+    starts_at: Optional[UtcDatetime] = None
     is_full: bool = False
     best_fit: bool = False
 
@@ -233,7 +246,7 @@ class LeaguePreviewPlayerOut(BaseModel):
     display_name: str
     level: Optional[float] = None
     provisional: bool = True
-    joined_at: Optional[datetime] = None
+    joined_at: Optional[UtcDatetime] = None
 
 
 class LevelBucketOut(BaseModel):
@@ -248,7 +261,7 @@ class LeaguePreviewOut(BaseModel):
     sport_name: str
     location_name: Optional[str] = None
     distance_km: Optional[float] = None
-    starts_at: Optional[datetime] = None
+    starts_at: Optional[UtcDatetime] = None
     rounds: Optional[int] = None
     weeks: Optional[int] = None
     round_length_days: int = 7
@@ -324,7 +337,7 @@ class MatchCorrection(BaseModel):
 
 
 class MatchScheduleProposal(BaseModel):
-    scheduled_at: datetime
+    scheduled_at: UtcDatetime
     court: Optional[str] = None
     duration_minutes: Optional[int] = None
     override_conflict_warning: bool = False
@@ -340,7 +353,7 @@ class MatchOut(BaseModel):
     kind: MatchKind = MatchKind.league
     invite_status: Optional[FriendlyInviteStatus] = None
     requires_confirmation: bool = True
-    scheduled_at: Optional[datetime] = None
+    scheduled_at: Optional[UtcDatetime] = None
     scheduled_by: Optional[int] = None
     schedule_confirmed: bool = False
     court: Optional[str] = None
@@ -352,16 +365,16 @@ class MatchOut(BaseModel):
     sets: Optional[list[SetScore]] = None
     round_number: Optional[int] = None
     status: MatchStatus
-    created_at: datetime
-    played_at: Optional[datetime]
+    created_at: UtcDatetime
+    played_at: Optional[UtcDatetime]
     reported_by: Optional[int] = None
     confirmed_by: Optional[int] = None
-    confirmed_at: Optional[datetime] = None
-    auto_confirm_at: Optional[datetime] = None
+    confirmed_at: Optional[UtcDatetime] = None
+    auto_confirm_at: Optional[UtcDatetime] = None
     corrected_by: Optional[int] = None
     corrected_sets: Optional[list[SetScore]] = None
     dispute_note: Optional[str] = None
-    disputed_at: Optional[datetime] = None
+    disputed_at: Optional[UtcDatetime] = None
     void_reason: Optional[str] = None
 
     class Config:
@@ -373,7 +386,7 @@ class NextMatchEntry(BaseModel):
     sport_id: Optional[int] = None
     league_id: Optional[int] = None
     league_name: Optional[str] = None
-    schedule_started_at: Optional[datetime] = None
+    schedule_started_at: Optional[UtcDatetime] = None
     best_of: int = 3
     invite_status: Optional[FriendlyInviteStatus] = None
     match: MatchOut
@@ -390,7 +403,7 @@ class OpenItemOut(BaseModel):
     sport_id: Optional[int] = None
     league_id: Optional[int] = None
     league_name: Optional[str] = None
-    schedule_started_at: Optional[datetime] = None
+    schedule_started_at: Optional[UtcDatetime] = None
     round_length_days: int = 7
     best_of: int = 3
     old_rank: Optional[int] = None
@@ -425,7 +438,7 @@ class FriendlyPlayerOut(BaseModel):
     wins: int
     losses: int
     shared_leagues: int
-    last_played_at: Optional[datetime] = None
+    last_played_at: Optional[UtcDatetime] = None
 
 
 class FriendlyInviteLinkCreate(BaseModel):
@@ -456,7 +469,7 @@ class HeadToHeadMatch(BaseModel):
     my_score: int
     opponent_score: int
     sets: Optional[list[SetScore]] = None
-    played_at: Optional[datetime]
+    played_at: Optional[UtcDatetime]
 
 
 class HeadToHeadOut(BaseModel):
@@ -483,7 +496,7 @@ class PlayerRatingOut(BaseModel):
     level: float
     provisional: bool
     rated_matches: int
-    finalized_at: Optional[datetime] = None
+    finalized_at: Optional[UtcDatetime] = None
 
     class Config:
         from_attributes = True
@@ -572,7 +585,7 @@ class SharedLeagueOut(BaseModel):
 class PlayerProfileOut(BaseModel):
     id: int
     name: str
-    joined_at: datetime
+    joined_at: UtcDatetime
     league_count: int
     ntrp: Optional[float] = None
     rank: Optional[int] = None
@@ -606,12 +619,12 @@ class MatchDetailOut(BaseModel):
     league_id: Optional[int] = None
     league_name: Optional[str] = None
     round_number: Optional[int] = None
-    schedule_started_at: Optional[datetime] = None
+    schedule_started_at: Optional[UtcDatetime] = None
     round_length_days: Optional[int] = None
     status: str
-    scheduled_at: Optional[datetime] = None
+    scheduled_at: Optional[UtcDatetime] = None
     scheduled_by: Optional[int] = None
-    schedule_proposed_at: Optional[datetime] = None
+    schedule_proposed_at: Optional[UtcDatetime] = None
     court: Optional[str] = None
     default_court: Optional[str] = None
     duration_minutes: Optional[int] = None
@@ -627,9 +640,9 @@ class MatchDetailOut(BaseModel):
     corrected_by: Optional[int] = None
     corrected_sets: Optional[list[SetScore]] = None
     dispute_note: Optional[str] = None
-    disputed_at: Optional[datetime] = None
+    disputed_at: Optional[UtcDatetime] = None
     void_reason: Optional[str] = None
-    auto_confirm_at: Optional[datetime] = None
+    auto_confirm_at: Optional[UtcDatetime] = None
     prediction: Optional[ResultPrediction] = None
 
 
@@ -639,8 +652,8 @@ class OpsFlaggedLeague(BaseModel):
     flag: str  # stalled | never_started | voided
     round_number: Optional[int] = None
     round_length_days: Optional[int] = None
-    schedule_started_at: Optional[datetime] = None
-    created_at: datetime
+    schedule_started_at: Optional[UtcDatetime] = None
+    created_at: UtcDatetime
     member_count: int
     capacity: Optional[int] = None
     round_matches_total: int = 0
@@ -655,8 +668,8 @@ class OpsHealthyLeague(BaseModel):
     league_name: str
     round_number: Optional[int] = None
     round_length_days: Optional[int] = None
-    schedule_started_at: Optional[datetime] = None
-    created_at: datetime
+    schedule_started_at: Optional[UtcDatetime] = None
+    created_at: UtcDatetime
     member_count: int
     matches_total: int = 0
     matches_played: int = 0
