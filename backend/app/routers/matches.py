@@ -17,6 +17,8 @@ REMIND_COOLDOWN = timedelta(hours=1)
 AUTO_REMIND_INTERVAL = timedelta(hours=24)
 MAX_AUTO_REMINDS = 3
 AUTO_VOID_INTERVAL = timedelta(days=4)
+PROPOSAL_REMIND_INTERVAL = timedelta(hours=24)
+MAX_PROPOSAL_REMINDS = 2
 
 
 def _to_naive_utc(dt: datetime) -> datetime:
@@ -100,6 +102,7 @@ def _auto_confirm_overdue(db: Session) -> None:
                 )
 
     _auto_remind_overdue_matches(db)
+    _auto_remind_pending_proposals(db)
     _auto_void_abandoned_friendlies(db)
 
 
@@ -142,6 +145,61 @@ def _auto_remind_overdue_matches(db: Session) -> None:
                     "המשחק שלכם כבר היה אמור להתקיים ועדיין לא דיווחתם תוצאה",
                     url,
                 )
+
+
+def _auto_remind_pending_proposals(db: Session) -> None:
+    """A proposal nobody answers is the quietest way for a match to die: the
+    round runs out and the whole thing lands in the void sweep. Nag the player
+    who owes the answer once a day, twice, while the offer is still in the
+    future."""
+    now = datetime.utcnow()
+    threshold = now - PROPOSAL_REMIND_INTERVAL
+    waiting = (
+        db.query(models.Match)
+        .filter(
+            models.Match.status == models.MatchStatus.pending,
+            models.Match.schedule_confirmed.is_(False),
+            models.Match.scheduled_at.isnot(None),
+            models.Match.scheduled_at > now,
+            models.Match.scheduled_by.isnot(None),
+            models.Match.schedule_proposed_at.isnot(None),
+            models.Match.schedule_proposed_at <= threshold,
+            or_(
+                models.Match.proposal_remind_count.is_(None),
+                models.Match.proposal_remind_count < MAX_PROPOSAL_REMINDS,
+            ),
+            or_(
+                models.Match.proposal_reminded_at.is_(None),
+                models.Match.proposal_reminded_at <= threshold,
+            ),
+        )
+        .all()
+    )
+    for match in waiting:
+        match.proposal_remind_count = (match.proposal_remind_count or 0) + 1
+        match.proposal_reminded_at = now
+    if waiting:
+        db.commit()
+        for match in waiting:
+            proposer = db.query(models.User).filter(models.User.id == match.scheduled_by).first()
+            recipient_id = (
+                match.player2_id if match.scheduled_by == match.player1_id else match.player1_id
+            )
+            name = proposer.name if proposer else ""
+            count = len(match.time_options)
+            body = (
+                f"{name} מחכה לתשובה שלך על {count} הזמנים שהציע/ה למשחק שלכם"
+                if count > 1
+                else f"{name} מחכה לתשובה שלך על השעה שהציע/ה למשחק שלכם"
+            )
+            notify_user(
+                db,
+                recipient_id,
+                "הצעת זמן מחכה לך",
+                body,
+                f"/matches/{match.id}",
+                category="time_proposal",
+            )
 
 
 def _auto_void_abandoned_friendlies(db: Session) -> None:

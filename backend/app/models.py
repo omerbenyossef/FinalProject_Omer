@@ -172,6 +172,12 @@ class Match(Base):
     disputed_at = Column(DateTime, nullable=True)
     last_reminded_at = Column(DateTime, nullable=True)
     auto_remind_count = Column(Integer, default=0, nullable=False)
+    # Separate counters for nagging about an unanswered time proposal: that
+    # phase happens before the match, the result reminders after it, and one
+    # must not eat the other's budget. Nullable because add_missing_columns
+    # can only add nullable columns to a table that already exists.
+    proposal_remind_count = Column(Integer, nullable=True)
+    proposal_reminded_at = Column(DateTime, nullable=True)
     void_reason = Column(String, nullable=True)
 
     league = relationship("League", back_populates="matches")
