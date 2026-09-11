@@ -374,7 +374,7 @@ export default function Profile() {
   const { selectedSportId, sports } = useSport();
   const { t } = useLanguage();
   const navigate = useNavigate();
-  const { nextMatches, matchesLoading, reload: loadNextMatches, openAction, itemCount, triggerOpenAction } =
+  const { nextMatches, matchesLoading, reload: loadNextMatches, openAction, itemCount } =
     useOpenAction();
   const [stats, setStats] = useState(null);
   const [error, setError] = useState("");
@@ -556,8 +556,15 @@ export default function Profile() {
     entry.kind === "friendly" &&
     entry.match.scheduled_at != null &&
     Date.now() - new Date(entry.match.scheduled_at).getTime() > STALE_FRIENDLY_MS;
+  // A league match whose round has closed is no longer "this week" — reported
+  // or not, it moves to the in-progress page (which is where the leftovers
+  // live, and the only place a closed-round match can still be answered).
+  const roundIsOver = (entry) => {
+    const due = dueDateFor(entry, roundLengthById);
+    return due != null && due < Date.now();
+  };
   const leagueMatchesForSport = relevantEntries.filter(
-    (entry) => entry.kind !== "friendly" && isToPlayStatus(entry.match.status)
+    (entry) => entry.kind !== "friendly" && isToPlayStatus(entry.match.status) && !roundIsOver(entry)
   );
   const friendlyMatchesForSport = relevantEntries.filter(
     (entry) => entry.kind === "friendly" && isToPlayStatus(entry.match.status) && !isStaleFriendly(entry)
@@ -675,11 +682,7 @@ export default function Profile() {
             {(isNoLeague || isRoundNotOpened) && (
               <span className="home-tag">{isNoLeague ? "DAY 1" : "1 LEAGUE"}</span>
             )}
-            {itemCount > 0 && (
-              <button type="button" className="home-tag home-tag-needs" onClick={triggerOpenAction}>
-                {itemCount}
-              </button>
-            )}
+
           </div>
           <div className="home-head-actions">
             <button
@@ -917,6 +920,16 @@ export default function Profile() {
             )}
           </>
         )
+      )}
+
+      {itemCount > 0 && (
+        <button type="button" className="home-inprogress" onClick={() => navigate("/needs-you")}>
+          <span className="home-inprogress-label">{t("משחקים בתהליך")}</span>
+          <span className="home-inprogress-count" dir="ltr">
+            {itemCount}
+          </span>
+          <ChevronIcon aria-hidden="true" />
+        </button>
       )}
 
       {shownHomeLeagues.length > 0 && (

@@ -231,7 +231,17 @@ def my_next_matches(
             models.Match.player1_id == current_user.id,
             models.Match.player2_id == current_user.id,
         )
-        match = (
+        # This is the home screen's "this week" card, so a match whose round
+        # has already closed can't hold the league's slot — it would hide a
+        # live one behind it, and the leftovers have their own page now.
+        def _live(candidates):
+            for candidate in candidates:
+                ends_at = _round_ends_at(league, candidate.round_number)
+                if ends_at is None or ends_at >= datetime.utcnow():
+                    return candidate
+            return None
+
+        match = _live(
             db.query(models.Match)
             .options(joinedload(models.Match.player1), joinedload(models.Match.player2))
             .filter(
@@ -240,10 +250,10 @@ def my_next_matches(
                 my_match_filter,
             )
             .order_by(models.Match.created_at.asc())
-            .first()
+            .all()
         )
         if not match:
-            match = (
+            match = _live(
                 db.query(models.Match)
                 .options(joinedload(models.Match.player1), joinedload(models.Match.player2))
                 .filter(
@@ -252,7 +262,7 @@ def my_next_matches(
                     my_match_filter,
                 )
                 .order_by(models.Match.created_at.asc())
-                .first()
+                .all()
             )
         if not match:
             match = (
@@ -308,21 +318,36 @@ def my_next_matches(
     return entries
 
 
-def _classify_open_item(match: models.Match, user_id: int) -> str | None:
+def _round_ends_at(league: models.League, round_number: int | None) -> datetime | None:
+    if not league or not league.schedule_started_at or not round_number:
+        return None
+    first_end = _week_end_saturday(league.schedule_started_at)
+    return first_end + timedelta(days=(league.round_length_days or 7) * (round_number - 1))
+
+
+def _classify_open_item(match: models.Match, user_id: int, round_over: bool = False) -> str | None:
     """Which of needsyou112a.md's four tile types (or None) a match is for
     this viewer. Mirrors matchUtils.js's matchScheduleState/getActionCandidates
     but fixes the bug those had: after a dispute, corrected_by (not
-    reported_by) is the one actually waiting on a response."""
+    reported_by) is the one actually waiting on a response.
+
+    "waiting" covers everything the viewer has already done and is waiting on
+    the opponent for — a reported score, a correction, a proposed time. Those
+    used to classify as None, which is why a match in flight could vanish from
+    every list the moment its own player acted on it."""
     if match.status == models.MatchStatus.pending_confirmation:
         if match.corrected_sets is not None:
             return "waiting" if match.corrected_by == user_id else "confirm"
-        return None if match.reported_by == user_id else "confirm"
+        return "waiting" if match.reported_by == user_id else "confirm"
 
     if match.status == models.MatchStatus.pending:
         if not match.scheduled_at:
-            return None
+            # No time was ever agreed. While the round is open that is the
+            # schedule flow's business, not a to-do; once it closes, the only
+            # thing left to say about the match is what happened (or didn't).
+            return "report" if round_over else None
         if not match.schedule_confirmed:
-            return "proposed" if match.scheduled_by != user_id else None
+            return "proposed" if match.scheduled_by != user_id else "waiting"
         return "report" if match.scheduled_at <= datetime.utcnow() else None
 
     return None
@@ -392,7 +417,12 @@ def my_open_items(
             .all()
         )
         for match in matches:
-            item_type = _classify_open_item(match, current_user.id)
+            round_ends_at = _round_ends_at(league, match.round_number)
+            item_type = _classify_open_item(
+                match,
+                current_user.id,
+                round_over=round_ends_at is not None and round_ends_at < datetime.utcnow(),
+            )
             if not item_type:
                 continue
             old_rank = new_rank = members_total = None

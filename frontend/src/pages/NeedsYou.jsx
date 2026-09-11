@@ -6,6 +6,7 @@ import { useLanguage } from "../LanguageContext.jsx";
 import { useOpenAction } from "../OpenActionContext.jsx";
 import { ChevronIcon } from "../Icons.jsx";
 import { buildOpenItemDisplay } from "../matchUtils.js";
+import EmptyLine from "../EmptyLine.jsx";
 
 export default function NeedsYou() {
   const { t } = useLanguage();
@@ -14,13 +15,6 @@ export default function NeedsYou() {
   const { openItems, scheduledCount, reload, openItemsLoading } = useOpenAction();
   const [busyId, setBusyId] = useState(null);
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    if (!openItemsLoading && openItems.length === 0) {
-      navigate("/profile", { replace: true });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [openItemsLoading, openItems.length]);
 
   const needCount = openItems.filter((i) => i.type !== "waiting").length;
   const waitingCount = openItems.filter((i) => i.type === "waiting").length;
@@ -68,7 +62,14 @@ export default function NeedsYou() {
     } else if (item.type === "report") {
       run(matchId, () => api.reportMatchNotPlayed(matchId));
     } else if (item.type === "waiting") {
-      run(matchId, () => api.cancelMatchCorrection(matchId));
+      const d = buildOpenItemDisplay(item, user.id, t);
+      if (d.waitingKind === "correction") {
+        run(matchId, () => api.cancelMatchCorrection(matchId));
+      } else if (item.kind === "friendly") {
+        run(matchId, () => api.remindFriendly(matchId));
+      } else {
+        run(matchId, () => api.sendMatchReminder(item.league_id, matchId));
+      }
     }
   }
 
@@ -78,7 +79,7 @@ export default function NeedsYou() {
         <button type="button" className="sched-nav-back" onClick={() => navigate(-1)} aria-label={t("חזרה")}>
           <ChevronIcon aria-hidden="true" />
         </button>
-        <span className="sched-nav-label">{t("NEEDS YOU")}</span>
+        <span className="sched-nav-label">{t("IN PROGRESS")}</span>
       </div>
 
       <div className="needs-count">{openItems.length}</div>
@@ -87,6 +88,10 @@ export default function NeedsYou() {
       </div>
 
       {error && <p className="error">{t(error)}</p>}
+
+      {!openItemsLoading && openItems.length === 0 && (
+        <EmptyLine sentence={t("אין לך משחקים בתהליך כרגע.")} />
+      )}
 
       <div className="needs-list">
         {openItems.map((item) => {
@@ -105,6 +110,11 @@ export default function NeedsYou() {
                         {d.opponentName}
                       </span>
                     </Link>
+                    {d.value && (
+                      <span className={`needs-item-value needs-item-value-${d.valueKind}`} dir="ltr">
+                        {d.value}
+                      </span>
+                    )}
                   </div>
                   <div className="needs-item-context" dir="ltr">
                     {d.context}
@@ -171,7 +181,6 @@ export default function NeedsYou() {
       </div>
 
       <div className="needs-footer">
-        <span>{t("NOTHING ELSE IS WAITING")}</span>
         <span>{t("{n} MATCHES SCHEDULED", { n: scheduledCount })}</span>
       </div>
     </div>

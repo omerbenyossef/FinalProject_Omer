@@ -347,6 +347,16 @@ const PAIRS = [
   ["יש לבחור זמן למשחק", "Pick a time for the match"],
   ["הזמן שבחרת כבר לא מוצע", "The time you picked is no longer on offer"],
 
+  // In-progress page + its entry point
+  ["משחקים בתהליך", "Matches in progress"],
+  ["IN PROGRESS", "IN PROGRESS"],
+  ["אין לך משחקים בתהליך כרגע.", "You have no matches in progress right now."],
+  ["YOU REPORTED · WAITING", "YOU REPORTED · WAITING"],
+  ["YOU REPORTED IT WASN'T PLAYED · WAITING", "YOU REPORTED IT WASN'T PLAYED · WAITING"],
+  ["TIME PROPOSED · WAITING", "TIME PROPOSED · WAITING"],
+  ["ROUND CLOSED · NOT REPORTED", "ROUND CLOSED · NOT REPORTED"],
+  ["לא נקבע זמן ולא דווחה תוצאה", "No time was set and no result was reported"],
+
   // Home "to play" card — what is pending on a reported match
   ["ממתין לאישור התוצאה", "Waiting for the score to be confirmed"],
   ["ממתין לאישור שהמשחק לא בוצע", "Waiting for confirmation it wasn't played"],

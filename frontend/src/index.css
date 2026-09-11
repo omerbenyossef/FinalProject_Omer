@@ -6942,6 +6942,22 @@ button:active { transform: translateY(1px); }
 .lpv-join.is-full { background: #2b323d; color: #8b93a6; }
 
 /* needsyou112a — home name-row counter */
+/* The one line that leads to the in-progress page — everything reported,
+   proposed or left over from a closed round. Deliberately a line and not
+   another block on the home screen. */
+.home-inprogress {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  margin-top: 22px; padding: 14px 0; border: 0;
+  border-top: 1px solid rgba(148, 163, 184, .14);
+  border-bottom: 1px solid rgba(148, 163, 184, .14);
+  background: none; color: inherit; cursor: pointer; text-align: start;
+}
+.home-inprogress-label { flex: 1; font: 600 15px "IBM Plex Sans", var(--sans); color: #c9cfdb; }
+.home-inprogress-count {
+  flex: none; font: 500 13px "IBM Plex Mono", monospace; color: var(--court, #c6f24e);
+}
+.home-inprogress .chevron-icon { flex: none; width: 15px; height: 15px; color: #8b93a6; }
+
 /* notifications155a — the bell in the home header */
 .home-head-actions { display: flex; align-items: flex-start; gap: 6px; }
 .home-bell {

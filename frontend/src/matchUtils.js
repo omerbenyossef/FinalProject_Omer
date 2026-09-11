@@ -396,13 +396,46 @@ export function buildOpenItemDisplay(item, userId, t) {
   const roundLabel = m.round_number ? `R${m.round_number}` : null;
   const leagueOrFriendly = item.league_name || t("FRIENDLY");
 
+  // Everything the viewer has already done and is now waiting on the opponent
+  // for. Three different things, and the row has to say which.
   if (item.type === "waiting") {
+    if (m.corrected_sets != null) {
+      return {
+        typeLabel: t("CORRECTION SENT · WAITING"),
+        opponentName: opponent.name,
+        opponentId: opponent.id,
+        context: t("NOT COUNTED UNTIL THEY ANSWER"),
+        secondaryLabel: t("CANCEL"),
+        waitingKind: "correction",
+      };
+    }
+    if (m.status === "pending_confirmation") {
+      const notPlayedClaim = m.void_reason === "not_played";
+      const mySets = iAmPlayer1
+        ? m.sets
+        : m.sets?.map((set) => ({ player1_games: set.player2_games, player2_games: set.player1_games }));
+      return {
+        typeLabel: notPlayedClaim ? t("YOU REPORTED IT WASN'T PLAYED · WAITING") : t("YOU REPORTED · WAITING"),
+        opponentName: opponent.name,
+        opponentId: opponent.id,
+        value: notPlayedClaim ? null : formatSets(mySets),
+        valueKind: "score",
+        context: [leagueOrFriendly, roundLabel, t("NOT COUNTED UNTIL THEY ANSWER")]
+          .filter(Boolean)
+          .join(" · "),
+        secondaryLabel: t("תזכורת"),
+        waitingKind: "remind",
+      };
+    }
     return {
-      typeLabel: t("CORRECTION SENT · WAITING"),
+      typeLabel: t("TIME PROPOSED · WAITING"),
       opponentName: opponent.name,
       opponentId: opponent.id,
-      context: t("NOT COUNTED UNTIL THEY ANSWER"),
-      secondaryLabel: t("CANCEL"),
+      value: m.scheduled_at ? formatWeekdayTime(new Date(m.scheduled_at)).split(" ")[1] : null,
+      valueKind: "time",
+      context: [leagueOrFriendly, roundLabel].filter(Boolean).join(" · "),
+      secondaryLabel: t("תזכורת"),
+      waitingKind: "remind",
     };
   }
 
@@ -468,7 +501,22 @@ export function buildOpenItemDisplay(item, userId, t) {
     };
   }
 
-  // report
+  // report — either the agreed time has passed with no score, or the round
+  // closed on a match that never got a time in the first place.
+  if (!m.scheduled_at) {
+    return {
+      typeLabel: t("ROUND CLOSED · NOT REPORTED"),
+      age: null,
+      opponentName: opponent.name,
+      opponentId: opponent.id,
+      value: roundLabel,
+      valueKind: "meta",
+      context: [leagueOrFriendly, t("לא נקבע זמן ולא דווחה תוצאה")].filter(Boolean).join(" · "),
+      primaryLabel: t("דווח תוצאה"),
+      primaryLime: true,
+      secondaryLabel: t("המשחק לא בוצע"),
+    };
+  }
   return {
     typeLabel: t("PLAYED · NOT REPORTED"),
     age: compactAge(new Date(m.scheduled_at)),
