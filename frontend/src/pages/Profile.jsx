@@ -381,6 +381,9 @@ export default function Profile() {
   // The bell counts what needs doing, and it comes from the notifications
   // endpoint itself so the badge and the screen can never disagree.
   const [notifCount, setNotifCount] = useState(0);
+  // open-matches-156a: the row's number is what waits on *you*, so the tag
+  // doesn't shout when there is nothing to do.
+  const [openMatches, setOpenMatches] = useState({ waiting_on_you: [], waiting_on_them: [] });
   const [myLeagues, setMyLeagues] = useState([]);
   const [busy, setBusy] = useState(false);
   const [reportingMatchId, setReportingMatchId] = useState(null);
@@ -414,6 +417,10 @@ export default function Profile() {
     api
       .notifications()
       .then((data) => setNotifCount(data.unread_count))
+      .catch(() => {});
+    api
+      .openMatches()
+      .then(setOpenMatches)
       .catch(() => {});
   }, []);
 
@@ -947,11 +954,16 @@ export default function Profile() {
         </button>
       )}
 
-      {itemCount > 0 && (
+      {openMatches.waiting_on_you.length + openMatches.waiting_on_them.length > 0 && (
         <button type="button" className="home-inprogress" onClick={() => navigate("/needs-you")}>
-          <span className="home-inprogress-label">{t("משחקים בתהליך")}</span>
-          <span className="home-inprogress-count" dir="ltr">
-            {itemCount}
+          <span className="home-inprogress-label">{t("משחקים שעוד לא נסגרו")}</span>
+          <span
+            className={`home-inprogress-count${
+              openMatches.waiting_on_you.length === 0 ? " quiet" : ""
+            }`}
+            dir="ltr"
+          >
+            {openMatches.waiting_on_you.length}
           </span>
           <ChevronIcon aria-hidden="true" />
         </button>

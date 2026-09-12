@@ -178,6 +178,10 @@ class Match(Base):
     # can only add nullable columns to a table that already exists.
     proposal_remind_count = Column(Integer, nullable=True)
     proposal_reminded_at = Column(DateTime, nullable=True)
+    # open-matches-156a: when the viewer last nudged the opponent by hand from
+    # the open-matches screen. Separate from the automatic sweeps' counters so
+    # one can't rate-limit the other.
+    manual_reminded_at = Column(DateTime, nullable=True)
     void_reason = Column(String, nullable=True)
 
     league = relationship("League", back_populates="matches")

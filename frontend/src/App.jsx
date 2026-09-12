@@ -18,7 +18,7 @@ import LeagueManage from "./pages/LeagueManage.jsx";
 import RoundDetail from "./pages/RoundDetail.jsx";
 import LeagueRounds from "./pages/LeagueRounds.jsx";
 import Profile from "./pages/Profile.jsx";
-import NeedsYou from "./pages/NeedsYou.jsx";
+import OpenMatches from "./pages/OpenMatches.jsx";
 import Notifications from "./pages/Notifications.jsx";
 import Invites from "./pages/Invites.jsx";
 import Rankings from "./pages/Rankings.jsx";
@@ -100,7 +100,7 @@ export default function App() {
           path="/needs-you"
           element={
             <ProtectedRoute>
-              <NeedsYou />
+              <OpenMatches />
             </ProtectedRoute>
           }
         />

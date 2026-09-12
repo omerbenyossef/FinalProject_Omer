@@ -12,6 +12,7 @@ from .routers import (
     leagues,
     matches,
     notifications,
+    open_matches,
     ops,
     players,
     push,
@@ -265,6 +266,7 @@ app.include_router(players.router)
 app.include_router(push.router)
 app.include_router(ratings.router)
 app.include_router(friendly.router)
+app.include_router(open_matches.router)
 app.include_router(schedule.router)
 app.include_router(ops.router)
 app.include_router(notifications.router)

@@ -133,6 +133,9 @@ export const api = {
   cancelMatch: (leagueId, matchId) =>
     request(`/leagues/${leagueId}/matches/${matchId}`, { method: "DELETE" }),
 
+  openMatches: () => request("/matches/open"),
+  remindOpenMatch: (matchId) => request(`/matches/${matchId}/remind`, { method: "POST" }),
+
   notifications: () => request("/notifications"),
   markNotificationsRead: (ids) => request("/notifications/read", { method: "POST", body: { ids } }),
   markAllNotificationsRead: () => request("/notifications/read-all", { method: "POST" }),

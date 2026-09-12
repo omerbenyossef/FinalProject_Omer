@@ -679,6 +679,31 @@ class MatchDetailOut(BaseModel):
     conflict_gap_minutes: int = 60
 
 
+class OpenMatchItemOut(BaseModel):
+    """One unsettled match on the open-matches screen (open-matches-156a).
+    `body` is the finished sentence from the spec's wording table; the only
+    thing the client fills in is {score}, which has to be an isolated LTR mono
+    run inside the Hebrew."""
+
+    match_id: int
+    opponent_name: str
+    league_name: Optional[str] = None
+    round: Optional[int] = None
+    played_on: Optional[UtcDatetime] = None
+    state: str
+    score: Optional[str] = None
+    my_score: Optional[str] = None
+    their_score: Optional[str] = None
+    body: str
+    reminder_sent_at: Optional[UtcDatetime] = None
+    days_waiting: Optional[int] = None
+
+
+class OpenMatchesOut(BaseModel):
+    waiting_on_you: list[OpenMatchItemOut] = []
+    waiting_on_them: list[OpenMatchItemOut] = []
+
+
 class NotificationItemOut(BaseModel):
     """One row on the notifications screen. `body` is a finished sentence; the
     only things the client fills in are the {time} and {score} placeholders,

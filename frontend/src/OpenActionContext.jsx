@@ -98,7 +98,9 @@ export function OpenActionProvider({ children }) {
   function triggerOpenAction() {
     if (itemCount === 0) return;
     if (itemCount >= 2) {
-      navigate("/needs-you");
+      // The full "what needs you" list lives on the notifications screen;
+      // /needs-you is only the unsettled-results screen now.
+      navigate("/notifications");
       return;
     }
     navigate(openItemRoute(relevantItems[0]));
