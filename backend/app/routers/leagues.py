@@ -231,15 +231,17 @@ def my_next_matches(
             models.Match.player1_id == current_user.id,
             models.Match.player2_id == current_user.id,
         )
-        # This is the home screen's "this week" card, so a match whose round
-        # has already closed can't hold the league's slot — it would hide a
-        # live one behind it, and the leftovers have their own page now.
+        # A match whose round has closed shouldn't hold the league's slot on
+        # the home screen — it would hide a live one behind it. It is still
+        # returned when there is nothing live, because this feed also carries
+        # the "waiting for your confirmation" rows, and those can't vanish
+        # just because a round ended; the carousel filters them out itself.
         def _live(candidates):
             for candidate in candidates:
                 ends_at = _round_ends_at(league, candidate.round_number)
                 if ends_at is None or ends_at >= datetime.utcnow():
                     return candidate
-            return None
+            return candidates[0] if candidates else None
 
         match = _live(
             db.query(models.Match)
