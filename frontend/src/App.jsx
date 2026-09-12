@@ -19,6 +19,7 @@ import RoundDetail from "./pages/RoundDetail.jsx";
 import LeagueRounds from "./pages/LeagueRounds.jsx";
 import Profile from "./pages/Profile.jsx";
 import OpenMatches from "./pages/OpenMatches.jsx";
+import PendingConfirm from "./pages/PendingConfirm.jsx";
 import Notifications from "./pages/Notifications.jsx";
 import Invites from "./pages/Invites.jsx";
 import Rankings from "./pages/Rankings.jsx";
@@ -229,6 +230,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <MatchSchedule />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/matches/:matchId/pending"
+          element={
+            <ProtectedRoute>
+              <PendingConfirm />
             </ProtectedRoute>
           }
         />

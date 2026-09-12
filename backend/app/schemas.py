@@ -673,6 +673,11 @@ class MatchDetailOut(BaseModel):
     disputed_at: Optional[UtcDatetime] = None
     void_reason: Optional[str] = None
     auto_confirm_at: Optional[UtcDatetime] = None
+    reported_at: Optional[UtcDatetime] = None
+    reminder_sent_at: Optional[UtcDatetime] = None
+    # False once the round has closed or the match was decided — the report
+    # can't be edited any more (match-pending-confirm-159a).
+    can_edit: bool = True
     prediction: Optional[ResultPrediction] = None
     time_options: list[MatchTimeOptionOut] = []
     busy_windows: list[BusyWindowOut] = []

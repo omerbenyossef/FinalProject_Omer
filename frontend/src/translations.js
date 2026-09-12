@@ -354,6 +354,25 @@ const PAIRS = [
   ["אין הזמנות שמחכות לתשובה שלך.", "No invitations are waiting for your answer."],
   ["הזמין/ה אותך למשחק ידידותי", "invited you to a friendly match"],
 
+  // A match I reported, waiting on the opponent (159a)
+  ["דיווחת", "You reported"],
+  ["נשלח", "Sent"],
+  ["מצב", "Status"],
+  ["מחכה לאישור של {name}", "Waiting for {name} to confirm"],
+  ["המשחק לא שוחק", "The match wasn't played"],
+  ["תיקון ל־", "Correction to "],
+  ["עד ש{name} יאשר, המשחק לא נספר בטבלה ולא משפיע על הדירוג.",
+    "Until {name} confirms, the match isn't counted in the table and doesn't affect your rating."],
+  ["המשחק לא נספר בטבלה ולא משפיע על הדירוג.",
+    "The match isn't counted in the table and doesn't affect your rating."],
+  ["ערוך את הדיווח", "Edit the report"],
+  ["בעצם שיחקנו — דווח תוצאה", "We did play after all — report the score"],
+  ["המחזור נסגר, אי אפשר לשנות את הדיווח", "The round is closed, the report can't be changed"],
+  ["{name} דיווח/ה תוצאה אחרת", "{name} reported a different score"],
+  ["מנהל הליגה יכריע", "The league admin will decide"],
+  ["שמור דיווח", "Save report"],
+  ["משחק ידידותי", "Friendly match"],
+
   // Open matches — closed rounds that haven't been settled (156a)
   ["משחקים שעוד לא נסגרו", "Matches not closed yet"],
   ["מחכה לך", "Waiting on you"],

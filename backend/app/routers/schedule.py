@@ -12,6 +12,7 @@ from ..push_utils import notify_user, resolve_match_notifications
 from ..rating_utils import match_winner_id, round_to_half, update_ratings_for_match
 from .friendly import MAX_SETS as FRIENDLY_MAX_SETS
 from .leagues import _accumulate_stats, _empty_stats
+from .leagues import _round_ends_at
 from .matches import CONFIRMATION_WINDOW, _auto_confirm_overdue, _to_naive_utc
 
 router = APIRouter(prefix="/matches", tags=["schedule"])
@@ -108,6 +109,18 @@ def _compute_prediction(
         h2h_wins_after=h2h_wins + (1 if i_won else 0),
         h2h_losses_after=h2h_losses + (0 if i_won else 1),
     )
+
+
+def _can_edit_report(match: models.Match) -> bool:
+    """A report can be changed while the opponent hasn't answered and the round
+    is still open. Once the round closes — or the match ended in a standoff —
+    it is frozen."""
+    if match.status != models.MatchStatus.pending_confirmation:
+        return False
+    if not match.league_id or not match.league or not match.round_number:
+        return True
+    ends_at = _round_ends_at(match.league, match.round_number)
+    return ends_at is None or ends_at >= datetime.utcnow()
 
 
 def _default_court(db: Session, match: models.Match) -> str | None:
@@ -226,6 +239,9 @@ def get_match_detail(
         disputed_at=match.disputed_at,
         void_reason=match.void_reason,
         auto_confirm_at=match.auto_confirm_at,
+        reported_at=match.played_at,
+        reminder_sent_at=match.manual_reminded_at,
+        can_edit=_can_edit_report(match),
         prediction=prediction,
         time_options=match.time_options,
         busy_windows=_busy_windows(db, match, current_user.id),

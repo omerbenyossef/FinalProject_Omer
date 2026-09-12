@@ -58,6 +58,15 @@ export default function MatchSchedule() {
     return <Navigate to={`/matches/${matchId}/schedule`} replace />;
   }
 
+  // match-pending-confirm-159a: a match that already carries a report doesn't
+  // belong on a screen whose main action is "report the result".
+  if (detail.result_status === "pending_him" || detail.result_status === "disputed") {
+    return <Navigate to={`/matches/${matchId}/pending`} replace />;
+  }
+  if (detail.result_status === "pending_you") {
+    return <Navigate to={`/matches/${matchId}/confirm`} replace />;
+  }
+
   async function handleConfirm(overrideConflictWarning = false) {
     setBusy(true);
     setError("");

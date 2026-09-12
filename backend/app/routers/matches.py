@@ -451,12 +451,21 @@ def report_score(
         raise HTTPException(status_code=404, detail="Match not found")
     if current_user.id not in (match.player1_id, match.player2_id):
         raise HTTPException(status_code=403, detail="Not a participant in this match")
-    if match.status != models.MatchStatus.pending:
+    # match-pending-confirm-159a: whoever filed the report can still change it
+    # while the opponent hasn't answered — editing replaces the report and
+    # restarts the wait. Anyone else still can't touch a reported match.
+    editing_own_report = (
+        match.status == models.MatchStatus.pending_confirmation
+        and match.reported_by == current_user.id
+        and match.corrected_sets is None
+    )
+    if match.status != models.MatchStatus.pending and not editing_own_report:
         raise HTTPException(status_code=400, detail="כבר יש תוצאה למשחק הזה — אפשר רק לאשר אותה או לערער עליה")
-    if match.scheduled_at is None or not match.schedule_confirmed:
-        raise HTTPException(status_code=400, detail="צריך לתאם ולאשר שעה למשחק לפני דיווח תוצאה")
-    if datetime.utcnow() < match.scheduled_at:
-        raise HTTPException(status_code=400, detail="אפשר לדווח תוצאה רק אחרי השעה שנקבעה למשחק")
+    if not editing_own_report:
+        if match.scheduled_at is None or not match.schedule_confirmed:
+            raise HTTPException(status_code=400, detail="צריך לתאם ולאשר שעה למשחק לפני דיווח תוצאה")
+        if datetime.utcnow() < match.scheduled_at:
+            raise HTTPException(status_code=400, detail="אפשר לדווח תוצאה רק אחרי השעה שנקבעה למשחק")
     if not score_in.sets:
         raise HTTPException(status_code=400, detail="צריך לדווח לפחות סט אחד")
     best_of = match.league.best_of or 3
@@ -469,6 +478,11 @@ def report_score(
     match.played_at = datetime.utcnow()
     match.status = models.MatchStatus.pending_confirmation
     match.reported_by = current_user.id
+    # An edit (or "we actually played after all") replaces whatever was filed
+    # before, including a "didn't happen" claim, and the opponent gets a fresh
+    # window to answer in.
+    match.void_reason = None
+    match.manual_reminded_at = None
     match.confirmed_by = None
     match.confirmed_at = None
     match.auto_confirm_at = datetime.utcnow() + CONFIRMATION_WINDOW

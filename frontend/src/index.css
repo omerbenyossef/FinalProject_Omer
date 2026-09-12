@@ -6959,6 +6959,95 @@ button:active { transform: translateY(1px); }
 .home-inprogress .chevron-icon { flex: none; width: 15px; height: 15px; color: #8b93a6; }
 .home-inprogress-count.quiet { color: #8b93a6; }
 
+/* match-pending-confirm-159a — a match I reported, waiting on the opponent.
+   Plain: a heading, three rows, one sentence, the actions. */
+.app-shell:has(.pc) { height: 100svh; }
+.content:has(.pc) { min-height: 0; padding: 0; display: flex; flex-direction: column; }
+
+.pc {
+  flex: 1; min-height: 0; display: flex; flex-direction: column;
+  background: #0e1116; color: #eef1f7; overflow-y: auto;
+}
+
+.pc-head { flex: none; padding: 14px 20px 0; }
+.pc-back {
+  display: flex; align-items: center; justify-content: center; width: 34px; height: 34px;
+  margin-inline-start: -8px; border: 0; background: none; padding: 0; color: #eef1f7; cursor: pointer;
+}
+.pc-back .chevron-icon { width: 26px; height: 26px; transform: scaleX(-1); }
+[dir="ltr"] .pc-back .chevron-icon { transform: none; }
+
+.pc-title {
+  margin: 26px 0 0; font: 700 26px/1.25 "IBM Plex Sans", var(--sans);
+  letter-spacing: -.02em; text-wrap: pretty;
+}
+.pc-meta {
+  margin-top: 7px; display: flex; flex-wrap: wrap; gap: 8px;
+  font: 500 13px "IBM Plex Mono", monospace; color: #8b93a6;
+}
+.pc-meta-part { display: flex; align-items: baseline; gap: 8px; }
+.pc-dot { color: #6f7787; }
+.pc-error { margin: 12px 20px 0; }
+
+.pc-rows { flex: none; margin: 28px 20px 0; }
+.pc-row {
+  padding: 15px 0; border-top: 1px solid rgba(148, 163, 184, .14);
+  display: flex; align-items: baseline; gap: 16px;
+}
+.pc-row:last-child { border-bottom: 1px solid rgba(148, 163, 184, .14); }
+.pc-label { flex: none; width: 82px; font: 400 14.5px "IBM Plex Sans", var(--sans); color: #8b93a6; }
+.pc-value {
+  flex: 1; min-width: 0; font: 600 16px "IBM Plex Sans", var(--sans); color: #eef1f7;
+  text-wrap: pretty;
+}
+.pc-sent { font: 500 14px "IBM Plex Mono", monospace; color: #c9cfdb; }
+.pc-state { display: flex; align-items: baseline; gap: 9px; }
+.pc-state--dispute { color: #e2a0a0; }
+.pc-dot-lime {
+  flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--court, #c6f24e);
+  transform: translateY(-2px);
+}
+.pc-score {
+  font-family: "IBM Plex Mono", monospace; font-weight: 500;
+  direction: ltr; unicode-bidi: isolate; white-space: nowrap;
+}
+
+.pc-scores { margin: 14px 20px 0; display: flex; flex-direction: column; gap: 6px; }
+.pc-scores-row {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  font: 500 13.5px "IBM Plex Sans", var(--sans); color: #8b93a6;
+}
+
+/* The only reason to care about this screen, so it gets a whole sentence. */
+.pc-impact {
+  margin: 16px 20px 0; font: 400 14.5px/1.55 "IBM Plex Sans", var(--sans);
+  color: #8b93a6; text-wrap: pretty;
+}
+
+.pc-actions {
+  margin-top: auto; padding: 24px 20px 30px;
+  display: flex; flex-direction: column; gap: 11px;
+}
+.pc-btn {
+  height: 50px; border: 0; border-radius: 25px; display: flex; align-items: center;
+  justify-content: center; font: 700 15.5px "IBM Plex Sans", var(--sans); cursor: pointer;
+}
+.pc-btn--primary { background: var(--court, #c6f24e); color: #0e1116; }
+.pc-btn--sent { background: #161d26; color: #8b93a6; cursor: default; }
+.pc-btn--ghost {
+  border: 1px solid rgba(148, 163, 184, .22); background: none; color: #eef1f7; font-weight: 600;
+}
+.pc-btn:disabled { opacity: .55; cursor: default; }
+.pc-link {
+  margin-top: 2px; border: 0; background: none; padding: 4px;
+  font: 600 14.5px "IBM Plex Sans", var(--sans); color: #8b93a6; cursor: pointer;
+}
+.pc-locked {
+  text-align: center; font: 600 14.5px "IBM Plex Sans", var(--sans); color: #6f7787;
+}
+
+.pc-form { padding: 24px 20px 30px; }
+
 /* open-matches-156a — matches from closed rounds that still haven't been
    settled. Split by who is holding them up, and nothing else. */
 .app-shell:has(.om) { height: 100svh; }

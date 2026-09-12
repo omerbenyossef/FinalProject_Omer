@@ -381,8 +381,9 @@ export function openItemRoute(item) {
   if (item.type === "confirm") return `/matches/${m.id}/confirm`;
   if (item.type === "proposed") return `/matches/${m.id}`;
   if (item.type === "report") return `/matches/${m.id}`;
-  // waiting: nothing to confirm yet, just let them see the match itself
-  return `/matches/${m.id}`;
+  // waiting: I've already done my part, so this is the "waiting on them"
+  // screen, not the reporting one (match-pending-confirm-159a).
+  return `/matches/${m.id}/pending`;
 }
 
 // Builds every display string a needsyou112a.md item row needs, in the
