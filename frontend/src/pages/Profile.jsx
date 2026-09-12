@@ -543,12 +543,14 @@ export default function Profile() {
   // a friendly one whose action (confirm) navigates to the dedicated confirm page
   // regardless of which page triggered it — report/schedule friendly actions must
   // stay reachable here.
-  const relevantEntries = nextMatches
-    .filter((entry) => entry.sport_id === selectedSportId)
-    .filter(
-      (entry) =>
-        entry.match.id !== barMatchId || (entry.kind === "friendly" && openAction?.kind !== "confirm")
-    );
+  const sportEntries = nextMatches.filter((entry) => entry.sport_id === selectedSportId);
+  // The carousel and the "round is done" line read the unfiltered list: the
+  // tab-bar button is a shortcut to a match, not a place the match now lives,
+  // and hiding the only card left made the screen claim the round was over.
+  const relevantEntries = sportEntries.filter(
+    (entry) =>
+      entry.match.id !== barMatchId || (entry.kind === "friendly" && openAction?.kind !== "confirm")
+  );
   const confirmationEntries = relevantEntries.filter(
     (entry) => entry.match.status === "pending_confirmation" && entry.match.reported_by !== user?.id
   );
@@ -570,7 +572,7 @@ export default function Profile() {
     const due = dueDateFor(entry, roundLengthById);
     return due != null && due < Date.now();
   };
-  const leagueMatchesForSport = relevantEntries.filter(
+  const leagueMatchesForSport = sportEntries.filter(
     (entry) => entry.kind !== "friendly" && isToPlayStatus(entry.match.status) && !roundIsOver(entry)
   );
   // An invitation you haven't answered isn't a match yet — it lives on its own
@@ -579,25 +581,25 @@ export default function Profile() {
     entry.kind === "friendly" &&
     entry.match.invite_status === "pending" &&
     entry.match.player1.id !== user?.id;
-  const friendlyMatchesForSport = relevantEntries.filter(
+  const friendlyMatchesForSport = sportEntries.filter(
     (entry) =>
       entry.kind === "friendly" &&
       isToPlayStatus(entry.match.status) &&
       !isStaleFriendly(entry) &&
       !isUnansweredInvite(entry)
   );
-  // Counted off nextMatches, not relevantEntries: the latter drops whatever
-  // the tab-bar button is showing, and this count has to be the real one.
-  const inviteCount = nextMatches.filter(
-    (entry) => entry.sport_id === selectedSportId && isUnansweredInvite(entry)
-  ).length;
+  const inviteCount = sportEntries.filter(isUnansweredInvite).length;
   const combinedToPlay = [...leagueMatchesForSport, ...friendlyMatchesForSport];
   const sortedToPlay = user ? sortToPlay(combinedToPlay, user.id, roundLengthById) : [];
   // 109c: "all matches of the round have been played" — only meaningful when
   // there's an actual next round to name; otherwise this stays silent like
   // it always has (rule 1: no content, no placeholder).
+  const openMatchesTotal =
+    openMatches.waiting_on_you.length + openMatches.waiting_on_them.length;
   const nextRoundOpen = (() => {
-    if (combinedToPlay.length > 0 || isNoLeague || isRoundNotOpened) return null;
+    // Don't announce that the round is done while matches from it are still
+    // unsettled — one of them may not even have been played.
+    if (combinedToPlay.length > 0 || openMatchesTotal > 0 || isNoLeague || isRoundNotOpened) return null;
     let best = null;
     for (const l of myLeaguesForSport) {
       const { round, daysLeft } = activeRoundStatus(l.schedule_started_at, l.round_length_days || 7);
@@ -954,7 +956,7 @@ export default function Profile() {
         </button>
       )}
 
-      {openMatches.waiting_on_you.length + openMatches.waiting_on_them.length > 0 && (
+      {openMatchesTotal > 0 && (
         <button type="button" className="home-inprogress" onClick={() => navigate("/needs-you")}>
           <span className="home-inprogress-label">{t("משחקים שעוד לא נסגרו")}</span>
           <span
