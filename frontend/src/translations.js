@@ -347,6 +347,13 @@ const PAIRS = [
   ["יש לבחור זמן למשחק", "Pick a time for the match"],
   ["הזמן שבחרת כבר לא מוצע", "The time you picked is no longer on offer"],
 
+  // Friendly invites waiting for an answer
+  ["משחקים שהוצעו לך", "Matches offered to you"],
+  ["INVITES", "INVITES"],
+  ["FRIENDLY INVITE", "FRIENDLY INVITE"],
+  ["אין הזמנות שמחכות לתשובה שלך.", "No invitations are waiting for your answer."],
+  ["הזמין/ה אותך למשחק ידידותי", "invited you to a friendly match"],
+
   // In-progress page + its entry point
   ["משחקים בתהליך", "Matches in progress"],
   ["IN PROGRESS", "IN PROGRESS"],

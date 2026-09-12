@@ -20,6 +20,7 @@ import LeagueRounds from "./pages/LeagueRounds.jsx";
 import Profile from "./pages/Profile.jsx";
 import NeedsYou from "./pages/NeedsYou.jsx";
 import Notifications from "./pages/Notifications.jsx";
+import Invites from "./pages/Invites.jsx";
 import Rankings from "./pages/Rankings.jsx";
 import Settings from "./pages/Settings.jsx";
 import HeadToHead from "./pages/HeadToHead.jsx";
@@ -116,6 +117,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <JoinByCode />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/invites"
+          element={
+            <ProtectedRoute>
+              <Invites />
             </ProtectedRoute>
           }
         />

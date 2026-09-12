@@ -566,9 +566,24 @@ export default function Profile() {
   const leagueMatchesForSport = relevantEntries.filter(
     (entry) => entry.kind !== "friendly" && isToPlayStatus(entry.match.status) && !roundIsOver(entry)
   );
+  // An invitation you haven't answered isn't a match yet — it lives on its own
+  // row (and page), not in the week's carousel.
+  const isUnansweredInvite = (entry) =>
+    entry.kind === "friendly" &&
+    entry.match.invite_status === "pending" &&
+    entry.match.player1.id !== user?.id;
   const friendlyMatchesForSport = relevantEntries.filter(
-    (entry) => entry.kind === "friendly" && isToPlayStatus(entry.match.status) && !isStaleFriendly(entry)
+    (entry) =>
+      entry.kind === "friendly" &&
+      isToPlayStatus(entry.match.status) &&
+      !isStaleFriendly(entry) &&
+      !isUnansweredInvite(entry)
   );
+  // Counted off nextMatches, not relevantEntries: the latter drops whatever
+  // the tab-bar button is showing, and this count has to be the real one.
+  const inviteCount = nextMatches.filter(
+    (entry) => entry.sport_id === selectedSportId && isUnansweredInvite(entry)
+  ).length;
   const combinedToPlay = [...leagueMatchesForSport, ...friendlyMatchesForSport];
   const sortedToPlay = user ? sortToPlay(combinedToPlay, user.id, roundLengthById) : [];
   // 109c: "all matches of the round have been played" — only meaningful when
@@ -920,6 +935,16 @@ export default function Profile() {
             )}
           </>
         )
+      )}
+
+      {inviteCount > 0 && (
+        <button type="button" className="home-inprogress" onClick={() => navigate("/invites")}>
+          <span className="home-inprogress-label">{t("משחקים שהוצעו לך")}</span>
+          <span className="home-inprogress-count" dir="ltr">
+            {inviteCount}
+          </span>
+          <ChevronIcon aria-hidden="true" />
+        </button>
       )}
 
       {itemCount > 0 && (
