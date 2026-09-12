@@ -18,6 +18,7 @@ import LeagueManage from "./pages/LeagueManage.jsx";
 import RoundDetail from "./pages/RoundDetail.jsx";
 import LeagueRounds from "./pages/LeagueRounds.jsx";
 import Profile from "./pages/Profile.jsx";
+import Home from "./pages/Home.jsx";
 import OpenMatches from "./pages/OpenMatches.jsx";
 import PendingConfirm from "./pages/PendingConfirm.jsx";
 import Notifications from "./pages/Notifications.jsx";
@@ -189,7 +190,7 @@ export default function App() {
           path="/profile"
           element={
             <ProtectedRoute>
-              <Profile />
+              <Home />
             </ProtectedRoute>
           }
         />

@@ -3,7 +3,7 @@ import { useAuth } from "./AuthContext.jsx";
 import { useSport } from "./SportContext.jsx";
 import { useLanguage } from "./LanguageContext.jsx";
 import { useOpenAction } from "./OpenActionContext.jsx";
-import { ChevronIcon, PersonIcon, RanksIcon, SettingsIcon, TrophyIcon } from "./Icons.jsx";
+import { ChevronIcon, HomeIcon, PersonIcon, RanksIcon, SettingsIcon, TrophyIcon } from "./Icons.jsx";
 import InstallPrompt from "./InstallPrompt.jsx";
 import Onboarding from "./Onboarding.jsx";
 import { translate } from "./translations.js";
@@ -77,30 +77,41 @@ export default function Layout({ children }) {
         <nav className="tabbar">
           <div className="tabbar-row">
             <div className={`tabbar-inner${openAction ? "" : " wide"}`}>
+              {/* home-week-168a: HOME · LEAGUES · MATCHES · PROFILE. Labels are
+                  Latin mono here, the same language the new home screen speaks. */}
               <NavLink
                 to="/profile"
+                end
                 className={({ isActive }) => `tab${isActive ? " active" : ""}`}
-                aria-label={t("פרופיל")}
+                aria-label="HOME"
               >
-                <PersonIcon className="tab-icon" aria-hidden="true" />
-                {!openAction && <span className="tab-label">{t("פרופיל")}</span>}
+                <HomeIcon className="tab-icon" aria-hidden="true" />
+                {!openAction && <span className="tab-label">HOME</span>}
               </NavLink>
               <NavLink
                 to="/leagues"
                 className={({ isActive }) => `tab${isActive ? " active" : ""}`}
-                aria-label={t("ליגות")}
+                aria-label="LEAGUES"
               >
                 <TrophyIcon className="tab-icon" aria-hidden="true" />
-                {!openAction && <span className="tab-label">{t("ליגות")}</span>}
+                {!openAction && <span className="tab-label">LEAGUES</span>}
                 {hasOtherLeagueActivity && <span className="tab-dot" aria-hidden="true" />}
               </NavLink>
               <NavLink
-                to="/ranks"
+                to="/needs-you"
                 className={({ isActive }) => `tab${isActive ? " active" : ""}`}
-                aria-label={t("דירוג")}
+                aria-label="MATCHES"
               >
                 <RanksIcon className="tab-icon" aria-hidden="true" />
-                {!openAction && <span className="tab-label">{t("דירוג")}</span>}
+                {!openAction && <span className="tab-label">MATCHES</span>}
+              </NavLink>
+              <NavLink
+                to={user ? `/players/${user.id}` : "/profile"}
+                className={({ isActive }) => `tab${isActive ? " active" : ""}`}
+                aria-label="PROFILE"
+              >
+                <PersonIcon className="tab-icon" aria-hidden="true" />
+                {!openAction && <span className="tab-label">PROFILE</span>}
               </NavLink>
             </div>
 

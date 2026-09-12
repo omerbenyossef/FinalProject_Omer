@@ -354,6 +354,28 @@ const PAIRS = [
   ["אין הזמנות שמחכות לתשובה שלך.", "No invitations are waiting for your answer."],
   ["הזמין/ה אותך למשחק ידידותי", "invited you to a friendly match"],
 
+  // Home — the week (168a). Latin labels stay Latin in both languages.
+  ["THIS WEEK", "THIS WEEK"],
+  ["MATCH", "MATCH"],
+  ["MATCHES", "MATCHES"],
+  ["ROUND", "ROUND"],
+  ["ENDS", "ENDS"],
+  ["NO MATCHES THIS WEEK", "NO MATCHES THIS WEEK"],
+  ["NO DATE", "NO DATE"],
+  ["ALL SET", "ALL SET"],
+  ["WAITING FOR THEM", "WAITING FOR THEM"],
+  ["FRIENDLY INVITES", "FRIENDLY INVITES"],
+  ["INVITED YOU", "INVITED YOU"],
+  ["Report result", "Report result"],
+  ["Propose a time", "Propose a time"],
+  ["Confirm result", "Confirm result"],
+  ["Accept", "Accept"],
+  ["Decline", "Decline"],
+  ["Find a friendly match", "Find a friendly match"],
+  ["+{n} more invites", "+{n} more invites"],
+  ["מחזור {n} ממשיך", "Round {n} continues"],
+  ["אין משחקים פתוחים", "No open matches"],
+
   // A match I reported, waiting on the opponent (159a)
   ["דיווחת", "You reported"],
   ["נשלח", "Sent"],

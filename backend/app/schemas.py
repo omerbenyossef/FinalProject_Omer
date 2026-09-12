@@ -684,6 +684,46 @@ class MatchDetailOut(BaseModel):
     conflict_gap_minutes: int = 60
 
 
+class HomeWeekMatchOut(BaseModel):
+    id: int
+    opponent_name: str
+    league_name: Optional[str] = None
+    round: Optional[int] = None
+    # Null when no time is agreed — the card shows its "no date" column.
+    scheduled_at: Optional[UtcDatetime] = None
+    state: str
+
+
+class HomeWeekInviteOut(BaseModel):
+    id: int
+    from_name: str
+    from_level: Optional[float] = None
+    proposed_at: Optional[UtcDatetime] = None
+    created_at: Optional[UtcDatetime] = None
+
+
+class HomeWeekLeagueOut(BaseModel):
+    id: int
+    name: str
+    position: Optional[int] = None
+    size: Optional[int] = None
+    round: Optional[int] = None
+
+
+class HomeWeekRoundOut(BaseModel):
+    number: int
+    ends_at: UtcDatetime
+
+
+class HomeWeekOut(BaseModel):
+    """home-week-168a — the whole home screen in one payload."""
+
+    matches: list[HomeWeekMatchOut] = []
+    invites: list[HomeWeekInviteOut] = []
+    leagues: list[HomeWeekLeagueOut] = []
+    round: Optional[HomeWeekRoundOut] = None
+
+
 class OpenMatchItemOut(BaseModel):
     """One unsettled match on the open-matches screen (open-matches-156a).
     `body` is the finished sentence from the spec's wording table; the only

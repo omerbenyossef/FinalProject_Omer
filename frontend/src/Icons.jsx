@@ -7,6 +7,15 @@ const common = {
   strokeLinejoin: "round",
 };
 
+export function HomeIcon(props) {
+  return (
+    <svg {...common} {...props}>
+      <path d="M4 10.5 12 4l8 6.5" />
+      <path d="M6 10v9h12v-9" />
+    </svg>
+  );
+}
+
 export function TrophyIcon(props) {
   return (
     <svg {...common} {...props}>

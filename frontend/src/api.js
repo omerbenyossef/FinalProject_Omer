@@ -133,6 +133,7 @@ export const api = {
   cancelMatch: (leagueId, matchId) =>
     request(`/leagues/${leagueId}/matches/${matchId}`, { method: "DELETE" }),
 
+  homeWeek: (sportId) => request(`/home/week${sportId ? `?sport_id=${sportId}` : ""}`),
   openMatches: () => request("/matches/open"),
   remindOpenMatch: (matchId) => request(`/matches/${matchId}/remind`, { method: "POST" }),
 

@@ -6959,6 +6959,132 @@ button:active { transform: translateY(1px); }
 .home-inprogress .chevron-icon { flex: none; width: 15px; height: 15px; color: #8b93a6; }
 .home-inprogress-count.quiet { color: #8b93a6; }
 
+/* home-week-168a — the home screen as a diary of the week. The match cards are
+   flex:1 so they share the free height and the screen is never half empty. */
+.app-shell:has(.hw) { height: 100svh; }
+.content:has(.hw) { min-height: 0; padding: 0; display: flex; flex-direction: column; }
+
+.hw {
+  flex: 1; min-height: 0; display: flex; flex-direction: column;
+  background: #0F1113; color: #F2F2EF; padding: 16px 22px 0; box-sizing: border-box;
+}
+
+.hw-top { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.hw-id { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+.hw-name {
+  font: 400 22px/1 "Anton", var(--display); text-transform: uppercase;
+  letter-spacing: .01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.hw-ntrp { flex: none; font: 500 12px "IBM Plex Mono", monospace; color: #84878C; }
+.hw-bell {
+  position: relative; flex: none; display: flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border: 0; background: none; padding: 0; color: #F2F2EF; cursor: pointer;
+}
+.hw-bell svg { width: 23px; height: 23px; }
+.hw-bell-dot {
+  position: absolute; top: 0; inset-inline-end: 1px; width: 8px; height: 8px; border-radius: 50%;
+  background: #C6F24E; border: 2px solid #0F1113;
+}
+
+.hw-week { flex: none; margin-top: 26px; }
+.hw-title { margin: 0; font: 400 36px/1 "Anton", var(--display); letter-spacing: .02em; }
+.hw-meta {
+  margin-top: 8px; font: 500 12px "IBM Plex Mono", monospace; letter-spacing: .08em; color: #84878C;
+}
+.hw-error { margin: 12px 0 0; }
+
+.hw-diary {
+  flex: 1; min-height: 0; margin-top: 24px; padding-bottom: 18px;
+  display: flex; flex-direction: column; gap: 12px; overflow-y: auto;
+}
+
+/* One card per match, growing to fill the diary. */
+.hw-card {
+  flex: 1 1 0; min-height: 104px;
+  background: #181B1F; border-radius: 22px; overflow: hidden;
+  display: flex; cursor: pointer; text-align: start;
+}
+.hw-card--invite { flex: none; cursor: default; }
+
+.hw-date {
+  flex: none; width: 74px; background: #24272B; color: #84878C;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+}
+.hw-date.is-lime { background: #C6F24E; color: #0F1113; }
+.hw-date-day { font: 500 10.5px "IBM Plex Mono", monospace; letter-spacing: .14em; }
+.hw-date-num { font: 400 34px/1 "Anton", var(--display); }
+.hw-date-time { font: 500 10.5px "IBM Plex Mono", monospace; }
+
+.hw-body {
+  flex: 1; min-width: 0; padding: 18px;
+  display: flex; flex-direction: column; justify-content: center; gap: 6px;
+}
+.hw-opponent {
+  font: 700 24px/1.2 "IBM Plex Sans", var(--sans); letter-spacing: -.015em; color: #F2F2EF;
+  text-wrap: pretty;
+}
+.hw-opponent.dim { color: #C9CBCD; }
+.hw-sub { font: 500 11.5px "IBM Plex Mono", monospace; color: #84878C; }
+.hw-action { margin-top: 8px; display: flex; }
+.hw-action--pair { gap: 9px; }
+
+.hw-btn {
+  align-self: flex-start; height: 42px; padding: 0 20px; border: 0; border-radius: 21px;
+  font: 700 14px "IBM Plex Sans", var(--sans); cursor: pointer;
+}
+.hw-btn--lime { background: #C6F24E; color: #0F1113; }
+.hw-btn--ghost {
+  border: 1px solid rgba(242, 242, 239, .22); background: none; color: #F2F2EF; font-weight: 600;
+}
+.hw-btn--sm { height: 38px; padding: 0 18px; font-size: 13.5px; }
+.hw-btn:disabled { opacity: .55; cursor: default; }
+.hw-mono-action {
+  font: 500 11.5px "IBM Plex Mono", monospace; letter-spacing: .08em; color: #84878C;
+}
+
+/* Three cards or more: the card gets shorter and the button gives way to a
+   lime line — 168a's "under 120px" rule. */
+.hw-card.is-compact { min-height: 84px; }
+.hw-card.is-compact .hw-opponent { font-size: 20px; }
+.hw-card.is-compact .hw-body { padding: 14px 16px; gap: 3px; }
+.hw-card.is-compact .hw-action { margin-top: 5px; }
+.hw-text-action {
+  border: 0; background: none; padding: 0; text-align: start;
+  font: 700 13.5px "IBM Plex Sans", var(--sans); color: #C6F24E; cursor: pointer;
+}
+
+.hw-invites { flex: none; display: flex; flex-direction: column; gap: 12px; }
+.hw-sec { display: flex; align-items: center; gap: 10px; }
+.hw-sec-name {
+  font: 500 11px "IBM Plex Mono", monospace; letter-spacing: .16em; color: #6E7176;
+}
+.hw-sec-rule { flex: 1; height: 1px; background: rgba(242, 242, 239, .1); }
+.hw-sec-count { font: 500 11px "IBM Plex Mono", monospace; color: #6E7176; }
+.hw-more {
+  align-self: center; border: 0; background: none; padding: 4px;
+  font: 600 13.5px "IBM Plex Sans", var(--sans); color: #C6F24E; cursor: pointer;
+}
+
+.hw-empty {
+  flex: 1; background: #181B1F; border-radius: 22px; padding: 22px;
+  display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 16px;
+}
+.hw-empty-line { font: 700 20px "IBM Plex Sans", var(--sans); color: #F2F2EF; }
+
+.hw-tiles { flex: none; display: flex; gap: 10px; }
+.hw-tile {
+  flex: 1; min-width: 0; padding: 13px 15px; border: 0; border-radius: 16px;
+  background: #181B1F; color: #F2F2EF; cursor: pointer;
+  display: flex; align-items: baseline; gap: 8px; text-align: start;
+}
+.hw-tile--more { flex: none; justify-content: center; }
+.hw-tile-name {
+  flex: 1; min-width: 0; font: 600 13px "IBM Plex Sans", var(--sans);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.hw-tile-pos { flex: none; font: 600 16px "IBM Plex Mono", monospace; }
+.hw-tile-size { font: 500 11px "IBM Plex Mono", monospace; color: #6E7176; }
+
 /* match-pending-confirm-159a — a match I reported, waiting on the opponent.
    Plain: a heading, three rows, one sentence, the actions. */
 .app-shell:has(.pc) { height: 100svh; }

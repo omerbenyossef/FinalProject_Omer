@@ -8,6 +8,7 @@ from . import models
 from .database import Base, engine, SessionLocal
 from .routers import (
     auth,
+    home,
     friendly,
     leagues,
     matches,
@@ -266,6 +267,7 @@ app.include_router(players.router)
 app.include_router(push.router)
 app.include_router(ratings.router)
 app.include_router(friendly.router)
+app.include_router(home.router)
 app.include_router(open_matches.router)
 app.include_router(schedule.router)
 app.include_router(ops.router)
