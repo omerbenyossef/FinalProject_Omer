@@ -7341,6 +7341,11 @@ button:active { transform: translateY(1px); }
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .om-meta { flex: none; font: 500 12px "IBM Plex Mono", monospace; color: #6f7787; }
+.om-titles { display: flex; flex-direction: column; gap: 3px; }
+.om-frame {
+  font: 500 12px "IBM Plex Mono", monospace; color: #6f7787;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 .om-body-line {
   margin: 0; font: 400 15px/1.5 "IBM Plex Sans", var(--sans); color: #c9cfdb; text-wrap: pretty;
 }

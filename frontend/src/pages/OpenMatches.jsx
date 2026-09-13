@@ -27,14 +27,24 @@ function countPhrase(n, t) {
   return t(COUNT_WORDS[n]);
 }
 
-function roundAndDate(item) {
-  const parts = [];
-  if (item.round) parts.push(`R${item.round}`);
-  if (item.played_on) {
-    const d = new Date(item.played_on);
-    parts.push(`${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}`);
-  }
-  return parts.join(" · ");
+function playedOn(item) {
+  if (!item.played_on) return "";
+  const d = new Date(item.played_on);
+  return `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+// Which competition the match belonged to. Without it a row is just a name and
+// a date, and a league match reads like a friendly.
+function Frame({ item, t }) {
+  if (!item.league_name) return <span className="om-frame">{t("משחק ידידותי")}</span>;
+  return (
+    <span className="om-frame">
+      <span dir="auto" style={{ unicodeBidi: "isolate" }}>
+        {item.league_name}
+      </span>
+      {item.round ? ` · ${t("מחזור {n}", { n: item.round })}` : ""}
+    </span>
+  );
 }
 
 // The sentence arrives finished; the score is the one value the client places,
@@ -147,11 +157,14 @@ export default function OpenMatches() {
             <div className="om-cards">
               {you.map((item) => (
                 <div className="om-card" key={item.match_id}>
-                  <div className="om-card-top">
-                    <span className="om-name">{item.opponent_name}</span>
-                    <span className="om-meta" dir="ltr">
-                      {roundAndDate(item)}
-                    </span>
+                  <div className="om-titles">
+                    <div className="om-card-top">
+                      <span className="om-name">{item.opponent_name}</span>
+                      <span className="om-meta" dir="ltr">
+                        {playedOn(item)}
+                      </span>
+                    </div>
+                    <Frame item={item} t={t} />
                   </div>
                   <p className="om-body-line">{renderBody(item)}</p>
 
@@ -229,11 +242,14 @@ export default function OpenMatches() {
             <div className="om-rows">
               {them.map((item) => (
                 <div className="om-row" key={item.match_id}>
-                  <div className="om-card-top">
-                    <span className="om-row-name">{item.opponent_name}</span>
-                    <span className="om-meta" dir="ltr">
-                      {roundAndDate(item)}
-                    </span>
+                  <div className="om-titles">
+                    <div className="om-card-top">
+                      <span className="om-row-name">{item.opponent_name}</span>
+                      <span className="om-meta" dir="ltr">
+                        {playedOn(item)}
+                      </span>
+                    </div>
+                    <Frame item={item} t={t} />
                   </div>
                   <p className="om-row-line">{renderBody(item)}</p>
                   {remindedToday(item) ? (
