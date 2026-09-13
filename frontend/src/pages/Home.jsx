@@ -11,6 +11,19 @@ import Profile from "./Profile.jsx";
 
 const WEEKDAY = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
+// home-week-169a: nine steps, 1.5 to 5.5 — the range an amateur league lives
+// in. Anything outside it sits on the nearest edge rather than off the bar.
+const HW_STEPS = [1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5];
+
+function activeStep(level) {
+  if (level == null) return null;
+  let best = HW_STEPS[0];
+  for (const step of HW_STEPS) {
+    if (Math.abs(step - level) < Math.abs(best - level)) best = step;
+  }
+  return best;
+}
+
 function dayMonth(date) {
   return `${String(date.getDate()).padStart(2, "0")}.${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
@@ -23,7 +36,7 @@ function hhmm(date) {
 // is to play, when, and the one action each match is asking for.
 export default function Home() {
   const { user } = useAuth();
-  const { selectedSportId } = useSport();
+  const { sports, selectedSportId } = useSport();
   const { t } = useLanguage();
   const { reload: reloadOpenAction } = useOpenAction();
   const navigate = useNavigate();
@@ -31,6 +44,7 @@ export default function Home() {
   const [week, setWeek] = useState(null);
   const [leagues, setLeagues] = useState(null);
   const [ratings, setRatings] = useState([]);
+  const [stats, setStats] = useState(null);
   const [notifCount, setNotifCount] = useState(0);
   const [busyId, setBusyId] = useState(null);
   const [error, setError] = useState("");
@@ -44,6 +58,11 @@ export default function Home() {
   }, [selectedSportId]);
 
   useEffect(load, [load]);
+
+  useEffect(() => {
+    if (!selectedSportId) return;
+    api.myStats(selectedSportId).then(setStats).catch(() => {});
+  }, [selectedSportId]);
 
   useEffect(() => {
     api.myLeagues().then(setLeagues).catch(() => setLeagues([]));
@@ -64,7 +83,10 @@ export default function Home() {
     return <Profile />;
   }
 
-  const myLevel = ratings.find((r) => r.sport_id === selectedSportId)?.level ?? null;
+  const myRating = ratings.find((r) => r.sport_id === selectedSportId) ?? null;
+  const sportName = sports.find((s) => s.id === selectedSportId)?.name;
+  const winRate =
+    stats && stats.matches_played > 0 ? Math.round((stats.wins / stats.matches_played) * 100) : null;
 
   async function act(id, run) {
     setBusyId(id);
@@ -82,21 +104,19 @@ export default function Home() {
 
   const matches = week?.matches ?? [];
   const invites = week?.invites ?? [];
-  const leagueTiles = (week?.leagues ?? []).slice(0, 2);
-  const extraLeagues = (week?.leagues ?? []).length - leagueTiles.length;
+  const leagueTiles = week?.leagues ?? [];
   const round = week?.round ?? null;
 
   const metaLine = (() => {
     if (!week) return "";
-    if (matches.length === 0) return "NO MATCHES THIS WEEK";
+    if (matches.length === 0) return "THIS WEEK · NO MATCHES";
     const parts = [
+      "THIS WEEK",
       `${matches.length} ${matches.length === 1 ? "MATCH" : "MATCHES"}`,
     ];
     if (round) {
       const ends = new Date(round.ends_at);
-      parts.push(
-        `${"ROUND"} ${round.number} ${"ENDS"} ${WEEKDAY[ends.getDay()]} ${dayMonth(ends)}`
-      );
+      parts.push(`R${round.number} ${"ENDS"} ${WEEKDAY[ends.getDay()]} ${dayMonth(ends)}`);
     }
     return parts.join(" · ");
   })();
@@ -199,36 +219,72 @@ export default function Home() {
 
   return (
     <div className="hw">
-      <div className="hw-top">
-        <div className="hw-id">
+      <div className="hw-hero">
+        <div className="hw-top">
           <span className="hw-name">{user?.name}</span>
-          {myLevel != null && (
-            <span className="hw-ntrp" dir="ltr">
-              {myLevel.toFixed(1)} NTRP
+          <div className="hw-top-side">
+            <span className="hw-leagues" dir="ltr">
+              {sportLeagues.length} {sportLeagues.length === 1 ? "LEAGUE" : "LEAGUES"}
             </span>
-          )}
+            <button
+              type="button"
+              className="hw-bell"
+              onClick={() => navigate("/notifications")}
+              aria-label={t("התראות")}
+            >
+              <BellIcon aria-hidden="true" />
+              {notifCount > 0 && <span className="hw-bell-dot" aria-hidden="true" />}
+            </button>
+          </div>
         </div>
-        <button
-          type="button"
-          className="hw-bell"
-          onClick={() => navigate("/notifications")}
-          aria-label={t("התראות")}
-        >
-          <BellIcon aria-hidden="true" />
-          {notifCount > 0 && <span className="hw-bell-dot" aria-hidden="true" />}
-        </button>
-      </div>
 
-      <div className="hw-week">
-        <h1 className="hw-title">{"THIS WEEK"}</h1>
-        <div className="hw-meta" dir="ltr">
-          {metaLine}
+        <div className="hw-nums" dir="ltr">
+          <span className="hw-num">
+            {winRate !== null ? winRate : "–"}%<span className="hw-num-unit">{"WIN"}</span>
+          </span>
+          <span className="hw-num">
+            {stats ? stats.wins : 0}W-{stats ? stats.losses : 0}L
+          </span>
+          <span className="hw-num">
+            {stats ? stats.matches_played : 0} {"PLAYED"}
+          </span>
         </div>
+
+        {myRating && (
+          <div className="hw-scale">
+            <div className="hw-scale-head">
+              <span className="hw-scale-label">NTRP · {sportName ? t(sportName) : ""}</span>
+              <span className="hw-scale-level" dir="ltr">
+                {myRating.level.toFixed(1)}
+              </span>
+            </div>
+            <div className="hw-scale-bar" dir="ltr" aria-hidden="true">
+              {HW_STEPS.map((step) => (
+                <span
+                  key={step}
+                  className={`hw-step${step === activeStep(myRating.level) ? " is-here" : ""}`}
+                />
+              ))}
+            </div>
+            <div className="hw-scale-foot" dir="ltr">
+              <span>1.5</span>
+              <span className="hw-scale-note" dir="auto">
+                {myRating.provisional
+                  ? t("זמני · עוד {n} משחקים", { n: 3 - myRating.rated_matches })
+                  : (round && leagueTiles[0]?.name) || ""}
+              </span>
+              <span>5.5</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {error && <p className="hw-error error">{t(error)}</p>}
 
       <div className="hw-diary">
+        <div className="hw-meta" dir="ltr">
+          {metaLine}
+        </div>
         {!week ? (
           <SkeletonMatchRow />
         ) : (
@@ -280,9 +336,7 @@ export default function Home() {
                       <div className="hw-body">
                         <span className="hw-opponent">{invite.from_name}</span>
                         <span className="hw-sub" dir="ltr">
-                          {"FRIENDLY"}
-                          {invite.from_level != null ? ` · ${invite.from_level.toFixed(1)} NTRP` : ""}
-                          {` · ${"INVITED YOU"}`}
+                          {`FRIENDLY · ${"INVITED YOU"}`}
                         </span>
                         <div className="hw-action hw-action--pair">
                           <button
@@ -314,38 +368,37 @@ export default function Home() {
               </div>
             )}
 
-            {leagueTiles.length > 0 && (
-              <div className="hw-tiles">
-                {leagueTiles.map((league) => (
-                  <button
-                    type="button"
-                    className="hw-tile"
-                    key={league.id}
-                    onClick={() => navigate(`/leagues/${league.id}`)}
-                  >
-                    <span className="hw-tile-name">{league.name}</span>
-                    <span className="hw-tile-pos" dir="ltr">
-                      {league.position ?? "–"}
-                      <span className="hw-tile-size">/{league.size ?? "–"}</span>
-                    </span>
-                  </button>
-                ))}
-                {extraLeagues > 0 && (
-                  <button
-                    type="button"
-                    className="hw-tile hw-tile--more"
-                    onClick={() => navigate("/leagues")}
-                  >
-                    <span className="hw-tile-pos" dir="ltr">
-                      +{extraLeagues}
-                    </span>
-                  </button>
-                )}
-              </div>
-            )}
           </>
         )}
       </div>
+
+      {week && (
+        <div className="hw-strip">
+          <div className="hw-strip-inner">
+            {leagueTiles.map((league) => (
+              <button
+                type="button"
+                className="hw-tile"
+                key={league.id}
+                onClick={() => navigate(`/leagues/${league.id}`)}
+              >
+                <span className="hw-tile-name">{league.name}</span>
+                <span className="hw-tile-pos" dir="ltr">
+                  {league.position ?? "–"}
+                  <span className="hw-tile-size">/{league.size ?? "–"}</span>
+                </span>
+              </button>
+            ))}
+            <button
+              type="button"
+              className="hw-tile hw-tile--join"
+              onClick={() => navigate("/leagues/open")}
+            >
+              {"Join a league"}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

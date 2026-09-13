@@ -6965,17 +6965,42 @@ button:active { transform: translateY(1px); }
 .content:has(.hw) { min-height: 0; padding: 0; display: flex; flex-direction: column; }
 
 .hw {
+  /* 169a: the gutter sits on the blocks, not on the screen, so the league
+     strip can scroll the full width of the phone. */
   flex: 1; min-height: 0; display: flex; flex-direction: column;
-  background: #0F1113; color: #F2F2EF; padding: 16px 22px 0; box-sizing: border-box;
+  background: #0F1113; color: #F2F2EF; padding: 16px 0 0; box-sizing: border-box;
 }
 
-.hw-top { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.hw-id { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+/* 169a — the identity block that used to live on the profile screen. */
+.hw-hero { flex: none; padding: 0 22px; }
+.hw-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .hw-name {
-  font: 400 22px/1 "Anton", var(--display); text-transform: uppercase;
+  min-width: 0; font: 400 44px/.92 "Anton", var(--display); text-transform: uppercase;
   letter-spacing: .01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.hw-ntrp { flex: none; font: 500 12px "IBM Plex Mono", monospace; color: #84878C; }
+.hw-top-side { flex: none; margin-top: 6px; display: flex; align-items: center; gap: 13px; }
+.hw-leagues { font: 500 11px "IBM Plex Mono", monospace; letter-spacing: .14em; color: #84878C; }
+
+.hw-nums { margin-top: 11px; display: flex; align-items: baseline; gap: 16px; }
+.hw-num { font: 500 13px "IBM Plex Mono", monospace; color: #C9CBCD; }
+.hw-num-unit { margin-inline-start: 5px; color: #6E7176; }
+
+.hw-scale { margin-top: 18px; }
+.hw-scale-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.hw-scale-label {
+  font: 500 11px "IBM Plex Mono", monospace; letter-spacing: .08em; color: #6E7176;
+}
+.hw-scale-level { flex: none; font: 400 20px/1 "Anton", var(--display); }
+.hw-scale-bar { margin-top: 9px; height: 22px; display: flex; align-items: flex-end; gap: 3px; }
+.hw-step { flex: 1; height: 8px; border-radius: 2px; background: #24272B; }
+.hw-step.is-here { height: 22px; background: #C6F24E; }
+.hw-scale-foot {
+  margin-top: 6px; display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+  font: 500 10.5px "IBM Plex Mono", monospace; color: #6E7176;
+}
+.hw-scale-note {
+  min-width: 0; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 .hw-bell {
   position: relative; flex: none; display: flex; align-items: center; justify-content: center;
   width: 30px; height: 30px; border: 0; background: none; padding: 0; color: #F2F2EF; cursor: pointer;
@@ -6986,15 +7011,14 @@ button:active { transform: translateY(1px); }
   background: #C6F24E; border: 2px solid #0F1113;
 }
 
-.hw-week { flex: none; margin-top: 26px; }
-.hw-title { margin: 0; font: 400 36px/1 "Anton", var(--display); letter-spacing: .02em; }
 .hw-meta {
-  margin-top: 8px; font: 500 12px "IBM Plex Mono", monospace; letter-spacing: .08em; color: #84878C;
+  flex: none; font: 500 11.5px "IBM Plex Mono", monospace; letter-spacing: .1em; color: #84878C;
 }
-.hw-error { margin: 12px 0 0; }
+.hw-error { margin: 12px 22px 0; }
 
 .hw-diary {
-  flex: 1; min-height: 0; margin-top: 24px; padding-bottom: 18px;
+  flex: 1; min-height: 0; margin-top: 22px; padding: 18px 22px 0;
+  border-top: 1px solid rgba(242, 242, 239, .12);
   display: flex; flex-direction: column; gap: 12px; overflow-y: auto;
 }
 
@@ -7071,13 +7095,26 @@ button:active { transform: translateY(1px); }
 }
 .hw-empty-line { font: 700 20px "IBM Plex Sans", var(--sans); color: #F2F2EF; }
 
-.hw-tiles { flex: none; display: flex; gap: 10px; }
+/* 169a — the leagues live in a strip that scrolls the full screen width; it
+   sits outside the diary so its overflow isn't clipped. */
+.hw-strip {
+  flex: none; margin-top: 14px; padding: 0 0 18px;
+  overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.hw-strip::-webkit-scrollbar { display: none; }
+.hw-strip-inner { padding: 0 22px; display: flex; gap: 10px; width: max-content; }
 .hw-tile {
-  flex: 1; min-width: 0; padding: 13px 15px; border: 0; border-radius: 16px;
+  flex: none; width: 168px; box-sizing: border-box;
+  padding: 13px 15px; border: 0; border-radius: 16px;
   background: #181B1F; color: #F2F2EF; cursor: pointer;
   display: flex; align-items: baseline; gap: 8px; text-align: start;
 }
-.hw-tile--more { flex: none; justify-content: center; }
+.hw-tile--join {
+  background: none; border: 1px solid rgba(242, 242, 239, .22); border-style: dashed;
+  align-items: center; justify-content: flex-start;
+  font: 600 13px "IBM Plex Sans", var(--sans); color: #84878C;
+}
 .hw-tile-name {
   flex: 1; min-width: 0; font: 600 13px "IBM Plex Sans", var(--sans);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
