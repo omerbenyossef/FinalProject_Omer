@@ -180,13 +180,19 @@ def _item(match: models.Match, user_id: int) -> tuple[str, schemas.OpenMatchItem
         # Both sides agreed it never happened. Nothing is owed on the result,
         # but the pairing is: once its round is gone, this is where they find
         # it again and move it to a later one.
+        if match.confirmed_by is not None:
+            opening = "שניכם דיווחתם שהמשחק לא שוחק"
+        elif match.reported_by == user_id:
+            opening = "דיווחת שהמשחק לא שוחק ולא הייתה תגובה מ" + name
+        else:
+            opening = f"{name} דיווח/ה שהמשחק לא שוחק ולא הגבת"
         return (
             "you",
             schemas.OpenMatchItemOut(
                 **common,
                 state="not_played_void",
                 days_waiting=_days_since(match.disputed_at),
-                body="שניכם דיווחתם שהמשחק לא שוחק, והוא לא נספר בטבלה. אפשר לתאם אותו למחזור אחר.",
+                body=f"{opening}, והוא לא נספר בטבלה. אפשר לתאם אותו למחזור אחר.",
             ),
         )
 

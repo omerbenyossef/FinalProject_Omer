@@ -232,6 +232,7 @@ def get_match_detail(
         last_match_sets=last_match_sets,
         result_status=_result_status(match, current_user.id),
         reported_by=match.reported_by,
+        confirmed_by=match.confirmed_by,
         reported_sets=_mine_first(match.sets),
         corrected_by=match.corrected_by,
         corrected_sets=_mine_first(match.corrected_sets),
@@ -893,6 +894,10 @@ def confirm_result(
     if confirming_not_played:
         match.status = models.MatchStatus.disputed
         match.disputed_at = datetime.utcnow()
+        # Recording the confirmer is what separates "we both said so" from a
+        # claim that stood because nobody ever answered it.
+        match.confirmed_by = current_user.id
+        match.confirmed_at = match.disputed_at
         db.commit()
         db.refresh(match)
 

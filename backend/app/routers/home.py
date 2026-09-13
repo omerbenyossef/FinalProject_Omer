@@ -47,6 +47,16 @@ def _match_state(match: models.Match, user_id: int) -> str:
     return "played" if match.scheduled_at <= datetime.utcnow() else "scheduled"
 
 
+def _void_note(match: models.Match, user_id: int) -> str:
+    """How a voided match got there — both sides said so, or one did and the
+    other never answered."""
+    if match.confirmed_by is not None:
+        return "שניכם דיווחתם שהמשחק לא שוחק"
+    if match.reported_by == user_id:
+        return "דיווחת שהמשחק לא שוחק · אין תגובה מהיריב"
+    return "היריב דיווח שהמשחק לא שוחק · לא הגבת"
+
+
 @router.get("/week", response_model=schemas.HomeWeekOut)
 def home_week(
     db: Session = Depends(get_db),
@@ -117,6 +127,7 @@ def home_week(
                     round=match.round_number,
                     scheduled_at=match.scheduled_at if match.schedule_confirmed else None,
                     state=_match_state(match, current_user.id),
+                    note=_void_note(match, current_user.id) if _not_played_void(match) else None,
                 )
             )
 

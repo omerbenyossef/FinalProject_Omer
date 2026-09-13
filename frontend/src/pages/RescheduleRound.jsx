@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api";
 import { useLanguage } from "../LanguageContext.jsx";
+import { useAuth } from "../AuthContext.jsx";
 import { useOpenAction } from "../OpenActionContext.jsx";
 import { ChevronIcon } from "../Icons.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
@@ -17,6 +18,7 @@ function dayMonth(value) {
 export default function RescheduleRound() {
   const { matchId } = useParams();
   const { t } = useLanguage();
+  const { user } = useAuth();
   const { reload: reloadOpenAction } = useOpenAction();
   const navigate = useNavigate();
 
@@ -60,6 +62,17 @@ export default function RescheduleRound() {
 
   const name = detail?.opponent?.name ?? "";
   const options = rounds.options ?? [];
+
+  // Two ways a match ends up voided: both sides said so, or one said so and
+  // the other never answered. The screen says which.
+  const intro = (() => {
+    const tail = t("המשחק לא נספר בטבלה. אפשר לתאם אותו למחזור משחקים אחר.");
+    if (!detail) return tail;
+    if (detail.confirmed_by != null) return `${t("דווח משני הצדדים שהמשחק לא שוחק.")} ${tail}`;
+    if (detail.reported_by === user?.id)
+      return `${t("דיווחת שהמשחק לא שוחק ולא הייתה תגובה מ{name}.", { name })} ${tail}`;
+    return `${t("{name} דיווח/ה שהמשחק לא שוחק ולא הגבת.", { name })} ${tail}`;
+  })();
 
   const metaParts = [
     detail?.league_name ? (
@@ -110,9 +123,7 @@ export default function RescheduleRound() {
             ))}
           </div>
         )}
-        <p className="rr-intro">
-          {t("דווח משני הצדדים שהמשחק לא שוחק, והוא לא נספר בטבלה. אפשר לתאם אותו למחזור משחקים אחר.")}
-        </p>
+        <p className="rr-intro">{intro}</p>
       </div>
 
       {error && <p className="rr-error error">{t(error)}</p>}

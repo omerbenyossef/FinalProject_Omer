@@ -2304,6 +2304,11 @@ a { color: var(--court); text-decoration: none; }
 }
 
 /* "אשר" עם "הצע שעה אחרת" מתחתיו — המצב היחיד עם שתי פעולות */
+/* The voided state is a sentence, not a label: it gets the row's width and
+   the action drops underneath it. */
+.mm-block--void .mm-row { flex-wrap: wrap; }
+.mm-block--void .mm-btn { flex: 1 1 100%; margin-top: 12px; }
+
 .mm-actions {
   flex: none;
   display: flex;

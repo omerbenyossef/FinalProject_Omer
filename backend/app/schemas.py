@@ -666,6 +666,7 @@ class MatchDetailOut(BaseModel):
     last_match_sets: Optional[list[SetScore]] = None
     result_status: Optional[str] = None
     reported_by: Optional[int] = None
+    confirmed_by: Optional[int] = None
     reported_sets: Optional[list[SetScore]] = None
     corrected_by: Optional[int] = None
     corrected_sets: Optional[list[SetScore]] = None
@@ -692,6 +693,8 @@ class HomeWeekMatchOut(BaseModel):
     # Null when no time is agreed — the card shows its "no date" column.
     scheduled_at: Optional[UtcDatetime] = None
     state: str
+    # Only for the "not_played" state: what actually happened to the match.
+    note: Optional[str] = None
 
 
 class RescheduleRoundOptionOut(BaseModel):

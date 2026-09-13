@@ -1026,6 +1026,7 @@ function MyMatchBlock({
   onNeedsConfirm,
 }) {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const [reporting, setReporting] = useState(false);
   const [editing, setEditing] = useState(false);
 
@@ -1078,8 +1079,35 @@ function MyMatchBlock({
 
   let meta = null;
   let action = null;
+  let voided = false;
 
-  if (match.status === "disputed") {
+  if (match.status === "disputed" && match.void_reason === "not_played" && !match.corrected_sets) {
+    // Voided, not disputed: say who reported it, whether the other side ever
+    // answered, and offer the one thing still open — a new round for it.
+    voided = true;
+    const iReported = match.reported_by === userId;
+    const answered = match.confirmed_by != null;
+    meta = [
+      iReported ? t("דיווחת שהמשחק לא בוצע") : t("היריב דיווח שהמשחק לא בוצע"),
+      answered
+        ? iReported
+          ? t("היריב אישר")
+          : t("אישרת")
+        : iReported
+          ? t("לא הייתה תגובה מהיריב")
+          : t("לא הגבת"),
+      t("המשחק נחשב כלא בוצע"),
+    ].join(" · ");
+    action = (
+      <button
+        type="button"
+        className="mm-btn"
+        onClick={() => navigate(`/matches/${match.id}/reschedule`)}
+      >
+        {t("תיאום במחזור אחר")}
+      </button>
+    );
+  } else if (match.status === "disputed") {
     meta = t("התוצאות לא תואמות · המשחק לא נספר");
     action = (
       <button type="button" className="mm-btn ghost" onClick={onNeedsConfirm}>
@@ -1146,7 +1174,7 @@ function MyMatchBlock({
   }
 
   return (
-    <div className="mm-block">
+    <div className={`mm-block${voided ? " mm-block--void" : ""}`}>
       <div className="mm-label">{t("המשחק שלך")}</div>
       <div className="mm-row">
         <Avatar name={opponent.name} size={36} />

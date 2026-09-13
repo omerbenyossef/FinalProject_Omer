@@ -215,9 +215,7 @@ export default function Home() {
             )}
             {match.round ? ` · R${match.round}` : ""}
           </span>
-          {voided && (
-            <span className="hw-note">{t("דווח משני הצדדים שהמשחק לא שוחק")}</span>
-          )}
+          {voided && match.note && <span className="hw-note">{t(match.note)}</span>}
           <div className="hw-action" onClick={(e) => e.stopPropagation()}>
             {action}
           </div>
