@@ -106,7 +106,15 @@ def _last_match(db: Session, user_id: int, sport_id: int | None) -> schemas.Home
         )
         .filter(models.Match.status == models.MatchStatus.completed, mine)
     )
-    matches = [m for m in query.all() if m.sets]
+    # A row needs a name, an opponent and a readable score to be worth
+    # showing; anything less renders as a card with nothing in it.
+    matches = [
+        m
+        for m in query.all()
+        if m.sets
+        and all(isinstance(x, dict) and "player1_games" in x and "player2_games" in x for x in m.sets)
+        and (m.player2 if m.player1_id == user_id else m.player1) is not None
+    ]
     if sport_id is not None:
         matches = [
             m for m in matches

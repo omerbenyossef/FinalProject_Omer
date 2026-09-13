@@ -297,7 +297,7 @@ export default function Home() {
           </button>
         </div>
 
-        {last ? (
+        {last && (last.opponent_name || (last.my_sets ?? []).length > 0) ? (
           <div className="hw-last">
             <div className="hw-last-top" dir="ltr">
               <span className="hw-last-label">
