@@ -195,18 +195,9 @@ export default function OpenMatches() {
                     </div>
                   ) : item.state === "unreported" ? (
                     <div className="om-actions">
-                      {item.league_name && (
-                        <button
-                          type="button"
-                          className="om-primary"
-                          onClick={() => navigate(`/matches/${item.match_id}/reschedule`)}
-                        >
-                          {t("תיאום במחזור אחר")}
-                        </button>
-                      )}
                       <button
                         type="button"
-                        className={item.league_name ? "om-secondary" : "om-primary"}
+                        className="om-primary"
                         disabled={busyId === item.match_id}
                         onClick={() => navigate(`/matches/${item.match_id}`)}
                       >

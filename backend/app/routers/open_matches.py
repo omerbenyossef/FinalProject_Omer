@@ -213,21 +213,13 @@ def _item(match: models.Match, user_id: int) -> tuple[str, schemas.OpenMatchItem
         )
 
     if match.status == models.MatchStatus.pending:
-        # A league match from a closed round that nobody reported. Whether a
-        # time was ever agreed or not, it wasn't played — so the way out is a
-        # later round, with reporting still there in case they did play.
-        body = (
-            "המחזור נסגר והמשחק לא שוחק. אפשר לתאם אותו למחזור אחר, או לדווח אם בכל זאת שיחקתם."
-            if match.league_id
-            else "המשחק לא שוחק ולא דווח."
-        )
         return (
             "you",
             schemas.OpenMatchItemOut(
                 **common,
                 state="unreported",
                 days_waiting=_days_since(match.scheduled_at),
-                body=body,
+                body="המחזור נסגר בלי שהמשחק שוחק. דווח מה קרה.",
             ),
         )
 
