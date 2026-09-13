@@ -739,6 +739,18 @@ class HomeWeekRoundOut(BaseModel):
     ends_at: UtcDatetime
 
 
+class HomeWeekLastMatchOut(BaseModel):
+    """home-week-empty-170a — the one result the empty week has to show."""
+
+    opponent_name: str
+    my_sets: list[SetScore] = []
+    won: Optional[bool] = None
+    round: Optional[int] = None
+    league_name: Optional[str] = None
+    played_at: Optional[UtcDatetime] = None
+    ntrp_delta: Optional[float] = None
+
+
 class HomeWeekOut(BaseModel):
     """home-week-168a — the whole home screen in one payload."""
 
@@ -746,6 +758,13 @@ class HomeWeekOut(BaseModel):
     invites: list[HomeWeekInviteOut] = []
     leagues: list[HomeWeekLeagueOut] = []
     round: Optional[HomeWeekRoundOut] = None
+    # 170a, for the week with nothing in it: when the soonest round across all
+    # the player's leagues opens, who they could play meanwhile, and the last
+    # result they have.
+    next_round_starts_at: Optional[UtcDatetime] = None
+    players_near_level: int = 0
+    my_level: Optional[float] = None
+    last_match: Optional[HomeWeekLastMatchOut] = None
 
 
 class OpenMatchItemOut(BaseModel):

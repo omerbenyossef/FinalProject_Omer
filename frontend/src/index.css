@@ -7100,11 +7100,88 @@ button:active { transform: translateY(1px); }
   font: 600 13.5px "IBM Plex Sans", var(--sans); color: #C6F24E; cursor: pointer;
 }
 
-.hw-empty {
-  flex: 1; background: #181B1F; border-radius: 22px; padding: 22px;
-  display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 16px;
+/* home-week-empty-170a — the week with nothing to play. Five blocks in a
+   column; only the last one grows, so no gap is left hanging. */
+/* The five blocks add up to 6px more than an iPhone-height screen leaves,
+   and none of them may shrink (the LAST MATCH card has a 96px floor), so the
+   top padding gives the difference back rather than the layout scrolling. */
+.hw-diary--empty { gap: 14px; padding-top: 12px; overflow: hidden; }
+
+.hw-free { flex: none; display: flex; align-items: flex-end; gap: 14px; }
+.hw-free-num {
+  font: 400 76px/.82 "Anton", var(--display); letter-spacing: -.01em; color: #C6F24E;
 }
-.hw-empty-line { font: 700 20px "IBM Plex Sans", var(--sans); color: #F2F2EF; }
+.hw-free-side { padding-bottom: 6px; display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.hw-free-label {
+  font: 400 24px/1 "Anton", var(--display); letter-spacing: .02em; color: #F2F2EF;
+}
+.hw-free-sub {
+  font: 500 11.5px "IBM Plex Mono", monospace; letter-spacing: .08em; color: #84878C;
+}
+
+.hw-explain {
+  flex: none; margin: 0; max-width: 31ch;
+  font: 400 14.5px/1.55 "IBM Plex Sans", var(--sans); color: #9CA0A6; text-wrap: pretty;
+  /* An English sentence inside the RTL screen: keep the parent's alignment,
+     but let the sentence punctuate in its own direction. */
+  unicode-bidi: plaintext;
+}
+
+.hw-cta-stack { flex: none; display: flex; flex-direction: column; gap: 9px; }
+.hw-cta {
+  width: 100%; box-sizing: border-box; padding: 15px 18px; border: 0; border-radius: 18px;
+  background: #181B1F; color: #F2F2EF; cursor: pointer;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; text-align: start;
+}
+.hw-cta-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.hw-cta-title { font: 700 16px "IBM Plex Sans", var(--sans); }
+.hw-cta-sub {
+  font: 500 11px "IBM Plex Mono", monospace; letter-spacing: .06em; color: #84878C;
+}
+.hw-cta-go {
+  flex: none; width: 36px; height: 36px; border-radius: 50%; background: #C6F24E; color: #0F1113;
+  display: flex; align-items: center; justify-content: center;
+}
+.hw-cta-go svg { width: 19px; height: 19px; }
+[dir="rtl"] .hw-cta-go svg, [dir="rtl"] .hw-cta-chev svg { transform: scaleX(-1); }
+.hw-cta--ghost {
+  background: none; border: 1px solid rgba(242, 242, 239, .14); color: #C9CBCD;
+}
+.hw-cta--ghost .hw-cta-title { font: 600 15px "IBM Plex Sans", var(--sans); }
+.hw-cta-chev { flex: none; color: #6E7176; display: flex; }
+.hw-cta-chev svg { width: 17px; height: 17px; }
+
+.hw-last {
+  flex: 1; min-height: 96px; margin-top: 2px; padding: 13px 18px;
+  background: #181B1F; border-radius: 18px;
+  display: flex; flex-direction: column; justify-content: center; gap: 9px;
+}
+.hw-last-top { display: flex; align-items: center; gap: 9px; }
+.hw-last-label {
+  flex: none; font: 500 11px "IBM Plex Mono", monospace; letter-spacing: .16em; color: #6E7176;
+}
+.hw-last-rule { flex: 1; height: 1px; background: rgba(242, 242, 239, .12); }
+.hw-last-result {
+  flex: none; font: 500 11px "IBM Plex Mono", monospace; letter-spacing: .08em; color: #84878C;
+}
+.hw-last-result.won { color: #C6F24E; }
+.hw-last-mid { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.hw-last-name {
+  flex: 1; min-width: 0; font: 700 18px "IBM Plex Sans", var(--sans);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.hw-last-score {
+  flex: none; font: 500 17px "IBM Plex Mono", monospace;
+  direction: ltr; unicode-bidi: isolate; white-space: nowrap;
+}
+.hw-last-sub {
+  font: 500 11px "IBM Plex Mono", monospace; letter-spacing: .06em; color: #84878C;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.hw-last--none { align-items: center; }
+.hw-last-empty {
+  font: 500 11.5px "IBM Plex Mono", monospace; letter-spacing: .1em; color: #6E7176;
+}
 
 /* 169a — the leagues live in a strip that scrolls the full screen width; it
    sits outside the diary so its overflow isn't clipped. */

@@ -7,7 +7,7 @@ import { useLanguage } from "../LanguageContext.jsx";
 import { useOpenAction } from "../OpenActionContext.jsx";
 import { BellIcon } from "../Icons.jsx";
 import { SkeletonMatchRow } from "../Skeleton.jsx";
-import { NTRP_STEPS } from "../matchUtils.js";
+import { NTRP_STEPS, formatSets } from "../matchUtils.js";
 import Profile from "./Profile.jsx";
 
 const WEEKDAY = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
@@ -25,6 +25,16 @@ function activeStep(level) {
 
 function dayMonth(date) {
   return `${String(date.getDate()).padStart(2, "0")}.${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function startOfDay(date) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function daysUntil(date) {
+  return Math.max(0, Math.round((startOfDay(date) - startOfDay(new Date())) / 86400000));
 }
 
 function hhmm(date) {
@@ -121,6 +131,7 @@ export default function Home() {
   })();
 
   const compact = matches.length >= 3;
+  const emptyState = !!week && matches.length === 0 && invites.length === 0;
 
   function cardFor(match) {
     const scheduled = match.scheduled_at ? new Date(match.scheduled_at) : null;
@@ -223,6 +234,119 @@ export default function Home() {
     );
   }
 
+  // home-week-empty-170a: a week with nothing to play isn't one stretched
+  // empty card — it's the countdown to the next round, what to do meanwhile,
+  // and the last result, with only the last block growing.
+  function emptyWeek() {
+    const nextStart = week?.next_round_starts_at ? new Date(week.next_round_starts_at) : null;
+    const days = nextStart ? daysUntil(nextStart) : null;
+    const last = week?.last_match ?? null;
+    const near = week?.players_near_level ?? 0;
+
+    return (
+      <>
+        {days !== null && (
+          <div className="hw-free" dir="ltr">
+            <span className="hw-free-num">{days}</span>
+            <span className="hw-free-side">
+              <span className="hw-free-label">{days === 1 ? "DAY FREE" : "DAYS FREE"}</span>
+              <span className="hw-free-sub">
+                {days === 0
+                  ? "NEXT ROUND STARTS TODAY"
+                  : days === 1
+                    ? "NEXT ROUND STARTS TOMORROW"
+                    : `NEXT ROUND STARTS ${WEEKDAY[nextStart.getDay()]} ${dayMonth(nextStart)}`}
+              </span>
+            </span>
+          </div>
+        )}
+
+        <p className="hw-explain">
+          {days !== null
+            ? "All your league matches are played. New fixtures show up here when the next round starts."
+            : "All your league matches are played. New fixtures show up here when your league opens its next round."}
+        </p>
+
+        <div className="hw-cta-stack">
+          <button type="button" className="hw-cta" onClick={() => navigate("/friendly/new")}>
+            <span className="hw-cta-text">
+              <span className="hw-cta-title">{"Find a friendly match"}</span>
+              {near > 0 && week?.my_level != null && (
+                <span className="hw-cta-sub" dir="ltr">
+                  {`${near} PLAYERS NEAR ${week.my_level.toFixed(1)}`}
+                </span>
+              )}
+            </span>
+            <span className="hw-cta-go" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
+                <path d="M5 12h13M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+          </button>
+          <button
+            type="button"
+            className="hw-cta hw-cta--ghost"
+            onClick={() => navigate("/leagues/open")}
+          >
+            <span className="hw-cta-title">{"Browse open leagues"}</span>
+            <span className="hw-cta-chev" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+          </button>
+        </div>
+
+        {last ? (
+          <div className="hw-last">
+            <div className="hw-last-top" dir="ltr">
+              <span className="hw-last-label">
+                {"LAST MATCH"}
+                {last.round ? ` · R${last.round}` : ""}
+              </span>
+              <span className="hw-last-rule" />
+              <span className={`hw-last-result${last.won ? " won" : ""}`}>
+                {last.won ? "WON" : "LOST"}
+              </span>
+            </div>
+            <div className="hw-last-mid">
+              <span className="hw-last-name">
+                {"vs "}
+                <span dir="auto" style={{ unicodeBidi: "isolate" }}>
+                  {last.opponent_name}
+                </span>
+              </span>
+              <span className="hw-last-score" dir="ltr">
+                {formatSets(last.my_sets)}
+              </span>
+            </div>
+            <div className="hw-last-sub" dir="ltr">
+              {last.played_at && (
+                <>
+                  {WEEKDAY[new Date(last.played_at).getDay()]} {dayMonth(new Date(last.played_at))}
+                </>
+              )}
+              {last.league_name && (
+                <>
+                  {last.played_at ? " · " : ""}
+                  <span dir="auto" style={{ unicodeBidi: "isolate" }}>
+                    {last.league_name}
+                  </span>
+                </>
+              )}
+              {last.ntrp_delta != null &&
+                ` · NTRP ${last.ntrp_delta > 0 ? "+" : "−"}${Math.abs(last.ntrp_delta).toFixed(1)}`}
+            </div>
+          </div>
+        ) : (
+          <div className="hw-last hw-last--none">
+            <span className="hw-last-empty">{"NO MATCHES PLAYED YET"}</span>
+          </div>
+        )}
+      </>
+    );
+  }
+
   return (
     <div className="hw">
       <div className="hw-hero">
@@ -289,7 +413,7 @@ export default function Home() {
 
       {error && <p className="hw-error error">{t(error)}</p>}
 
-      <div className="hw-diary">
+      <div className={`hw-diary${emptyState ? " hw-diary--empty" : ""}`}>
         <div className="hw-meta" dir="ltr">
           {metaLine}
         </div>
@@ -297,24 +421,7 @@ export default function Home() {
           <SkeletonMatchRow />
         ) : (
           <>
-            {matches.length > 0 ? (
-              matches.map(cardFor)
-            ) : invites.length === 0 ? (
-              <div className="hw-empty">
-                <span className="hw-empty-line">
-                  {round
-                    ? t("מחזור {n} ממשיך", { n: round.number })
-                    : t("אין משחקים פתוחים")}
-                </span>
-                <button
-                  type="button"
-                  className="hw-btn hw-btn--ghost"
-                  onClick={() => navigate("/friendly/new")}
-                >
-                  {"Find a friendly match"}
-                </button>
-              </div>
-            ) : null}
+            {matches.length > 0 ? matches.map(cardFor) : invites.length === 0 ? emptyWeek() : null}
 
             {invites.length > 0 && (
               <div className="hw-invites">
