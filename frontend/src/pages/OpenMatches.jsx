@@ -5,6 +5,7 @@ import { useLanguage } from "../LanguageContext.jsx";
 import { useOpenAction } from "../OpenActionContext.jsx";
 import { ChevronIcon } from "../Icons.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
+import SetScoreForm from "../SetScoreForm.jsx";
 
 // open-matches-156a: the count is spoken as a word inside the sentence, not
 // printed as a digit.
@@ -75,6 +76,9 @@ export default function OpenMatches() {
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
   const [busyId, setBusyId] = useState(null);
+  // Which row has its score form open. A match from a closed round is
+  // reported here, on the screen that's asking for the report.
+  const [reportingId, setReportingId] = useState(null);
 
   const load = useCallback(() => {
     api
@@ -90,6 +94,7 @@ export default function OpenMatches() {
     setError("");
     try {
       await fn();
+      setReportingId(null);
       load();
       reloadOpenAction();
     } catch (err) {
@@ -97,6 +102,17 @@ export default function OpenMatches() {
     } finally {
       setBusyId(null);
     }
+  }
+
+  // Sets are stored in the match's own player1/player2 order; the form always
+  // puts the viewer first.
+  function reportScore(item, sets) {
+    const asMatch = item.i_am_player1
+      ? sets
+      : sets.map((set) => ({ player1_games: set.player2_games, player2_games: set.player1_games }));
+    return item.league_id
+      ? api.reportScore(item.league_id, item.match_id, asMatch)
+      : api.reportFriendlyScore(item.match_id, asMatch, true);
   }
 
   if (error && !data) return <p className="error">{t(error)}</p>;
@@ -194,16 +210,35 @@ export default function OpenMatches() {
                       </button>
                     </div>
                   ) : item.state === "unreported" ? (
-                    <div className="om-actions">
-                      <button
-                        type="button"
-                        className="om-primary"
-                        disabled={busyId === item.match_id}
-                        onClick={() => navigate(`/matches/${item.match_id}`)}
-                      >
-                        {t("דווח")}
-                      </button>
-                    </div>
+                    reportingId === item.match_id ? (
+                      <SetScoreForm
+                        player1Name={item.i_am_player1 ? t("אתה") : item.opponent_name}
+                        player2Name={item.i_am_player1 ? item.opponent_name : t("אתה")}
+                        busy={busyId === item.match_id}
+                        maxSets={item.max_sets}
+                        onSubmit={(sets) => run(item.match_id, () => reportScore(item, sets))}
+                        onCancel={() => setReportingId(null)}
+                      />
+                    ) : (
+                      <div className="om-actions">
+                        <button
+                          type="button"
+                          className="om-primary"
+                          disabled={busyId === item.match_id}
+                          onClick={() => setReportingId(item.match_id)}
+                        >
+                          {t("דווח תוצאה")}
+                        </button>
+                        <button
+                          type="button"
+                          className="om-secondary"
+                          disabled={busyId === item.match_id}
+                          onClick={() => run(item.match_id, () => api.reportMatchNotPlayed(item.match_id))}
+                        >
+                          {t("המשחק לא בוצע")}
+                        </button>
+                      </div>
+                    )
                   ) : (
                     <div className="om-actions">
                       <button

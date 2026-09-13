@@ -756,8 +756,12 @@ class OpenMatchItemOut(BaseModel):
 
     match_id: int
     opponent_name: str
+    league_id: Optional[int] = None
     league_name: Optional[str] = None
     round: Optional[int] = None
+    # What a row needs to take a report without leaving the screen.
+    i_am_player1: bool = True
+    max_sets: int = 3
     played_on: Optional[UtcDatetime] = None
     state: str
     score: Optional[str] = None

@@ -89,10 +89,13 @@ def _item(match: models.Match, user_id: int) -> tuple[str, schemas.OpenMatchItem
     common = dict(
         match_id=match.id,
         opponent_name=name,
+        league_id=match.league_id,
         league_name=match.league.name if match.league_id else None,
         round=match.round_number,
         played_on=match.scheduled_at or match.played_at,
         reminder_sent_at=match.manual_reminded_at,
+        i_am_player1=i_am_player1,
+        max_sets=(match.league.best_of or 3) if match.league_id else 3,
     )
 
     if match.status == models.MatchStatus.pending_confirmation:
@@ -219,7 +222,7 @@ def _item(match: models.Match, user_id: int) -> tuple[str, schemas.OpenMatchItem
                 **common,
                 state="unreported",
                 days_waiting=_days_since(match.scheduled_at),
-                body="המחזור נסגר בלי שהמשחק שוחק. דווח מה קרה.",
+                body="המחזור נסגר ואין תוצאה למשחק הזה. דווח מה קרה — תוצאה, או שהמשחק לא בוצע.",
             ),
         )
 

@@ -651,10 +651,17 @@ def report_match_not_played(
     match = _get_match_for_participant(db, match_id, current_user.id)
     if match.status != models.MatchStatus.pending:
         raise HTTPException(status_code=400, detail="כבר יש תוצאה למשחק הזה — אפשר רק לאשר אותה או לערער עליה")
-    if match.scheduled_at is None or not match.schedule_confirmed:
-        raise HTTPException(status_code=400, detail="צריך לתאם ולאשר שעה למשחק לפני שאפשר לדווח שהוא לא בוצע")
-    if _to_naive_utc(match.scheduled_at) >= datetime.utcnow():
-        raise HTTPException(status_code=400, detail="אפשר לדווח שמשחק לא בוצע רק אחרי השעה שנקבעה לו")
+    # Once the round is over the match is past regardless of what was agreed:
+    # a time that came and went and a time that was never set are the same
+    # "we didn't play it", and both have to be reportable — otherwise a match
+    # nobody ever scheduled waits forever for a report it can't give.
+    if not _round_is_over(match):
+        if match.scheduled_at is None or not match.schedule_confirmed:
+            raise HTTPException(
+                status_code=400, detail="צריך לתאם ולאשר שעה למשחק לפני שאפשר לדווח שהוא לא בוצע"
+            )
+        if _to_naive_utc(match.scheduled_at) >= datetime.utcnow():
+            raise HTTPException(status_code=400, detail="אפשר לדווח שמשחק לא בוצע רק אחרי השעה שנקבעה לו")
 
     match.status = models.MatchStatus.pending_confirmation
     match.reported_by = current_user.id
@@ -691,6 +698,15 @@ def report_match_not_played(
     )
 
     return match
+
+
+def _round_is_over(match: models.Match) -> bool:
+    """A league match whose round has already closed. A friendly has no round,
+    so it is never "over" in this sense."""
+    if not match.league_id or not match.league:
+        return False
+    ends_at = _round_ends_at(match.league, match.round_number)
+    return ends_at is not None and ends_at < datetime.utcnow()
 
 
 def _not_played_void(match: models.Match) -> bool:
