@@ -181,6 +181,8 @@ def accept_invite(
         raise HTTPException(status_code=403, detail="Not the invited player")
     if match.invite_status != models.FriendlyInviteStatus.pending:
         raise HTTPException(status_code=400, detail="ההזמנה כבר טופלה")
+    if match.status != models.MatchStatus.pending:
+        raise HTTPException(status_code=400, detail="ההזמנה כבר לא בתוקף")
 
     match.invite_status = models.FriendlyInviteStatus.accepted
     db.commit()

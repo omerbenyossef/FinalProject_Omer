@@ -17,6 +17,10 @@ REMIND_COOLDOWN = timedelta(hours=1)
 AUTO_REMIND_INTERVAL = timedelta(hours=24)
 MAX_AUTO_REMINDS = 3
 AUTO_VOID_INTERVAL = timedelta(days=4)
+# A friendly that never got off the ground — an invitation nobody answered, or
+# one that was accepted and never given a time — is a non-event. It goes
+# quietly a week after the last thing that happened to it.
+FRIENDLY_IDLE_INTERVAL = timedelta(days=7)
 PROPOSAL_REMIND_INTERVAL = timedelta(hours=24)
 MAX_PROPOSAL_REMINDS = 2
 
@@ -254,6 +258,32 @@ def _auto_void_abandoned_friendlies(db: Session) -> None:
                     type="match_voided",
                     match_id=match.id,
                 )
+
+    # The other half: friendlies that never reached a confirmed time at all.
+    # Nothing happened to announce, so these are dropped without a word —
+    # they just stop showing up.
+    idle_threshold = now - FRIENDLY_IDLE_INTERVAL
+    idle = [
+        match
+        for match in db.query(models.Match)
+        .filter(
+            models.Match.kind == models.MatchKind.friendly,
+            models.Match.status == models.MatchStatus.pending,
+            or_(
+                models.Match.schedule_confirmed.is_(False),
+                models.Match.scheduled_at.is_(None),
+            ),
+        )
+        .all()
+        if (match.scheduled_at or match.created_at) is not None
+        and (match.scheduled_at or match.created_at) <= idle_threshold
+    ]
+    for match in idle:
+        match.status = models.MatchStatus.disputed
+        match.void_reason = "not_played"
+        match.disputed_at = now
+    if idle:
+        db.commit()
 
 
 def _round_robin_rounds(player_ids: list[int]) -> list[list[tuple[int, int]]]:

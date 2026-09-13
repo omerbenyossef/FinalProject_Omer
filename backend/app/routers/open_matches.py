@@ -179,7 +179,10 @@ def _item(match: models.Match, user_id: int) -> tuple[str, schemas.OpenMatchItem
     ):
         # Both sides agreed it never happened. Nothing is owed on the result,
         # but the pairing is: once its round is gone, this is where they find
-        # it again and move it to a later one.
+        # it again and move it to a later one. A friendly has no round and no
+        # table to owe anything to — a voided one is simply gone.
+        if not match.league_id:
+            return None
         if match.confirmed_by is not None:
             opening = "שניכם דיווחתם שהמשחק לא שוחק"
         elif match.reported_by == user_id:

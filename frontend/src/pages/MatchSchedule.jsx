@@ -61,6 +61,7 @@ export default function MatchSchedule() {
   // Both players agreed it was never played: the only thing left to do with
   // it is put it in a later round.
   if (
+    detail.league_id &&
     detail.result_status === "disputed" &&
     detail.void_reason === "not_played" &&
     !detail.corrected_sets

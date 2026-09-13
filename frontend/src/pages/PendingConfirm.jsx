@@ -71,16 +71,17 @@ export default function PendingConfirm() {
     return <Navigate to={`/matches/${matchId}`} replace />;
   }
 
-  // An agreed "we never played" isn't a standoff — it has its own screen.
-  if (
+  // An agreed "we never played" isn't a standoff. A league match has a round
+  // to move to; a friendly has nowhere to go, so it just says what happened.
+  const isVoid =
     detail.result_status === "disputed" &&
     detail.void_reason === "not_played" &&
-    detail.corrected_sets == null
-  ) {
+    detail.corrected_sets == null;
+  if (isVoid && detail.league_id) {
     return <Navigate to={`/matches/${matchId}/reschedule`} replace />;
   }
 
-  const isDispute = detail.result_status === "disputed";
+  const isDispute = detail.result_status === "disputed" && !isVoid;
   const notPlayedClaim = detail.void_reason === "not_played" && detail.corrected_sets == null;
   // In a standoff both sides filed something, so "you reported" has to show
   // whichever of the two is actually mine.
@@ -188,7 +189,12 @@ export default function PendingConfirm() {
       ) : (
         <>
           <div className="pc-rows">
-            <div className="pc-row">
+            {/* A match voided because nobody said anything has no report of
+                mine to show. */}
+            <div
+              className="pc-row"
+              style={isVoid && detail.reported_by !== user?.id ? { display: "none" } : undefined}
+            >
               <span className="pc-label">{t("דיווחת")}</span>
               <span className="pc-value">
                 {notPlayedClaim ? (
@@ -219,7 +225,9 @@ export default function PendingConfirm() {
 
             <div className="pc-row">
               <span className="pc-label">{t("מצב")}</span>
-              {isDispute ? (
+              {isVoid ? (
+                <span className="pc-value pc-state">{t("המשחק בוטל ולא נספר")}</span>
+              ) : isDispute ? (
                 <span className="pc-value pc-state pc-state--dispute">
                   {t("{name} דיווח/ה תוצאה אחרת", { name })}
                 </span>
@@ -232,7 +240,11 @@ export default function PendingConfirm() {
             </div>
           </div>
 
-          {isDispute ? (
+          {isVoid ? (
+            <p className="pc-impact">
+              {t("אף אחד לא דיווח תוצאה, אז המשחק בוטל. הוא לא נספר ולא משפיע על הדירוג — אפשר פשוט לקבוע משחק חדש.")}
+            </p>
+          ) : isDispute ? (
             <>
               <div className="pc-scores">
                 <div className="pc-scores-row">
