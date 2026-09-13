@@ -7,18 +7,17 @@ import { useLanguage } from "../LanguageContext.jsx";
 import { useOpenAction } from "../OpenActionContext.jsx";
 import { BellIcon } from "../Icons.jsx";
 import { SkeletonMatchRow } from "../Skeleton.jsx";
+import { NTRP_STEPS } from "../matchUtils.js";
 import Profile from "./Profile.jsx";
 
 const WEEKDAY = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
-// home-week-169a: nine steps, 1.5 to 5.5 — the range an amateur league lives
-// in. Anything outside it sits on the nearest edge rather than off the bar.
-const HW_STEPS = [1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5];
-
+// The scale runs the app's full NTRP range, 1.5 to 7. A level between steps
+// (or outside the range) sits on the nearest one rather than off the bar.
 function activeStep(level) {
   if (level == null) return null;
-  let best = HW_STEPS[0];
-  for (const step of HW_STEPS) {
+  let best = NTRP_STEPS[0];
+  for (const step of NTRP_STEPS) {
     if (Math.abs(step - level) < Math.abs(best - level)) best = step;
   }
   return best;
@@ -266,7 +265,7 @@ export default function Home() {
               </span>
             </div>
             <div className="hw-scale-bar" dir="ltr" aria-hidden="true">
-              {HW_STEPS.map((step) => (
+              {NTRP_STEPS.map((step) => (
                 <span
                   key={step}
                   className={`hw-step${step === activeStep(myRating.level) ? " is-here" : ""}`}
@@ -277,10 +276,12 @@ export default function Home() {
               <span>1.5</span>
               <span className="hw-scale-note" dir="auto">
                 {myRating.provisional
-                  ? t("זמני · עוד {n} משחקים", { n: 3 - myRating.rated_matches })
+                  ? 3 - myRating.rated_matches === 1
+                    ? t("זמני · עוד משחק אחד")
+                    : t("זמני · עוד {n} משחקים", { n: 3 - myRating.rated_matches })
                   : (round && leagueTiles[0]?.name) || ""}
               </span>
-              <span>5.5</span>
+              <span>7.0</span>
             </div>
           </div>
         )}

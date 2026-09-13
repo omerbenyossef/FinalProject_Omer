@@ -961,6 +961,7 @@ const PAIRS = [
 
   // Home screen redesign (73a)
   ["זמני · עוד {n} משחקים", "provisional · {n} matches left"],
+  ["זמני · עוד משחק אחד", "provisional · 1 match left"],
   ["קבע רמה", "Set your level"],
 
   // Tab bar open action (75b/76b/77a-e)
