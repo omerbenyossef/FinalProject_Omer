@@ -811,6 +811,7 @@ export default function LeagueDetail() {
                         busy={busy}
                         maxSets={league.best_of}
                         daysLeft={shownRoundDaysLeft}
+                        roundClosed={!!shownRoundDue && shownRoundDue.getTime() < Date.now()}
                         onSchedule={() => navigate(`/matches/${myShownMatch.id}/schedule`)}
                         onQuickConfirmSchedule={() => handleQuickConfirmSchedule(myShownMatch.id)}
                         onCancelSchedule={() => handleCancelSchedule(myShownMatch.id)}
@@ -1018,6 +1019,7 @@ function MyMatchBlock({
   busy,
   maxSets,
   daysLeft,
+  roundClosed,
   onSchedule,
   onQuickConfirmSchedule,
   onCancelSchedule,
@@ -1134,6 +1136,20 @@ function MyMatchBlock({
     } else {
       meta = t("דיווחת {score} · ממתין ליריב", { score: formatSets(claimSets) });
     }
+  } else if (roundClosed && match.status === "pending" && !match.reported_by) {
+    // The round is over and nothing was ever reported: a time (or a missing
+    // one) inside a closed round is a dead end, so the match moves instead.
+    voided = true;
+    meta = t("המחזור נסגר והמשחק לא שוחק");
+    action = (
+      <button
+        type="button"
+        className="mm-btn"
+        onClick={() => navigate(`/matches/${match.id}/reschedule`)}
+      >
+        {t("תיאום במחזור אחר")}
+      </button>
+    );
   } else if (rowStatus === "no_time") {
     meta = [t("עוד לא נקבעה שעה"), daysLeft != null ? daysLeftPhrase(daysLeft, t) : null]
       .filter(Boolean)

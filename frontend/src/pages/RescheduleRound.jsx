@@ -68,6 +68,8 @@ export default function RescheduleRound() {
   const intro = (() => {
     const tail = t("המשחק לא נספר בטבלה. אפשר לתאם אותו למחזור משחקים אחר.");
     if (!detail) return tail;
+    // Nobody reported anything — the round simply closed without the match.
+    if (detail.result_status == null) return `${t("המחזור נסגר והמשחק לא שוחק.")} ${tail}`;
     if (detail.confirmed_by != null) return `${t("דווח משני הצדדים שהמשחק לא שוחק.")} ${tail}`;
     if (detail.reported_by === user?.id)
       return `${t("דיווחת שהמשחק לא שוחק ולא הייתה תגובה מ{name}.", { name })} ${tail}`;

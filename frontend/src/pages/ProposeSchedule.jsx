@@ -138,6 +138,7 @@ export default function ProposeSchedule() {
     ? roundDueDateObj(detail.schedule_started_at, detail.round_number, detail.round_length_days || 7)
     : null;
   const days = buildDayOptions(roundEnd, roundStart);
+  const roundClosed = !!detail.league_id && !!roundEnd && roundEnd.getTime() < Date.now();
   const isFriendly = !detail.round_number;
 
   const busyWindows = (detail.busy_windows ?? []).map((w) => ({
@@ -248,6 +249,21 @@ export default function ProposeSchedule() {
 
       {cameFromDecline && (
         <p className="sched-counter-note">{t("הזמן שהוצע לא התאים לך — סמן/י מתי כן, והיריב יבחר")}</p>
+      )}
+
+      {/* The round this match belongs to is over — setting a time inside it
+          is a dead end, so offer the way out. */}
+      {roundClosed && (
+        <div className="sched-closed-note">
+          <span>{t("המחזור הזה נסגר")}</span>
+          <button
+            type="button"
+            className="sched-closed-link"
+            onClick={() => navigate(`/matches/${matchId}/reschedule`)}
+          >
+            {t("תיאום במחזור אחר")}
+          </button>
+        </div>
       )}
 
       <div className="sched-section-label">{t("DAY")}</div>

@@ -758,13 +758,35 @@ def _reschedule_options(db: Session, match: models.Match, user_id: int):
     return current_round, options
 
 
-def _require_not_played_void(match: models.Match) -> None:
+def _round_is_over(match: models.Match) -> bool:
+    ends_at = _round_ends_at(match.league, match.round_number)
+    return ends_at is not None and ends_at < datetime.utcnow()
+
+
+def _can_reschedule(match: models.Match) -> bool:
+    """Which matches can be given a new round: league matches that weren't
+    played. Either both sides said so and it was voided, or its round simply
+    closed with nothing reported — a time that was never agreed and a time
+    that came and went are the same "we didn't play" as far as the table is
+    concerned, so they get the same way out."""
+    if not match.league_id or not match.league:
+        return False
+    if _not_played_void(match):
+        return True
+    return (
+        match.status == models.MatchStatus.pending
+        and match.reported_by is None
+        and _round_is_over(match)
+    )
+
+
+def _require_can_reschedule(match: models.Match) -> None:
     if not match.league_id or not match.league:
         raise HTTPException(status_code=400, detail="אפשר לתאם מחזור אחר רק למשחק ליגה")
-    if not _not_played_void(match):
+    if not _can_reschedule(match):
         raise HTTPException(
             status_code=400,
-            detail="אפשר לתאם מחזור אחר רק למשחק ששני הצדדים דיווחו שלא שוחק",
+            detail="אפשר לתאם מחזור אחר רק למשחק שלא שוחק והמחזור שלו נסגר",
         )
 
 
@@ -776,7 +798,7 @@ def get_reschedule_rounds(
 ):
     _auto_confirm_overdue(db)
     match = _get_match_for_participant(db, match_id, current_user.id)
-    _require_not_played_void(match)
+    _require_can_reschedule(match)
     current_round, options = _reschedule_options(db, match, current_user.id)
     return schemas.RescheduleRoundsOut(
         current_round=current_round,
@@ -798,7 +820,7 @@ def reschedule_to_round(
     confirm handshake, so neither side can force a slot on the other."""
     _auto_confirm_overdue(db)
     match = _get_match_for_participant(db, match_id, current_user.id)
-    _require_not_played_void(match)
+    _require_can_reschedule(match)
 
     _, options = _reschedule_options(db, match, current_user.id)
     if payload.round_number not in [o.number for o in options]:
