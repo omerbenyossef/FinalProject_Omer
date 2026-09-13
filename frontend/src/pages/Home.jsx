@@ -125,8 +125,9 @@ export default function Home() {
 
   function cardFor(match) {
     const scheduled = match.scheduled_at ? new Date(match.scheduled_at) : null;
-    const dim = match.state === "waiting_on_them" || match.state === "no_time";
-    const limeDate = !!scheduled && match.state !== "waiting_on_them";
+    const voided = match.state === "not_played";
+    const dim = match.state === "waiting_on_them" || match.state === "no_time" || voided;
+    const limeDate = !!scheduled && !voided && match.state !== "waiting_on_them";
 
     // Three cards or more and a full-size button stops fitting: the action
     // becomes a lime line instead (168a's short-card rule).
@@ -137,13 +138,17 @@ export default function Home() {
           ? "Propose a time"
           : match.state === "confirm_mine"
             ? "Confirm result"
-            : null;
+            : voided
+              ? t("תיאום במחזור אחר")
+              : null;
     const target =
       match.state === "no_time"
         ? `/matches/${match.id}/schedule`
         : match.state === "confirm_mine"
           ? `/matches/${match.id}/confirm`
-          : `/matches/${match.id}`;
+          : voided
+            ? `/matches/${match.id}/reschedule`
+            : `/matches/${match.id}`;
 
     let action;
     if (!label) {
@@ -162,7 +167,7 @@ export default function Home() {
       action = (
         <button
           type="button"
-          className={`hw-btn ${match.state === "no_time" ? "hw-btn--ghost" : "hw-btn--lime"}`}
+          className={`hw-btn ${match.state === "no_time" || voided ? "hw-btn--ghost" : "hw-btn--lime"}`}
           onClick={() => navigate(target)}
         >
           {label}
@@ -170,8 +175,9 @@ export default function Home() {
       );
     }
 
-    const route =
-      match.state === "waiting_on_them"
+    const route = voided
+      ? `/matches/${match.id}/reschedule`
+      : match.state === "waiting_on_them"
         ? `/matches/${match.id}/pending`
         : match.state === "no_time"
           ? `/matches/${match.id}/schedule`
@@ -179,7 +185,7 @@ export default function Home() {
 
     return (
       <div
-        className={`hw-card${compact ? " is-compact" : ""}`}
+        className={`hw-card${compact ? " is-compact" : ""}${voided ? " hw-card--void" : ""}`}
         key={`m${match.id}`}
         onClick={() => navigate(route)}
       >
@@ -188,7 +194,7 @@ export default function Home() {
             <>
               <span className="hw-date-day">{WEEKDAY[scheduled.getDay()]}</span>
               <span className="hw-date-num">{scheduled.getDate()}</span>
-              <span className="hw-date-time">{hhmm(scheduled)}</span>
+              <span className="hw-date-time">{voided ? "NOT PLAYED" : hhmm(scheduled)}</span>
             </>
           ) : (
             <>
@@ -209,6 +215,9 @@ export default function Home() {
             )}
             {match.round ? ` · R${match.round}` : ""}
           </span>
+          {voided && (
+            <span className="hw-note">{t("דווח משני הצדדים שהמשחק לא שוחק")}</span>
+          )}
           <div className="hw-action" onClick={(e) => e.stopPropagation()}>
             {action}
           </div>

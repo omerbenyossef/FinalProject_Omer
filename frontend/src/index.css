@@ -7029,6 +7029,9 @@ button:active { transform: translateY(1px); }
   display: flex; cursor: pointer; text-align: start;
 }
 .hw-card--invite { flex: none; cursor: default; }
+/* The voided card carries a sentence as well as an action, so it never gets
+   squeezed below what its own content needs. */
+.hw-card--void { flex: 1 0 auto; }
 
 .hw-date {
   flex: none; width: 74px; background: #24272B; color: #84878C;
@@ -7049,6 +7052,9 @@ button:active { transform: translateY(1px); }
 }
 .hw-opponent.dim { color: #C9CBCD; }
 .hw-sub { font: 500 11.5px "IBM Plex Mono", monospace; color: #84878C; }
+/* The one line a card needs when the state is the whole story: a match both
+   players said never happened. */
+.hw-note { margin-top: 3px; font: 500 12.5px "IBM Plex Sans", var(--sans); color: #C9CBCD; }
 .hw-action { margin-top: 8px; display: flex; }
 .hw-action--pair { gap: 9px; }
 
@@ -7210,6 +7216,75 @@ button:active { transform: translateY(1px); }
 }
 
 .pc-form { padding: 24px 20px 30px; }
+
+/* A voided "never played" match, and the round it can move to. Same palette
+   as the pending screen — it is the other half of the same story. */
+.app-shell:has(.rr) { height: 100svh; }
+.content:has(.rr) { min-height: 0; padding: 0; display: flex; flex-direction: column; }
+
+.rr {
+  flex: 1; min-height: 0; display: flex; flex-direction: column;
+  background: #0e1116; color: #eef1f7; overflow-y: auto;
+}
+.rr-head { flex: none; padding: 14px 20px 0; }
+.rr-back {
+  display: flex; align-items: center; justify-content: center; width: 34px; height: 34px;
+  margin-inline-start: -8px; border: 0; background: none; padding: 0; color: #eef1f7; cursor: pointer;
+}
+.rr-back .chevron-icon { width: 26px; height: 26px; transform: scaleX(-1); }
+[dir="ltr"] .rr-back .chevron-icon { transform: none; }
+.rr-title {
+  margin: 26px 0 0; font: 700 26px/1.25 "IBM Plex Sans", var(--sans);
+  letter-spacing: -.02em; text-wrap: pretty;
+}
+.rr-meta {
+  margin-top: 7px; display: flex; flex-wrap: wrap; gap: 8px;
+  font: 500 13px "IBM Plex Mono", monospace; color: #8b93a6;
+}
+.rr-meta-part { display: flex; align-items: baseline; gap: 8px; }
+.rr-dot { color: #6f7787; }
+.rr-intro {
+  margin: 16px 0 0; font: 400 14.5px/1.55 "IBM Plex Sans", var(--sans);
+  color: #8b93a6; text-wrap: pretty;
+}
+.rr-error { margin: 12px 20px 0; }
+.rr-empty {
+  margin: 26px 20px 0; font: 600 15px "IBM Plex Sans", var(--sans); color: #8b93a6;
+}
+
+.rr-section {
+  flex: none; margin: 26px 20px 0;
+  font: 500 11.5px "IBM Plex Mono", monospace; letter-spacing: .1em;
+  text-transform: uppercase; color: #6f7787;
+}
+.rr-options { flex: none; margin: 12px 20px 0; display: flex; flex-direction: column; gap: 10px; }
+.rr-option {
+  width: 100%; box-sizing: border-box; padding: 15px 17px; border-radius: 18px;
+  border: 1px solid rgba(148, 163, 184, .16); background: #131a22; color: #eef1f7;
+  display: flex; flex-direction: column; align-items: stretch; gap: 5px;
+  text-align: start; cursor: pointer;
+}
+.rr-option.is-picked { border-color: var(--court, #c6f24e); background: #17202a; }
+.rr-option-main { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.rr-option-name { font: 700 17px "IBM Plex Sans", var(--sans); }
+.rr-option-dates {
+  flex: none; font: 500 13px "IBM Plex Mono", monospace; color: #8b93a6;
+  white-space: nowrap;
+}
+.rr-option-load { font: 400 13.5px "IBM Plex Sans", var(--sans); color: #8b93a6; }
+
+.rr-actions { margin-top: auto; padding: 26px 20px 30px; }
+.rr-btn {
+  width: 100%; height: 50px; border: 0; border-radius: 25px;
+  display: flex; align-items: center; justify-content: center;
+  font: 700 15.5px "IBM Plex Sans", var(--sans); cursor: pointer;
+}
+.rr-btn--primary { background: var(--court, #c6f24e); color: #0e1116; }
+.rr-btn:disabled { opacity: .55; cursor: default; }
+.rr-foot {
+  margin: 12px 0 0; text-align: center;
+  font: 400 13px "IBM Plex Sans", var(--sans); color: #6f7787;
+}
 
 /* open-matches-156a — matches from closed rounds that still haven't been
    settled. Split by who is holding them up, and nothing else. */

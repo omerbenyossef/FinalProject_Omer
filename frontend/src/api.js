@@ -161,6 +161,12 @@ export const api = {
     }),
   declineMatchSchedule: (matchId) => request(`/matches/${matchId}/schedule/decline`, { method: "POST" }),
   reportMatchNotPlayed: (matchId) => request(`/matches/${matchId}/report-not-played`, { method: "POST" }),
+  rescheduleRounds: (matchId) => request(`/matches/${matchId}/reschedule-rounds`),
+  rescheduleToRound: (matchId, roundNumber) =>
+    request(`/matches/${matchId}/reschedule-round`, {
+      method: "POST",
+      body: { round_number: roundNumber },
+    }),
   confirmMatchResult: (matchId) => request(`/matches/${matchId}/confirm`, { method: "POST" }),
   disputeMatchResult: (matchId, sets, note) =>
     request(`/matches/${matchId}/dispute`, { method: "POST", body: { sets, note: note || null } }),

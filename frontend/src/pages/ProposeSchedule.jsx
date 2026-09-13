@@ -8,18 +8,25 @@ import { roundDueDateObj, hasHebrewChars, daysWord } from "../matchUtils.js";
 
 const WEEKDAY_SHORT = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
-function buildDayOptions(roundEndDate) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+function buildDayOptions(roundEndDate, roundStartDate) {
+  // The window opens today, unless the match belongs to a round that hasn't
+  // started yet — a match moved to a later round is played in that round.
+  const first = new Date();
+  first.setHours(0, 0, 0, 0);
+  if (roundStartDate) {
+    const start = new Date(roundStartDate);
+    start.setHours(0, 0, 0, 0);
+    if (start > first) first.setTime(start.getTime());
+  }
   let count = 5;
   if (roundEndDate) {
     const end = new Date(roundEndDate);
     end.setHours(0, 0, 0, 0);
-    const daysLeft = Math.floor((end - today) / 86400000) + 1;
+    const daysLeft = Math.floor((end - first) / 86400000) + 1;
     count = Math.max(1, Math.min(5, daysLeft));
   }
   return Array.from({ length: count }, (_, i) => {
-    const d = new Date(today);
+    const d = new Date(first);
     d.setDate(d.getDate() + i);
     return d;
   });
@@ -113,10 +120,24 @@ export default function ProposeSchedule() {
     );
   }
 
+  const roundStart =
+    detail.round_number && detail.round_number > 1
+      ? (() => {
+          const previousEnd = roundDueDateObj(
+            detail.schedule_started_at,
+            detail.round_number - 1,
+            detail.round_length_days || 7
+          );
+          if (!previousEnd) return null;
+          const start = new Date(previousEnd);
+          start.setDate(start.getDate() + 1);
+          return start;
+        })()
+      : null;
   const roundEnd = detail.round_number
     ? roundDueDateObj(detail.schedule_started_at, detail.round_number, detail.round_length_days || 7)
     : null;
-  const days = buildDayOptions(roundEnd);
+  const days = buildDayOptions(roundEnd, roundStart);
   const isFriendly = !detail.round_number;
 
   const busyWindows = (detail.busy_windows ?? []).map((w) => ({

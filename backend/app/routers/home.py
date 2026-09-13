@@ -17,6 +17,7 @@ from ..database import get_db
 from ..rating_utils import get_rating, round_to_half
 from .leagues import _compute_my_standing, _current_round_number, _round_ends_at
 from .matches import _auto_confirm_overdue
+from .schedule import _not_played_void
 
 router = APIRouter(prefix="/home", tags=["home"])
 
@@ -33,7 +34,10 @@ def _match_state(match: models.Match, user_id: int) -> str:
     no_time            — no time agreed
     waiting_on_them    — I reported, they haven't answered
     confirm_mine       — they reported, it's waiting on me
+    not_played         — both sides agreed it never happened
     """
+    if _not_played_void(match):
+        return "not_played"
     if match.status == models.MatchStatus.pending_confirmation:
         if match.corrected_sets is not None:
             return "waiting_on_them" if match.corrected_by == user_id else "confirm_mine"
@@ -82,13 +86,22 @@ def home_week(
             .filter(
                 models.Match.league_id == league.id,
                 models.Match.status.in_(
-                    [models.MatchStatus.pending, models.MatchStatus.pending_confirmation]
+                    [
+                        models.MatchStatus.pending,
+                        models.MatchStatus.pending_confirmation,
+                        # A match both players agreed wasn't played is voided,
+                        # but it stays on this week's page until its round is
+                        # over — with the option to move it to a later one.
+                        models.MatchStatus.disputed,
+                    ]
                 ),
                 mine,
             )
             .all()
         )
         for match in rows:
+            if match.status == models.MatchStatus.disputed and not _not_played_void(match):
+                continue
             # Only the live round is "this week" — anything left over from a
             # closed round belongs to the open-matches screen.
             if current_round is not None and match.round_number not in (None, current_round):

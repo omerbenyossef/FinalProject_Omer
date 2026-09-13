@@ -58,6 +58,15 @@ export default function MatchSchedule() {
     return <Navigate to={`/matches/${matchId}/schedule`} replace />;
   }
 
+  // Both players agreed it was never played: the only thing left to do with
+  // it is put it in a later round.
+  if (
+    detail.result_status === "disputed" &&
+    detail.void_reason === "not_played" &&
+    !detail.corrected_sets
+  ) {
+    return <Navigate to={`/matches/${matchId}/reschedule`} replace />;
+  }
   // match-pending-confirm-159a: a match that already carries a report doesn't
   // belong on a screen whose main action is "report the result".
   if (detail.result_status === "pending_him" || detail.result_status === "disputed") {

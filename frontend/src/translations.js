@@ -376,6 +376,24 @@ const PAIRS = [
   ["מחזור {n} ממשיך", "Round {n} continues"],
   ["אין משחקים פתוחים", "No open matches"],
 
+  // A match both sides agreed was never played, and moving it to a later round
+  ["תיאום במחזור אחר", "Move to another round"],
+  ["דווח משני הצדדים שהמשחק לא שוחק", "Both sides reported the match wasn't played"],
+  ["המשחק מול {name} לא שוחק", "Your match against {name} wasn't played"],
+  ["דווח משני הצדדים שהמשחק לא שוחק, והוא לא נספר בטבלה. אפשר לתאם אותו למחזור משחקים אחר.",
+    "Both sides reported the match wasn't played, so it isn't counted in the table. You can move it to another round."],
+  ["לאיזה מחזור להעביר?", "Which round should it move to?"],
+  ["אין לך משחק אחר במחזור הזה", "You have no other match that round"],
+  ["יש לך עוד משחק אחד במחזור הזה", "You already have one other match that round"],
+  ["יש לך עוד {n} משחקים במחזור הזה", "You already have {n} other matches that round"],
+  ["העבר למחזור {n}", "Move to round {n}"],
+  ["אחרי ההעברה תקבעו שעה כמו בכל משחק אחר.", "Once it moves, you set a time like for any other match."],
+  ["אין מחזור פנוי להעביר אליו את המשחק", "There's no upcoming round to move the match to"],
+  ["אפשר לתאם מחזור אחר רק למשחק ליגה", "Only a league match can be moved to another round"],
+  ["אפשר לתאם מחזור אחר רק למשחק ששני הצדדים דיווחו שלא שוחק",
+    "Only a match both sides reported as not played can be moved to another round"],
+  ["אפשר לבחור רק מחזור שעוד לא התחיל", "You can only pick a round that hasn't started yet"],
+
   // A match I reported, waiting on the opponent (159a)
   ["דיווחת", "You reported"],
   ["נשלח", "Sent"],

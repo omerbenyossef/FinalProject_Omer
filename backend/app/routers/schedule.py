@@ -12,7 +12,7 @@ from ..push_utils import notify_user, resolve_match_notifications
 from ..rating_utils import match_winner_id, round_to_half, update_ratings_for_match
 from .friendly import MAX_SETS as FRIENDLY_MAX_SETS
 from .leagues import _accumulate_stats, _empty_stats
-from .leagues import _round_ends_at
+from .leagues import _current_round_number, _round_ends_at
 from .matches import CONFIRMATION_WINDOW, _auto_confirm_overdue, _to_naive_utc
 
 router = APIRouter(prefix="/matches", tags=["schedule"])
@@ -685,6 +685,171 @@ def report_match_not_played(
         current_user.id,
         match.id,
         f"דיווחת שהמשחק מול {opponent.name if opponent else ''} לא התקיים. מחכה לאישור שלו/ה",
+        league_id=match.league_id,
+        actor_name=current_user.name,
+    )
+
+    return match
+
+
+def _not_played_void(match: models.Match) -> bool:
+    """Both sides agreed the match never happened, so it is voided: it isn't
+    counted anywhere, but the pairing itself is still owed."""
+    return (
+        match.status == models.MatchStatus.disputed
+        and match.void_reason == "not_played"
+        and match.corrected_sets is None
+    )
+
+
+# A make-up match belongs in one of the next rounds, not five months out, so
+# the picker offers a short window.
+MAX_RESCHEDULE_OPTIONS = 4
+
+
+def _round_starts_at(league: models.League, round_number: int) -> datetime | None:
+    if not league or not league.schedule_started_at:
+        return None
+    if round_number <= 1:
+        return league.schedule_started_at
+    previous_end = _round_ends_at(league, round_number - 1)
+    return previous_end + timedelta(days=1) if previous_end else None
+
+
+def _reschedule_options(db: Session, match: models.Match, user_id: int):
+    """Which rounds a voided match can be moved into: the ones that haven't
+    started yet. Rounds are just windows derived from the league's start date,
+    so a round past the planned end of the season still has real dates — the
+    last planned round is offered as the single fallback there, since a match
+    that was never played has to go somewhere."""
+    league = match.league
+    current_round = _current_round_number(league.schedule_started_at, league.round_length_days or 7)
+    first = (current_round or match.round_number or 0) + 1
+    last = first + MAX_RESCHEDULE_OPTIONS - 1
+    if league.planned_rounds:
+        last = min(last, max(first, league.planned_rounds))
+
+    my_pending = (
+        db.query(models.Match)
+        .filter(
+            models.Match.league_id == league.id,
+            models.Match.id != match.id,
+            models.Match.status.in_(
+                [models.MatchStatus.pending, models.MatchStatus.pending_confirmation]
+            ),
+            or_(
+                models.Match.player1_id == user_id,
+                models.Match.player2_id == user_id,
+            ),
+        )
+        .all()
+    )
+    options = []
+    for number in range(first, last + 1):
+        options.append(
+            schemas.RescheduleRoundOptionOut(
+                number=number,
+                starts_at=_round_starts_at(league, number),
+                ends_at=_round_ends_at(league, number),
+                my_matches=sum(1 for m in my_pending if m.round_number == number),
+            )
+        )
+    return current_round, options
+
+
+def _require_not_played_void(match: models.Match) -> None:
+    if not match.league_id or not match.league:
+        raise HTTPException(status_code=400, detail="אפשר לתאם מחזור אחר רק למשחק ליגה")
+    if not _not_played_void(match):
+        raise HTTPException(
+            status_code=400,
+            detail="אפשר לתאם מחזור אחר רק למשחק ששני הצדדים דיווחו שלא שוחק",
+        )
+
+
+@router.get("/{match_id}/reschedule-rounds", response_model=schemas.RescheduleRoundsOut)
+def get_reschedule_rounds(
+    match_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    _auto_confirm_overdue(db)
+    match = _get_match_for_participant(db, match_id, current_user.id)
+    _require_not_played_void(match)
+    current_round, options = _reschedule_options(db, match, current_user.id)
+    return schemas.RescheduleRoundsOut(
+        current_round=current_round,
+        original_round=match.round_number,
+        options=options,
+    )
+
+
+@router.post("/{match_id}/reschedule-round", response_model=schemas.MatchOut)
+def reschedule_to_round(
+    match_id: int,
+    payload: schemas.RescheduleRoundRequest,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Move a match both players agreed wasn't played into a later round.
+    Either of them can do it — the round only decides which window the match
+    belongs to, and the time inside it still goes through the usual propose /
+    confirm handshake, so neither side can force a slot on the other."""
+    _auto_confirm_overdue(db)
+    match = _get_match_for_participant(db, match_id, current_user.id)
+    _require_not_played_void(match)
+
+    _, options = _reschedule_options(db, match, current_user.id)
+    if payload.round_number not in [o.number for o in options]:
+        raise HTTPException(status_code=400, detail="אפשר לבחור רק מחזור שעוד לא התחיל")
+
+    # Back to a plain unscheduled league match in its new round: everything
+    # the voided attempt left behind is cleared, including the old time so the
+    # pair start the scheduling flow from scratch.
+    _clear_time_options(db, match)
+    match.round_number = payload.round_number
+    match.status = models.MatchStatus.pending
+    match.scheduled_at = None
+    match.scheduled_by = None
+    match.schedule_confirmed = False
+    match.schedule_proposed_at = None
+    match.void_reason = None
+    match.reported_by = None
+    match.sets = None
+    match.player1_score = None
+    match.player2_score = None
+    match.played_at = None
+    match.disputed_at = None
+    match.confirmed_by = None
+    match.confirmed_at = None
+    match.auto_confirm_at = None
+    match.last_reminded_at = None
+    match.manual_reminded_at = None
+    match.auto_remind_count = 0
+    match.proposal_remind_count = 0
+    match.proposal_reminded_at = None
+    db.commit()
+    db.refresh(match)
+
+    opponent_id = match.player2_id if current_user.id == match.player1_id else match.player1_id
+    opponent = match.player2 if current_user.id == match.player1_id else match.player1
+    notify_user(
+        db,
+        opponent_id,
+        "המשחק עבר למחזור אחר",
+        f"{current_user.name} תיאם/ה את המשחק שלכם למחזור {match.round_number}. עכשיו צריך לקבוע שעה",
+        f"/matches/{match.id}/schedule",
+        category="time_proposal",
+        type="match_rescheduled",
+        actor_name=current_user.name,
+        league_id=match.league_id,
+        match_id=match.id,
+    )
+    resolve_match_notifications(
+        db,
+        current_user.id,
+        match.id,
+        f"העברת את המשחק מול {opponent.name if opponent else ''} למחזור {match.round_number}",
         league_id=match.league_id,
         actor_name=current_user.name,
     )

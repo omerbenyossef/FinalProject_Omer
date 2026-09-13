@@ -21,6 +21,7 @@ import Profile from "./pages/Profile.jsx";
 import Home from "./pages/Home.jsx";
 import OpenMatches from "./pages/OpenMatches.jsx";
 import PendingConfirm from "./pages/PendingConfirm.jsx";
+import RescheduleRound from "./pages/RescheduleRound.jsx";
 import Notifications from "./pages/Notifications.jsx";
 import Invites from "./pages/Invites.jsx";
 import Rankings from "./pages/Rankings.jsx";
@@ -231,6 +232,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <MatchSchedule />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/matches/:matchId/reschedule"
+          element={
+            <ProtectedRoute>
+              <RescheduleRound />
             </ProtectedRoute>
           }
         />

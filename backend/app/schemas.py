@@ -694,6 +694,27 @@ class HomeWeekMatchOut(BaseModel):
     state: str
 
 
+class RescheduleRoundOptionOut(BaseModel):
+    """One round a voided match can be moved into."""
+
+    number: int
+    starts_at: Optional[UtcDatetime] = None
+    ends_at: Optional[UtcDatetime] = None
+    # How many other matches the viewer already has waiting in that round, so
+    # the picker can say what it is adding to.
+    my_matches: int = 0
+
+
+class RescheduleRoundsOut(BaseModel):
+    current_round: Optional[int] = None
+    original_round: Optional[int] = None
+    options: list[RescheduleRoundOptionOut] = []
+
+
+class RescheduleRoundRequest(BaseModel):
+    round_number: int
+
+
 class HomeWeekInviteOut(BaseModel):
     id: int
     from_name: str

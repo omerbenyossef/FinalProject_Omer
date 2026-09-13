@@ -71,6 +71,15 @@ export default function PendingConfirm() {
     return <Navigate to={`/matches/${matchId}`} replace />;
   }
 
+  // An agreed "we never played" isn't a standoff — it has its own screen.
+  if (
+    detail.result_status === "disputed" &&
+    detail.void_reason === "not_played" &&
+    detail.corrected_sets == null
+  ) {
+    return <Navigate to={`/matches/${matchId}/reschedule`} replace />;
+  }
+
   const isDispute = detail.result_status === "disputed";
   const notPlayedClaim = detail.void_reason === "not_played" && detail.corrected_sets == null;
   // In a standoff both sides filed something, so "you reported" has to show
