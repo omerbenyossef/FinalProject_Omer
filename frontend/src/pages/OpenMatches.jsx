@@ -170,6 +170,16 @@ export default function OpenMatches() {
                         </span>
                       </div>
                     </div>
+                  ) : item.state === "not_played_void" ? (
+                    <div className="om-actions">
+                      <button
+                        type="button"
+                        className="om-primary"
+                        onClick={() => navigate(`/matches/${item.match_id}/reschedule`)}
+                      >
+                        {t("תיאום במחזור אחר")}
+                      </button>
+                    </div>
                   ) : item.state === "unreported" ? (
                     <div className="om-actions">
                       <button

@@ -172,6 +172,24 @@ def _item(match: models.Match, user_id: int) -> tuple[str, schemas.OpenMatchItem
             ),
         )
 
+    if (
+        match.status == models.MatchStatus.disputed
+        and match.void_reason == "not_played"
+        and match.corrected_sets is None
+    ):
+        # Both sides agreed it never happened. Nothing is owed on the result,
+        # but the pairing is: once its round is gone, this is where they find
+        # it again and move it to a later one.
+        return (
+            "you",
+            schemas.OpenMatchItemOut(
+                **common,
+                state="not_played_void",
+                days_waiting=_days_since(match.disputed_at),
+                body="שניכם דיווחתם שהמשחק לא שוחק, והוא לא נספר בטבלה. אפשר לתאם אותו למחזור אחר.",
+            ),
+        )
+
     if match.status == models.MatchStatus.disputed and match.void_reason != "not_played":
         return (
             "you",
