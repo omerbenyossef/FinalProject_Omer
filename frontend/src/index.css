@@ -7102,11 +7102,11 @@ button:active { transform: translateY(1px); }
 
 /* home-week-empty-170a — the week with nothing to play. Five blocks in a
    column; only the last one grows, so no gap is left hanging. */
-/* The five blocks add up to 6px more than an iPhone-height screen leaves,
-   and none of them may shrink (the LAST MATCH card has a 96px floor), so the
-   top padding gives the difference back rather than the layout scrolling. */
-.hw-diary--empty { gap: 14px; padding-top: 12px; overflow: hidden; }
-
+/* The five blocks are all natural-height, so on a short screen the column
+   can be taller than the space. It scrolls in that case rather than cutting
+   the last card in half, and the rhythm tightens first so most phones never
+   get there. */
+.hw-diary--empty { gap: 14px; padding-top: 12px; overflow-y: auto; }
 .hw-free { flex: none; display: flex; align-items: flex-end; gap: 14px; }
 .hw-free-num {
   font: 400 76px/.82 "Anton", var(--display); letter-spacing: -.01em; color: #C6F24E;
@@ -7152,7 +7152,8 @@ button:active { transform: translateY(1px); }
 .hw-cta-chev svg { width: 17px; height: 17px; }
 
 .hw-last {
-  flex: 1; min-height: 96px; margin-top: 2px; padding: 13px 18px;
+  /* Grows into free space, never shrinks below its own three lines. */
+  flex: 1 0 auto; min-height: 96px; margin-top: 2px; padding: 13px 18px;
   background: #181B1F; border-radius: 18px;
   display: flex; flex-direction: column; justify-content: center; gap: 9px;
 }
@@ -7182,6 +7183,26 @@ button:active { transform: translateY(1px); }
 .hw-last-empty {
   font: 500 11.5px "IBM Plex Mono", monospace; letter-spacing: .1em; color: #6E7176;
 }
+
+/* Shorter phones: tighten the rhythm and the display type before anything
+   has to scroll. Must come after the rules it overrides — the blocks above
+   set font shorthands. */
+@media (max-height: 830px) {
+  .hw-diary--empty { gap: 10px; padding-top: 8px; }
+  .hw-free-num { font-size: 62px; }
+  .hw-free-label { font-size: 21px; }
+  .hw-free { gap: 12px; }
+  .hw-explain { font-size: 14px; line-height: 1.5; }
+  .hw-cta { padding: 13px 18px; }
+  .hw-last { min-height: 88px; }
+}
+/* Shorter still: the sentence goes. The countdown above it already says when
+   the next round starts, so it is the one block whose absence costs nothing,
+   and dropping it keeps the last result on screen instead of a sliver of it. */
+@media (max-height: 795px) {
+  .hw-explain { display: none; }
+}
+
 
 /* 169a — the leagues live in a strip that scrolls the full screen width; it
    sits outside the diary so its overflow isn't clipped. */
