@@ -22,6 +22,7 @@ import Home from "./pages/Home.jsx";
 import OpenMatches from "./pages/OpenMatches.jsx";
 import PendingConfirm from "./pages/PendingConfirm.jsx";
 import RescheduleRound from "./pages/RescheduleRound.jsx";
+import MyProfile from "./pages/MyProfile.jsx";
 import Notifications from "./pages/Notifications.jsx";
 import Invites from "./pages/Invites.jsx";
 import Rankings from "./pages/Rankings.jsx";
@@ -264,6 +265,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <CorrectScore />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/me"
+          element={
+            <ProtectedRoute>
+              <MyProfile />
             </ProtectedRoute>
           }
         />

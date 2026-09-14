@@ -128,6 +128,8 @@ class UserOut(BaseModel):
     age: Optional[int] = None
     email: EmailStr
     is_admin: bool = False
+    # my-profile-171a shows the month the player joined.
+    created_at: Optional[UtcDatetime] = None
     area: Optional[str] = None
     travel_radius_km: Optional[float] = None
     notify_time_proposals: bool = True

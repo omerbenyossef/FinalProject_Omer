@@ -3,7 +3,7 @@ import { useAuth } from "./AuthContext.jsx";
 import { useSport } from "./SportContext.jsx";
 import { useLanguage } from "./LanguageContext.jsx";
 import { useOpenAction } from "./OpenActionContext.jsx";
-import { ChevronIcon, HomeIcon, PersonIcon, RanksIcon, SettingsIcon, TrophyIcon } from "./Icons.jsx";
+import { ChevronIcon, HomeIcon, RanksIcon, TrophyIcon } from "./Icons.jsx";
 import InstallPrompt from "./InstallPrompt.jsx";
 import Onboarding from "./Onboarding.jsx";
 import { translate } from "./translations.js";
@@ -33,8 +33,8 @@ export default function Layout({ children }) {
       <header className="topbar">
         {user ? (
           <>
-            <Link to="/settings" className="topbar-icon-btn" aria-label={t("הגדרות")}>
-              <SettingsIcon aria-hidden="true" />
+            <Link to="/me" className="topbar-avatar" aria-label={t("פרופיל")}>
+              {user.name?.trim()?.[0] ?? "?"}
             </Link>
             <div className="wordmark-cluster">
               <span className="wordmark-rally">RALLY</span>
@@ -77,8 +77,9 @@ export default function Layout({ children }) {
         <nav className="tabbar">
           <div className="tabbar-row">
             <div className={`tabbar-inner${openAction ? "" : " wide"}`}>
-              {/* home-week-168a: HOME · LEAGUES · MATCHES · PROFILE. Labels are
-                  Latin mono here, the same language the new home screen speaks. */}
+              {/* my-profile-171a: HOME · LEAGUES · MATCHES. The profile moved to
+                  the avatar in the header. Labels are Latin mono here, the same
+                  language the home screen speaks. */}
               <NavLink
                 to="/profile"
                 end
@@ -104,14 +105,6 @@ export default function Layout({ children }) {
               >
                 <RanksIcon className="tab-icon" aria-hidden="true" />
                 {!openAction && <span className="tab-label">MATCHES</span>}
-              </NavLink>
-              <NavLink
-                to={user ? `/players/${user.id}` : "/profile"}
-                className={({ isActive }) => `tab${isActive ? " active" : ""}`}
-                aria-label="PROFILE"
-              >
-                <PersonIcon className="tab-icon" aria-hidden="true" />
-                {!openAction && <span className="tab-label">PROFILE</span>}
               </NavLink>
             </div>
 

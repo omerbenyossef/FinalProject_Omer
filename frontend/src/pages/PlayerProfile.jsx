@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import { useSport } from "../SportContext.jsx";
@@ -44,14 +44,17 @@ export default function PlayerProfile() {
   }, [numericPlayerId, selectedSportId]);
 
   useEffect(() => {
-    if (isSelf) return;
     setH2h(null);
     api
       .headToHead(numericPlayerId)
       .then(setH2h)
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [numericPlayerId, isSelf]);
+  }, [numericPlayerId]);
+
+  // my-profile-171a: my own profile is its own screen now, so this one is
+  // only ever about someone else.
+  if (isSelf) return <Navigate to="/me" replace />;
 
   if (error) return <p className="error">{t(error)}</p>;
 
@@ -79,7 +82,7 @@ export default function PlayerProfile() {
   }
 
   return (
-    <div className={isSelf ? "pp-page pp-self" : "pp-page"}>
+    <div className="pp-page">
       <div className="pp-nav">
         <button type="button" className="pp-nav-back" onClick={() => navigate(-1)} aria-label={t("חזרה")}>
           <ChevronIcon aria-hidden="true" />
@@ -130,8 +133,7 @@ export default function PlayerProfile() {
         </div>
       </div>
 
-      {!isSelf &&
-        (neverPlayed ? (
+      {neverPlayed ? (
           <p className="pp-never-played">{t("NEVER PLAYED")}</p>
         ) : h2h ? (
           <>
@@ -172,9 +174,9 @@ export default function PlayerProfile() {
               })}
             </div>
           </>
-        ) : null)}
+      ) : null}
 
-      {!isSelf && profile.shared_leagues.length > 0 && (
+      {profile.shared_leagues.length > 0 && (
         <div className="pp-shared">
           <div className="pp-shared-label">{t("SHARED LEAGUES")}</div>
           {profile.shared_leagues.map((l) => (
@@ -192,13 +194,11 @@ export default function PlayerProfile() {
         </div>
       )}
 
-      {!isSelf && (
-        <button type="button" className="pp-challenge" onClick={goToChallenge}>
+      <button type="button" className="pp-challenge" onClick={goToChallenge}>
           <span className="pp-dot-lime" aria-hidden="true" />
-          <span className="pp-challenge-label">{t("הזמן למשחק חברות")}</span>
-          <ChevronIcon aria-hidden="true" />
-        </button>
-      )}
+        <span className="pp-challenge-label">{t("הזמן למשחק חברות")}</span>
+        <ChevronIcon aria-hidden="true" />
+      </button>
     </div>
   );
 }

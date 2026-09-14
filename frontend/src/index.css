@@ -596,26 +596,15 @@ a { color: var(--court); text-decoration: none; }
 
 .topbar nav a:hover { color: var(--court); }
 
-.topbar-icon-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  color: var(--ink);
-  flex: none;
+/* my-profile-171a — the way into my profile, on every screen with a header. */
+.topbar-avatar {
+  flex: none; width: 30px; height: 30px; border-radius: 50%;
+  background: #24272B; color: #C9CBCD;
+  display: flex; align-items: center; justify-content: center;
+  font: 400 14px/1 "Anton", var(--display); text-transform: uppercase;
+  text-decoration: none;
 }
-
-.topbar-icon-btn svg {
-  width: 18px;
-  height: 18px;
-}
-
-.topbar-icon-btn:hover {
-  background: var(--card-alt);
-  color: var(--court);
-}
+.topbar-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
 
 .link-btn {
   background: none;
@@ -7230,6 +7219,76 @@ button:active { transform: translateY(1px); }
 }
 .hw-tile-pos { flex: none; font: 600 16px "IBM Plex Mono", monospace; }
 .hw-tile-size { font: 500 11px "IBM Plex Mono", monospace; color: #6E7176; }
+
+/* my-profile-171a — my own profile. Identity, four numbers, settings, out. */
+.app-shell:has(.mp) { height: 100svh; }
+.content:has(.mp) { min-height: 0; padding: 0; display: flex; flex-direction: column; }
+
+.mp {
+  flex: 1; min-height: 0; overflow: hidden;
+  display: flex; flex-direction: column;
+  background: #0F1113; color: #F2F2EF; padding: 20px 22px 0; box-sizing: border-box;
+}
+
+.mp-head { flex: none; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.mp-head-label {
+  font: 500 11px "IBM Plex Mono", monospace; letter-spacing: .16em; color: #84878C;
+}
+.mp-head-edit {
+  font: 500 11px "IBM Plex Mono", monospace; letter-spacing: .12em; color: #84878C;
+  text-decoration: none;
+}
+
+.mp-id { flex: none; margin-top: 34px; display: flex; flex-direction: column; gap: 9px; min-width: 0; }
+.mp-name {
+  margin: 0; font: 700 40px/1 "IBM Plex Sans", var(--sans); letter-spacing: -.025em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mp-sub { font: 500 11.5px "IBM Plex Mono", monospace; letter-spacing: .07em; color: #84878C; }
+
+.mp-grid {
+  flex: none; margin-top: 28px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+}
+.mp-cell {
+  padding: 16px 18px; background: #181B1F; border-radius: 18px;
+  display: flex; flex-direction: column; gap: 9px; min-width: 0;
+}
+.mp-num {
+  font: 400 34px/.85 "Anton", var(--display); letter-spacing: -.01em; color: #F2F2EF;
+  text-align: start;
+}
+.mp-num > span { unicode-bidi: isolate; }
+.mp-num.lime { color: #C6F24E; }
+.mp-num.dim { color: #6E7176; }
+.mp-label {
+  font: 500 10px "IBM Plex Mono", monospace; letter-spacing: .16em; color: #84878C;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.mp-settings {
+  flex: none; margin-top: 34px; padding: 17px 0;
+  border-top: 1px solid rgba(242, 242, 239, .11);
+  border-bottom: 1px solid rgba(242, 242, 239, .11);
+  display: flex; align-items: center; gap: 13px;
+  color: #F2F2EF; text-decoration: none;
+}
+.mp-settings-icon { flex: none; width: 22px; height: 22px; color: #C9CBCD; }
+.mp-settings-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.mp-settings-title { font: 600 16px "IBM Plex Sans", var(--sans); }
+.mp-settings-sub {
+  font: 500 10.5px "IBM Plex Mono", monospace; letter-spacing: .06em; color: #84878C;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* The chevron points the way the reader travels; the app-wide .chevron-icon
+   rule flips it in LTR. */
+.mp-settings-chev { flex: none; width: 15px; height: 15px; color: #6E7176; }
+
+.mp-logout {
+  flex: none; margin-top: auto; padding: 17px 0; border: 0; background: none;
+  font: 500 11.5px "IBM Plex Mono", monospace; letter-spacing: .12em; color: #6E7176;
+  text-align: start; cursor: pointer;
+}
 
 /* match-pending-confirm-159a — a match I reported, waiting on the opponent.
    Plain: a heading, three rows, one sentence, the actions. */
