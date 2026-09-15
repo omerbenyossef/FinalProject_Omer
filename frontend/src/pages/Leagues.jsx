@@ -47,7 +47,7 @@ function LeagueCarouselCard({ league, standingsRows, openAction, userId, t, navi
               ? `${t("מחזור {n}", { n: currentRound })} · ${daysLeftPhrase(daysLeft, t)}`
               : `${league.my_members_total} ${t("שחקנים")}`}
             {" · "}
-            {league.is_open ? "PUBLIC" : "PRIVATE"}
+            {league.is_open ? t("ציבורית") : t("פרטית")}
             {league.is_open &&
               ` · NTRP ${(league.level_min ?? 1.5).toFixed(1)}–${(league.level_max ?? 7.0).toFixed(1)}`}
           </div>

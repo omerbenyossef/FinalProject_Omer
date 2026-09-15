@@ -296,7 +296,7 @@ export default function Rankings() {
               <span className="rk-who">
                 <span className="rk-name">
                   <span dir="auto" style={{ unicodeBidi: "isolate" }}>{me.display_name}</span>
-                  <span className="rk-you"> · you</span>
+                  <span className="rk-you"> · {t("אתה")}</span>
                 </span>
                 <span className="rk-sub" dir="ltr">
                   {sort === "ntrp" ? `${me.wins}-${me.losses}` : `NTRP ${me.ntrp.toFixed(1)}`}

@@ -88,7 +88,7 @@ export default function LeaguePreview() {
 
   if (joinedNow) {
     const openLine = [
-      preview.starts_at ? `R1 OPENS ${weekdayShort(new Date(preview.starts_at))}` : null,
+      preview.starts_at ? `R1 OPENS ${weekdayShort(new Date(preview.starts_at), t)}` : null,
       `YOU ARE #${preview.joined + 1}${preview.capacity != null ? ` OF ${preview.capacity}` : ""}`,
     ]
       .filter(Boolean)

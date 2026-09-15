@@ -8,9 +8,9 @@ import { ChevronIcon } from "../Icons.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
 import { NTRP_STEPS } from "../matchUtils.js";
 
-function metaLine(league) {
+function metaLine(league, t) {
   const parts = [];
-  if (league.rounds) parts.push(`${league.rounds} ROUNDS`);
+  if (league.rounds) parts.push(t("{n} מחזורים", { n: league.rounds }));
   parts.push(`NTRP ${league.level_min.toFixed(1)}-${league.level_max.toFixed(1)}`);
   return parts.join(" · ");
 }
@@ -131,7 +131,7 @@ export default function OpenLeagues() {
                 ) : null}
               </div>
               <div className="ol-row-meta" dir="ltr">
-                {metaLine(league)}
+                {metaLine(league, t)}
               </div>
               {league.capacity != null && (
                 <div className="ol-row-capacity">

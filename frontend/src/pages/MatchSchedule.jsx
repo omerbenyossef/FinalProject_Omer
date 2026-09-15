@@ -198,7 +198,7 @@ export default function MatchSchedule() {
               · R{detail.round_number}
             </>
           ) : (
-            "FRIENDLY"
+            t("ידידותי")
           )}
           {detail.schedule_proposed_at && ` · ${timeAgoLabel(new Date(detail.schedule_proposed_at))}`}
         </p>
@@ -221,7 +221,7 @@ export default function MatchSchedule() {
                     onClick={() => setPickedOption(option.id)}
                   >
                     <span className="sched-option-time" dir="ltr">
-                      {formatWeekdayDateTime(new Date(option.start_at))}
+                      {formatWeekdayDateTime(new Date(option.start_at), t)}
                     </span>
                     {blocked ? (
                       <span className="sched-option-note">{blocked}</span>
@@ -237,12 +237,12 @@ export default function MatchSchedule() {
         ) : (
           <div className="sched-hero">
             <div className="sched-hero-time" dir="ltr">
-              {formatWeekdayDateTime(scheduledDate)}
+              {formatWeekdayDateTime(scheduledDate, t)}
             </div>
             {detail.court && <div className="sched-hero-court">{detail.court}</div>}
             <div className="sched-hero-meta" dir="ltr">
               {proposalExpired
-                ? "TIME HAS PASSED"
+                ? "השעה עברה"
                 : daysUntilMatch != null && `IN ${daysUntilMatch} ${daysWord(daysUntilMatch)}`}
               {!proposalExpired && daysUntilRoundEnd !== null && ` · ROUND ENDS IN ${daysUntilRoundEnd}`}
             </div>
@@ -337,7 +337,7 @@ export default function MatchSchedule() {
             {options.map((option) => (
               <div className="sched-option is-static" key={option.id}>
                 <span className="sched-option-time" dir="ltr">
-                  {formatWeekdayDateTime(new Date(option.start_at))}
+                  {formatWeekdayDateTime(new Date(option.start_at), t)}
                 </span>
               </div>
             ))}
@@ -345,7 +345,7 @@ export default function MatchSchedule() {
         ) : (
           <div className="sched-hero">
             <div className="sched-hero-time" dir="ltr">
-              {formatWeekdayDateTime(scheduledDate)}
+              {formatWeekdayDateTime(scheduledDate, t)}
             </div>
             {detail.court && <div className="sched-hero-court">{detail.court}</div>}
           </div>
@@ -372,7 +372,7 @@ export default function MatchSchedule() {
         <button type="button" className="sched-nav-back" onClick={() => navigate(-1)} aria-label={t("חזרה")}>
           <ChevronIcon aria-hidden="true" />
         </button>
-        <span className="sched-nav-label">{t(duePassed ? "REPORT THE RESULT" : "MATCH IS SET")}</span>
+        <span className="sched-nav-label">{t(duePassed ? "דיווח התוצאה" : "המשחק קבוע")}</span>
       </div>
       <h1 className="sched-title">{t("מול {name}", { name: detail.opponent.name })}</h1>
       <p className="sched-sub" dir="ltr">
@@ -388,7 +388,7 @@ export default function MatchSchedule() {
             · R{detail.round_number}
           </>
         ) : (
-          "FRIENDLY"
+          t("ידידותי")
         )}
       </p>
 
@@ -396,12 +396,12 @@ export default function MatchSchedule() {
 
       <div className="sched-hero">
         <div className="sched-hero-time" dir="ltr">
-          {formatWeekdayDateTime(scheduledDate)}
+          {formatWeekdayDateTime(scheduledDate, t)}
         </div>
         {detail.court && <div className="sched-hero-court">{detail.court}</div>}
         <div className="sched-hero-meta" dir="ltr">
           {duePassed
-            ? "TIME HAS PASSED"
+            ? "השעה עברה"
             : daysUntilMatch != null && `IN ${daysUntilMatch} ${daysWord(daysUntilMatch)}`}
           {!duePassed && daysUntilRoundEnd !== null && ` · ROUND ENDS IN ${daysUntilRoundEnd}`}
         </div>

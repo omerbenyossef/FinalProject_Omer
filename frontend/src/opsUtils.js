@@ -7,7 +7,7 @@ function weeksAgoLabel(date) {
   const diffMs = Date.now() - date.getTime();
   const days = Math.round(diffMs / 86400000);
   const weeks = Math.max(1, Math.round(days / 7));
-  return weeks === 1 ? "1 WEEK AGO" : `${weeks} WEEKS AGO`;
+  return weeks === 1 ? "לפני שבוע" : `${weeks} WEEKS AGO`;
 }
 
 export function opsTagText(item, t) {

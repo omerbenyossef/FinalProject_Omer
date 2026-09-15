@@ -114,7 +114,7 @@ export default function ConfirmResult() {
 
         <h1 className="sched-title">{t("{name} מדווח/ת שהמשחק לא בוצע", { name: detail.opponent.name })}</h1>
         <p className="sched-sub" dir="ltr">
-          {detail.scheduled_at && formatWeekdayTime(new Date(detail.scheduled_at))}
+          {detail.scheduled_at && formatWeekdayTime(new Date(detail.scheduled_at), t)}
         </p>
 
         {error && <p className="error">{t(error)}</p>}
@@ -154,9 +154,9 @@ export default function ConfirmResult() {
             · R{detail.round_number}
           </>
         ) : (
-          "FRIENDLY"
+          t("ידידותי")
         )}
-        {detail.scheduled_at && ` · ${formatWeekdayTime(new Date(detail.scheduled_at))}`}
+        {detail.scheduled_at && ` · ${formatWeekdayTime(new Date(detail.scheduled_at), t)}`}
       </p>
 
       {error && <p className="error">{t(error)}</p>}

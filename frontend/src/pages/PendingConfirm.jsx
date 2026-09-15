@@ -13,11 +13,11 @@ function dayMonth(date) {
   return `${String(date.getDate()).padStart(2, "0")}.${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
 
-function daysAgoLabel(date) {
+function daysAgoLabel(date, t) {
   const days = Math.max(0, Math.floor((Date.now() - date.getTime()) / 86400000));
-  if (days === 0) return "TODAY";
-  if (days === 1) return "1 DAY AGO";
-  return `${days} DAYS AGO`;
+  if (days === 0) return t("היום");
+  if (days === 1) return t("לפני יום");
+  return t("לפני {n} ימים", { n: days });
 }
 
 function remindedToday(value) {
@@ -135,7 +135,7 @@ export default function PendingConfirm() {
     detail.round_number ? <span key="round">R{detail.round_number}</span> : null,
     detail.scheduled_at ? (
       <span key="date">
-        {weekdayShort(new Date(detail.scheduled_at))} {dayMonth(new Date(detail.scheduled_at))}
+        {weekdayShort(new Date(detail.scheduled_at), t)} {dayMonth(new Date(detail.scheduled_at))}
       </span>
     ) : null,
   ].filter(Boolean);
@@ -218,7 +218,7 @@ export default function PendingConfirm() {
               <div className="pc-row">
                 <span className="pc-label">{t("נשלח")}</span>
                 <span className="pc-value pc-sent" dir="ltr">
-                  {dayMonth(reportedAt)} · {daysAgoLabel(reportedAt)}
+                  {dayMonth(reportedAt)} · {daysAgoLabel(reportedAt, t)}
                 </span>
               </div>
             )}

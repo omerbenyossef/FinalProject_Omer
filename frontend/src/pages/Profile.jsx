@@ -123,7 +123,7 @@ function ToPlayCard({
   // hometoplaycardfix.md — the card is a full NTRP/HEAD TO HEAD/TIME table
   // (quick scanning across the carousel), not a single compact meta line.
   const leagueLine = isFriendly ? (
-    `FRIENDLY · ${pendingInvite ? "INVITED" : "ACCEPTED"}`
+    `FRIENDLY · ${pendingInvite ? t("הוזמן") : t("אושר")}`
   ) : (
     <>
       R{m.round_number} ·{" "}
@@ -135,7 +135,7 @@ function ToPlayCard({
   const myNtrpText = myNtrp != null ? myNtrp.toFixed(1) : "—";
   const oppNtrpText = oppNtrp != null ? oppNtrp.toFixed(1) : "—";
   const h2hText = `${h2h?.wins ?? 0}-${h2h?.losses ?? 0}`;
-  const timeText = m.scheduled_at ? formatWeekdayDateTime(new Date(m.scheduled_at)) : "not set";
+  const timeText = m.scheduled_at ? formatWeekdayDateTime(new Date(m.scheduled_at), t) : "not set";
   // Once a match has been reported the scheduled time is beside the point, and
   // leaving it there reads as "you still have to play this". Say what is
   // actually pending instead.
@@ -314,7 +314,7 @@ function SoloLeagueHero({ league, members, standings, t }) {
   const levelByUser = new Map((standings || []).map((r) => [r.user.id, r.level]));
 
   const openLine = [
-    league.starts_at ? `R1 OPENS ${weekdayShort(new Date(league.starts_at))}` : null,
+    league.starts_at ? `R1 OPENS ${weekdayShort(new Date(league.starts_at), t)}` : null,
     capacity != null ? `${joined} OF ${capacity} JOINED` : `${joined} JOINED`,
   ]
     .filter(Boolean)
@@ -704,7 +704,7 @@ export default function Profile() {
           <div className="home-name-row">
             <h1 className="home-name">{user.name}</h1>
             {(isNoLeague || isRoundNotOpened) && (
-              <span className="home-tag">{isNoLeague ? "DAY 1" : "1 LEAGUE"}</span>
+              <span className="home-tag">{isNoLeague ? "DAY 1" : t("ליגה אחת")}</span>
             )}
 
           </div>

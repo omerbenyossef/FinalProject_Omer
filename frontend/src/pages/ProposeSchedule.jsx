@@ -4,9 +4,8 @@ import { api } from "../api";
 import { useLanguage } from "../LanguageContext.jsx";
 import { ChevronIcon, CheckIcon } from "../Icons.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
-import { roundDueDateObj, hasHebrewChars, daysWord } from "../matchUtils.js";
+import { roundDueDateObj, hasHebrewChars, daysWord, weekdayName } from "../matchUtils.js";
 
-const WEEKDAY_SHORT = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
 function buildDayOptions(roundEndDate, roundStartDate) {
   // The window opens today, unless the match belongs to a round that hasn't
@@ -240,7 +239,7 @@ export default function ProposeSchedule() {
               })()}
           </>
         ) : (
-          "FRIENDLY"
+          t("ידידותי")
         )}
       </p>
 
@@ -263,7 +262,7 @@ export default function ProposeSchedule() {
               disabled={nothingLeft}
               onClick={() => setSelectedDay(d)}
             >
-              <span className="sched-day-weekday">{WEEKDAY_SHORT[d.getDay()]}</span>
+              <span className="sched-day-weekday">{weekdayName(d, t)}</span>
               <span className="sched-day-date">{d.getDate()}</span>
               {picksOn(d) > 0 && <span className="sched-day-picks">{picksOn(d)}</span>}
             </button>

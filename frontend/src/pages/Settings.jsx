@@ -8,11 +8,12 @@ import { getExistingSubscription, isPushSupported, subscribeToPush, unsubscribeF
 import PageHelp from "../PageHelp.jsx";
 import Toggle from "../Toggle.jsx";
 import RatingQuestionnaire from "../RatingQuestionnaire.jsx";
+import { monthName } from "../matchUtils.js";
 
 const PROVISIONAL_MATCHES = 3;
 
-function monthAbbrev(dateStr) {
-  return new Date(dateStr).toLocaleString("en-US", { month: "short" }).toUpperCase();
+function monthAbbrev(dateStr, t) {
+  return monthName(new Date(dateStr), t);
 }
 
 export default function Settings() {
@@ -96,7 +97,7 @@ export default function Settings() {
                     n: Math.max(0, PROVISIONAL_MATCHES - myRating.rated_matches),
                   })
                 : myRating.finalized_at
-                ? t("FINAL SINCE {month}", { month: monthAbbrev(myRating.finalized_at) })
+                ? t("FINAL SINCE {month}", { month: monthAbbrev(myRating.finalized_at, t) })
                 : t("FINAL")}
             </div>
             <p className="settings-level-note">{t("הרמה נקבעת מהתוצאות שלך, לא נקבעת ידנית.")}</p>
@@ -145,9 +146,10 @@ function LanguageChip() {
     setLanguage(language === "en" ? "he" : "en");
   }
 
+  // The chip names the language it is in, so it never translates itself.
   return (
     <button type="button" className="settings-chip" onClick={cycle}>
-      {language === "en" ? "Language: English" : "שפה: עברית"}
+      {language === "en" ? "English" : "עברית"}
     </button>
   );
 }
@@ -525,7 +527,7 @@ function QuietHoursRow({ user, onSave }) {
   );
 }
 
-// settings114b.md — "Leave a league": one league leaves directly to the
+// settings114b.md — t("יציאה מליגה"): one league leaves directly to the
 // confirm sheet, two or more show a small pick list first (same pattern as
 // the tabbar's single-vs-multi open-item routing).
 function LeaveLeagueRow() {

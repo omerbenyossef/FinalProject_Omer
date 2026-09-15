@@ -83,7 +83,7 @@ export default function RescheduleRound() {
     rounds.original_round ? <span key="round">R{rounds.original_round}</span> : null,
     detail?.scheduled_at ? (
       <span key="date">
-        {weekdayShort(new Date(detail.scheduled_at))} {dayMonth(detail.scheduled_at)}
+        {weekdayShort(new Date(detail.scheduled_at), t)} {dayMonth(detail.scheduled_at)}
       </span>
     ) : null,
   ].filter(Boolean);

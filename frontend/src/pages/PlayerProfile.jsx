@@ -6,17 +6,16 @@ import { useSport } from "../SportContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import { ChevronIcon } from "../Icons.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
-import { formatSets } from "../matchUtils.js";
+import { formatSets, monthName } from "../matchUtils.js";
 
-const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 
-function joinedLabel(joinedAt) {
+function joinedLabel(joinedAt, t) {
   const d = new Date(joinedAt);
-  return `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+  return t("הצטרף ב-{month} {year}", { month: monthName(d, t), year: d.getFullYear() });
 }
 
-function leagueCountLabel(n) {
-  return `${n} LEAGUE${n === 1 ? "" : "S"}`;
+function leagueCountLabel(n, t) {
+  return n === 1 ? t("ליגה אחת") : t("{n} ליגות", { n });
 }
 
 export default function PlayerProfile() {
@@ -96,7 +95,7 @@ export default function PlayerProfile() {
         </span>
       </h1>
       <p className="pp-sub" dir="ltr">
-        {leagueCountLabel(profile.league_count)} · JOINED {joinedLabel(profile.joined_at)}
+        {leagueCountLabel(profile.league_count, t)} · {joinedLabel(profile.joined_at, t)}
       </p>
 
       <div className="pp-stats">
@@ -153,7 +152,7 @@ export default function PlayerProfile() {
               <div className="pp-meetings-label">{t("LAST MEETINGS")}</div>
               {recentMeetings.map((m) => {
                 const iWon = m.my_score > m.opponent_score;
-                const context = m.kind === "friendly" ? "Friendly" : `${m.league_name} · R${m.round_number}`;
+                const context = m.kind === "friendly" ? t("ידידותי") : `${m.league_name} · R${m.round_number}`;
                 return (
                   <div className="pp-meeting-row" key={m.id}>
                     <span className={`pp-meeting-badge${iWon ? " win" : " loss"}`}>{iWon ? "W" : "L"}</span>
@@ -186,8 +185,9 @@ export default function PlayerProfile() {
                   {l.name}
                 </span>
               </span>
-              <span className="pp-shared-ranks" dir="ltr">
-                YOU {l.my_rank != null ? `#${l.my_rank}` : "—"} · HIM {l.opponent_rank != null ? `#${l.opponent_rank}` : "—"}
+              <span className="pp-shared-ranks">
+                {t("אתה")} {l.my_rank != null ? `#${l.my_rank}` : "—"} ·{" "}
+                {t("הוא")} {l.opponent_rank != null ? `#${l.opponent_rank}` : "—"}
               </span>
             </div>
           ))}

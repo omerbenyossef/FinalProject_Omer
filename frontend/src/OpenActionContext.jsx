@@ -54,7 +54,7 @@ export function OpenActionProvider({ children }) {
   // The tab-bar button lives in the layout, so it never remounts and used to
   // keep advertising work that was already done — every screen had to remember
   // to call reload() after acting, and a screen that forgot (or acted without
-  // navigating) left "REPORT VS ..." sitting there. Refetching on every route
+  // navigating) left "דווח תוצאה" sitting there. Refetching on every route
   // change covers all of them; an action that doesn't navigate still calls
   // reload() itself.
   useEffect(() => {

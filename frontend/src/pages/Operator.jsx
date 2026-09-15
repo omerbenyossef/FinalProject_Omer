@@ -9,9 +9,9 @@ import { opsTagText, opsReasonLine, opsProgress, opsHealthyLine } from "../opsUt
 const HEALTHY_VISIBLE = 3;
 const RANGE_KEYS = ["week", "month", "all"];
 const RANGE_LABELS = {
-  week: "THIS WEEK",
-  month: "THIS MONTH",
-  all: "ALL TIME",
+  week: "השבוע",
+  month: "החודש",
+  all: "מאז ומתמיד",
 };
 
 export default function Operator() {

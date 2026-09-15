@@ -78,7 +78,7 @@ export default function Invites() {
               </div>
               <div className="needs-item-context" dir="auto">
                 {m.scheduled_at
-                  ? formatWeekdayDateTime(new Date(m.scheduled_at))
+                  ? formatWeekdayDateTime(new Date(m.scheduled_at), t)
                   : t("הזמין/ה אותך למשחק ידידותי")}
               </div>
               <div className="needs-item-actions">

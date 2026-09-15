@@ -423,7 +423,7 @@ export default function LeagueDetail() {
       myNextMatch.player1.id === user?.id ? myNextMatch.player2 : myNextMatch.player1;
     if (myNextMatch.scheduled_at) {
       // Already set and still ahead — nothing to press, just say when.
-      leagueActionSub = [formatWeekdayDateTime(new Date(myNextMatch.scheduled_at)), myNextMatch.court]
+      leagueActionSub = [formatWeekdayDateTime(new Date(myNextMatch.scheduled_at), t), myNextMatch.court]
         .filter(Boolean)
         .join(" · ");
     } else {
@@ -1006,7 +1006,13 @@ function AddRoundConfirmSheet({ nextRound, roundsToCreate, pairs, dueDate, busy,
 }
 
 
-const FX_STATUS_TAG = { no_time: "NO TIME", sent: "SENT", asked_you: "ASKED YOU", set: "SET" };
+// The tag words themselves, translated where they are rendered.
+const FX_STATUS_TAG = {
+  no_time: "אין שעה",
+  sent: "נשלחה הצעה",
+  asked_you: "הציעו לך",
+  set: "קבוע",
+};
 
 // 149a — my own match in the shown round, lifted out of the fixtures list into
 // its own block at the top of the tab. Every action that used to live inside
@@ -1068,7 +1074,7 @@ function MyMatchBlock({
     );
   }
 
-  const when = match.scheduled_at ? formatWeekdayTime(new Date(match.scheduled_at)) : "";
+  const when = match.scheduled_at ? formatWeekdayTime(new Date(match.scheduled_at), t) : "";
   const claimSets = mine(match.corrected_sets ?? match.sets);
   const finalSets = mine(match.sets);
   const iWon =
@@ -1318,7 +1324,9 @@ function FixtureRow({
           )
         ) : mine && rowStatus ? (
           <span className={`fx-sched-tag${rowStatus === "asked_you" || rowStatus === "set" ? " bright" : ""}`} dir="ltr">
-            {rowStatus === "no_time" ? FX_STATUS_TAG.no_time : `${formatWeekdayTime(new Date(match.scheduled_at))} · ${FX_STATUS_TAG[rowStatus]}`}
+            {rowStatus === "no_time"
+              ? t(FX_STATUS_TAG.no_time)
+              : `${formatWeekdayTime(new Date(match.scheduled_at), t)} · ${t(FX_STATUS_TAG[rowStatus])}`}
           </span>
         ) : mine ? (
           <span className="state open">{t("לשחק")}</span>

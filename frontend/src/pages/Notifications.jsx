@@ -5,25 +5,26 @@ import { useLanguage } from "../LanguageContext.jsx";
 import { useOpenAction } from "../OpenActionContext.jsx";
 import { ChevronIcon } from "../Icons.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
-import { formatWeekdayDateTime } from "../matchUtils.js";
+import { formatWeekdayDateTime, weekdayName } from "../matchUtils.js";
 
-const WEEKDAY_SHORT = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const MAX_CARDS = 3;
 
 // notifications155a.md: no "2 hours ago" anywhere — an age, a weekday, or a
 // date, whichever is the shortest true answer.
-function stamp(value) {
+function stamp(value, t) {
   const date = new Date(value);
   const diff = Date.now() - date.getTime();
-  if (diff < 86400000) return `${Math.max(1, Math.round(diff / 3600000))}H`;
-  if (diff < 7 * 86400000) return WEEKDAY_SHORT[date.getDay()];
+  if (diff < 86400000)
+    // The stamp column is narrow — an age, not a sentence.
+    return t("{n} ש׳", { n: Math.max(1, Math.round(diff / 3600000)) });
+  if (diff < 7 * 86400000) return weekdayName(date, t);
   return `${String(date.getDate()).padStart(2, "0")}.${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
 
 // Scores and times arrive as values, not as text: they have to be formatted in
 // the viewer's own timezone and set as isolated LTR runs, or "6-4 6-3" and
 // "THU 10.9 · 22:00" come out backwards inside a Hebrew sentence.
-function renderBody(item, english) {
+function renderBody(item, english, t) {
   const body = english && item.body_en ? item.body_en : item.body;
   return body.split(/(\{score\}|\{time\}|\{count\})/).map((part, i) => {
     if (part === "{score}") {
@@ -36,7 +37,7 @@ function renderBody(item, english) {
     if (part === "{time}") {
       return (
         <span key={i} className="nt-mono" dir="ltr">
-          {item.time ? formatWeekdayDateTime(new Date(item.time)) : ""}
+          {item.time ? formatWeekdayDateTime(new Date(item.time), t) : ""}
         </span>
       );
     }
@@ -170,7 +171,7 @@ export default function Notifications() {
           <button type="button" className="nt-back" onClick={() => navigate(-1)} aria-label={t("חזרה")}>
             <ChevronIcon aria-hidden="true" />
           </button>
-          <span className="nt-nav-label">NOTIFICATIONS</span>
+          <span className="nt-nav-label">{t("התראות")}</span>
         </div>
 
         {nothingAtAll ? (
@@ -201,14 +202,12 @@ export default function Notifications() {
               <div className="nt-card" key={item.id}>
                 <div className="nt-card-meta">
                   <span className="nt-dot" aria-hidden="true" />
-                  <span className="nt-card-type" dir="ltr">
-                    {item.type}
-                  </span>
+                  <span className="nt-card-type">{t(item.type)}</span>
                   <span className="nt-card-age" dir="ltr">
-                    {stamp(item.created_at)}
+                    {stamp(item.created_at, t)}
                   </span>
                 </div>
-                <p className="nt-card-body">{renderBody(item, language === "en")}</p>
+                <p className="nt-card-body">{renderBody(item, language === "en", t)}</p>
                 <div className="nt-card-actions">
                   <button
                     type="button"
@@ -256,7 +255,7 @@ export default function Notifications() {
                 >
                   <span className="nt-row-text">{renderUpdate(item)}</span>
                   <span className="nt-row-stamp" dir="ltr">
-                    {stamp(item.created_at)}
+                    {stamp(item.created_at, t)}
                   </span>
                 </Tag>
               );
