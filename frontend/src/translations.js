@@ -1245,6 +1245,17 @@ const PAIRS = [
   ["תוצאה מחכה לאישור שלך", "A result is waiting for you"],
   ["התראות עוד לא מוגדרות בשרת", "Notifications aren't set up on the server yet"],
   ["בדיקת התראה", "Test notification"],
+  ["שנודיע לך על המשחקים שלך?", "Want us to tell you about your matches?"],
+  [
+    "כשקובעים לך משחק, כשמחכים לאישור שלך, וכשמחזור נפתח.",
+    "When a match is set for you, when a result waits on you, and when a round opens.",
+  ],
+  ["רגע...", "One sec..."],
+  [
+    "לא הצלחנו להפעיל התראות, אפשר לנסות שוב",
+    "We couldn't turn notifications on — you can try again",
+  ],
+  ["כן", "Yes"],
   ["שלח", "Send"],
   ["נשלחה התראת בדיקה", "Test notification sent"],
   ["המכשיר הזה לא רשום להתראות", "This device isn't registered for notifications"],

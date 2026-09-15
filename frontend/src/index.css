@@ -7806,3 +7806,18 @@ button:active { transform: translateY(1px); }
   cursor: pointer;
 }
 .pp-photo-error { font: 500 12px "IBM Plex Sans", var(--sans); color: #ff8a8a; }
+
+/* The notification ask reuses the install banner's shape; its own accent is
+   the lime button, since this is the one banner we want answered. */
+.push-banner .install-banner-icon { color: var(--court); }
+/* .btn-bright is a full-width CTA everywhere else, and it is declared after
+   .btn-small, so the size has to be set here. */
+.push-banner .btn-bright {
+  flex: none;
+  width: auto;
+  padding: 8px 15px;
+  font-size: 12.5px;
+  white-space: nowrap;
+  /* "כן" is two characters, and a 999px radius would round it into a dot. */
+  min-width: 66px;
+}

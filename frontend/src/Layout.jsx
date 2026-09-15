@@ -6,6 +6,7 @@ import { useLanguage } from "./LanguageContext.jsx";
 import { useOpenAction } from "./OpenActionContext.jsx";
 import { ChevronIcon, HomeIcon, RanksIcon, TrophyIcon } from "./Icons.jsx";
 import InstallPrompt from "./InstallPrompt.jsx";
+import PushPrompt from "./PushPrompt.jsx";
 import Onboarding from "./Onboarding.jsx";
 
 const AUTH_PATHS = ["/signin", "/signup", "/forgot-password", "/reset-password"];
@@ -81,6 +82,7 @@ export default function Layout({ children }) {
       </header>
       {user && <Onboarding />}
       {user && <InstallPrompt />}
+      {user && <PushPrompt />}
       <main className="content">{children}</main>
       {user && location.pathname !== "/ops" && !isJoinPreview && !isRanks && (
         <nav className="tabbar">
