@@ -166,6 +166,8 @@ def create_friendly_invite(
         "הזמנה למשחק ידידותי",
         f"{current_user.name} הזמין/ה אותך למשחק ידידותי",
         "/profile",
+        title_en="Friendly invite",
+        body_en=f"{current_user.name} invited you to a friendly match",
     )
     return match
 
@@ -194,6 +196,8 @@ def accept_invite(
         "ההזמנה אושרה",
         f"{current_user.name} אישר/ה את ההזמנה למשחק ידידותי",
         "/profile",
+        title_en="Invite accepted",
+        body_en=f"{current_user.name} accepted your friendly invite",
     )
     return match
 
@@ -231,9 +235,17 @@ def remind_friendly(
         title, body = "תזכורת להזמנה", f"{current_user.name} מזכיר/ה לך לענות להזמנה למשחק ידידותי"
     elif match.status == models.MatchStatus.pending_confirmation:
         title, body = "תזכורת: יש תוצאה לאישור", f"{current_user.name} מזכיר/ה לך לאשר את התוצאה שדווחה"
+        title_en, body_en = (
+            "Reminder: a result to confirm",
+            f"{current_user.name} is reminding you to confirm the reported result",
+        )
     else:
         title, body = "תזכורת למשחק", f"{current_user.name} מזכיר/ה לך לשחק ולדווח את המשחק הידידותי שלכם"
-    notify_user(db, opponent_id, title, body, "/profile")
+        title_en, body_en = (
+            "A match reminder",
+            f"{current_user.name} is reminding you to play your friendly and report it",
+        )
+    notify_user(db, opponent_id, title, body, "/profile", title_en=title_en, body_en=body_en)
     match.last_reminded_at = datetime.utcnow()
     db.commit()
 
@@ -284,6 +296,8 @@ def report_friendly_score(
             "יש תוצאה לאישור",
             f"{current_user.name} דיווח תוצאה למשחק הידידותי שלכם, ומחכה לאישור שלך",
             "/profile",
+            title_en="A result to confirm",
+            body_en=f"{current_user.name} reported a score for your friendly match and is waiting for you",
             type="result_reported",
             actor_name=current_user.name,
             match_id=match.id,
@@ -294,6 +308,10 @@ def report_friendly_score(
             current_user.id,
             match.id,
             f"דיווחת תוצאה במשחק הידידותי מול {opponent.name if opponent else ''}. מחכה לאישור שלו/ה",
+            body_en=(
+                f"You reported the score in your friendly against "
+                f"{opponent.name if opponent else ''}. Waiting for them to confirm"
+            ),
             actor_name=current_user.name,
         )
     else:
@@ -367,5 +385,7 @@ def redeem_invite_link(
         "ההזמנה אושרה",
         f"{current_user.name} נרשם/ה והצטרף/ה למשחק הידידותי",
         "/profile",
+        title_en="Invite accepted",
+        body_en=f"{current_user.name} signed up and joined the friendly match",
     )
     return match

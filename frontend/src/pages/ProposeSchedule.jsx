@@ -231,11 +231,11 @@ export default function ProposeSchedule() {
             ) : (
               detail.league_name?.toUpperCase()
             )}{" "}
-            · R{detail.round_number}
+            · {t("מחזור {n}", { n: detail.round_number })}
             {roundEnd &&
               (() => {
                 const n = Math.max(0, Math.ceil((roundEnd.getTime() - Date.now()) / 86400000));
-                return ` · ENDS IN ${n} ${daysWord(n)}`;
+                return ` · ${t("נסגר בעוד")} ${n} ${daysWord(n, t)}`;
               })()}
           </>
         ) : (
@@ -347,7 +347,7 @@ export default function ProposeSchedule() {
           <span className="sched-court-value">{court || t("טרם נקבעה")}</span>
         )}
         <button type="button" className="sched-court-edit" onClick={() => setEditingCourt((v) => !v)}>
-          EDIT
+          {t("עריכה")}
         </button>
       </div>
 

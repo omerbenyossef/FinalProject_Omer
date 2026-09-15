@@ -227,6 +227,7 @@ def list_notifications(
             league_id=row.league_id,
             match_id=row.match_id,
             body=row.body,
+            body_en=row.body_en,
             created_at=row.created_at,
             read_at=row.read_at,
         )

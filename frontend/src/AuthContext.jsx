@@ -28,6 +28,12 @@ export function AuthProvider({ children }) {
       .me()
       .then((userData) => {
         setUser(userData);
+        // Keep the stored language in step with the one this device reads in,
+        // so pushes written on the server arrive in the right language.
+        const chosen = localStorage.getItem("rally-language") || "he";
+        if ((userData.language || "he") !== chosen) {
+          api.updateProfile({ language: chosen }).catch(() => {});
+        }
       })
       .catch(() => {
         if (!timedOut) localStorage.removeItem("token");

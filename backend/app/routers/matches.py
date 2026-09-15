@@ -96,6 +96,8 @@ def _auto_confirm_overdue(db: Session) -> None:
                     type="auto_confirmed",
                     league_id=match.league_id,
                     match_id=match.id,
+                    title_en="Match closed automatically",
+                    body_en="The result wasn't confirmed in time, so your match was locked automatically and counted",
                 )
         for match in voided:
             url = f"/leagues/{match.league_id}" if match.league_id else "/profile"
@@ -109,6 +111,8 @@ def _auto_confirm_overdue(db: Session) -> None:
                     type="match_voided",
                     league_id=match.league_id,
                     match_id=match.id,
+                    title_en="Match voided automatically",
+                    body_en="Nobody answered the report that the match wasn't played, so it was voided and won't count",
                 )
 
     _auto_remind_overdue_matches(db)
@@ -157,6 +161,8 @@ def _auto_remind_overdue_matches(db: Session) -> None:
                     type="report_reminder",
                     league_id=match.league_id,
                     match_id=match.id,
+                    title_en="Reminder: a match to report",
+                    body_en="Your match has already passed and no result was reported",
                 )
 
 
@@ -205,6 +211,11 @@ def _auto_remind_pending_proposals(db: Session) -> None:
                 if count > 1
                 else f"{name} מחכה לתשובה שלך על השעה שהציע/ה למשחק שלכם"
             )
+            body_en = (
+                f"{name} is waiting for your answer on the {count} times they proposed"
+                if count > 1
+                else f"{name} is waiting for your answer on the time they proposed"
+            )
             notify_user(
                 db,
                 recipient_id,
@@ -216,6 +227,8 @@ def _auto_remind_pending_proposals(db: Session) -> None:
                 actor_name=name,
                 league_id=match.league_id,
                 match_id=match.id,
+                title_en="A time proposal is waiting",
+                body_en=body_en,
             )
 
 
@@ -257,6 +270,8 @@ def _auto_void_abandoned_friendlies(db: Session) -> None:
                     "/profile",
                     type="match_voided",
                     match_id=match.id,
+                    title_en="Match voided automatically",
+                    body_en="Your match is long past its time and nobody reported it, so it was voided and won't count",
                 )
 
     # The other half: friendlies that never reached a confirmed time at all.
@@ -423,8 +438,10 @@ def generate_schedule(
             round_number = round_by_member.get(member_id)
             if opponent_name and round_number:
                 body = f"מחזור {round_number} נפתח. היריב שלך: {opponent_name}"
+                body_en = f"Round {round_number} is open. Your opponent: {opponent_name}"
             else:
                 body = f"נוצר לוח משחקים חדש בליגה {league.name}"
+                body_en = f"A new schedule was created in {league.name}"
             notify_user(
                 db,
                 member_id,
@@ -434,6 +451,8 @@ def generate_schedule(
                 category="round_open",
                 type="round_open",
                 league_id=league.id,
+                title_en="A new schedule",
+                body_en=body_en,
             )
 
     return created
@@ -531,6 +550,8 @@ def report_score(
         actor_name=current_user.name,
         league_id=league_id,
         match_id=match.id,
+        title_en="A result to confirm",
+        body_en=f"{current_user.name} reported a score for your match and is waiting for you",
     )
     resolve_match_notifications(
         db,
@@ -539,6 +560,7 @@ def report_score(
         f"דיווחת תוצאה במשחק מול {opponent.name if opponent else ''}. מחכה לאישור שלו/ה",
         league_id=league_id,
         actor_name=current_user.name,
+        body_en=f"You reported the score against {opponent.name if opponent else ''}. Waiting for them to confirm",
     )
 
     return match

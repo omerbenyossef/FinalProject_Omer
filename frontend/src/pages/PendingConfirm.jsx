@@ -132,7 +132,7 @@ export default function PendingConfirm() {
     ) : (
       <span key="league">{t("משחק ידידותי")}</span>
     ),
-    detail.round_number ? <span key="round">R{detail.round_number}</span> : null,
+    detail.round_number ? <span key="round">{t("מחזור {n}", { n: detail.round_number })}</span> : null,
     detail.scheduled_at ? (
       <span key="date">
         {weekdayShort(new Date(detail.scheduled_at), t)} {dayMonth(new Date(detail.scheduled_at))}

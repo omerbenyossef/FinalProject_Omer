@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { translate } from "./translations.js";
+import { api } from "./api";
 
 const STORAGE_KEY = "rally-language";
 const LanguageContext = createContext(null);
@@ -19,6 +20,12 @@ export function LanguageProvider({ children }) {
   function setLanguage(next) {
     localStorage.setItem(STORAGE_KEY, next);
     setLanguageState(next);
+    // The server writes push notifications, so it has to know which language
+    // this player reads. Best effort: a signed-out visitor has nothing to
+    // save, and a failure here only affects the phone, not the app.
+    if (localStorage.getItem("token")) {
+      api.updateProfile({ language: next }).catch(() => {});
+    }
   }
 
   function t(text, params) {

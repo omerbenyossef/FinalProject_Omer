@@ -195,12 +195,12 @@ export default function MatchSchedule() {
               ) : (
                 detail.league_name?.toUpperCase()
               )}{" "}
-              · R{detail.round_number}
+              · {t("מחזור {n}", { n: detail.round_number })}
             </>
           ) : (
             t("ידידותי")
           )}
-          {detail.schedule_proposed_at && ` · ${timeAgoLabel(new Date(detail.schedule_proposed_at))}`}
+          {detail.schedule_proposed_at && ` · ${timeAgoLabel(new Date(detail.schedule_proposed_at), t)}`}
         </p>
 
         {error && <p className="error">{t(error)}</p>}
@@ -243,7 +243,7 @@ export default function MatchSchedule() {
             <div className="sched-hero-meta" dir="ltr">
               {proposalExpired
                 ? "השעה עברה"
-                : daysUntilMatch != null && `IN ${daysUntilMatch} ${daysWord(daysUntilMatch)}`}
+                : daysUntilMatch != null && `${t("בעוד")} ${daysUntilMatch} ${daysWord(daysUntilMatch, t)}`}
               {!proposalExpired && daysUntilRoundEnd !== null && ` · ROUND ENDS IN ${daysUntilRoundEnd}`}
             </div>
           </div>
@@ -385,7 +385,7 @@ export default function MatchSchedule() {
             ) : (
               detail.league_name?.toUpperCase()
             )}{" "}
-            · R{detail.round_number}
+            · {t("מחזור {n}", { n: detail.round_number })}
           </>
         ) : (
           t("ידידותי")
@@ -402,7 +402,7 @@ export default function MatchSchedule() {
         <div className="sched-hero-meta" dir="ltr">
           {duePassed
             ? "השעה עברה"
-            : daysUntilMatch != null && `IN ${daysUntilMatch} ${daysWord(daysUntilMatch)}`}
+            : daysUntilMatch != null && `${t("בעוד")} ${daysUntilMatch} ${daysWord(daysUntilMatch, t)}`}
           {!duePassed && daysUntilRoundEnd !== null && ` · ROUND ENDS IN ${daysUntilRoundEnd}`}
         </div>
       </div>

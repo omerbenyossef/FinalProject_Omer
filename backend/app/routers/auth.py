@@ -62,7 +62,9 @@ def update_profile(
     # settings114b.md: each identity row saves on its own, so only the field
     # actually sent gets applied — the others stay untouched.
     data = payload.dict(exclude_unset=True)
-    for field in ("name", "age", "area", "travel_radius_km"):
+    if data.get("language") not in (None, "he", "en"):
+        raise HTTPException(status_code=400, detail="שפה לא נתמכת")
+    for field in ("name", "age", "area", "travel_radius_km", "language"):
         if field in data:
             setattr(current_user, field, data[field])
     db.commit()

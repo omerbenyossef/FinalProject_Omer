@@ -13,6 +13,7 @@ from sqlalchemy import (
     UniqueConstraint,
     Float,
     Boolean,
+    Text,
 )
 from sqlalchemy.orm import relationship
 
@@ -56,6 +57,8 @@ class User(Base):
     deleted_at = Column(DateTime, nullable=True)
     area = Column(String, nullable=True)
     travel_radius_km = Column(Float, nullable=True)
+    # "he" (the default) or "en" — set from the app when the reader switches.
+    language = Column(String, nullable=True)
     notify_time_proposals = Column(Boolean, nullable=False, default=True)
     notify_round_opens = Column(Boolean, nullable=False, default=True)
     quiet_hours_from = Column(String, nullable=True, default="22:00")
@@ -285,6 +288,9 @@ class Notification(Base):
     # Only round_open is tappable on the screen.
     type = Column(String, nullable=False, default="update")
     actor_name = Column(String, nullable=True)
+    # The same line in English. Written at event time, because the wording is
+    # built from state that has moved on by the time anyone reads the row.
+    body_en = Column(Text, nullable=True)
     league_id = Column(Integer, ForeignKey("leagues.id"), nullable=True)
     match_id = Column(Integer, ForeignKey("matches.id"), nullable=True)
     # A finished sentence, built on the server — the client never assembles

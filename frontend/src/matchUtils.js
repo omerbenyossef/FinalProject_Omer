@@ -104,20 +104,23 @@ export function daysLeftLabel(daysLeft) {
 }
 
 // "1 DAY" vs "N DAYS" — shared by the schedule flow's mono meta lines.
-export function daysWord(n) {
-  return n === 1 ? "DAY" : "DAYS";
+export function daysWord(n, t) {
+  if (!t) return n === 1 ? "DAY" : "DAYS";
+  return n === 1 ? t("יום") : t("ימים");
 }
 
 // Always-English "2 DAYS AGO" label for the schedule flow's mono meta lines
 // (see daysLeftLabel above for the same pattern applied to due dates).
-export function timeAgoLabel(date) {
+export function timeAgoLabel(date, t) {
+  const say = (text, params) => (t ? t(text, params) : text);
   const diffMs = Date.now() - date.getTime();
   const minutes = Math.round(diffMs / 60000);
-  if (minutes < 60) return minutes <= 1 ? "JUST NOW" : `${minutes} MIN AGO`;
+  if (minutes < 60)
+    return minutes <= 1 ? say("ממש עכשיו") : say("לפני {n} דקות", { n: minutes });
   const hours = Math.round(minutes / 60);
-  if (hours < 24) return hours === 1 ? "1 HOUR AGO" : `${hours} HOURS AGO`;
+  if (hours < 24) return hours === 1 ? say("לפני שעה") : say("לפני {n} שעות", { n: hours });
   const days = Math.round(hours / 24);
-  return days === 1 ? "1 DAY AGO" : `${days} DAYS AGO`;
+  return days === 1 ? say("לפני יום") : say("לפני {n} ימים", { n: days });
 }
 
 // State machine for the "schedule a time before you can report a score" gate:

@@ -80,7 +80,7 @@ export default function RescheduleRound() {
         {detail.league_name}
       </span>
     ) : null,
-    rounds.original_round ? <span key="round">R{rounds.original_round}</span> : null,
+    rounds.original_round ? <span key="round">{t("מחזור {n}", { n: rounds.original_round })}</span> : null,
     detail?.scheduled_at ? (
       <span key="date">
         {weekdayShort(new Date(detail.scheduled_at), t)} {dayMonth(detail.scheduled_at)}

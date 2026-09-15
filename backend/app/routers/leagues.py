@@ -928,6 +928,8 @@ def _join_league_core(
             type="member_joined",
             actor_name=current_user.name,
             league_id=league.id,
+            title_en="A new member joined",
+            body_en=f"{current_user.name} joined {league.name}",
         )
 
     return _to_league_out(league)

@@ -151,7 +151,7 @@ export default function ConfirmResult() {
             ) : (
               detail.league_name?.toUpperCase()
             )}{" "}
-            · R{detail.round_number}
+            · {t("מחזור {n}", { n: detail.round_number })}
           </>
         ) : (
           t("ידידותי")

@@ -416,6 +416,8 @@ def _auto_decline_conflicting_proposals(db: Session, match: models.Match, start:
                 type="time_dropped",
                 league_id=other.league_id,
                 match_id=other.id,
+                title_en="Time proposal cancelled",
+                body_en="The time proposed for your match is no longer free, so the proposal was cancelled",
             )
         other.scheduled_at = None
         other.scheduled_by = None
@@ -511,6 +513,11 @@ def propose_match_schedule(
         if len(starts) == 1
         else f"{current_user.name} הציע/ה {len(starts)} זמנים למשחק שלכם, בחר/י אחד מהם"
     )
+    body_en = (
+        f"{current_user.name} proposed a time for your match and is waiting for you"
+        if len(starts) == 1
+        else f"{current_user.name} proposed {len(starts)} times for your match — pick one"
+    )
     notify_user(
         db,
         opponent_id,
@@ -522,6 +529,8 @@ def propose_match_schedule(
         actor_name=current_user.name,
         league_id=match.league_id,
         match_id=match.id,
+        title_en="A time for your match",
+        body_en=body_en,
     )
 
     return match
@@ -583,6 +592,8 @@ def confirm_match_schedule(
         actor_name=current_user.name,
         league_id=match.league_id,
         match_id=match.id,
+        title_en="Time confirmed",
+        body_en=f"{current_user.name} confirmed the time you proposed",
     )
     resolve_match_notifications(
         db,
@@ -591,6 +602,7 @@ def confirm_match_schedule(
         f"אישרת את הזמן למשחק מול {proposer.name if proposer else ''}",
         league_id=match.league_id,
         actor_name=current_user.name,
+        body_en=f"You confirmed the time for your match against {proposer.name if proposer else ''}",
     )
 
     return match
@@ -630,6 +642,8 @@ def decline_match_schedule(
         actor_name=current_user.name,
         league_id=match.league_id,
         match_id=match.id,
+        title_en="Time proposal cancelled",
+        body_en=f"{current_user.name} cancelled the time proposal for your match",
     )
 
     return match
@@ -686,6 +700,8 @@ def report_match_not_played(
         actor_name=current_user.name,
         league_id=match.league_id,
         match_id=match.id,
+        title_en="Reported as not played",
+        body_en=f"{current_user.name} says your match never happened, and is waiting for your answer",
     )
     opponent = match.player2 if current_user.id == match.player1_id else match.player1
     resolve_match_notifications(
@@ -695,6 +711,7 @@ def report_match_not_played(
         f"דיווחת שהמשחק מול {opponent.name if opponent else ''} לא התקיים. מחכה לאישור שלו/ה",
         league_id=match.league_id,
         actor_name=current_user.name,
+        body_en=f"You reported that your match against {opponent.name if opponent else ''} never happened. Waiting for their answer",
     )
 
     return match
@@ -861,6 +878,8 @@ def reschedule_to_round(
         actor_name=current_user.name,
         league_id=match.league_id,
         match_id=match.id,
+        title_en="Match moved to another round",
+        body_en=f"{current_user.name} moved your match to round {match.round_number}. Now you need to set a time",
     )
     resolve_match_notifications(
         db,
@@ -869,6 +888,7 @@ def reschedule_to_round(
         f"העברת את המשחק מול {opponent.name if opponent else ''} למחזור {match.round_number}",
         league_id=match.league_id,
         actor_name=current_user.name,
+        body_en=f"You moved your match against {opponent.name if opponent else ''} to round {match.round_number}",
     )
 
     return match
@@ -929,6 +949,8 @@ def confirm_result(
             actor_name=current_user.name,
             league_id=match.league_id,
             match_id=match.id,
+            title_en="Confirmed as not played",
+            body_en=f"{current_user.name} confirmed your match never happened — it is voided and won't count",
         )
         resolve_match_notifications(
             db,
@@ -937,6 +959,7 @@ def confirm_result(
             f"אישרת שהמשחק מול {other.name if other else ''} לא התקיים. הוא לא ייספר בתוצאות",
             league_id=match.league_id,
             actor_name=current_user.name,
+            body_en=f"You confirmed that your match against {other.name if other else ''} never happened. It won't count",
         )
         return match
 
@@ -958,12 +981,16 @@ def confirm_result(
         .order_by(models.RatingSample.id.desc())
         .first()
     )
+    level_note_en = ""
     if sample:
         direction = "עלה" if sample.level_after > sample.level_before else "ירד"
+        direction_en = "went up" if sample.level_after > sample.level_before else "went down"
         if abs(sample.level_after - sample.level_before) < 0.005:
             level_note = f". הדירוג שלך נשאר {sample.level_after:.1f}"
+            level_note_en = f". Your rating stays {sample.level_after:.1f}"
         else:
             level_note = f". הדירוג שלך {direction} ל־{sample.level_after:.1f}"
+            level_note_en = f". Your rating {direction_en} to {sample.level_after:.1f}"
     notify_user(
         db,
         other_id,
@@ -974,6 +1001,8 @@ def confirm_result(
         actor_name=current_user.name,
         league_id=match.league_id,
         match_id=match.id,
+        title_en="Result confirmed",
+        body_en=f"The result against {current_user.name} is confirmed{level_note_en}",
     )
     resolve_match_notifications(
         db,
@@ -982,6 +1011,7 @@ def confirm_result(
         f"אישרת את התוצאה מול {other.name if other else ''}",
         league_id=match.league_id,
         actor_name=current_user.name,
+        body_en=f"You confirmed the result against {other.name if other else ''}",
     )
 
     return match
@@ -1037,6 +1067,8 @@ def dispute_result(
         actor_name=current_user.name,
         league_id=match.league_id,
         match_id=match.id,
+        title_en="A correction to the result",
+        body_en=f"{current_user.name} sent a correction to the score you reported, and is waiting for your answer",
     )
     resolve_match_notifications(
         db,
@@ -1045,6 +1077,7 @@ def dispute_result(
         f"ביקשת לתקן את התוצאה מול {reporter.name if reporter else ''}. מחכה לתשובה שלו/ה",
         league_id=match.league_id,
         actor_name=current_user.name,
+        body_en=f"You asked to correct the result against {reporter.name if reporter else ''}. Waiting for their answer",
     )
 
     return match
@@ -1073,6 +1106,8 @@ def reject_correction(
         "המשחק נכנס למחלוקת",
         f"{current_user.name} דחה/תה את התיקון שלך — המשחק לא ייספר בטבלה",
         f"/matches/{match.id}",
+        title_en="The match is in dispute",
+        body_en=f"{current_user.name} rejected your correction — the match won't count in the table",
     )
 
     return match

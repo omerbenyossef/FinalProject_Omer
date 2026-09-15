@@ -53,9 +53,11 @@ function renderBody(item, english, t) {
 }
 
 // The one piece of emphasis an update line gets: whoever it is about.
-function renderUpdate(item) {
-  if (!item.actor_name || !item.body.includes(item.actor_name)) return item.body;
-  return item.body.split(item.actor_name).flatMap((part, i) =>
+function renderUpdate(item, english) {
+  // Each row was written in both languages at event time; the reader picks.
+  const body = english && item.body_en ? item.body_en : item.body;
+  if (!item.actor_name || !body.includes(item.actor_name)) return body;
+  return body.split(item.actor_name).flatMap((part, i) =>
     i === 0
       ? [part]
       : [
@@ -253,7 +255,7 @@ export default function Notifications() {
                   className={`nt-row${item.read_at ? "" : " unread"}${tappable ? " is-link" : ""}`}
                   onClick={tappable ? () => navigate(`/leagues/${item.league_id}?tab=matches`) : undefined}
                 >
-                  <span className="nt-row-text">{renderUpdate(item)}</span>
+                  <span className="nt-row-text">{renderUpdate(item, language === "en")}</span>
                   <span className="nt-row-stamp" dir="ltr">
                     {stamp(item.created_at, t)}
                   </span>

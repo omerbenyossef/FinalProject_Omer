@@ -611,7 +611,7 @@ export default function LeagueDetail() {
                         {r.status === "completed" ? (r.won ? "W" : "L") : "–"}
                       </span>
                       <span className="ms-strip-num" dir="ltr">
-                        R{r.round}
+                        {t("מחזור {n}", { n: r.round })}
                       </span>
                     </div>
                   ))}

@@ -316,6 +316,8 @@ def remind_opponent(
         actor_name=current_user.name,
         league_id=match.league_id,
         match_id=match.id,
+        title_en="A nudge from your opponent",
+        body_en=f"{current_user.name} is waiting for your answer on your match",
     )
 
     return _item(match, current_user.id)[1]

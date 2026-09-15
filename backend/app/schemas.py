@@ -68,6 +68,9 @@ class UpdateProfileRequest(BaseModel):
     age: Optional[int] = None
     area: Optional[str] = None
     travel_radius_km: Optional[float] = None
+    # "he" or "en" — which language this player reads the app in, so pushes
+    # can be written in it.
+    language: Optional[str] = None
 
 
 class UpdateNotificationPreferencesRequest(BaseModel):
@@ -130,6 +133,7 @@ class UserOut(BaseModel):
     is_admin: bool = False
     # my-profile-171a shows the month the player joined.
     created_at: Optional[UtcDatetime] = None
+    language: Optional[str] = None
     area: Optional[str] = None
     travel_radius_km: Optional[float] = None
     notify_time_proposals: bool = True

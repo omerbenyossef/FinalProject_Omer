@@ -63,6 +63,7 @@ def log_notification(
     user_id: int,
     body: str,
     *,
+    body_en: str | None = None,
     type: str = "update",
     url: str | None = None,
     actor_name: str | None = None,
@@ -76,6 +77,7 @@ def log_notification(
     row = models.Notification(
         user_id=user_id,
         type=type,
+        body_en=body_en,
         actor_name=actor_name,
         league_id=league_id,
         match_id=match_id,
@@ -94,6 +96,7 @@ def resolve_match_notifications(
     match_id: int,
     body: str,
     *,
+    body_en: str | None = None,
     league_id: int | None = None,
     actor_name: str | None = None,
 ) -> None:
@@ -108,6 +111,7 @@ def resolve_match_notifications(
         db,
         user_id,
         body,
+        body_en=body_en,
         type="acted",
         match_id=match_id,
         league_id=league_id,
@@ -124,6 +128,8 @@ def notify_user(
     url: str = "/",
     category: str | None = None,
     *,
+    title_en: str | None = None,
+    body_en: str | None = None,
     type: str = "update",
     actor_name: str | None = None,
     league_id: int | None = None,
@@ -145,6 +151,7 @@ def notify_user(
         db,
         user_id,
         body,
+        body_en=body_en,
         type=type,
         url=url,
         actor_name=actor_name,
@@ -158,6 +165,10 @@ def notify_user(
         return
     if _within_quiet_hours(user):
         return
+
+    # The phone speaks the language the reader picked in the app.
+    if user.language == "en" and body_en:
+        title, body = title_en or title, body_en
 
     subscriptions = db.query(models.PushSubscription).filter(models.PushSubscription.user_id == user_id).all()
     for subscription in subscriptions:

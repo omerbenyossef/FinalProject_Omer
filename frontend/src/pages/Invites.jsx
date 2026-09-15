@@ -66,7 +66,7 @@ export default function Invites() {
               <div className="needs-item-head">
                 <span className="needs-item-type">{t("FRIENDLY INVITE")}</span>
                 <span className="needs-item-age" dir="ltr">
-                  {timeAgoLabel(new Date(m.created_at))}
+                  {timeAgoLabel(new Date(m.created_at), t)}
                 </span>
               </div>
               <div className="needs-item-opponent">

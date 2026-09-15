@@ -126,7 +126,7 @@ function ToPlayCard({
     `FRIENDLY · ${pendingInvite ? t("הוזמן") : t("אושר")}`
   ) : (
     <>
-      R{m.round_number} ·{" "}
+      {t("מחזור {n}", { n: m.round_number })} ·{" "}
       <span dir="auto" style={{ unicodeBidi: "isolate" }}>
         {(entry.league_name || "").toUpperCase()}
       </span>

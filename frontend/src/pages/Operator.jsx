@@ -161,7 +161,7 @@ export default function Operator() {
           <div className="ops-footer">
             <span>{t("READ ONLY")}</span>
             <span dir="ltr">
-              {t("UPDATED")} {fetchedAt ? timeAgoLabel(fetchedAt) : ""}
+              {t("UPDATED")} {fetchedAt ? timeAgoLabel(fetchedAt, t) : ""}
             </span>
           </div>
         </>
