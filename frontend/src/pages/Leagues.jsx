@@ -8,7 +8,7 @@ import { useOpenAction } from "../OpenActionContext.jsx";
 import EmptyState from "../EmptyState.jsx";
 import { TrophyIcon, ChevronIcon, PlusIcon, RanksIcon } from "../Icons.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
-import { leagueRuleLabels, NTRP_STEPS, currentRoundNumber, weekdayShort } from "../matchUtils.js";
+import { leagueRuleLabels, NTRP_STEPS, currentRoundNumber } from "../matchUtils.js";
 import RatingQuestionnaire from "../RatingQuestionnaire.jsx";
 
 // "3RD" reads as a placing in English. Hebrew has no ordinal suffix, so it
@@ -115,30 +115,30 @@ const OPEN_OPTIONS = [
   [false, "בהזמנה בלבד"],
   [true, "פתוחה לכולם"],
 ];
-const START_SUNDAYS = 3;
-
-// A round runs Sunday to Saturday, so a league opens on a Sunday: the next one
-// from today (today itself, if today is Sunday) or one of the two after it.
-function nextSundays(count = START_SUNDAYS, from = new Date()) {
-  const first = new Date(from.getFullYear(), from.getMonth(), from.getDate());
-  first.setDate(first.getDate() + ((7 - first.getDay()) % 7));
-  return Array.from({ length: count }, (_, i) => {
-    const day = new Date(first);
-    day.setDate(day.getDate() + i * 7);
-    return day;
-  });
-}
-
-// Local calendar day, not toISOString — that shifts to UTC and can land on
-// the Saturday before.
+// Local calendar day, not toISOString — that shifts to UTC and can land on the
+// day before.
 function isoDay(date) {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${date.getFullYear()}-${month}-${day}`;
 }
 
-function dayMonth(date) {
-  return `${String(date.getDate()).padStart(2, "0")}.${String(date.getMonth() + 1).padStart(2, "0")}`;
+// Spelled out in the reader's own language, so nothing rests on whether the
+// date field shows dd/mm or mm/dd.
+function longDate(value, language) {
+  return new Date(value).toLocaleDateString(language === "en" ? "en-GB" : "he-IL", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+}
+
+// A league opens whenever its creator wants. The next Sunday is only the
+// default, because a round that starts on one runs a whole week.
+function nextSunday(from = new Date()) {
+  const day = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+  day.setDate(day.getDate() + ((7 - day.getDay()) % 7));
+  return day;
 }
 
 export default function Leagues() {
@@ -154,7 +154,7 @@ export default function Leagues() {
   const [isOpen, setIsOpen] = useState(false);
   const [levelMin, setLevelMin] = useState(1.5);
   const [levelMax, setLevelMax] = useState(5.5);
-  const [startsAt, setStartsAt] = useState(() => isoDay(nextSundays()[0]));
+  const [startsAt, setStartsAt] = useState(() => isoDay(nextSunday()));
   const [submitting, setSubmitting] = useState(false);
   const [sheetError, setSheetError] = useState("");
   const [showRatingGate, setShowRatingGate] = useState(false);
@@ -227,7 +227,7 @@ export default function Leagues() {
     setIsOpen(false);
     setLevelMin(1.5);
     setLevelMax(5.5);
-    setStartsAt(isoDay(nextSundays()[0]));
+    setStartsAt(isoDay(nextSunday()));
     setSheetError("");
     setShowSheet(true);
   }
@@ -534,28 +534,25 @@ export default function Leagues() {
               </>
             )}
 
-            {/* A league opens on a Sunday, so the only choice is which one —
-                a free date field could open a league mid-round. */}
-            <div className="sheet-label">{t("תאריך פתיחה")}</div>
-            <div className="sheet-chips">
-              {nextSundays().map((day) => {
-                const value = isoDay(day);
-                return (
-                  <button
-                    type="button"
-                    key={value}
-                    onClick={() => setStartsAt(value)}
-                    className={`sheet-chip${startsAt === value ? " on" : ""}`}
-                  >
-                    <span>{weekdayShort(day, t)}</span>{" "}
-                    <span dir="ltr" style={{ unicodeBidi: "isolate" }}>
-                      {dayMonth(day)}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-            <p className="sheet-sub">{t("ליגות נפתחות ביום ראשון, כדי שכל מחזור יהיה שבוע שלם.")}</p>
+            {/* Any day, with the next Sunday filled in to start from. The line
+                underneath spells the date out, so the field's own dd/mm-or-
+                mm/dd ordering can't be read the wrong way round. */}
+            <label className="sheet-label" htmlFor="league-starts-at">
+              {t("תאריך פתיחה")}
+            </label>
+            <input
+              id="league-starts-at"
+              type="date"
+              className="sheet-input"
+              value={startsAt}
+              min={isoDay(new Date())}
+              onChange={(e) => setStartsAt(e.target.value)}
+            />
+            <p className="sheet-sub">
+              {startsAt
+                ? t("המחזור הראשון נפתח ב{date}", { date: longDate(startsAt, language) })
+                : t("בחר את היום שבו המחזור הראשון נפתח.")}
+            </p>
 
             {sheetError && <p className="error">{t(sheetError)}</p>}
 

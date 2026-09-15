@@ -21,3 +21,19 @@ services:
         fromDatabase:
           name: league-db
           property: connectionString
+      # Web push. Without a private key the app still records every
+      # notification, it just never leaves the server — push_utils prints it
+      # and returns. Set the pair in the dashboard; sync:false keeps the
+      # private key out of the repo.
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_SUBJECT
+        sync: false
+      # Whose account may create a public league, matched on email.
+      - key: ADMIN_EMAIL
+        sync: false
+      # Where a password-reset link points, once mail works.
+      - key: FRONTEND_URL
+        sync: false

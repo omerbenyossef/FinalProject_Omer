@@ -12,7 +12,11 @@ from ..rating_utils import update_ratings_for_match
 
 router = APIRouter(prefix="/leagues/{league_id}/matches", tags=["matches"])
 
-CONFIRMATION_WINDOW = timedelta(hours=48)
+# How long silence takes to finalize a reported result. Nobody asked for it to
+# happen, so the window is long enough that a player who only opens the app
+# every couple of days still gets a say, and _auto_remind_pending_confirmations
+# nags them each day until it closes.
+CONFIRMATION_WINDOW = timedelta(hours=72)
 REMIND_COOLDOWN = timedelta(hours=1)
 AUTO_REMIND_INTERVAL = timedelta(hours=24)
 MAX_AUTO_REMINDS = 3
@@ -116,8 +120,68 @@ def _auto_confirm_overdue(db: Session) -> None:
                 )
 
     _auto_remind_overdue_matches(db)
+    _auto_remind_pending_confirmations(db)
     _auto_remind_pending_proposals(db)
     _auto_void_abandoned_friendlies(db)
+
+
+def _auto_remind_pending_confirmations(db: Session) -> None:
+    """Companion sweep: a reported result finalizes on its own once its window
+    runs out, and the only notice the player owing an answer used to get was
+    the one sent the moment it was reported. Nag them every 24h while the
+    window is open, so nothing goes final on someone who never heard."""
+    now = datetime.utcnow()
+    threshold = now - AUTO_REMIND_INTERVAL
+    waiting = (
+        db.query(models.Match)
+        .filter(
+            models.Match.status == models.MatchStatus.pending_confirmation,
+            models.Match.auto_confirm_at.isnot(None),
+            models.Match.auto_confirm_at > now,
+            or_(
+                models.Match.confirm_remind_count.is_(None),
+                models.Match.confirm_remind_count < MAX_AUTO_REMINDS,
+            ),
+            or_(
+                models.Match.confirm_reminded_at.is_(None),
+                models.Match.confirm_reminded_at <= threshold,
+            ),
+            # Nothing to nag about in the first day — they were told when it
+            # was reported.
+            models.Match.auto_confirm_at <= now + CONFIRMATION_WINDOW - AUTO_REMIND_INTERVAL,
+        )
+        .all()
+    )
+    for match in waiting:
+        match.confirm_remind_count = (match.confirm_remind_count or 0) + 1
+        match.confirm_reminded_at = now
+    if not waiting:
+        return
+    db.commit()
+    for match in waiting:
+        # Whoever moved last isn't the one being waited on: normally that's the
+        # reporter, but once a correction is in it's the reporter who owes the
+        # answer.
+        owes_answer = match.reported_by if match.corrected_sets is not None else (
+            match.player2_id if match.reported_by == match.player1_id else match.player1_id
+        )
+        other = match.player2 if owes_answer == match.player1_id else match.player1
+        hours_left = max(1, int((match.auto_confirm_at - now).total_seconds() // 3600))
+        notify_user(
+            db,
+            owes_answer,
+            "תוצאה מחכה לאישור שלך",
+            f"התוצאה מול {other.name} עוד מחכה לתשובה שלך. בעוד {hours_left} שעות היא תאושר מעצמה.",
+            f"/matches/{match.id}",
+            type="confirm_reminder",
+            league_id=match.league_id,
+            match_id=match.id,
+            title_en="A result is waiting for you",
+            body_en=(
+                f"Your result against {other.name} is still waiting on your answer."
+                f" In {hours_left} hours it confirms on its own."
+            ),
+        )
 
 
 def _auto_remind_overdue_matches(db: Session) -> None:

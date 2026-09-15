@@ -191,6 +191,11 @@ class Match(Base):
     dispute_note = Column(String, nullable=True)
     disputed_at = Column(DateTime, nullable=True)
     last_reminded_at = Column(DateTime, nullable=True)
+    # The nag for a result waiting on the other side's answer keeps its own
+    # counter: auto_remind_count belongs to the "you haven't reported yet" nag,
+    # and a match passes through both.
+    confirm_remind_count = Column(Integer, nullable=True)
+    confirm_reminded_at = Column(DateTime, nullable=True)
     auto_remind_count = Column(Integer, default=0, nullable=False)
     # Separate counters for nagging about an unanswered time proposal: that
     # phase happens before the match, the result reminders after it, and one

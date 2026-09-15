@@ -595,8 +595,8 @@ const PAIRS = [
     "{count} from earlier rounds still aren't counted in the table. Until they close they don't affect your rating."],
   ["משחק אחד ממחזורים קודמים עוד לא נספר בטבלה. עד שייסגר הוא לא משפיע על הדירוג.",
     "One match from an earlier round still isn't counted in the table. Until it closes it doesn't affect your rating."],
-  ["תוצאה שדווחה ולא אושרה נסגרת אוטומטית אחרי 48 שעות, לפי הדיווח.",
-    "A reported result that isn't confirmed closes automatically after 48 hours, as reported."],
+  ["תוצאה שדווחה ולא אושרה נסגרת אוטומטית אחרי 72 שעות, לפי הדיווח.",
+    "A reported result that isn't confirmed closes automatically after 72 hours, as reported."],
   ["{n} משחקים", "{n} matches"],
   ["שני משחקים", "Two matches"],
   ["שלושה משחקים", "Three matches"],
@@ -1242,6 +1242,13 @@ const PAIRS = [
   ["התמונה גדולה מדי", "That image is too large"],
   ["אפשר להעלות תמונה בפורמט JPEG, PNG או WebP", "Photos can be JPEG, PNG or WebP"],
   ["אין תמונה לשחקן הזה", "That player has no photo"],
+  ["תוצאה מחכה לאישור שלך", "A result is waiting for you"],
+  ["התראות עוד לא מוגדרות בשרת", "Notifications aren't set up on the server yet"],
+  ["בדיקת התראה", "Test notification"],
+  ["שלח", "Send"],
+  ["נשלחה התראת בדיקה", "Test notification sent"],
+  ["המכשיר הזה לא רשום להתראות", "This device isn't registered for notifications"],
+  ["לא הצלחנו לשלוח התראה למכשיר הזה", "We couldn't send a notification to this device"],
 
   // Onboarding, screen 3 — the three tabs
   [
@@ -1253,10 +1260,8 @@ const PAIRS = [
     "Every match still open \u2014 a result to report, a result to confirm, or a round that ended with no score. Split into what's waiting on you and what's waiting on them.",
   ],
   ["תאריך פתיחה", "Start date"],
-  [
-    "ליגות נפתחות ביום ראשון, כדי שכל מחזור יהיה שבוע שלם.",
-    "Leagues open on a Sunday, so every round is a full week.",
-  ],
+  ["המחזור הראשון נפתח ב{date}", "The first round opens on {date}"],
+  ["בחר את היום שבו המחזור הראשון נפתח.", "Pick the day the first round opens."],
 ];
 
 const heToEn = {};

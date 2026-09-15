@@ -390,6 +390,7 @@ function NotificationsSection({ user, updateUser }) {
   const { t } = useLanguage();
   const [supported, setSupported] = useState(true);
   const [subscribed, setSubscribed] = useState(false);
+  const [tested, setTested] = useState("");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -441,6 +442,22 @@ function NotificationsSection({ user, updateUser }) {
     }
   }
 
+  // Whoever sets the keys up can't see someone else's phone, so the only way
+  // to know push actually arrives is to ask for one.
+  async function sendTest() {
+    setError("");
+    setTested("");
+    setBusy(true);
+    try {
+      const data = await api.testPush();
+      setTested(data.message);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <>
       <div className="settings-detail-row">
@@ -449,6 +466,15 @@ function NotificationsSection({ user, updateUser }) {
           <Toggle className="settings-toggle" checked={subscribed} onChange={togglePush} disabled={busy} label={t("התראות במכשיר")} />
         )}
       </div>
+
+      {subscribed && (
+        <div className="settings-detail-row">
+          <div className="settings-detail-title">{tested ? t(tested) : t("בדיקת התראה")}</div>
+          <button type="button" className="link-btn" onClick={sendTest} disabled={busy}>
+            {t("שלח")}
+          </button>
+        </div>
+      )}
 
       <div className="settings-detail-row">
         <div className="settings-detail-title">{t("תוצאה לאישור")}</div>

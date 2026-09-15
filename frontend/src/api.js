@@ -70,6 +70,7 @@ export const api = {
     }),
   myStats: (sportId) => request(`/auth/me/stats${sportId ? `?sport_id=${sportId}` : ""}`),
   updateProfile: (fields) => request("/auth/me", { method: "PATCH", body: fields }),
+  testPush: () => request("/push/test", { method: "POST" }),
   setMyPhoto: (dataUrl) => request("/auth/me/photo", { method: "PUT", body: { data_url: dataUrl } }),
   deleteMyPhoto: () => request("/auth/me/photo", { method: "DELETE" }),
   updateNotificationPreferences: (fields) =>

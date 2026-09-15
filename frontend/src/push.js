@@ -20,7 +20,9 @@ export async function getExistingSubscription() {
 export async function subscribeToPush() {
   const registration = await navigator.serviceWorker.ready;
   const { key } = await api.getVapidKey();
-  if (!key) throw new Error("Push not configured on server");
+  // The server has no VAPID key, so there is nothing to subscribe to. Said in
+  // Hebrew because this string is shown to the user through t().
+  if (!key) throw new Error("התראות עוד לא מוגדרות בשרת");
 
   const subscription = await registration.pushManager.subscribe({
     userVisibleOnly: true,
