@@ -20,6 +20,9 @@ export default function Layout({ children }) {
   // the topbar (its roster scrolls, its footer holds the only action), so the
   // tab bar would just be a second bottom bar competing with it.
   const isJoinPreview = /^\/leagues\/\d+\/preview$/.test(location.pathname);
+  // ranks-entry-173: the rankings are pushed over the profile, not a tab —
+  // the only way out is back.
+  const isRanks = location.pathname === "/ranks";
 
   if (isAuthRoute) {
     return <main className="content auth-content">{children}</main>;
@@ -74,7 +77,7 @@ export default function Layout({ children }) {
       {user && <Onboarding />}
       {user && <InstallPrompt />}
       <main className="content">{children}</main>
-      {user && location.pathname !== "/ops" && !isJoinPreview && (
+      {user && location.pathname !== "/ops" && !isJoinPreview && !isRanks && (
         <nav className="tabbar">
           <div className="tabbar-row">
             <div className={`tabbar-inner${openAction ? "" : " wide"}`}>

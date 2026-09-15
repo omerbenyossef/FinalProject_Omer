@@ -6,7 +6,7 @@ import { useSport } from "../SportContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import { useOpenAction } from "../OpenActionContext.jsx";
 import EmptyState from "../EmptyState.jsx";
-import { TrophyIcon, ChevronIcon, PlusIcon } from "../Icons.jsx";
+import { TrophyIcon, ChevronIcon, PlusIcon, RanksIcon } from "../Icons.jsx";
 import { SkeletonBar, SkeletonLeagueCard } from "../Skeleton.jsx";
 import {
   leagueRuleLabels,
@@ -422,6 +422,17 @@ export default function Leagues() {
           <EmptyState icon={<TrophyIcon aria-hidden="true" />}>{t("אין כרגע ליגות פתוחות.")}</EmptyState>
         )}
       </div>
+
+      {/* ranks-entry-173: the secondary way into the rankings, for whoever is
+          looking for new opponents rather than their own number. */}
+      <Link to="/ranks" className="lg-ranks-row">
+        <RanksIcon className="lg-ranks-icon" aria-hidden="true" />
+        <span className="lg-ranks-text">
+          <span className="lg-ranks-title">{t("כל השחקנים לפי רמה")}</span>
+          <span className="lg-ranks-sub">{t("גם מחוץ לליגות שלך")}</span>
+        </span>
+        <ChevronIcon className="lg-ranks-chev" aria-hidden="true" />
+      </Link>
 
       {showSheet && (
         <div className="sheet-backdrop" onClick={closeSheet}>

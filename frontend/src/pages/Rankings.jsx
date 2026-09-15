@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext.jsx";
 import { useSport } from "../SportContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
@@ -7,7 +7,7 @@ import { api } from "../api.js";
 import { SkeletonBar } from "../Skeleton.jsx";
 import EmptyState from "../EmptyState.jsx";
 import EmptyLine from "../EmptyLine.jsx";
-import { ChevronDownIcon, CheckIcon, RanksIcon } from "../Icons.jsx";
+import { ChevronDownIcon, ChevronIcon, CheckIcon, RanksIcon } from "../Icons.jsx";
 
 const SORT_KEY = "rally.ranks.sort";
 const PAGE_LIMIT = 50;
@@ -16,9 +16,12 @@ function fmtNum(n) {
   return n.toLocaleString("en-US");
 }
 
+// ranks-entry-173: a bar is a level on the 1.0–7.0 scale, not a share of the
+// leader's — that's what makes two rows comparable and keeps half a level the
+// same distance everywhere. Nobody reaches full width.
 function barPct(entry, sort) {
   if (!entry) return 0;
-  if (sort === "ntrp") return Math.max(0, Math.min(100, ((entry.ntrp - 1.5) / (7.0 - 1.5)) * 100));
+  if (sort === "ntrp") return Math.max(0, Math.min(100, Math.round((entry.ntrp / 7) * 100)));
   return Math.max(0, Math.min(100, entry.win_pct));
 }
 
@@ -26,6 +29,7 @@ export default function Rankings() {
   const { user } = useAuth();
   const { selectedSportId } = useSport();
   const { t } = useLanguage();
+  const navigate = useNavigate();
 
   const [sort, setSort] = useState(() => localStorage.getItem(SORT_KEY) || "ntrp");
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -144,6 +148,18 @@ export default function Rankings() {
   return (
     <div className="rk-page" ref={pageWrapRef} style={pageHeight ? { height: `${pageHeight}px` } : undefined}>
       <header className="rk-head">
+        <button type="button" className="rk-back" onClick={() => navigate(-1)}>
+          <ChevronIcon aria-hidden="true" />
+          <span>{t("פרופיל")}</span>
+        </button>
+
+        <div className="rk-titlerow">
+          <h1 className="rk-title">{t("דירוג שחקנים")}</h1>
+          {!loading && sportReady && (
+            <span className="rk-scale">{t("{n} שחקנים · 1.0–7.0", { n: fmtNum(total) })}</span>
+          )}
+        </div>
+
         <p className="rk-eyebrow" dir="ltr">
           {t("YOUR PLACE")} · <span dir="auto" style={{ unicodeBidi: "isolate" }}>{me?.display_name ?? user.name}</span>
         </p>
@@ -175,11 +191,7 @@ export default function Rankings() {
         )}
 
         <p className="rk-sortline" dir="ltr">
-          {!loading && sportReady && (
-            <span>
-              {fmtNum(total)} {t("PLAYERS")} · {t("SORTED BY")}
-            </span>
-          )}
+          {!loading && sportReady && <span>{t("SORTED BY")}</span>}
           <button
             type="button"
             className="rk-sort"
@@ -200,7 +212,7 @@ export default function Rankings() {
           </span>
           <span className="rk-col-player">{t("PLAYER")}</span>
           <span className="rk-col-bar" dir="ltr">
-            {sort === "ntrp" ? "1.5 —————— 7.0" : t("WIN %")}
+            {sort === "ntrp" ? "1.0 —————— 7.0" : t("WIN %")}
           </span>
           <span className="rk-col-val" dir="ltr">
             {sort === "ntrp" ? "NTRP" : t("W %")}
@@ -244,7 +256,11 @@ export default function Rankings() {
         {!loading &&
           !error &&
           players.map((p) => (
-            <li className="rk-row" key={p.id} ref={p.id === user.id ? myRowRef : undefined}>
+            <li
+              className={`rk-row${p.rank === 1 ? " is-leader" : ""}`}
+              key={p.id}
+              ref={p.id === user.id ? myRowRef : undefined}
+            >
               <span className="rk-rank" dir="ltr">
                 {p.rank}
               </span>
@@ -327,7 +343,7 @@ export default function Rankings() {
                 <span className="rk-sort-option-text">
                   <span className="rk-sort-option-label">{t("דירוג NTRP")}</span>
                   <span className="rk-sort-option-sub" dir="ltr">
-                    1.5 — 7.0
+                    1.0 — 7.0
                   </span>
                 </span>
                 {sort === "ntrp" && <CheckIcon aria-hidden="true" />}

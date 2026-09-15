@@ -6340,6 +6340,24 @@ button:active { transform: translateY(1px); }
 }
 
 .rk-head { flex: none; padding: 16px 20px 0; }
+/* 173 — pushed over the profile, so it opens with the way back, then its own
+   title and the scale it measures against. */
+.rk-back {
+  display: flex; align-items: center; gap: 9px; border: 0; background: none; padding: 0;
+  font: 500 11px "IBM Plex Mono", "IBM Plex Sans", monospace; letter-spacing: .16em;
+  text-transform: uppercase; color: #84878C; cursor: pointer;
+}
+.rk-back .chevron-icon { width: 20px; height: 20px; }
+[dir="ltr"] .rk-back .chevron-icon { transform: scaleX(-1); }
+.rk-titlerow {
+  margin-top: 26px; display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+}
+.rk-title { margin: 0; font: 400 32px/1 "Anton", var(--display); }
+.rk-scale {
+  flex: none; font: 500 11px "IBM Plex Mono", "IBM Plex Sans", monospace; letter-spacing: .1em;
+  text-transform: uppercase; color: #84878C;
+}
+.rk-eyebrow { margin-top: 22px !important; }
 .rk-eyebrow { margin: 0; font: 500 10px "IBM Plex Mono", "IBM Plex Sans", monospace; letter-spacing: .18em; color: #6f7787; }
 
 .rk-place { margin-top: 12px; display: flex; align-items: flex-end; gap: 11px; }
@@ -6383,7 +6401,8 @@ button:active { transform: translateY(1px); }
 .rk-sub { display: block; margin-top: 4px; font: 500 10.5px "IBM Plex Mono", "IBM Plex Sans", monospace; color: #6f7787; }
 .rk-bar { flex: 1; min-width: 0; height: 3px; border-radius: 3px; background: rgba(148, 163, 184, .13);
   overflow: hidden; }
-.rk-bar i { display: block; height: 100%; border-radius: 3px; background: rgba(201, 207, 219, .55); }
+.rk-bar i { display: block; height: 100%; border-radius: 3px; background: rgba(242, 242, 239, .5); }
+.rk-row.is-leader .rk-bar i { background: #C6F24E; }
 .rk-val { flex: none; width: 40px; text-align: right; font: 500 12.5px "IBM Plex Mono", "IBM Plex Sans", monospace;
   color: #8b93a6; font-variant-numeric: tabular-nums; }
 
@@ -6404,7 +6423,7 @@ button:active { transform: translateY(1px); }
 .rk-me .rk-sub, .rk-me .rk-rank { color: #a3abbb; }
 .rk-me .rk-bar { height: 6px; }
 .rk-me .rk-bar i { background: #eef1f7; }
-.rk-me .rk-val { font-weight: 600; font-size: 14px; color: #eef1f7; }
+.rk-me .rk-val { font-weight: 600; font-size: 14px; color: #C6F24E; }
 .rk-you { font-family: "IBM Plex Sans", var(--sans); font-weight: 500; font-size: 11px; color: #a3abbb; }
 
 .rk-me-note {
@@ -7235,7 +7254,20 @@ button:active { transform: translateY(1px); }
 .hw-tile-pos { flex: none; font: 600 16px "IBM Plex Mono", "IBM Plex Sans", monospace; }
 .hw-tile-size { font: 500 11px "IBM Plex Mono", "IBM Plex Sans", monospace; color: #6E7176; }
 
-/* my-profile-171a — my own profile. Identity, four numbers, settings, out. */
+/* 173 — the rankings row at the foot of the leagues page. */
+.lg-ranks-row {
+  margin: 26px 20px 30px; padding: 17px 0;
+  border-top: 1px solid rgba(148, 163, 184, .16);
+  display: flex; align-items: center; gap: 13px;
+  color: var(--ink); text-decoration: none;
+}
+.lg-ranks-icon { flex: none; width: 22px; height: 22px; color: #c9cfdb; }
+.lg-ranks-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.lg-ranks-title { font: 600 16px "IBM Plex Sans", var(--sans); }
+.lg-ranks-sub { font: 400 13px "IBM Plex Sans", var(--sans); color: #8b93a6; }
+.lg-ranks-chev { flex: none; width: 15px; height: 15px; color: #6f7787; }
+
+/* my-profile-171a — my own profile. Identity, the numbers, settings, out. */
 .app-shell:has(.mp) { height: 100svh; }
 .content:has(.mp) { min-height: 0; padding: 0; display: flex; flex-direction: column; }
 
@@ -7271,7 +7303,23 @@ button:active { transform: translateY(1px); }
 .mp-cell {
   padding: 16px 18px; background: #181B1F; border-radius: 18px;
   display: flex; flex-direction: column; gap: 9px; min-width: 0;
+  border: 0; color: inherit; text-align: start; font: inherit;
 }
+/* 173 — the NTRP cell spans the grid and leads to the rankings; the lime
+   hairline is the only hint besides the chevron. */
+.mp-cell--ntrp {
+  grid-column: 1 / -1; cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(198, 242, 78, .28);
+  flex-direction: row; align-items: center; gap: 16px;
+}
+.mp-ntrp-num { flex: none; display: flex; flex-direction: column; gap: 9px; }
+.mp-ntrp-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.mp-ntrp-title { font: 600 14.5px "IBM Plex Sans", var(--sans); color: #F2F2EF; }
+.mp-ntrp-sub {
+  font: 500 10.5px "IBM Plex Mono", "IBM Plex Sans", monospace; letter-spacing: .06em;
+  color: #84878C; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mp-ntrp-chev { flex: none; width: 15px; height: 15px; color: #84878C; }
 .mp-num {
   font: 400 34px/.85 "Anton", var(--display); letter-spacing: -.01em; color: #F2F2EF;
   text-align: start;

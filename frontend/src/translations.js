@@ -443,6 +443,18 @@ const PAIRS = [
   ["שחקנים תחרותיים", "Competitive players"],
   ["קולג׳, נבחרת או מקצועי", "College, national or professional"],
 
+  // The rankings, reached from the NTRP card (173)
+  ["איפה אני מול כולם", "Where I stand"],
+  ["קבע את הרמה שלך", "Set your level"],
+  ["עוד לא נקבעה רמה", "no level set yet"],
+  ["{rank} מתוך {total} שחקנים", "{rank} of {total} players"],
+  ["עוד משחק אחד", "1 match to go"],
+  ["עוד {n} משחקים", "{n} matches to go"],
+  ["דירוג שחקנים", "RANKS"],
+  ["{n} שחקנים · 1.0–7.0", "{n} players · 1.0–7.0"],
+  ["כל השחקנים לפי רמה", "All players by level"],
+  ["גם מחוץ לליגות שלך", "Beyond your own leagues"],
+
   // The three tabs
   ["בית", "Home"],
   ["רצף ניצחונות", "win streak"],

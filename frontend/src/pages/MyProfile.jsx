@@ -50,6 +50,20 @@ export default function MyProfile() {
   const wins = me?.wins ?? stats?.wins ?? 0;
   const losses = me?.losses ?? stats?.losses ?? 0;
   const streak = streakOf(stats?.recent_matches);
+  const played = me?.matches_played ?? stats?.matches_played ?? 0;
+  const toGo = Math.max(0, (rankings?.min_matches ?? 5) - played);
+  const standingLine = (() => {
+    if (level == null) return t("עוד לא נקבעה רמה");
+    // A level from the questionnaire alone isn't a standing yet: the table
+    // asks for five matches first (the same threshold it ranks records by).
+    if (toGo > 0)
+      return `${t("לא מדורג")} · ${
+        toGo === 1 ? t("עוד משחק אחד") : t("עוד {n} משחקים", { n: toGo })
+      }`;
+    if (me?.rank)
+      return t("{rank} מתוך {total} שחקנים", { rank: me.rank, total: rankings.total });
+    return t("{n} שחקנים", { n: rankings?.total ?? 0 });
+  })();
   const joined = user?.created_at ? new Date(user.created_at) : null;
 
   function handleLogout() {
@@ -78,30 +92,29 @@ export default function MyProfile() {
         </span>
       </div>
 
+      {/* ranks-entry-173: the NTRP card is the way into the rankings — "what
+          does this number mean" and "where am I against everyone" are the same
+          question. It spans the grid and is the only tappable cell. */}
       <div className="mp-grid">
-        <div className="mp-cell">
-          <span className="mp-num lime">
-            <span dir="ltr">{level != null ? level.toFixed(1) : "—"}</span>
+        <button
+          type="button"
+          className="mp-cell mp-cell--ntrp"
+          onClick={() => navigate(level != null ? "/ranks" : "/settings")}
+        >
+          <span className="mp-ntrp-num">
+            <span className={`mp-num${level != null ? " lime" : " dim"}`}>
+              <span dir="ltr">{level != null ? level.toFixed(1) : "—"}</span>
+            </span>
+            <span className="mp-label">{"NTRP"}</span>
           </span>
-          <span className="mp-label">{"NTRP"}</span>
-        </div>
-        <div className="mp-cell">
-          {me?.rank ? (
-            <>
-              <span className="mp-num">
-                <span dir="ltr">{me.rank}</span>
-              </span>
-              <span className="mp-label">{t("דירוג מתוך {n}", { n: rankings.total })}</span>
-            </>
-          ) : (
-            <>
-              <span className="mp-num dim">
-                <span dir="ltr">—</span>
-              </span>
-              <span className="mp-label">{t("ללא דירוג")}</span>
-            </>
-          )}
-        </div>
+          <span className="mp-ntrp-text">
+            <span className="mp-ntrp-title">
+              {level != null ? t("איפה אני מול כולם") : t("קבע את הרמה שלך")}
+            </span>
+            <span className="mp-ntrp-sub">{standingLine}</span>
+          </span>
+          <ChevronIcon className="mp-ntrp-chev" aria-hidden="true" />
+        </button>
         <div className="mp-cell">
           <span className="mp-num">
             <span dir="ltr">
