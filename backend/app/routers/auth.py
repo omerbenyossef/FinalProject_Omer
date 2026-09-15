@@ -1,3 +1,5 @@
+import base64
+import binascii
 import os
 import secrets
 from datetime import datetime, timedelta
@@ -272,6 +274,61 @@ def delete_account(
 
     _delete_user_account(db, current_user)
     return schemas.MessageOut(message="החשבון נמחק בהצלחה")
+
+
+# The client downscales to a small square before sending, so anything much
+# larger than this is a client that didn't — refuse it rather than carry it in
+# every row read.
+MAX_PHOTO_BYTES = 300 * 1024
+PHOTO_TYPES = ("image/jpeg", "image/png", "image/webp")
+
+
+def _decode_data_url(data_url: str) -> tuple[str, bytes]:
+    """Splits "data:<type>;base64,<payload>" into its media type and bytes,
+    raising a 400 for anything that isn't one of the image types we serve."""
+    prefix, _, payload = data_url.partition(",")
+    if not payload or not prefix.startswith("data:") or not prefix.endswith(";base64"):
+        raise HTTPException(status_code=400, detail="קובץ התמונה לא תקין")
+    media_type = prefix[len("data:") : -len(";base64")]
+    if media_type not in PHOTO_TYPES:
+        raise HTTPException(status_code=400, detail="אפשר להעלות תמונה בפורמט JPEG, PNG או WebP")
+    try:
+        raw = base64.b64decode(payload, validate=True)
+    except (binascii.Error, ValueError):
+        raise HTTPException(status_code=400, detail="קובץ התמונה לא תקין")
+    if not raw:
+        raise HTTPException(status_code=400, detail="קובץ התמונה לא תקין")
+    if len(raw) > MAX_PHOTO_BYTES:
+        raise HTTPException(status_code=400, detail="התמונה גדולה מדי")
+    return media_type, raw
+
+
+@router.put("/me/photo", response_model=schemas.UserOut)
+def set_my_photo(
+    payload: schemas.PhotoUploadRequest,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    media_type, raw = _decode_data_url(payload.data_url)
+    # Re-encode from the bytes we validated, so what gets stored is only ever
+    # something this endpoint could decode.
+    current_user.photo = f"data:{media_type};base64," + base64.b64encode(raw).decode()
+    current_user.photo_updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+
+@router.delete("/me/photo", response_model=schemas.UserOut)
+def delete_my_photo(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    current_user.photo = None
+    current_user.photo_updated_at = None
+    db.commit()
+    db.refresh(current_user)
+    return current_user
 
 
 @router.post("/forgot-password", response_model=schemas.ForgotPasswordOut)

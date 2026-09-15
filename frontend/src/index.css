@@ -7748,3 +7748,61 @@ button:active { transform: translateY(1px); }
   gap: 10px; padding: 14px 0; border-top: 1px solid rgba(148, 163, 184, .14); background: var(--paper);
   font: 600 10.5px "IBM Plex Mono", "IBM Plex Sans", monospace; letter-spacing: .1em; color: #6f7787;
 }
+
+/* A player's photo sits inside the same circle the initial does, so every
+   place that draws an avatar keeps its own size and ring. */
+.avatar-photo {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+/* The photo control on /me: the circle is the button, the words beside it say
+   what tapping does and offer the way back to no photo. */
+.pp-photo {
+  flex: none;
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.pp-photo-btn {
+  flex: none;
+  position: relative;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  line-height: 0;
+}
+.pp-photo-btn:disabled { opacity: 0.55; cursor: default; }
+.pp-photo-badge {
+  position: absolute;
+  inset-inline-end: -2px;
+  bottom: -2px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--court);
+  color: var(--court-contrast);
+  box-shadow: 0 0 0 2px #0f1113;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 700 14px/1 "IBM Plex Sans", var(--sans);
+}
+.pp-photo-input { display: none; }
+.pp-photo-side { min-width: 0; display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+.pp-photo-hint { font: 500 13px "IBM Plex Sans", var(--sans); color: #84878c; }
+.pp-photo-remove {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #84878c;
+  font: 500 12px "IBM Plex Sans", var(--sans);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.pp-photo-error { font: 500 12px "IBM Plex Sans", var(--sans); color: #ff8a8a; }

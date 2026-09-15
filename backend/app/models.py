@@ -64,8 +64,25 @@ class User(Base):
     quiet_hours_from = Column(String, nullable=True, default="22:00")
     quiet_hours_to = Column(String, nullable=True, default="08:00")
 
+    # A small square JPEG as a data URL. It lives in the row rather than on
+    # disk because the production filesystem doesn't survive a deploy, and it
+    # is served by its own endpoint so it never rides along in the JSON that
+    # carries a player's name.
+    photo = Column(Text, nullable=True)
+    photo_updated_at = Column(DateTime, nullable=True)
+
     memberships = relationship("LeagueMembership", back_populates="user")
     push_subscriptions = relationship("PushSubscription", back_populates="user")
+
+    @property
+    def photo_url(self) -> str | None:
+        """Where to fetch this player's photo, or None if they have none. The
+        stamp lets the endpoint answer with a far-future cache, since a new
+        photo means a new URL."""
+        if not self.photo:
+            return None
+        stamp = int(self.photo_updated_at.timestamp()) if self.photo_updated_at else 0
+        return f"/players/{self.id}/photo?v={stamp}"
 
     @property
     def is_admin(self) -> bool:

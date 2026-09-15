@@ -45,6 +45,11 @@ class MessageOut(BaseModel):
     message: str
 
 
+class PhotoUploadRequest(BaseModel):
+    # "data:image/jpeg;base64,..." — the client downscales before sending.
+    data_url: str
+
+
 class ForgotPasswordOut(MessageOut):
     # Only set while no mail is configured — see forgot_password.
     reset_token: Optional[str] = None
@@ -138,6 +143,8 @@ class UserOut(BaseModel):
     is_admin: bool = False
     # my-profile-171a shows the month the player joined.
     created_at: Optional[UtcDatetime] = None
+    # Path to the photo endpoint, or None — never the image itself.
+    photo_url: Optional[str] = None
     language: Optional[str] = None
     area: Optional[str] = None
     travel_radius_km: Optional[float] = None

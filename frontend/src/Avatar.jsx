@@ -1,5 +1,8 @@
+import { mediaUrl } from "./api";
+
 export default function Avatar({
   name,
+  photoUrl = null,
   size = 28,
   dim = false,
   icon = null,
@@ -29,9 +32,16 @@ export default function Avatar({
         ...fontStyle,
       };
 
+  const photo = photoUrl ? mediaUrl(photoUrl) : null;
+
   return (
-    <span className="avatar" style={style}>
-      {icon ?? initial}
+    <span className="avatar" style={photo ? sizeStyle : style}>
+      {photo ? (
+        // The initial stays behind it as the fallback if the image 404s.
+        <img className="avatar-photo" src={photo} alt="" />
+      ) : (
+        icon ?? initial
+      )}
     </span>
   );
 }

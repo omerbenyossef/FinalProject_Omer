@@ -6,6 +6,7 @@ import { useSport } from "../SportContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import { SettingsIcon, ChevronIcon } from "../Icons.jsx";
 import { monthName } from "../matchUtils.js";
+import PhotoPicker from "../PhotoPicker.jsx";
 
 // The streak is the run of same-result matches at the top of the history.
 function streakOf(recent) {
@@ -79,6 +80,8 @@ export default function MyProfile() {
           {t("עריכה")}
         </Link>
       </div>
+
+      <PhotoPicker />
 
       <div className="mp-id">
         <h1 className="mp-name">{user?.name}</h1>

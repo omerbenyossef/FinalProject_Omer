@@ -1228,6 +1228,20 @@ const PAIRS = [
   ["אפשר להגדיר סיסמה חדשה", "You can set a new password"],
   ["רגע, בודקים את החשבון", "One moment, checking the account"],
   ["אין חשבון עם האימייל הזה", "There's no account with that email"],
+
+  // Profile photo
+  ["הוספת תמונה", "Add a photo"],
+  ["החלפת תמונה", "Change photo"],
+  ["הסרת התמונה", "Remove photo"],
+  ["התמונה שלך", "Your photo"],
+  ["הוסף תמונה כדי שיזהו אותך", "Add a photo so people recognise you"],
+  ["מעלה...", "Uploading..."],
+  ["לא הצלחנו לקרוא את הקובץ", "That file couldn't be read"],
+  ["הקובץ הזה אינו תמונה", "That file isn't an image"],
+  ["קובץ התמונה לא תקין", "That image file isn't valid"],
+  ["התמונה גדולה מדי", "That image is too large"],
+  ["אפשר להעלות תמונה בפורמט JPEG, PNG או WebP", "Photos can be JPEG, PNG or WebP"],
+  ["אין תמונה לשחקן הזה", "That player has no photo"],
   ["תאריך פתיחה", "Start date"],
   [
     "ליגות נפתחות ביום ראשון, כדי שכל מחזור יהיה שבוע שלם.",

@@ -1,6 +1,8 @@
+import base64
+import binascii
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session, joinedload
 
@@ -207,6 +209,27 @@ def head_to_head(
         )
 
     return schemas.HeadToHeadOut(opponent=opponent, wins=wins, losses=losses, matches=match_list)
+
+
+@router.get("/{player_id}/photo")
+def player_photo(player_id: int, db: Session = Depends(get_db)):
+    """The photo on its own, so a player's name and their picture don't have
+    to travel together. Every URL carries the stamp of the photo it points
+    at, so the answer can be cached for as long as the browser likes."""
+    user = db.query(models.User).filter(models.User.id == player_id).first()
+    if not user or not user.photo:
+        raise HTTPException(status_code=404, detail="אין תמונה לשחקן הזה")
+    prefix, _, payload = user.photo.partition(",")
+    media_type = prefix[len("data:") : -len(";base64")] or "image/jpeg"
+    try:
+        raw = base64.b64decode(payload)
+    except (binascii.Error, ValueError):
+        raise HTTPException(status_code=404, detail="אין תמונה לשחקן הזה")
+    return Response(
+        content=raw,
+        media_type=media_type,
+        headers={"Cache-Control": "public, max-age=31536000, immutable"},
+    )
 
 
 @router.get("/{player_id}", response_model=schemas.PlayerProfileOut)

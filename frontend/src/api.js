@@ -1,5 +1,11 @@
 const API_BASE = import.meta.env.VITE_API_BASE || "https://league-backend-97i9.onrender.com";
 
+// photo_url comes back as a path on the API host, not on the app's own, so
+// anything that puts it in an <img src> has to join it to the base first.
+export function mediaUrl(path) {
+  return path ? `${API_BASE}${path}` : null;
+}
+
 function getToken() {
   return localStorage.getItem("token");
 }
@@ -64,6 +70,8 @@ export const api = {
     }),
   myStats: (sportId) => request(`/auth/me/stats${sportId ? `?sport_id=${sportId}` : ""}`),
   updateProfile: (fields) => request("/auth/me", { method: "PATCH", body: fields }),
+  setMyPhoto: (dataUrl) => request("/auth/me/photo", { method: "PUT", body: { data_url: dataUrl } }),
+  deleteMyPhoto: () => request("/auth/me/photo", { method: "DELETE" }),
   updateNotificationPreferences: (fields) =>
     request("/auth/me/notifications", { method: "PATCH", body: fields }),
   changePassword: (currentPassword, newPassword) =>

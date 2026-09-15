@@ -1,4 +1,5 @@
 import { Link, NavLink, useLocation } from "react-router-dom";
+import { mediaUrl } from "./api";
 import { useAuth } from "./AuthContext.jsx";
 import { useSport } from "./SportContext.jsx";
 import { useLanguage } from "./LanguageContext.jsx";
@@ -36,7 +37,11 @@ export default function Layout({ children }) {
         {user ? (
           <>
             <Link to="/me" className="topbar-avatar" aria-label={t("פרופיל")}>
-              {user.name?.trim()?.[0] ?? "?"}
+              {user.photo_url ? (
+                <img src={mediaUrl(user.photo_url)} alt="" />
+              ) : (
+                user.name?.trim()?.[0] ?? "?"
+              )}
             </Link>
             <div className="wordmark-cluster">
               <span className="wordmark-rally">RALLY</span>
