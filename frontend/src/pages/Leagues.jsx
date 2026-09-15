@@ -8,8 +8,7 @@ import { useOpenAction } from "../OpenActionContext.jsx";
 import EmptyState from "../EmptyState.jsx";
 import { TrophyIcon, ChevronIcon, PlusIcon, RanksIcon } from "../Icons.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
-import { leagueRuleLabels, NTRP_STEPS, currentRoundNumber } from "../matchUtils.js";
-import { getCurrentPosition } from "../geo.js";
+import { leagueRuleLabels, NTRP_STEPS, currentRoundNumber, weekdayShort } from "../matchUtils.js";
 import RatingQuestionnaire from "../RatingQuestionnaire.jsx";
 
 // "3RD" reads as a placing in English. Hebrew has no ordinal suffix, so it
@@ -116,6 +115,31 @@ const OPEN_OPTIONS = [
   [false, "בהזמנה בלבד"],
   [true, "פתוחה לכולם"],
 ];
+const START_SUNDAYS = 3;
+
+// A round runs Sunday to Saturday, so a league opens on a Sunday: the next one
+// from today (today itself, if today is Sunday) or one of the two after it.
+function nextSundays(count = START_SUNDAYS, from = new Date()) {
+  const first = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+  first.setDate(first.getDate() + ((7 - first.getDay()) % 7));
+  return Array.from({ length: count }, (_, i) => {
+    const day = new Date(first);
+    day.setDate(day.getDate() + i * 7);
+    return day;
+  });
+}
+
+// Local calendar day, not toISOString — that shifts to UTC and can land on
+// the Saturday before.
+function isoDay(date) {
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${date.getFullYear()}-${month}-${day}`;
+}
+
+function dayMonth(date) {
+  return `${String(date.getDate()).padStart(2, "0")}.${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
 
 export default function Leagues() {
   const [leagues, setLeagues] = useState([]);
@@ -130,9 +154,7 @@ export default function Leagues() {
   const [isOpen, setIsOpen] = useState(false);
   const [levelMin, setLevelMin] = useState(1.5);
   const [levelMax, setLevelMax] = useState(5.5);
-  const [capacity, setCapacity] = useState("");
-  const [startsAt, setStartsAt] = useState("");
-  const [locationName, setLocationName] = useState("");
+  const [startsAt, setStartsAt] = useState(() => isoDay(nextSundays()[0]));
   const [submitting, setSubmitting] = useState(false);
   const [sheetError, setSheetError] = useState("");
   const [showRatingGate, setShowRatingGate] = useState(false);
@@ -205,9 +227,7 @@ export default function Leagues() {
     setIsOpen(false);
     setLevelMin(1.5);
     setLevelMax(5.5);
-    setCapacity("");
-    setStartsAt("");
-    setLocationName("");
+    setStartsAt(isoDay(nextSundays()[0]));
     setSheetError("");
     setShowSheet(true);
   }
@@ -239,7 +259,6 @@ export default function Leagues() {
     setSheetError("");
     setSubmitting(true);
     try {
-      const position = await getCurrentPosition();
       const league = await api.createLeague({
         name: name.trim(),
         description: "",
@@ -252,11 +271,16 @@ export default function Leagues() {
         // range rather than whatever was left over from a prior open toggle.
         level_min: isOpen ? levelMin : NTRP_STEPS[0],
         level_max: isOpen ? levelMax : NTRP_STEPS[NTRP_STEPS.length - 1],
-        capacity: capacity.trim() ? Number(capacity) : null,
+        // Location and capacity were optional fields nobody filled in on the
+        // way in. They live in league settings now, which is also where the
+        // coordinates are taken (with a location to justify the permission
+        // prompt) — asking for the device's location to create a league held
+        // the button hostage to a prompt for a field that isn't here.
+        capacity: null,
         starts_at: startsAt ? new Date(startsAt).toISOString() : null,
-        location_name: locationName.trim() || null,
-        lat: position?.lat ?? null,
-        lng: position?.lng ?? null,
+        location_name: null,
+        lat: null,
+        lng: null,
       });
       navigate(`/leagues/${league.id}`);
     } catch (err) {
@@ -510,42 +534,28 @@ export default function Leagues() {
               </>
             )}
 
-            <label className="sheet-label" htmlFor="league-location">
-              {t("מיקום (אופציונלי)")}
-            </label>
-            <input
-              id="league-location"
-              type="text"
-              className="sheet-input"
-              value={locationName}
-              onChange={(e) => setLocationName(e.target.value)}
-              placeholder={t("לדוגמה: רמת גן")}
-              maxLength={40}
-            />
-
-            <label className="sheet-label" htmlFor="league-capacity">
-              {t("קיבולת (אופציונלי)")}
-            </label>
-            <input
-              id="league-capacity"
-              type="number"
-              min="2"
-              className="sheet-input"
-              value={capacity}
-              onChange={(e) => setCapacity(e.target.value)}
-              placeholder={t("ללא הגבלה")}
-            />
-
-            <label className="sheet-label" htmlFor="league-starts-at">
-              {t("תאריך פתיחה (אופציונלי)")}
-            </label>
-            <input
-              id="league-starts-at"
-              type="date"
-              className="sheet-input"
-              value={startsAt}
-              onChange={(e) => setStartsAt(e.target.value)}
-            />
+            {/* A league opens on a Sunday, so the only choice is which one —
+                a free date field could open a league mid-round. */}
+            <div className="sheet-label">{t("תאריך פתיחה")}</div>
+            <div className="sheet-chips">
+              {nextSundays().map((day) => {
+                const value = isoDay(day);
+                return (
+                  <button
+                    type="button"
+                    key={value}
+                    onClick={() => setStartsAt(value)}
+                    className={`sheet-chip${startsAt === value ? " on" : ""}`}
+                  >
+                    <span>{weekdayShort(day, t)}</span>{" "}
+                    <span dir="ltr" style={{ unicodeBidi: "isolate" }}>
+                      {dayMonth(day)}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="sheet-sub">{t("ליגות נפתחות ביום ראשון, כדי שכל מחזור יהיה שבוע שלם.")}</p>
 
             {sheetError && <p className="error">{t(sheetError)}</p>}
 

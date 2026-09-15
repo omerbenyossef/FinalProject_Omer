@@ -1221,6 +1221,11 @@ const PAIRS = [
   ["ליגה חדשה", "New league"],
   ["העונה נגמרה", "Season over"],
   ["יש לי משחק", "My match"],
+  ["תאריך פתיחה", "Start date"],
+  [
+    "ליגות נפתחות ביום ראשון, כדי שכל מחזור יהיה שבוע שלם.",
+    "Leagues open on a Sunday, so every round is a full week.",
+  ],
 ];
 
 const heToEn = {};
