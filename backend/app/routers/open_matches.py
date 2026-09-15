@@ -3,9 +3,10 @@ haven't been settled.
 
 The one question this screen answers is *who is holding this up and what can I
 do about it*, so the split into waiting_on_you / waiting_on_them is made here
-and the client never works it out for itself. The sentences come from the
-spec's wording table, finished, with a single {score} placeholder the client
-fills in as an isolated LTR run.
+and the client never works it out for itself. `body` is the spec's wording
+with three placeholders left in it — {name}, {score} and {sent} — because the
+client is the side that knows which language the reader picked and how to
+isolate a score inside the sentence.
 """
 
 from datetime import datetime, timedelta
@@ -53,18 +54,6 @@ def _days_since(value: datetime | None) -> int | None:
     return max(0, (datetime.utcnow() - value).days)
 
 
-def _days_phrase(days: int | None) -> str:
-    if days is None:
-        return ""
-    if days <= 0:
-        return " — נשלח היום."
-    if days == 1:
-        return " — נשלח לפני יום."
-    if days == 2:
-        return " — נשלח לפני יומיים."
-    return f" — נשלח לפני {days} ימים."
-
-
 def _is_open(match: models.Match) -> bool:
     """Has this match's own window closed, so that it is leftover business
     rather than this week's?"""
@@ -110,7 +99,7 @@ def _item(match: models.Match, user_id: int) -> tuple[str, schemas.OpenMatchItem
                         **common,
                         state="not_played_reported",
                         days_waiting=days,
-                        body=f"דיווחת שהמשחק לא שוחק. מחכים לאישור של {name}{_days_phrase(days)}",
+                        body="דיווחת שהמשחק לא שוחק. מחכים לאישור של {name}{sent}",
                     ),
                 )
             return (
@@ -119,7 +108,7 @@ def _item(match: models.Match, user_id: int) -> tuple[str, schemas.OpenMatchItem
                     **common,
                     state="awaiting_my_confirm",
                     days_waiting=days,
-                    body=f"{name} דיווח/ה שהמשחק לא שוחק. צריך שתאשר שזה מה שקרה.",
+                    body="{name} דיווח/ה שהמשחק לא שוחק. צריך שתאשר שזה מה שקרה.",
                 ),
             )
 
@@ -132,7 +121,7 @@ def _item(match: models.Match, user_id: int) -> tuple[str, schemas.OpenMatchItem
                         state="correction_sent",
                         score=corrected_first,
                         days_waiting=_days_since(match.disputed_at),
-                        body=f"שלחת תיקון ל־{{score}}. מחכים לאישור של {name}.",
+                        body="שלחת תיקון ל־{score}. מחכים לאישור של {name}.",
                     ),
                 )
             return (
@@ -142,13 +131,17 @@ def _item(match: models.Match, user_id: int) -> tuple[str, schemas.OpenMatchItem
                     state="awaiting_my_confirm",
                     score=corrected_first,
                     days_waiting=_days_since(match.disputed_at),
-                    body=f"{name} שלח/ה תיקון ל־{{score}}. צריך שתאשר שזו התוצאה.",
+                    body="{name} שלח/ה תיקון ל־{score}. צריך שתאשר שזו התוצאה.",
                 ),
             )
 
         i_won = _winner_is_me(match.sets, i_am_player1)
         if match.reported_by == user_id:
-            opening = "דיווחת ניצחון {score}." if i_won else "דיווחת הפסד {score}."
+            opening = (
+                "דיווחת ניצחון {score}. מחכים לאישור של {name}."
+                if i_won
+                else "דיווחת הפסד {score}. מחכים לאישור של {name}."
+            )
             return (
                 "them",
                 schemas.OpenMatchItemOut(
@@ -156,13 +149,13 @@ def _item(match: models.Match, user_id: int) -> tuple[str, schemas.OpenMatchItem
                     state="awaiting_their_confirm",
                     score=mine_first,
                     days_waiting=days,
-                    body=f"{opening} מחכים לאישור של {name}.",
+                    body=opening,
                 ),
             )
         opening = (
-            f"{name} דיווח/ה שניצחת {{score}}."
+            "{name} דיווח/ה שניצחת {score}. צריך שתאשר שזו התוצאה."
             if i_won
-            else f"{name} דיווח/ה ניצחון {{score}}."
+            else "{name} דיווח/ה ניצחון {score}. צריך שתאשר שזו התוצאה."
         )
         return (
             "you",
@@ -171,7 +164,7 @@ def _item(match: models.Match, user_id: int) -> tuple[str, schemas.OpenMatchItem
                 state="awaiting_my_confirm",
                 score=mine_first,
                 days_waiting=days,
-                body=f"{opening} צריך שתאשר שזו התוצאה.",
+                body=opening,
             ),
         )
 
@@ -191,9 +184,9 @@ def _item(match: models.Match, user_id: int) -> tuple[str, schemas.OpenMatchItem
         if match.confirmed_by is not None:
             body = "שניכם דיווחתם שהמשחק לא שוחק."
         elif match.reported_by == user_id:
-            body = f"דיווחת שהמשחק לא שוחק, ו{name} לא הגיב/ה."
+            body = "דיווחת שהמשחק לא שוחק, ו{name} לא הגיב/ה."
         else:
-            body = f"{name} דיווח/ה שהמשחק לא שוחק, ולא הגבת."
+            body = "{name} דיווח/ה שהמשחק לא שוחק, ולא הגבת."
         return (
             "you",
             schemas.OpenMatchItemOut(

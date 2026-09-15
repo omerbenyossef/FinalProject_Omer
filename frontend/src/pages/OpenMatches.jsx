@@ -48,10 +48,26 @@ function Frame({ item, t }) {
   );
 }
 
-// The sentence arrives finished; the score is the one value the client places,
-// as an isolated LTR run so "6-4 6-3" doesn't reverse inside the Hebrew.
-function renderBody(item) {
-  return item.body.split("{score}").flatMap((part, i) =>
+// How long a report has been waiting, as the clause that closes the sentence.
+function sentClause(item, t) {
+  const days = item.days_waiting;
+  if (days == null) return "";
+  if (days <= 0) return t(" — נשלח היום.");
+  if (days === 1) return t(" — נשלח לפני יום.");
+  if (days === 2) return t(" — נשלח לפני יומיים.");
+  return t(" — נשלח לפני {n} ימים.", { n: days });
+}
+
+// The server sends the sentence as a template — it doesn't know which
+// language the reader picked. The name and the waiting clause go in through
+// t(), and the score is placed as an isolated LTR run so "6-4 6-3" doesn't
+// reverse inside the Hebrew.
+function renderBody(item, t) {
+  const sentence = t(item.body, {
+    name: item.opponent_name,
+    sent: sentClause(item, t),
+  });
+  return sentence.split("{score}").flatMap((part, i) =>
     i === 0
       ? [part]
       : [
@@ -182,7 +198,7 @@ export default function OpenMatches() {
                     </div>
                     <Frame item={item} t={t} />
                   </div>
-                  <p className="om-body-line">{renderBody(item)}</p>
+                  <p className="om-body-line">{renderBody(item, t)}</p>
 
                   {item.state === "disputed" ? (
                     <div className="om-scores" dir="auto">
@@ -296,7 +312,7 @@ export default function OpenMatches() {
                     </div>
                     <Frame item={item} t={t} />
                   </div>
-                  <p className="om-row-line">{renderBody(item)}</p>
+                  <p className="om-row-line">{renderBody(item, t)}</p>
                   {remindedToday(item) ? (
                     <span className="om-reminded">{t("תזכורת נשלחה היום")}</span>
                   ) : (
