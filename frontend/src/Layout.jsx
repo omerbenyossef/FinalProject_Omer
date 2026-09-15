@@ -6,7 +6,6 @@ import { useOpenAction } from "./OpenActionContext.jsx";
 import { ChevronIcon, HomeIcon, RanksIcon, TrophyIcon } from "./Icons.jsx";
 import InstallPrompt from "./InstallPrompt.jsx";
 import Onboarding from "./Onboarding.jsx";
-import { translate } from "./translations.js";
 
 const AUTH_PATHS = ["/signin", "/signup", "/forgot-password", "/reset-password"];
 
@@ -41,7 +40,9 @@ export default function Layout({ children }) {
               <span className="wordmark-dot" />
               {sports.length > 0 && selectedSport && (
                 <span className="wordmark-sport-wrap">
-                  <span className="wordmark-sport">{translate(selectedSport.name, "en")}</span>
+                  {/* The sport follows the reader's language; only RALLY itself
+                      is a name that never translates. */}
+                  <span className="wordmark-sport">{t(selectedSport.name)}</span>
                   <select
                     className="wordmark-sport-select"
                     aria-label={t("בחר ענף")}
@@ -87,7 +88,7 @@ export default function Layout({ children }) {
                 aria-label="HOME"
               >
                 <HomeIcon className="tab-icon" aria-hidden="true" />
-                {!openAction && <span className="tab-label">HOME</span>}
+                {!openAction && <span className="tab-label">{t("בית")}</span>}
               </NavLink>
               <NavLink
                 to="/leagues"
@@ -95,7 +96,7 @@ export default function Layout({ children }) {
                 aria-label="LEAGUES"
               >
                 <TrophyIcon className="tab-icon" aria-hidden="true" />
-                {!openAction && <span className="tab-label">LEAGUES</span>}
+                {!openAction && <span className="tab-label">{t("ליגות")}</span>}
                 {hasOtherLeagueActivity && <span className="tab-dot" aria-hidden="true" />}
               </NavLink>
               <NavLink
@@ -104,7 +105,7 @@ export default function Layout({ children }) {
                 aria-label="MATCHES"
               >
                 <RanksIcon className="tab-icon" aria-hidden="true" />
-                {!openAction && <span className="tab-label">MATCHES</span>}
+                {!openAction && <span className="tab-label">{t("משחקים")}</span>}
               </NavLink>
             </div>
 

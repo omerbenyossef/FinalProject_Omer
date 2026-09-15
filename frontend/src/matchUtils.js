@@ -31,29 +31,43 @@ export function formatDayMonthTime(date) {
   return `${formatDayMonth(date)} · ${h}:${m}`;
 }
 
-const WEEKDAY_SHORT = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
-// Always-Latin "WED 20:00" label used across the schedule flow (107) — Anton
-// has no Hebrew glyphs, so this format is reserved for spots that render in
-// mono/Anton regardless of app language.
-export function formatWeekdayTime(date) {
-  const h = String(date.getHours()).padStart(2, "0");
-  const m = String(date.getMinutes()).padStart(2, "0");
-  return `${WEEKDAY_SHORT[date.getDay()]} ${h}:${m}`;
+export const WEEKDAY_SHORT = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+export const MONTH_SHORT = [
+  "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC",
+];
+
+// Weekday and month names follow the language like any other word. Pass `t`
+// wherever the label is shown to a reader; without it these stay Latin (a few
+// internal/sorting uses don't care).
+export function weekdayName(date, t) {
+  const key = WEEKDAY_SHORT[date.getDay()];
+  return t ? t(key) : key;
 }
 
-// Same always-Latin weekday abbreviation on its own, for spots like 109b's
-// "R1 OPENS SUN" that don't also need a time.
-export function weekdayShort(date) {
-  return WEEKDAY_SHORT[date.getDay()];
+export function monthName(date, t) {
+  const key = MONTH_SHORT[date.getMonth()];
+  return t ? t(key) : key;
+}
+
+// "WED 20:00" — the weekday plus the time, used across the schedule flow.
+export function formatWeekdayTime(date, t) {
+  const h = String(date.getHours()).padStart(2, "0");
+  const m = String(date.getMinutes()).padStart(2, "0");
+  return `${weekdayName(date, t)} ${h}:${m}`;
+}
+
+// The weekday on its own, for spots like 109b's "R1 OPENS SUN".
+export function weekdayShort(date, t) {
+  return weekdayName(date, t);
 }
 
 // formatWeekdayTime plus the calendar date — for screens where deciding
 // whether you can make it depends on knowing which day it actually is, not
 // just which weekday.
-export function formatWeekdayDateTime(date) {
+export function formatWeekdayDateTime(date, t) {
   const h = String(date.getHours()).padStart(2, "0");
   const m = String(date.getMinutes()).padStart(2, "0");
-  return `${WEEKDAY_SHORT[date.getDay()]} ${formatDayMonth(date)} · ${h}:${m}`;
+  return `${weekdayName(date, t)} ${formatDayMonth(date)} · ${h}:${m}`;
 }
 
 // Whole days between now and a future date, or null if it's already passed —

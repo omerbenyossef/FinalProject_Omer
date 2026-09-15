@@ -5,8 +5,7 @@ import { useAuth } from "../AuthContext.jsx";
 import { useSport } from "../SportContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import { SettingsIcon, ChevronIcon } from "../Icons.jsx";
-
-const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+import { monthName } from "../matchUtils.js";
 
 // The streak is the run of same-result matches at the top of the history.
 function streakOf(recent) {
@@ -61,17 +60,21 @@ export default function MyProfile() {
   return (
     <div className="mp">
       <div className="mp-head">
-        <span className="mp-head-label">{"PROFILE"}</span>
+        <span className="mp-head-label">{t("פרופיל")}</span>
         <Link to="/settings" className="mp-head-edit">
-          {"EDIT"}
+          {t("עריכה")}
         </Link>
       </div>
 
       <div className="mp-id">
         <h1 className="mp-name">{user?.name}</h1>
-        <span className="mp-sub" dir="ltr">
-          {`${sportLeagues.length} ${sportLeagues.length === 1 ? "LEAGUE" : "LEAGUES"}`}
-          {joined && ` · JOINED ${MONTHS[joined.getMonth()]} ${joined.getFullYear()}`}
+        <span className="mp-sub">
+          {sportLeagues.length === 1 ? t("ליגה אחת") : t("{n} ליגות", { n: sportLeagues.length })}
+          {joined &&
+            ` · ${t("הצטרף ב-{month} {year}", {
+              month: monthName(joined, t),
+              year: joined.getFullYear(),
+            })}`}
         </span>
       </div>
 
@@ -88,14 +91,14 @@ export default function MyProfile() {
               <span className="mp-num">
                 <span dir="ltr">{me.rank}</span>
               </span>
-              <span className="mp-label">{`RANK OF ${rankings.total}`}</span>
+              <span className="mp-label">{t("דירוג מתוך {n}", { n: rankings.total })}</span>
             </>
           ) : (
             <>
               <span className="mp-num dim">
                 <span dir="ltr">—</span>
               </span>
-              <span className="mp-label">{"UNRANKED"}</span>
+              <span className="mp-label">{t("ללא דירוג")}</span>
             </>
           )}
         </div>
@@ -105,13 +108,17 @@ export default function MyProfile() {
               {wins}-{losses}
             </span>
           </span>
-          <span className="mp-label">{"RECORD"}</span>
+          <span className="mp-label">{t("מאזן")}</span>
         </div>
         <div className="mp-cell">
+          {/* The count is the number; which way it runs is the label. A
+              single W/L letter glued to a digit is exactly where bidi breaks. */}
           <span className={`mp-num${streak ? (streak.won ? "" : " dim") : " dim"}`}>
-            <span dir="ltr">{streak ? `${streak.won ? "W" : "L"}${streak.n}` : "—"}</span>
+            <span dir="ltr">{streak ? streak.n : "—"}</span>
           </span>
-          <span className="mp-label">{"STREAK"}</span>
+          <span className="mp-label">
+            {streak ? (streak.won ? t("רצף ניצחונות") : t("רצף הפסדים")) : t("רצף")}
+          </span>
         </div>
       </div>
 
@@ -119,15 +126,13 @@ export default function MyProfile() {
         <SettingsIcon className="mp-settings-icon" aria-hidden="true" />
         <span className="mp-settings-text">
           <span className="mp-settings-title">{t("הגדרות")}</span>
-          <span className="mp-settings-sub" dir="ltr">
-            {"NOTIFICATIONS · AVAILABILITY · LANGUAGE"}
-          </span>
+          <span className="mp-settings-sub">{t("התראות · זמינות · שפה")}</span>
         </span>
         <ChevronIcon className="mp-settings-chev" aria-hidden="true" />
       </Link>
 
       <button type="button" className="mp-logout" onClick={handleLogout}>
-        {"LOG OUT"}
+        {t("התנתקות")}
       </button>
     </div>
   );

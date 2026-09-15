@@ -7,10 +7,8 @@ import { useLanguage } from "../LanguageContext.jsx";
 import { useOpenAction } from "../OpenActionContext.jsx";
 import { BellIcon } from "../Icons.jsx";
 import { SkeletonMatchRow } from "../Skeleton.jsx";
-import { NTRP_STEPS, formatSets } from "../matchUtils.js";
+import { NTRP_STEPS, WEEKDAY_SHORT, formatSets, monthName, weekdayName } from "../matchUtils.js";
 import Profile from "./Profile.jsx";
-
-const WEEKDAY = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
 // The scale runs the app's full NTRP range, 1.5 to 7. A level between steps
 // (or outside the range) sits on the nearest one rather than off the bar.
@@ -46,7 +44,7 @@ function hhmm(date) {
 export default function Home() {
   const { user } = useAuth();
   const { sports, selectedSportId } = useSport();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { reload: reloadOpenAction } = useOpenAction();
   const navigate = useNavigate();
 
@@ -118,14 +116,20 @@ export default function Home() {
 
   const metaLine = (() => {
     if (!week) return "";
-    if (matches.length === 0) return "THIS WEEK · NO MATCHES";
+    if (matches.length === 0) return `${t("השבוע")} · ${t("אין משחקים")}`;
     const parts = [
-      "THIS WEEK",
-      `${matches.length} ${matches.length === 1 ? "MATCH" : "MATCHES"}`,
+      t("השבוע"),
+      matches.length === 1 ? t("משחק אחד") : t("{n} משחקים", { n: matches.length }),
     ];
     if (round) {
       const ends = new Date(round.ends_at);
-      parts.push(`R${round.number} ${"ENDS"} ${WEEKDAY[ends.getDay()]} ${dayMonth(ends)}`);
+      parts.push(
+        t("מחזור {n} נסגר {day} {date}", {
+          n: round.number,
+          day: weekdayName(ends, t),
+          date: dayMonth(ends),
+        })
+      );
     }
     return parts.join(" · ");
   })();
@@ -143,11 +147,11 @@ export default function Home() {
     // becomes a lime line instead (168a's short-card rule).
     const label =
       match.state === "played"
-        ? "Report result"
+        ? t("דווח תוצאה")
         : match.state === "no_time"
-          ? "Propose a time"
+          ? t("הצע שעה")
           : match.state === "confirm_mine"
-            ? "Confirm result"
+            ? t("אשר תוצאה")
             : voided
               ? t("תיאום במחזור אחר")
               : null;
@@ -164,7 +168,7 @@ export default function Home() {
     if (!label) {
       action = (
         <span className="hw-mono-action">
-          {match.state === "waiting_on_them" ? "WAITING FOR THEM" : "ALL SET"}
+          {match.state === "waiting_on_them" ? t("מחכה לתשובה שלו") : t("הכול מוכן")}
         </span>
       );
     } else if (compact) {
@@ -202,28 +206,28 @@ export default function Home() {
         <div className={`hw-date${limeDate ? " is-lime" : ""}`} dir="ltr">
           {scheduled ? (
             <>
-              <span className="hw-date-day">{WEEKDAY[scheduled.getDay()]}</span>
+              <span className="hw-date-day">{weekdayName(scheduled, t)}</span>
               <span className="hw-date-num">{scheduled.getDate()}</span>
-              <span className="hw-date-time">{voided ? "NOT PLAYED" : hhmm(scheduled)}</span>
+              <span className="hw-date-time">{voided ? t("לא שוחק") : hhmm(scheduled)}</span>
             </>
           ) : (
             <>
               <span className="hw-date-num">?</span>
-              <span className="hw-date-time">{"NO DATE"}</span>
+              <span className="hw-date-time">{t("אין תאריך")}</span>
             </>
           )}
         </div>
         <div className="hw-body">
           <span className={`hw-opponent${dim ? " dim" : ""}`}>{match.opponent_name}</span>
-          <span className="hw-sub" dir="ltr">
+          <span className="hw-sub">
             {match.league_name ? (
               <span dir="auto" style={{ unicodeBidi: "isolate" }}>
                 {match.league_name}
               </span>
             ) : (
-              "FRIENDLY"
+              t("משחק ידידותי")
             )}
-            {match.round ? ` · R${match.round}` : ""}
+            {match.round ? ` · ${t("מחזור {n}", { n: match.round })}` : ""}
           </span>
           {voided && match.note && <span className="hw-note">{t(match.note)}</span>}
           <div className="hw-action" onClick={(e) => e.stopPropagation()}>
@@ -249,13 +253,16 @@ export default function Home() {
           <div className="hw-free" dir="ltr">
             <span className="hw-free-num">{days}</span>
             <span className="hw-free-side">
-              <span className="hw-free-label">{days === 1 ? "DAY FREE" : "DAYS FREE"}</span>
+              <span className="hw-free-label">{days === 1 ? t("יום פנוי") : t("ימים פנויים")}</span>
               <span className="hw-free-sub">
                 {days === 0
-                  ? "NEXT ROUND STARTS TODAY"
+                  ? t("המחזור הבא מתחיל היום")
                   : days === 1
-                    ? "NEXT ROUND STARTS TOMORROW"
-                    : `NEXT ROUND STARTS ${WEEKDAY[nextStart.getDay()]} ${dayMonth(nextStart)}`}
+                    ? t("המחזור הבא מתחיל מחר")
+                    : t("המחזור הבא מתחיל ב-{day} {date}", {
+                        day: weekdayName(nextStart, t),
+                        date: dayMonth(nextStart),
+                      })}
               </span>
             </span>
           </div>
@@ -263,17 +270,19 @@ export default function Home() {
 
         <p className="hw-explain">
           {days !== null
-            ? "All your league matches are played. New fixtures show up here when the next round starts."
-            : "All your league matches are played. New fixtures show up here when your league opens its next round."}
+            ? t("כל משחקי הליגה שלך שוחקו. משחקים חדשים יופיעו כאן כשייפתח המחזור הבא.")
+            : t("כל משחקי הליגה שלך שוחקו. משחקים חדשים יופיעו כאן כשהליגה תפתח מחזור חדש.")}
         </p>
 
         <div className="hw-cta-stack">
           <button type="button" className="hw-cta" onClick={() => navigate("/friendly/new")}>
             <span className="hw-cta-text">
-              <span className="hw-cta-title">{"Find a friendly match"}</span>
+              <span className="hw-cta-title">{t("מצא משחק ידידותי")}</span>
               {near > 0 && week?.my_level != null && (
-                <span className="hw-cta-sub" dir="ltr">
-                  {`${near} PLAYERS NEAR ${week.my_level.toFixed(1)}`}
+                <span className="hw-cta-sub">
+                  {near === 1
+                    ? t("שחקן אחד ברמה {level}", { level: week.my_level.toFixed(1) })
+                    : t("{n} שחקנים ברמה {level}", { n: near, level: week.my_level.toFixed(1) })}
                 </span>
               )}
             </span>
@@ -288,7 +297,7 @@ export default function Home() {
             className="hw-cta hw-cta--ghost"
             onClick={() => navigate("/leagues/open")}
           >
-            <span className="hw-cta-title">{"Browse open leagues"}</span>
+            <span className="hw-cta-title">{t("עיין בליגות פתוחות")}</span>
             <span className="hw-cta-chev" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M9 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
@@ -301,17 +310,17 @@ export default function Home() {
           <div className="hw-last">
             <div className="hw-last-top" dir="ltr">
               <span className="hw-last-label">
-                {"LAST MATCH"}
-                {last.round ? ` · R${last.round}` : ""}
+                {t("המשחק האחרון")}
+                {last.round ? ` · ${t("מחזור {n}", { n: last.round })}` : ""}
               </span>
               <span className="hw-last-rule" />
               <span className={`hw-last-result${last.won ? " won" : ""}`}>
-                {last.won ? "WON" : "LOST"}
+                {last.won ? t("ניצחון") : t("הפסד")}
               </span>
             </div>
             <div className="hw-last-mid">
               <span className="hw-last-name">
-                {"vs "}
+                {`${t("מול")} `}
                 <span dir="auto" style={{ unicodeBidi: "isolate" }}>
                   {last.opponent_name}
                 </span>
@@ -320,10 +329,10 @@ export default function Home() {
                 {formatSets(last.my_sets)}
               </span>
             </div>
-            <div className="hw-last-sub" dir="ltr">
+            <div className="hw-last-sub">
               {last.played_at && (
                 <>
-                  {WEEKDAY[new Date(last.played_at).getDay()]} {dayMonth(new Date(last.played_at))}
+                  {weekdayName(new Date(last.played_at), t)} {dayMonth(new Date(last.played_at))}
                 </>
               )}
               {last.league_name && (
@@ -340,7 +349,7 @@ export default function Home() {
           </div>
         ) : (
           <div className="hw-last hw-last--none">
-            <span className="hw-last-empty">{"NO MATCHES PLAYED YET"}</span>
+            <span className="hw-last-empty">{t("עוד לא שיחקת משחקים")}</span>
           </div>
         )}
       </>
@@ -353,8 +362,8 @@ export default function Home() {
         <div className="hw-top">
           <span className="hw-name">{user?.name}</span>
           <div className="hw-top-side">
-            <span className="hw-leagues" dir="ltr">
-              {sportLeagues.length} {sportLeagues.length === 1 ? "LEAGUE" : "LEAGUES"}
+            <span className="hw-leagues">
+              {sportLeagues.length === 1 ? t("ליגה אחת") : t("{n} ליגות", { n: sportLeagues.length })}
             </span>
             <button
               type="button"
@@ -370,13 +379,19 @@ export default function Home() {
 
         <div className="hw-nums" dir="ltr">
           <span className="hw-num">
-            {winRate !== null ? winRate : "–"}%<span className="hw-num-unit">{"WIN"}</span>
+            <span dir="ltr">{winRate !== null ? winRate : "–"}%</span>
+            <span className="hw-num-unit">{t("ניצחונות")}</span>
+          </span>
+          {/* The W/L letters only work inside an English run — in Hebrew the
+              letters and the digits fight over the order, so the record is
+              just the two numbers. */}
+          <span className="hw-num" dir="ltr">
+            {language === "en"
+              ? `${stats ? stats.wins : 0}W-${stats ? stats.losses : 0}L`
+              : `${stats ? stats.wins : 0}-${stats ? stats.losses : 0}`}
           </span>
           <span className="hw-num">
-            {stats ? stats.wins : 0}W-{stats ? stats.losses : 0}L
-          </span>
-          <span className="hw-num">
-            {stats ? stats.matches_played : 0} {"PLAYED"}
+            {t("{n} שוחקו", { n: stats ? stats.matches_played : 0 })}
           </span>
         </div>
 
@@ -426,7 +441,7 @@ export default function Home() {
             {invites.length > 0 && (
               <div className="hw-invites">
                 <div className="hw-sec" dir="ltr">
-                  <span className="hw-sec-name">{"FRIENDLY INVITES"}</span>
+                  <span className="hw-sec-name">{t("הזמנות למשחק ידידותי")}</span>
                   <span className="hw-sec-rule" />
                   <span className="hw-sec-count">{invites.length}</span>
                 </div>
@@ -437,21 +452,21 @@ export default function Home() {
                       <div className="hw-date" dir="ltr">
                         {when ? (
                           <>
-                            <span className="hw-date-day">{WEEKDAY[when.getDay()]}</span>
+                            <span className="hw-date-day">{weekdayName(when, t)}</span>
                             <span className="hw-date-num">{when.getDate()}</span>
                             <span className="hw-date-time">{hhmm(when)}</span>
                           </>
                         ) : (
                           <>
                             <span className="hw-date-num">?</span>
-                            <span className="hw-date-time">{"NO DATE"}</span>
+                            <span className="hw-date-time">{t("אין תאריך")}</span>
                           </>
                         )}
                       </div>
                       <div className="hw-body">
                         <span className="hw-opponent">{invite.from_name}</span>
-                        <span className="hw-sub" dir="ltr">
-                          {`FRIENDLY · ${"INVITED YOU"}`}
+                        <span className="hw-sub">
+                          {`${t("משחק ידידותי")} · ${t("הזמין/ה אותך")}`}
                         </span>
                         <div className="hw-action hw-action--pair">
                           <button
@@ -460,7 +475,7 @@ export default function Home() {
                             disabled={busyId === invite.id}
                             onClick={() => act(invite.id, () => api.acceptFriendlyInvite(invite.id))}
                           >
-                            {"Accept"}
+                            {t("אשר")}
                           </button>
                           <button
                             type="button"
@@ -468,7 +483,7 @@ export default function Home() {
                             disabled={busyId === invite.id}
                             onClick={() => act(invite.id, () => api.declineFriendlyInvite(invite.id))}
                           >
-                            {"Decline"}
+                            {t("דחה")}
                           </button>
                         </div>
                       </div>
@@ -477,7 +492,7 @@ export default function Home() {
                 })}
                 {invites.length > 2 && (
                   <button type="button" className="hw-more" onClick={() => navigate("/invites")}>
-                    {`+${invites.length - 2} more invites`}
+                    {t("עוד {n} הזמנות", { n: invites.length - 2 })}
                   </button>
                 )}
               </div>
@@ -509,7 +524,7 @@ export default function Home() {
               className="hw-tile hw-tile--join"
               onClick={() => navigate("/leagues/open")}
             >
-              {"Join a league"}
+              {t("הצטרף לליגה")}
             </button>
           </div>
         </div>
