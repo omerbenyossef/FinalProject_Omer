@@ -50,6 +50,28 @@ export default function SignIn() {
   return (
     <div className="signscreen">
       <div className="signscreen-brand">
+        {/* signin-logo-174a: the app tile, drawn inline — two colours and two
+            paths, so the first screen that loads makes no extra request. The
+            geometry is the app icon's (132a); if that changes, so does this. */}
+        <span className="signscreen-mark" aria-hidden="true">
+          <svg viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="36" fill="#0e1116" />
+            <path
+              d="M36 36 Q58 60 36 84"
+              fill="none"
+              stroke="#c6f24e"
+              strokeWidth="6"
+              strokeLinecap="round"
+            />
+            <path
+              d="M84 36 Q62 60 84 84"
+              fill="none"
+              stroke="#c6f24e"
+              strokeWidth="6"
+              strokeLinecap="round"
+            />
+          </svg>
+        </span>
         <div className="signscreen-wordmark">Rally</div>
         <p className="signscreen-tagline" dir="ltr">
           <span>{t("TENNIS LEAGUES FOR PEOPLE")}</span>

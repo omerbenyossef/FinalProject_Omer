@@ -3492,13 +3492,40 @@ button:active { transform: translateY(1px); }
   padding-bottom: 40px;
 }
 
+/* signin-logo-174a — the tile the user tapped on their home screen a second
+   ago, above the name. The block grew, so it starts higher. */
 .signscreen-brand {
-  padding-top: 132px;
+  padding-top: 72px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
   text-align: center;
+}
+
+.signscreen-mark {
+  width: 76px;
+  height: 76px;
+  border-radius: 20px;
+  background: var(--court);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.signscreen-mark svg {
+  width: 76px;
+  height: 76px;
+  display: block;
+}
+
+/* 44px is what separates a symbol from typography; under ~32px they read as
+   one lump. */
+.signscreen-brand .signscreen-wordmark { margin-top: 44px; }
+.signscreen-brand .signscreen-tagline { margin-top: 16px; }
+
+@media (max-height: 700px) {
+  .signscreen-brand { padding-top: 48px; }
+  .signscreen-brand .signscreen-wordmark { margin-top: 32px; }
 }
 
 .signscreen-signup .signscreen-title {
@@ -3509,14 +3536,15 @@ button:active { transform: translateY(1px); }
   font-family: "Anton", var(--display);
   font-weight: 400;
   font-size: 92px;
-  line-height: 1;
+  line-height: 0.82;
+  text-transform: uppercase;
   letter-spacing: -0.02em;
 }
 
 .signscreen-tagline {
   font-family: "IBM Plex Mono", "IBM Plex Sans", var(--mono);
   font-weight: 500;
-  font-size: 13px;
+  font-size: 12px;
   letter-spacing: 0.22em;
   color: var(--muted);
   margin: 0;
