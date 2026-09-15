@@ -1242,6 +1242,16 @@ const PAIRS = [
   ["התמונה גדולה מדי", "That image is too large"],
   ["אפשר להעלות תמונה בפורמט JPEG, PNG או WebP", "Photos can be JPEG, PNG or WebP"],
   ["אין תמונה לשחקן הזה", "That player has no photo"],
+
+  // Onboarding, screen 3 — the three tabs
+  [
+    "המסך שנפתח ראשון: המשחק שלך במחזור הזה, והליגות שאתה משחק בהן.",
+    "The screen that opens first: your match this round, and the leagues you play in.",
+  ],
+  [
+    "כל משחק שלא נסגר — תוצאה לדווח, תוצאה לאשר, או מחזור שנגמר בלי תוצאה. מחולק למה שמחכה לך ולמה שמחכה להם.",
+    "Every match still open \u2014 a result to report, a result to confirm, or a round that ended with no score. Split into what's waiting on you and what's waiting on them.",
+  ],
   ["תאריך פתיחה", "Start date"],
   [
     "ליגות נפתחות ביום ראשון, כדי שכל מחזור יהיה שבוע שלם.",

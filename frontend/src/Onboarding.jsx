@@ -3,7 +3,7 @@ import { useLanguage } from "./LanguageContext.jsx";
 import { useSport } from "./SportContext.jsx";
 import { api } from "./api";
 import RatingQuestionnaire from "./RatingQuestionnaire.jsx";
-import { PersonIcon, TrophyIcon, RanksIcon } from "./Icons.jsx";
+import { HomeIcon, TrophyIcon, RanksIcon } from "./Icons.jsx";
 import { hasSeenIntro, markIntroSeen } from "./onboardingSeen.js";
 
 const STEP_COUNT = 3;
@@ -243,22 +243,25 @@ export default function Onboarding() {
 
           <div className="ob-rows">
             <Row
-              icon={<PersonIcon aria-hidden="true" />}
+              icon={<HomeIcon aria-hidden="true" />}
               iconActive
-              title={t("פרופיל")}
-              desc={t(
-                "המסך שנפתח ראשון: המשחק הקרוב שלך, תוצאות שממתינות לאישור, והליגות שאתה משחק בהן."
-              )}
+              title={t("בית")}
+              desc={t("המסך שנפתח ראשון: המשחק שלך במחזור הזה, והליגות שאתה משחק בהן.")}
             />
             <Row
               icon={<TrophyIcon aria-hidden="true" />}
               title={t("ליגות")}
               desc={t("הליגות שלך, וליגות פתוחות להצטרפות ברמה שלך.")}
             />
+            {/* The rankings stopped being a tab in 173 — they're reached from
+                the NTRP card on the profile now. The third tab is the matches
+                page, and the words here name its own two sections. */}
             <Row
               icon={<RanksIcon aria-hidden="true" />}
-              title={t("דירוג")}
-              desc={t("כל השחקנים לפי רמה, גם מחוץ לליגה שלך.")}
+              title={t("משחקים")}
+              desc={t(
+                "כל משחק שלא נסגר — תוצאה לדווח, תוצאה לאשר, או מחזור שנגמר בלי תוצאה. מחולק למה שמחכה לך ולמה שמחכה להם."
+              )}
             />
           </div>
         </>
