@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import Layout from "./Layout.jsx";
 import Splash from "./Splash.jsx";
+import { SplashProvider } from "./SplashContext.jsx";
 import Loading from "./Loading.jsx";
 import { useAuth } from "./AuthContext.jsx";
 import SignIn from "./pages/SignIn.jsx";
@@ -89,7 +90,7 @@ export default function App() {
   }
 
   return (
-    <>
+    <SplashProvider value={!showSplash && !showLoading}>
       {showSplash && <Splash onDone={handleSplashDone} />}
       {showLoading && <Loading ready={!authLoading} onDone={() => setShowLoading(false)} />}
       <Layout>
@@ -294,6 +295,6 @@ export default function App() {
         />
       </Routes>
       </Layout>
-    </>
+    </SplashProvider>
   );
 }

@@ -71,6 +71,7 @@ export default function ResetPassword() {
             {t("סיסמה חדשה")}
             <input
               type="password"
+              autoComplete="new-password"
               minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}

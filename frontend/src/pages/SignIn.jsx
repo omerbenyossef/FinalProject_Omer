@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
+import { useSplashDone } from "../SplashContext.jsx";
 
 export default function SignIn() {
   const [email, setEmail] = useState("");
@@ -13,6 +14,7 @@ export default function SignIn() {
   const [slow, setSlow] = useState(false);
   const { loginWithToken } = useAuth();
   const { t } = useLanguage();
+  const splashDone = useSplashDone();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -79,6 +81,11 @@ export default function SignIn() {
         </p>
       </div>
 
+      {/* The form only exists once the splash is off screen: iOS offers to
+          fill a saved password as soon as a login form is in the DOM, and
+          under the splash that sheet comes up over a full-screen logo with
+          nothing behind it to fill. */}
+      {splashDone && (
       <form className="signscreen-form" onSubmit={handleSubmit} noValidate>
         <div className="signfield">
           <label className="signfield-label" htmlFor="signin-email" dir="ltr">
@@ -88,6 +95,7 @@ export default function SignIn() {
             id="signin-email"
             className="signfield-input signfield-input-email"
             type="email"
+            autoComplete="username"
             dir="ltr"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -114,6 +122,7 @@ export default function SignIn() {
               id="signin-password"
               className="signfield-input signfield-input-password"
               type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
               dir="ltr"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -135,6 +144,7 @@ export default function SignIn() {
         </button>
         {slow && <p className="muted signscreen-slow">{t("השרת מתעורר, זה עשוי לקחת עד דקה בפעם הראשונה...")}</p>}
       </form>
+      )}
 
       <p className="signscreen-footer">
         <span className="signscreen-footer-label" dir="ltr">

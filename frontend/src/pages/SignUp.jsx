@@ -101,6 +101,7 @@ export default function SignUp() {
             id="signup-email"
             className="signfield-input signfield-input-email signfield-input-small"
             type="email"
+            autoComplete="username"
             dir="ltr"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -117,6 +118,7 @@ export default function SignUp() {
               id="signup-password"
               className="signfield-input signfield-input-password signfield-input-small"
               type={showPassword ? "text" : "password"}
+              autoComplete="new-password"
               dir="ltr"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
