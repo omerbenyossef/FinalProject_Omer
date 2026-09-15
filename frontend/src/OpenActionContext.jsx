@@ -85,6 +85,32 @@ export function OpenActionProvider({ children }) {
 
   const itemCount = relevantItems.length;
 
+  // The red count on the home-screen icon. It answers "is anything waiting for
+  // me" from outside the app, so it counts differently from the tab bar:
+  // nothing is dropped for being the page you happen to be on, and a match
+  // waiting on the opponent isn't counted — a badge that sends someone in to
+  // find nothing they can do teaches them to ignore it.
+  const badgeCount = useMemo(
+    () =>
+      openItems.filter((item) => item.sport_id === selectedSportId && item.type !== "waiting")
+        .length,
+    [openItems, selectedSportId]
+  );
+
+  useEffect(() => {
+    // Only installed apps show a badge, and only some platforms have the API
+    // at all; everywhere else these calls simply don't exist.
+    if (!("setAppBadge" in navigator)) return;
+    const done = user && !openItemsLoading;
+    try {
+      if (done && badgeCount > 0) navigator.setAppBadge(badgeCount);
+      else navigator.clearAppBadge();
+    } catch {
+      // A platform that has the method but refuses the call (permission,
+      // private window) — the badge is a nicety, never worth an error.
+    }
+  }, [badgeCount, user, openItemsLoading]);
+
   const openAction = useMemo(
     () => buildTabbarPreview(relevantItems[0] ?? null, user?.id, t),
     [relevantItems, user, t]
