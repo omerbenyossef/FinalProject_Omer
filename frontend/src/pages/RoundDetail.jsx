@@ -183,7 +183,7 @@ export default function RoundDetail() {
         <div className="round-my-match">
           <div className="round-my-match-eyebrow">{t("המשחק שלי")}</div>
           <div className="round-my-match-top">
-            <Avatar name={myOpponent.name} size={36} />
+            <Avatar name={myOpponent.name} photoUrl={myOpponent.photo_url} size={36} />
             <div className="round-my-match-info">
               <div className="round-my-match-name">{t("מול {name}", { name: myOpponent.name })}</div>
               {myScheduleState === "proposed_by_me" && (

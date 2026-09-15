@@ -325,6 +325,7 @@ def get_player_profile(
     return schemas.PlayerProfileOut(
         id=player.id,
         name=player.name,
+        photo_url=player.photo_url,
         joined_at=player.created_at,
         league_count=league_count,
         ntrp=ntrp,

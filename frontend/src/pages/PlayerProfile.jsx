@@ -4,6 +4,7 @@ import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import { useSport } from "../SportContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
+import Avatar from "../Avatar.jsx";
 import { ChevronIcon } from "../Icons.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
 import { formatSets, monthName } from "../matchUtils.js";
@@ -88,6 +89,15 @@ export default function PlayerProfile() {
         </button>
         <span className="pp-nav-label">{t("PLAYER")}</span>
       </div>
+
+      {/* The one screen that is entirely about a person, so their face leads
+          it. Without a photo the circle is dropped rather than shown as an
+          initial — the name is right there, an inch high. */}
+      {profile.photo_url && (
+        <div className="pp-photo">
+          <Avatar name={profile.name} photoUrl={profile.photo_url} size={72} />
+        </div>
+      )}
 
       <h1 className="pp-name">
         <span dir="auto" style={{ unicodeBidi: "isolate" }}>

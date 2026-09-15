@@ -200,6 +200,7 @@ function ToPlayCard({
       <div className="tp-card-top">
         <Avatar
           name={opponent.name}
+          photoUrl={opponent.photo_url}
           size={52}
           dim={pendingInvite}
           background="#232a35"

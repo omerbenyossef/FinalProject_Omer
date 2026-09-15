@@ -178,7 +178,7 @@ export default function LeagueManage() {
             <ul className="manage-player-list">
               {members.map((m) => (
                 <li key={m.id} className="manage-player-row">
-                  <Avatar name={m.name} size={28} />
+                  <Avatar name={m.name} photoUrl={m.photo_url} size={28} />
                   <span>{m.name}</span>
                 </li>
               ))}

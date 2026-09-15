@@ -61,7 +61,7 @@ export default function WaitingConfirmationCard({
     <div className="waiting-card">
       <div className="waiting-compare">
         <div className="waiting-side">
-          <Avatar name={me.name} size={44} color="var(--court)" />
+          <Avatar name={me.name} photoUrl={me.photo_url} size={44} color="var(--court)" />
           <span className="waiting-side-name">{me.name}</span>
         </div>
         <div className="waiting-sets" dir="ltr">
@@ -72,7 +72,7 @@ export default function WaitingConfirmationCard({
           ))}
         </div>
         <div className="waiting-side">
-          <Avatar name={opponent.name} size={44} />
+          <Avatar name={opponent.name} photoUrl={opponent.photo_url} size={44} />
           <span className="waiting-side-name">{opponent.name}</span>
         </div>
       </div>

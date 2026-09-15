@@ -304,6 +304,9 @@ class LeagueCodeLookupOut(BaseModel):
 class MemberOut(BaseModel):
     id: int
     name: str
+    # Read off the User model's own property, so every screen that draws a
+    # player — standings, opponents, match rows — can show their face.
+    photo_url: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -620,6 +623,7 @@ class SharedLeagueOut(BaseModel):
 class PlayerProfileOut(BaseModel):
     id: int
     name: str
+    photo_url: Optional[str] = None
     joined_at: UtcDatetime
     league_count: int
     ntrp: Optional[float] = None

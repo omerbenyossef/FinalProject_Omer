@@ -89,7 +89,7 @@ export default function FriendlyNew() {
       {presetOpponent ? (
         <div className="friendly-player-list">
           <div className="friendly-player-row" key={presetOpponent.id}>
-            <Avatar name={presetOpponent.name} size={38} />
+            <Avatar name={presetOpponent.name} photoUrl={presetOpponent.photo_url} size={38} />
             <div className="friendly-player-body">
               <div className="friendly-player-name">
                 <span dir="auto" style={{ unicodeBidi: "isolate" }}>
@@ -128,7 +128,7 @@ export default function FriendlyNew() {
             {!loading &&
               players.map((p) => (
                 <div className="friendly-player-row" key={p.id}>
-                  <Avatar name={p.name} size={38} />
+                  <Avatar name={p.name} photoUrl={p.photo_url} size={38} />
                   <div className="friendly-player-body">
                     <div className="friendly-player-name">
                       <span dir="auto" style={{ unicodeBidi: "isolate" }}>

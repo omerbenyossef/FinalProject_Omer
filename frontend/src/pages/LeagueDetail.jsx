@@ -662,7 +662,7 @@ export default function LeagueDetail() {
                         {rank}
                       </span>
                       <span className="standings-td-avatar">
-                        <Avatar name={row.user.name} size={30} />
+                        <Avatar name={row.user.name} photoUrl={row.user.photo_url} size={30} />
                       </span>
                       <span className="standings-td-name">{row.user.name}</span>
                       <span className={`standings-td-num${shortOfMatches ? " short" : ""}`} dir="ltr">
@@ -1183,7 +1183,7 @@ function MyMatchBlock({
     <div className={`mm-block${voided ? " mm-block--void" : ""}`}>
       <div className="mm-label">{t("המשחק שלך")}</div>
       <div className="mm-row">
-        <Avatar name={opponent.name} size={36} />
+        <Avatar name={opponent.name} photoUrl={opponent.photo_url} size={36} />
         <div className="mm-body">
           <div className="mm-name">
             <span dir="auto" style={{ unicodeBidi: "isolate" }}>

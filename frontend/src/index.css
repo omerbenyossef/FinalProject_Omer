@@ -7821,3 +7821,8 @@ button:active { transform: translateY(1px); }
   /* "כן" is two characters, and a 999px radius would round it into a dot. */
   min-width: 66px;
 }
+
+/* The photo above the name on a player's page. */
+.pp-photo { margin-top: 20px; }
+.pp-photo .avatar { box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.22); }
+.pp-photo + .pp-name { margin-top: 14px; }
