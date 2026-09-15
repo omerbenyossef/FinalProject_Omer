@@ -385,6 +385,9 @@ const PAIRS = [
   ["המשחק נחשב כלא בוצע", "the match counts as not played"],
   // A match both sides agreed was never played, and moving it to a later round
   ["תיאום במחזור אחר", "Move to another round"],
+  ["אם לא תתאמו אותו למחזור אחר", "If you don't move it to another round"],
+  ["המשחק לא ייספר בטבלה, ושניכם תסיימו את המחזור עם משחק אחד פחות — בלי ניצחון לאף אחד.",
+    "The match won't count in the table, and you'll both finish the round a match short — with no win for either of you."],
   ["שניכם דיווחתם שהמשחק לא שוחק", "Both of you reported the match wasn't played"],
   ["דיווחת שהמשחק לא שוחק · אין תגובה מהיריב",
     "You reported the match wasn't played · no answer from your opponent"],

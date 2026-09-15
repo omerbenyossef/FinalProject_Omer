@@ -200,15 +200,25 @@ export default function OpenMatches() {
                       </div>
                     </div>
                   ) : item.state === "not_played_void" ? (
-                    <div className="om-actions">
-                      <button
-                        type="button"
-                        className="om-primary"
-                        onClick={() => navigate(`/matches/${item.match_id}/reschedule`)}
-                      >
-                        {t("תיאום במחזור אחר")}
-                      </button>
-                    </div>
+                    <>
+                      <div className="om-note">
+                        <span className="om-note-label">{t("אם לא תתאמו אותו למחזור אחר")}</span>
+                        <p className="om-note-text">
+                          {t(
+                            "המשחק לא ייספר בטבלה, ושניכם תסיימו את המחזור עם משחק אחד פחות — בלי ניצחון לאף אחד."
+                          )}
+                        </p>
+                      </div>
+                      <div className="om-actions">
+                        <button
+                          type="button"
+                          className="om-primary"
+                          onClick={() => navigate(`/matches/${item.match_id}/reschedule`)}
+                        >
+                          {t("תיאום במחזור אחר")}
+                        </button>
+                      </div>
+                    </>
                   ) : item.state === "unreported" ? (
                     reportingId === item.match_id ? (
                       <SetScoreForm

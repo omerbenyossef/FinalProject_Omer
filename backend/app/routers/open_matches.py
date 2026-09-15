@@ -186,19 +186,21 @@ def _item(match: models.Match, user_id: int) -> tuple[str, schemas.OpenMatchItem
         # table to owe anything to — a voided one is simply gone.
         if not match.league_id:
             return None
+        # Just what happened — what it costs is the card's own note, and the
+        # button says what to do about it.
         if match.confirmed_by is not None:
-            opening = "שניכם דיווחתם שהמשחק לא שוחק"
+            body = "שניכם דיווחתם שהמשחק לא שוחק."
         elif match.reported_by == user_id:
-            opening = "דיווחת שהמשחק לא שוחק ולא הייתה תגובה מ" + name
+            body = f"דיווחת שהמשחק לא שוחק, ו{name} לא הגיב/ה."
         else:
-            opening = f"{name} דיווח/ה שהמשחק לא שוחק ולא הגבת"
+            body = f"{name} דיווח/ה שהמשחק לא שוחק, ולא הגבת."
         return (
             "you",
             schemas.OpenMatchItemOut(
                 **common,
                 state="not_played_void",
                 days_waiting=_days_since(match.disputed_at),
-                body=f"{opening}, והוא לא נספר בטבלה. אפשר לתאם אותו למחזור אחר.",
+                body=body,
             ),
         )
 

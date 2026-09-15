@@ -7511,6 +7511,20 @@ button:active { transform: translateY(1px); }
   direction: ltr; unicode-bidi: isolate; white-space: nowrap;
 }
 
+/* What it costs to leave a match unplayed — the reason the button under it
+   exists. */
+.om-note {
+  padding-top: 13px; border-top: 1px solid rgba(148, 163, 184, .14);
+  display: flex; flex-direction: column; gap: 5px;
+}
+.om-note-label {
+  font: 700 13.5px "IBM Plex Sans", var(--sans); color: var(--court, #c6f24e);
+}
+.om-note-text {
+  margin: 0; font: 400 14px/1.5 "IBM Plex Sans", var(--sans); color: #8b93a6;
+  text-wrap: pretty;
+}
+
 .om-actions { display: flex; gap: 9px; }
 .om-primary {
   flex: 1; height: 44px; border: 0; border-radius: 22px;
