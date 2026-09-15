@@ -4598,306 +4598,144 @@ button:active { transform: translateY(1px); }
   color: #4d5566;
 }
 
-.leagues-actions {
-  margin-top: 22px;
+/* leagues-page-175a — a flat list of rows. The carousel, its dots and the
+   four-row standings excerpt are gone: every league is visible at once, and
+   the table itself is one tap away on the league page. */
+.content:has(.lgp) { padding: 0; }
+.lgp { padding: 20px 0 96px; }
+
+.lg-head {
+  padding: 0 22px;
   display: flex;
-  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
 }
+/* Anton has no Hebrew glyphs (player-profile-105a), so page titles are Plex. */
+.lg-h1 {
+  margin: 0;
+  font: 700 34px/1 "IBM Plex Sans Hebrew", "IBM Plex Sans", var(--sans);
+  letter-spacing: -0.025em;
+}
+.lg-head-actions { flex: none; display: flex; align-items: center; gap: 8px; }
 
 .btn-create-league {
-  display: inline-flex;
-  align-items: center;
+  flex: none;
   height: 38px;
-  padding: 0 17px;
+  padding: 0 15px;
   border: 0;
   border-radius: 19px;
   background: var(--court);
   color: var(--court-contrast);
-  font-family: var(--display);
-  font-weight: 700;
-  font-size: 13.5px;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.btn-friendly {
+  font: 700 13px "IBM Plex Sans Hebrew", "IBM Plex Sans", var(--sans);
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+}
+.btn-friendly {
   flex: none;
   height: 38px;
-  padding: 0 16px;
-  border-radius: 19px;
-  border: 1px solid rgba(148, 163, 184, 0.26);
-  background: #1a2029;
-  color: #eef1f7;
-  font-family: var(--display);
-  font-weight: 700;
-  font-size: 13.5px;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.btn-friendly svg {
-  width: 14px;
-  height: 14px;
-  stroke: var(--lime, #c6f24e);
-  stroke-width: 2.6;
-}
-
-.lg-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  margin-top: 20px;
-}
-.lg-title {
-  margin: 0;
-  font: 400 30px/1 "Anton", sans-serif;
-  letter-spacing: 0.005em;
-  text-transform: uppercase;
-}
-.lg-count {
-  font: 500 12px "IBM Plex Mono", "IBM Plex Sans", monospace;
-  color: #8b93a6;
-}
-
-.lg-carousel {
-  margin-top: 16px;
-  display: flex;
-  gap: 12px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  margin-inline: -20px;
-  padding-inline: 20px;
-}
-.lg-carousel::-webkit-scrollbar {
-  display: none;
-}
-.lg-carousel.single {
-  margin-inline: 0;
-  padding-inline: 0;
-}
-
-.lg-card {
-  box-sizing: border-box;
-  flex: none;
-  width: 305px;
-  scroll-snap-align: start;
-  border-radius: 20px;
-  background: rgba(148, 163, 184, 0.06);
-  padding: 18px 17px;
-}
-.lg-card.single {
-  width: 100%;
-}
-
-.lg-dots {
-  margin-top: 14px;
-  display: flex;
-  justify-content: center;
-  gap: 6px;
-}
-.lg-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 3px;
-  background: #2b323d;
-  transition: width 0.18s;
-}
-.lg-dot.is-on {
-  width: 18px;
-  background: var(--lime, #c6f24e);
-}
-
-.lg-card-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-}
-.lg-card-id {
-  min-width: 0;
-}
-.lg-card-name {
-  display: block;
-  font: 700 21px/1.3 "IBM Plex Sans", sans-serif;
-  letter-spacing: -0.01em;
-  color: #eef1f7;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  text-decoration: none;
-}
-.lg-card-meta {
-  margin-top: 4px;
-  font: 500 11.5px "IBM Plex Mono", "IBM Plex Sans", monospace;
-  color: #8b93a6;
-}
-.lg-card-rank {
-  flex: none;
-  text-align: end;
-}
-.lg-rank-num {
-  font: 400 30px/1 "Anton", sans-serif;
-  color: #eef1f7;
-}
-.lg-rank-of {
-  font: 500 12px "IBM Plex Mono", "IBM Plex Sans", monospace;
-  color: #6f7787;
-}
-.lg-rank-delta {
-  margin-top: 3px;
-  font: 600 11px "IBM Plex Mono", "IBM Plex Sans", monospace;
-  color: #c9cfdb;
-}
-
-.lg-standings {
-  margin-top: 16px;
-  padding-top: 13px;
-  border-top: 1px solid rgba(148, 163, 184, 0.14);
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-}
-.lg-srow {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  font: 500 12px "IBM Plex Mono", "IBM Plex Sans", monospace;
-  color: #8b93a6;
-}
-.lg-srank {
-  width: 14px;
-}
-.lg-sname {
-  flex: 1;
-  min-width: 0;
-  font: 600 13px "IBM Plex Sans", sans-serif;
-  color: #c9cfdb;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.lg-srow.is-me {
-  color: #eef1f7;
-  font-weight: 600;
-}
-.lg-srow.is-me .lg-sname {
-  color: #eef1f7;
-  font-weight: 700;
-}
-
-.lg-card-action {
-  margin-top: 14px;
-  padding: 12px 0 0;
+  padding: 0 14px;
   border: 0;
-  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 19px;
   background: none;
-  width: 100%;
-  text-align: start;
-  cursor: pointer;
-  display: flex;
+  box-shadow: inset 0 0 0 1px rgba(242, 242, 239, 0.22);
+  color: #c9cbcd;
+  text-decoration: none;
+  font: 600 13px "IBM Plex Sans Hebrew", "IBM Plex Sans", var(--sans);
+  display: inline-flex;
   align-items: center;
-  gap: 11px;
-  color: inherit;
+  gap: 6px;
+  white-space: nowrap;
+  cursor: pointer;
 }
-.lg-dot-lime {
-  flex: none;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--lime, #c6f24e);
-}
-.lg-action-body {
-  flex: 1;
-  min-width: 0;
-}
-.lg-action-title {
-  display: block;
-  font: 600 14px "IBM Plex Sans", sans-serif;
-  color: #eef1f7;
-}
-.lg-action-sub {
-  display: block;
-  margin-top: 2px;
-  font: 500 11.5px "IBM Plex Mono", "IBM Plex Sans", monospace;
-  color: #8b93a6;
-}
-.lg-card-action svg {
-  flex: none;
+.btn-friendly svg {
   width: 13px;
   height: 13px;
-  stroke: #8b93a6;
+  stroke: var(--court);
+  stroke-width: 2.6;
+}
+/* Below 380px the two buttons and the title stop fitting; the plus goes
+   before the word does. */
+@media (max-width: 379px) {
+  .btn-friendly svg { display: none; }
+  .btn-friendly { gap: 0; }
 }
 
-.lg-open-head {
-  margin-top: 20px;
-  padding-top: 13px;
-  border-top: 1px solid rgba(148, 163, 184, 0.14);
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-}
-.lg-open-head span:first-child {
-  font: 400 19px/1 "Anton", sans-serif;
-  letter-spacing: 0.01em;
-  text-transform: uppercase;
-}
-.lg-open-head span:last-child {
-  font: 500 12px "IBM Plex Mono", "IBM Plex Sans", monospace;
-  color: #8b93a6;
-}
-
-.open-league-list {
-  display: flex;
-  flex-direction: column;
-}
-
-.open-league-row {
+.lg-sec {
+  margin-top: 24px;
+  padding: 0 22px;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 11px 0;
-  background: none;
-  border: 0;
-  border-radius: 0;
+}
+.lg-sec-title {
+  flex: none;
+  font: 600 12px "IBM Plex Sans Hebrew", "IBM Plex Sans", var(--sans);
+  letter-spacing: 0.08em;
+  color: #84878c;
+}
+.lg-sec-rule { flex: 1; height: 1px; background: rgba(242, 242, 239, 0.11); }
+.lg-sec-num { flex: none; font: 400 15px/1 "Anton", var(--display); color: #84878c; }
+.lg-sec-range {
+  flex: none;
+  font: 500 10.5px "IBM Plex Mono", "IBM Plex Sans", var(--mono);
+  color: #6e7176;
+}
+
+.lg-list { margin-top: 2px; padding: 0 22px; }
+.lg-row {
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(242, 242, 239, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 12px;
   text-decoration: none;
   color: inherit;
 }
-
-.open-league-body {
-  flex: 1;
-  min-width: 0;
-}
-
-.open-league-name {
-  font-family: "IBM Plex Sans", var(--sans);
-  font-weight: 700;
-  font-size: 13.5px;
-  color: var(--ink-dim);
+.lg-row:last-child { border-bottom: 0; }
+.lg-row-body { flex: 1; min-width: 0; display: block; }
+.lg-row-name {
+  display: block;
+  font: 600 17px "IBM Plex Sans Hebrew", "IBM Plex Sans", var(--sans);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
-.open-league-meta {
-  font-family: "IBM Plex Mono", "IBM Plex Sans", var(--mono);
-  font-weight: 500;
-  font-size: 11px;
-  color: var(--muted);
-  margin-top: 2px;
+.lg-row-meta {
+  display: block;
+  margin-top: 5px;
+  font: 500 11px "IBM Plex Mono", "IBM Plex Sans", var(--mono);
+  letter-spacing: 0.06em;
+  color: #84878c;
+  text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-
-.open-league-join {
+.lg-row-tag {
   flex: none;
-  font-family: "IBM Plex Sans", var(--sans);
-  font-weight: 600;
-  font-size: 12px;
-  color: var(--ink-dim);
+  font: 500 10.5px "IBM Plex Mono", "IBM Plex Sans", var(--mono);
+  letter-spacing: 0.1em;
+  color: var(--court);
+  text-transform: uppercase;
+}
+.lg-row-chev { flex: none; width: 14px; height: 14px; color: #6e7176; }
+.lg-row.is-over .lg-row-name { color: #c9cbcd; }
+.lg-row.is-over .lg-row-meta { color: #6e7176; }
+
+.lg-row--open .lg-row-name {
+  font-size: 15px;
+  color: #c9cbcd;
+}
+.lg-row--open .lg-row-meta { font-size: 10.5px; }
+/* Three rows with three filled buttons would be noise, so joining is a word. */
+.lg-row-join {
+  flex: none;
+  font: 600 12.5px "IBM Plex Sans Hebrew", "IBM Plex Sans", var(--sans);
+  color: var(--court);
 }
 
 .profile-section-header-link {

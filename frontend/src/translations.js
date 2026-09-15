@@ -1217,6 +1217,10 @@ const PAIRS = [
   ["יציאה", "SIGN OUT"],
   ["מחיקת חשבון", "DELETE ACCOUNT"],
   ["נשמר אוטומטית", "SAVED AUTOMATICALLY"],
+  // Leagues page (175a)
+  ["ליגה חדשה", "New league"],
+  ["העונה נגמרה", "Season over"],
+  ["יש לי משחק", "My match"],
 ];
 
 const heToEn = {};
