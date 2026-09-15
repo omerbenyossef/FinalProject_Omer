@@ -11,7 +11,6 @@ export default function ForgotPassword() {
   // account there's nothing left to ask, so this screen doesn't stop here.
   const handedOver = (searchParams.get("email") ?? "").trim();
   const [email, setEmail] = useState(handedOver);
-  const [message, setMessage] = useState("");
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -61,7 +60,10 @@ export default function ForgotPassword() {
     setSubmitting(true);
     try {
       const result = await request(email);
-      if (result !== true) setMessage(result);
+      // Whatever the server answers, the form stays: the address may simply
+      // need correcting, and a screen with nothing on it but a sentence is a
+      // dead end.
+      if (result !== true) setNotice(result);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -85,27 +87,23 @@ export default function ForgotPassword() {
             <p className="muted" style={{ marginBottom: 14 }}>
               {t("הזינו את כתובת האימייל של החשבון כדי להגדיר סיסמה חדשה")}
             </p>
-            {message ? (
-              <p className="muted">{t(message)}</p>
-            ) : (
-              <form onSubmit={handleSubmit}>
-                <label>
-                  {t("אימייל")}
-                  <input
-                    type="email"
-                    autoComplete="username"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </label>
-                {notice && <p className="muted">{t(notice)}</p>}
-                {error && <p className="error">{t(error)}</p>}
-                <button type="submit" className="btn-primary" disabled={submitting}>
-                  {submitting ? t("שולח...") : t("המשך")}
-                </button>
-              </form>
-            )}
+            <form onSubmit={handleSubmit}>
+              <label>
+                {t("אימייל")}
+                <input
+                  type="email"
+                  autoComplete="username"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </label>
+              {notice && <p className="muted">{t(notice)}</p>}
+              {error && <p className="error">{t(error)}</p>}
+              <button type="submit" className="btn-primary" disabled={submitting}>
+                {submitting ? t("שולח...") : t("המשך")}
+              </button>
+            </form>
           </>
         )}
         <p className="muted" style={{ marginTop: 14 }}>

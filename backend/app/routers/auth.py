@@ -1,3 +1,4 @@
+import os
 import secrets
 from datetime import datetime, timedelta
 
@@ -15,6 +16,14 @@ from .matches import _auto_confirm_overdue
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 RESET_TOKEN_EXPIRE_HOURS = 1
+
+# There is no working way to send mail yet, so the address on a reset request
+# is identification and not verification: if it names an account, the token
+# comes straight back in the reply and the client goes on to set a new
+# password. Anyone who knows a registered address can therefore reset that
+# account, and the reply says whether an address is registered. Set
+# PASSWORD_RESET_WITHOUT_EMAIL=0 once mail works to restore the emailed link.
+RESET_WITHOUT_EMAIL = os.environ.get("PASSWORD_RESET_WITHOUT_EMAIL", "1") != "0"
 
 
 @router.post("/register", response_model=schemas.Token)
@@ -267,26 +276,23 @@ def delete_account(
 
 @router.post("/forgot-password", response_model=schemas.ForgotPasswordOut)
 def forgot_password(payload: schemas.ForgotPasswordRequest, db: Session = Depends(get_db)):
+    # Also on when mail simply isn't configured, so the flow can't dead-end
+    # into a link that was never sent.
+    hand_back_token = RESET_WITHOUT_EMAIL or not email_configured()
     user = db.query(models.User).filter(models.User.email == payload.email).first()
     if user:
         user.reset_token = secrets.token_urlsafe(32)
         user.reset_token_expires = datetime.utcnow() + timedelta(hours=RESET_TOKEN_EXPIRE_HOURS)
         db.commit()
-        # No mail is set up yet, so there is nowhere to send the link: hand the
-        # token straight back and let the client go on to the new-password
-        # screen. Setting GMAIL_ADDRESS and GMAIL_APP_PASSWORD turns this
-        # branch off on its own and the flow is an emailed link again, with no
-        # other change. Until then anyone who knows an address can reset that
-        # account, and the reply says whether the address is registered.
-        if not email_configured():
+        if hand_back_token:
             return schemas.ForgotPasswordOut(
                 message="אפשר להגדיר סיסמה חדשה", reset_token=user.reset_token
             )
         send_reset_email(user.email, user.reset_token)
-    elif not email_configured():
-        # In that mode the reply already says whether an address is registered
-        # (a real one comes back with a token), so there is nothing left for
-        # the careful wording to protect — say it plainly instead.
+    elif hand_back_token:
+        # The reply already tells a registered address from an unknown one (a
+        # registered one comes back with a token), so the careful wording has
+        # nothing left to protect — say it plainly instead.
         return schemas.ForgotPasswordOut(message="אין חשבון עם האימייל הזה")
 
     return schemas.ForgotPasswordOut(
