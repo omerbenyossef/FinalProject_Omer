@@ -1226,6 +1226,8 @@ const PAIRS = [
     "Enter the email address on the account to set a new password",
   ],
   ["אפשר להגדיר סיסמה חדשה", "You can set a new password"],
+  ["רגע, בודקים את החשבון", "One moment, checking the account"],
+  ["אין חשבון עם האימייל הזה", "There's no account with that email"],
   ["תאריך פתיחה", "Start date"],
   [
     "ליגות נפתחות ביום ראשון, כדי שכל מחזור יהיה שבוע שלם.",

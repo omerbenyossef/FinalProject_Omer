@@ -283,6 +283,11 @@ def forgot_password(payload: schemas.ForgotPasswordRequest, db: Session = Depend
                 message="אפשר להגדיר סיסמה חדשה", reset_token=user.reset_token
             )
         send_reset_email(user.email, user.reset_token)
+    elif not email_configured():
+        # In that mode the reply already says whether an address is registered
+        # (a real one comes back with a token), so there is nothing left for
+        # the careful wording to protect — say it plainly instead.
+        return schemas.ForgotPasswordOut(message="אין חשבון עם האימייל הזה")
 
     return schemas.ForgotPasswordOut(
         message="אם קיים חשבון עם האימייל הזה, נשלח אליו מייל עם קישור לאיפוס הסיסמה"

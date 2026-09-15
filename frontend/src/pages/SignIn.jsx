@@ -100,7 +100,12 @@ export default function SignIn() {
             <label className="signfield-label" htmlFor="signin-password">
               {t("PASSWORD")}
             </label>
-            <Link className="signscreen-inline-link" to="/forgot-password">
+            {/* Carry the address over: someone who already typed it here
+                shouldn't have to identify themselves twice. */}
+            <Link
+              className="signscreen-inline-link"
+              to={`/forgot-password${email.trim() ? `?email=${encodeURIComponent(email.trim())}` : ""}`}
+            >
               {t("FORGOT")}
             </Link>
           </div>
