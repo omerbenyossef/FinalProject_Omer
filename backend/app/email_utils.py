@@ -8,6 +8,13 @@ GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD")
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173")
 
 
+def email_configured() -> bool:
+    """Whether outgoing mail is set up. Callers that need to reach the user
+    some other way when it isn't (the password reset) ask this rather than
+    reading the two secrets themselves."""
+    return bool(GMAIL_ADDRESS and GMAIL_APP_PASSWORD)
+
+
 def send_reset_email(to_email: str, token: str) -> None:
     reset_link = f"{FRONTEND_URL}/reset-password?token={token}"
 

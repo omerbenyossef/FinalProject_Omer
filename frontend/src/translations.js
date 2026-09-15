@@ -1221,6 +1221,11 @@ const PAIRS = [
   ["ליגה חדשה", "New league"],
   ["העונה נגמרה", "Season over"],
   ["יש לי משחק", "My match"],
+  [
+    "הזינו את כתובת האימייל של החשבון כדי להגדיר סיסמה חדשה",
+    "Enter the email address on the account to set a new password",
+  ],
+  ["אפשר להגדיר סיסמה חדשה", "You can set a new password"],
   ["תאריך פתיחה", "Start date"],
   [
     "ליגות נפתחות ביום ראשון, כדי שכל מחזור יהיה שבוע שלם.",

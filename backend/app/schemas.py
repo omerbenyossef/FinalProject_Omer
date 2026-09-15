@@ -45,6 +45,11 @@ class MessageOut(BaseModel):
     message: str
 
 
+class ForgotPasswordOut(MessageOut):
+    # Only set while no mail is configured — see forgot_password.
+    reset_token: Optional[str] = None
+
+
 class ChangePasswordRequest(BaseModel):
     current_password: str
     new_password: str

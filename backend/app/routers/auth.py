@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from .. import models, schemas
 from ..auth import create_access_token, hash_password, verify_password, get_current_user
 from ..database import get_db
-from ..email_utils import send_reset_email
+from ..email_utils import email_configured, send_reset_email
 from ..rating_utils import match_winner_id
 from .matches import _auto_confirm_overdue
 
@@ -265,16 +265,26 @@ def delete_account(
     return schemas.MessageOut(message="החשבון נמחק בהצלחה")
 
 
-@router.post("/forgot-password", response_model=schemas.MessageOut)
+@router.post("/forgot-password", response_model=schemas.ForgotPasswordOut)
 def forgot_password(payload: schemas.ForgotPasswordRequest, db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.email == payload.email).first()
     if user:
         user.reset_token = secrets.token_urlsafe(32)
         user.reset_token_expires = datetime.utcnow() + timedelta(hours=RESET_TOKEN_EXPIRE_HOURS)
         db.commit()
+        # No mail is set up yet, so there is nowhere to send the link: hand the
+        # token straight back and let the client go on to the new-password
+        # screen. Setting GMAIL_ADDRESS and GMAIL_APP_PASSWORD turns this
+        # branch off on its own and the flow is an emailed link again, with no
+        # other change. Until then anyone who knows an address can reset that
+        # account, and the reply says whether the address is registered.
+        if not email_configured():
+            return schemas.ForgotPasswordOut(
+                message="אפשר להגדיר סיסמה חדשה", reset_token=user.reset_token
+            )
         send_reset_email(user.email, user.reset_token)
 
-    return schemas.MessageOut(
+    return schemas.ForgotPasswordOut(
         message="אם קיים חשבון עם האימייל הזה, נשלח אליו מייל עם קישור לאיפוס הסיסמה"
     )
 
