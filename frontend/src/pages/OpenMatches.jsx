@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { useLanguage } from "../LanguageContext.jsx";
+import { useAuth } from "../AuthContext.jsx";
+import { formatWeekdayDateTime } from "../matchUtils.js";
 import Avatar from "../Avatar.jsx";
 import { useOpenAction } from "../OpenActionContext.jsx";
 import { ChevronIcon } from "../Icons.jsx";
@@ -87,7 +89,17 @@ function remindedToday(item) {
 
 export default function OpenMatches() {
   const { t } = useLanguage();
-  const { reload: reloadOpenAction } = useOpenAction();
+  const { openItems, reload: reloadOpenAction } = useOpenAction();
+  const { user } = useAuth();
+  const myId = user?.id;
+
+  // What this player has put to someone else and is waiting on: a time they
+  // proposed, or an invitation nobody has answered. The two sections below are
+  // about matches whose round is over; these are live, and until now the only
+  // place they appeared was the tab bar's action button.
+  const mine = (openItems ?? []).filter(
+    (item) => item.type === "waiting" && item.match?.status === "pending"
+  );
   const navigate = useNavigate();
 
   const [data, setData] = useState(null);
@@ -158,8 +170,13 @@ export default function OpenMatches() {
           <ChevronIcon aria-hidden="true" />
         </button>
 
-        {total === 0 ? (
+        {/* "All closed" is only true if there is nothing here at all — the
+            proposals below are live, not leftovers, so they get their own
+            heading rather than sitting under a claim that contradicts them. */}
+        {total === 0 && mine.length === 0 ? (
           <h1 className="om-title om-title--closed">{t("כל המשחקים שלך נסגרו")}</h1>
+        ) : total === 0 ? (
+          <h1 className="om-title">{t("ההצעות שלך")}</h1>
         ) : (
           <>
             <h1 className="om-title">{t("משחקים שעוד לא נסגרו")}</h1>
@@ -297,9 +314,71 @@ export default function OpenMatches() {
           </>
         )}
 
-        {them.length > 0 && (
+        {mine.length > 0 && (
           <>
             <div className={`om-section${you.length > 0 ? " spaced" : ""}`}>
+              <span className="om-section-name">{t("הצעתי, ומחכה לתשובה")}</span>
+              <span className="om-section-rule" />
+              <span className="om-section-count" dir="ltr">
+                {mine.length}
+              </span>
+            </div>
+            <div className="om-rows">
+              {mine.map((item) => {
+                const m = item.match;
+                const opponent = m.player1.id === myId ? m.player2 : m.player1;
+                const isInvite = item.kind === "friendly" && m.invite_status === "pending";
+                return (
+                  <div className="om-row" key={`mine-${m.id}`}>
+                    <div className="om-titles">
+                      <div className="om-card-top">
+                        <Avatar name={opponent?.name} photoUrl={opponent?.photo_url} size={28} />
+                        <span className="om-row-name">{opponent?.name}</span>
+                        <span className="om-meta" dir="ltr">
+                          {item.league_name ? item.league_name : t("ידידותי")}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="om-row-line">
+                      {m.scheduled_at
+                        ? t("הצעת {when} ומחכה לאישור", {
+                            when: formatWeekdayDateTime(new Date(m.scheduled_at), t),
+                          })
+                        : t("שלחת הזמנה ועוד לא נקבעה שעה")}
+                    </p>
+                    <div className="om-mine-actions">
+                      <button
+                        type="button"
+                        className="om-remind"
+                        onClick={() => navigate(`/matches/${m.id}/schedule`)}
+                      >
+                        {m.scheduled_at ? t("שינוי השעה") : t("הצעת שעה")}
+                      </button>
+                      <button
+                        type="button"
+                        className="om-mine-cancel"
+                        disabled={busyId === m.id}
+                        onClick={() =>
+                          run(m.id, () =>
+                            isInvite && !m.scheduled_at
+                              ? api.cancelFriendlyInvite(m.id)
+                              : api.declineMatchSchedule(m.id)
+                          )
+                        }
+                      >
+                        {isInvite && !m.scheduled_at ? t("ביטול ההזמנה") : t("ביטול ההצעה")}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        {them.length > 0 && (
+          <>
+            <div className={`om-section${you.length > 0 || mine.length > 0 ? " spaced" : ""}`}>
               <span className="om-section-name">{t("מחכה להם")}</span>
               <span className="om-section-rule" />
               <span className="om-section-count" dir="ltr">

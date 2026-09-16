@@ -343,6 +343,15 @@ def _classify_open_item(match: models.Match, user_id: int, round_over: bool = Fa
         return "waiting" if match.reported_by == user_id else "confirm"
 
     if match.status == models.MatchStatus.pending:
+        if (
+            match.kind == models.MatchKind.friendly
+            and match.invite_status == models.FriendlyInviteStatus.pending
+            and match.player1_id == user_id
+        ):
+            # An invitation this viewer sent and nobody has answered. It used to
+            # classify as nothing at all, so the only trace of it was a dimmed
+            # card on the home screen — there was nowhere to go and cancel it.
+            return "waiting"
         if not match.scheduled_at:
             # No time was ever agreed. While the round is open that is the
             # schedule flow's business, not a to-do; once it closes, the only

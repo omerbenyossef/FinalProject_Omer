@@ -218,6 +218,43 @@ def decline_invite(
     db.commit()
 
 
+@router.post("/matches/{match_id}/cancel", status_code=status.HTTP_204_NO_CONTENT)
+def cancel_invite(
+    match_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """The inviter taking it back. Declining is the invited player's answer;
+    this is the other side of the same coin, and until now the player who sent
+    an invitation had no way to withdraw it."""
+    match = _get_friendly_match(db, match_id)
+    if current_user.id != match.player1_id:
+        raise HTTPException(status_code=403, detail="רק מי ששלח את ההזמנה יכול לבטל אותה")
+    if match.invite_status != models.FriendlyInviteStatus.pending:
+        raise HTTPException(status_code=400, detail="ההזמנה כבר טופלה")
+
+    match.invite_status = models.FriendlyInviteStatus.declined
+    # Nothing is being asked of them any more, so the rows that asked go.
+    db.query(models.Notification).filter(
+        models.Notification.user_id == match.player2_id,
+        models.Notification.match_id == match.id,
+    ).delete(synchronize_session=False)
+    db.commit()
+
+    notify_user(
+        db,
+        match.player2_id,
+        "ההזמנה בוטלה",
+        f"{current_user.name} ביטל/ה את ההזמנה למשחק ידידותי",
+        "/profile",
+        type="invite_cancelled",
+        actor_name=current_user.name,
+        match_id=match.id,
+        title_en="Invite cancelled",
+        body_en=f"{current_user.name} cancelled the friendly invite",
+    )
+
+
 @router.post("/matches/{match_id}/remind", status_code=status.HTTP_204_NO_CONTENT)
 def remind_friendly(
     match_id: int,
