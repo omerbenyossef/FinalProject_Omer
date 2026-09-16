@@ -1273,6 +1273,14 @@ const PAIRS = [
   ["תאריך פתיחה", "Start date"],
   ["המחזור הראשון נפתח ב{date}", "The first round opens on {date}"],
   ["בחר את היום שבו המחזור הראשון נפתח.", "Pick the day the first round opens."],
+  [
+    "המחזור הראשון נפתח ב{date}. שינוי התאריך מזיז את כל המחזורים.",
+    "The first round opens on {date}. Changing the date moves every round with it.",
+  ],
+  [
+    "בלי תאריך, המחזורים נספרים מהיום שבו נוצר לוח המשחקים.",
+    "With no date, rounds are counted from the day the schedule is created.",
+  ],
 ];
 
 const heToEn = {};

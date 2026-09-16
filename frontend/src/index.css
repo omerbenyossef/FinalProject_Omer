@@ -7834,3 +7834,11 @@ button:active { transform: translateY(1px); }
 .rk-face .skeleton { border-radius: 50%; }
 .rk-row .rk-who,
 .rk-me .rk-who { width: 92px; }
+
+/* The line under the league's opening date, explaining what moving it does. */
+.lrf-note {
+  display: block;
+  margin-top: 6px;
+  font: 500 11.5px/1.45 "IBM Plex Sans", var(--sans);
+  color: #8b93a6;
+}

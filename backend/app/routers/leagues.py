@@ -738,6 +738,13 @@ def update_league_rules(
         league.starts_at = None
     elif rules_in.starts_at is not None:
         league.starts_at = rules_in.starts_at
+        # Every round is measured from schedule_started_at, so a league that
+        # already has a schedule has to move its anchor too — otherwise the
+        # new opening day is a label and the weeks stay where they were. Times
+        # two players already agreed on are left alone: those are arrangements
+        # between them, not something a date change should quietly rewrite.
+        if league.schedule_started_at is not None:
+            league.schedule_started_at = rules_in.starts_at
     if rules_in.location_name is not None:
         league.location_name = rules_in.location_name
     if rules_in.lat is not None:

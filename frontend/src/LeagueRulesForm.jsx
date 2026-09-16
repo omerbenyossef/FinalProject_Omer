@@ -3,8 +3,18 @@ import { useLanguage } from "./LanguageContext.jsx";
 import { NTRP_STEPS } from "./matchUtils.js";
 import { getCurrentPosition } from "./geo.js";
 
+// Spelled out in the reader's own language, so nothing rests on whether the
+// date field shows dd/mm or mm/dd.
+function longDate(value, language) {
+  return new Date(value).toLocaleDateString(language === "en" ? "en-GB" : "he-IL", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+}
+
 export default function LeagueRulesForm({ league, onUpdate, onCancel }) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [bestOf, setBestOf] = useState(league.best_of);
   const [roundLengthDays, setRoundLengthDays] = useState(league.round_length_days);
   const [levelMin, setLevelMin] = useState(league.level_min ?? 1.5);
@@ -110,8 +120,17 @@ export default function LeagueRulesForm({ league, onUpdate, onCancel }) {
         />
       </label>
       <label>
-        {t("תאריך פתיחה (אופציונלי)")}
+        {t("תאריך פתיחה")}
         <input type="date" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} />
+        {/* Changing it moves every round with it, so say so before they save
+            rather than after they notice. */}
+        <span className="lrf-note">
+          {startsAt
+            ? t("המחזור הראשון נפתח ב{date}. שינוי התאריך מזיז את כל המחזורים.", {
+                date: longDate(startsAt, language),
+              })
+            : t("בלי תאריך, המחזורים נספרים מהיום שבו נוצר לוח המשחקים.")}
+        </span>
       </label>
       <label>
         {t("מיקום (אופציונלי)")}

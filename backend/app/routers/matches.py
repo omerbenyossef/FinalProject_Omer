@@ -478,7 +478,11 @@ def generate_schedule(
         next_round_number += 1
 
     if league.schedule_started_at is None:
-        league.schedule_started_at = datetime.utcnow()
+        # The rounds are counted from this anchor, and the creator already said
+        # which day the league opens — so they run from that day rather than
+        # from whenever this button happened to be pressed. Generating the
+        # schedule a week early no longer opens round 1 a week early.
+        league.schedule_started_at = league.starts_at or datetime.utcnow()
 
     db.commit()
     for match in created:
