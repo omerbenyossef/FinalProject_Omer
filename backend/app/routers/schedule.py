@@ -447,7 +447,23 @@ def propose_match_schedule(
     current_user: models.User = Depends(get_current_user),
 ):
     match = _get_match_for_participant(db, match_id, current_user.id)
-    if match.kind == models.MatchKind.friendly and match.invite_status != models.FriendlyInviteStatus.accepted:
+    # An invitation without a time is a question, not an invitation, so the
+    # player who sent it may name the time in the same breath. The invited
+    # player can't propose one back until they've accepted — there is nothing
+    # for them to schedule yet.
+    pending_invite = (
+        match.kind == models.MatchKind.friendly
+        and match.invite_status == models.FriendlyInviteStatus.pending
+    )
+    if pending_invite and current_user.id != match.player1_id:
+        raise HTTPException(status_code=400, detail="ההזמנה עדיין לא אושרה")
+    if (
+        match.kind == models.MatchKind.friendly
+        and match.invite_status not in (
+            models.FriendlyInviteStatus.pending,
+            models.FriendlyInviteStatus.accepted,
+        )
+    ):
         raise HTTPException(status_code=400, detail="ההזמנה עדיין לא אושרה")
     if match.status != models.MatchStatus.pending:
         raise HTTPException(status_code=400, detail="אי אפשר לתאם זמן למשחק שכבר דווח")
@@ -508,20 +524,42 @@ def propose_match_schedule(
     db.refresh(match)
 
     opponent_id = match.player2_id if current_user.id == match.player1_id else match.player1_id
-    body = (
-        f"{current_user.name} הציע/ה שעה למשחק שלכם, ומחכה לאישור שלך"
-        if len(starts) == 1
-        else f"{current_user.name} הציע/ה {len(starts)} זמנים למשחק שלכם, בחר/י אחד מהם"
-    )
-    body_en = (
-        f"{current_user.name} proposed a time for your match and is waiting for you"
-        if len(starts) == 1
-        else f"{current_user.name} proposed {len(starts)} times for your match — pick one"
-    )
+    if pending_invite:
+        # They were told about the invitation a moment ago; that row gives way
+        # to this one rather than sitting above it saying half the story.
+        db.query(models.Notification).filter(
+            models.Notification.user_id == opponent_id,
+            models.Notification.match_id == match.id,
+        ).delete(synchronize_session=False)
+        db.commit()
+    title = "הזמנה למשחק ידידותי" if pending_invite else "הצעת זמן למשחק"
+    title_en = "Friendly invite" if pending_invite else "A time for your match"
+    if pending_invite:
+        body = (
+            f"{current_user.name} מזמין/ה אותך למשחק ידידותי והציע/ה שעה"
+            if len(starts) == 1
+            else f"{current_user.name} מזמין/ה אותך למשחק ידידותי והציע/ה {len(starts)} זמנים"
+        )
+        body_en = (
+            f"{current_user.name} invited you to a friendly and suggested a time"
+            if len(starts) == 1
+            else f"{current_user.name} invited you to a friendly and suggested {len(starts)} times"
+        )
+    else:
+        body = (
+            f"{current_user.name} הציע/ה שעה למשחק שלכם, ומחכה לאישור שלך"
+            if len(starts) == 1
+            else f"{current_user.name} הציע/ה {len(starts)} זמנים למשחק שלכם, בחר/י אחד מהם"
+        )
+        body_en = (
+            f"{current_user.name} proposed a time for your match and is waiting for you"
+            if len(starts) == 1
+            else f"{current_user.name} proposed {len(starts)} times for your match — pick one"
+        )
     notify_user(
         db,
         opponent_id,
-        "הצעת זמן למשחק",
+        title,
         body,
         f"/matches/{match.id}",
         category="time_proposal",
@@ -529,7 +567,7 @@ def propose_match_schedule(
         actor_name=current_user.name,
         league_id=match.league_id,
         match_id=match.id,
-        title_en="A time for your match",
+        title_en=title_en,
         body_en=body_en,
     )
 
@@ -550,6 +588,13 @@ def confirm_match_schedule(
         raise HTTPException(status_code=400, detail="הזמן כבר מאושר")
     if match.scheduled_by == current_user.id:
         raise HTTPException(status_code=400, detail="לא ניתן לאשר הצעת זמן שהצעת בעצמך")
+
+    # Saying yes to the time is saying yes to the invitation — one tap, not two.
+    accepts_invite = (
+        match.kind == models.MatchKind.friendly
+        and match.invite_status == models.FriendlyInviteStatus.pending
+        and current_user.id == match.player2_id
+    )
 
     # Picking one of several offered slots. The one-tap confirms on the home,
     # round and league screens send no option_id — they only ever showed the
@@ -574,6 +619,8 @@ def confirm_match_schedule(
     _enforce_schedule_conflicts(db, match, start, end, payload.override_conflict_warning)
 
     match.schedule_confirmed = True
+    if accepts_invite:
+        match.invite_status = models.FriendlyInviteStatus.accepted
     _clear_time_options(db, match)
     db.commit()
     db.refresh(match)
@@ -584,16 +631,24 @@ def confirm_match_schedule(
     notify_user(
         db,
         match.scheduled_by,
-        "הזמן למשחק אושר",
-        f"{current_user.name} אישר/ה את הזמן שהצעת למשחק שלכם",
+        "ההזמנה אושרה" if accepts_invite else "הזמן למשחק אושר",
+        (
+            f"{current_user.name} אישר/ה את ההזמנה ואת השעה שהצעת"
+            if accepts_invite
+            else f"{current_user.name} אישר/ה את הזמן שהצעת למשחק שלכם"
+        ),
         f"/matches/{match.id}",
         category="time_proposal",
         type="time_confirmed",
         actor_name=current_user.name,
         league_id=match.league_id,
         match_id=match.id,
-        title_en="Time confirmed",
-        body_en=f"{current_user.name} confirmed the time you proposed",
+        title_en="Invite accepted" if accepts_invite else "Time confirmed",
+        body_en=(
+            f"{current_user.name} accepted your invite and the time you suggested"
+            if accepts_invite
+            else f"{current_user.name} confirmed the time you proposed"
+        ),
     )
     resolve_match_notifications(
         db,

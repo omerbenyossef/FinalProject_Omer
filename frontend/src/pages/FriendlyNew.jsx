@@ -30,7 +30,6 @@ export default function FriendlyNew() {
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [invitingId, setInvitingId] = useState(null);
-  const [invitedIds, setInvitedIds] = useState([]);
   const [linkBusy, setLinkBusy] = useState(false);
   // The copied link, kept on screen: a silent clipboard write is
   // indistinguishable from a button that does nothing.
@@ -51,11 +50,11 @@ export default function FriendlyNew() {
     setInvitingId(playerId);
     setError("");
     try {
-      await api.createFriendlyInvite(playerId, selectedSportId);
-      // Stay here and say so. Leaving for the home screen looked like the tap
-      // had done nothing: an invitation you sent doesn't appear there, only
-      // ones you received.
-      setInvitedIds((prev) => [...prev, playerId]);
+      const match = await api.createFriendlyInvite(playerId, selectedSportId);
+      // An invitation with no time is a question, so go straight on to the
+      // time. Whatever they pick reaches the other player as one message, and
+      // one tap from them accepts both the invitation and the time.
+      navigate(`/matches/${match.id}/schedule`);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -160,19 +159,15 @@ export default function FriendlyNew() {
                       {playedSub(p, t)}
                     </div>
                   </div>
-                  {invitedIds.includes(p.id) ? (
-                    <span className="friendly-sent">{t("ההזמנה נשלחה")}</span>
-                  ) : (
-                    <button
-                      type="button"
-                      className="my-match-report"
-                      disabled={invitingId === p.id}
-                      onClick={() => handleInvite(p.id)}
-                    >
-                      <span className="my-match-dot" aria-hidden="true" />
-                      {invitingId === p.id ? t("שולח...") : t("הזמן")}
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    className="my-match-report"
+                    disabled={invitingId === p.id}
+                    onClick={() => handleInvite(p.id)}
+                  >
+                    <span className="my-match-dot" aria-hidden="true" />
+                    {invitingId === p.id ? t("שולח...") : t("הזמן")}
+                  </button>
                 </div>
               ))}
             {!loading && players.length === 0 && (
