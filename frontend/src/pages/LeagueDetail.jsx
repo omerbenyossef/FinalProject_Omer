@@ -19,6 +19,7 @@ import {
   formatWeekdayDateTime,
   activeRoundStatus,
   daysLeftPhrase,
+  daysUntilOpen,
   getActionCandidates,
   buildOpenAction,
 } from "../matchUtils.js";
@@ -349,6 +350,11 @@ export default function LeagueDetail() {
     league.schedule_started_at,
     roundLengthDays
   );
+  // A league that opens later isn't in round 1 yet, whatever the arithmetic
+  // says, so the header names the day instead of counting down inside a round
+  // nobody can play in.
+  const opensInDays = daysUntilOpen(league.starts_at);
+  const opensOn = league.starts_at ? new Date(league.starts_at) : null;
   const rankDelta = myStanding?.rank_delta ?? 0;
   // A points tie at the bottom of the table still means "behind" even though
   // the win-count gap rounds to 0 — only rank 1 counts as actually leading.
@@ -475,8 +481,18 @@ export default function LeagueDetail() {
 
         <div className="ld-meta" dir="ltr">
           {[
-            headCurrentRound !== null ? t("מחזור {n}", { n: headCurrentRound }) : null,
-            headCurrentRound !== null ? daysLeftPhrase(headDaysLeft, t) : null,
+            ...(opensInDays !== null
+              ? [
+                  t("נפתחת ב-{date}", {
+                    date: `${String(opensOn.getDate()).padStart(2, "0")}.${String(
+                      opensOn.getMonth() + 1
+                    ).padStart(2, "0")}`,
+                  }),
+                ]
+              : [
+                  headCurrentRound !== null ? t("מחזור {n}", { n: headCurrentRound }) : null,
+                  headCurrentRound !== null ? daysLeftPhrase(headDaysLeft, t) : null,
+                ]),
             t("{n} שחקנים", { n: members.length }),
           ]
             .filter(Boolean)

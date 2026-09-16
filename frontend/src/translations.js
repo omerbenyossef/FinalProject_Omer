@@ -1273,6 +1273,7 @@ const PAIRS = [
   ["תאריך פתיחה", "Start date"],
   ["המחזור הראשון נפתח ב{date}", "The first round opens on {date}"],
   ["בחר את היום שבו המחזור הראשון נפתח.", "Pick the day the first round opens."],
+  ["נפתחת ב-{date}", "opens {date}"],
   [
     "המחזור הראשון נפתח ב{date}. שינוי התאריך מזיז את כל המחזורים.",
     "The first round opens on {date}. Changing the date moves every round with it.",

@@ -81,6 +81,18 @@ export function daysUntil(date) {
 
 // Translatable equivalent of daysLeftLabel, for spots in the UI that render
 // in the app's own language rather than always-English numeric labels.
+// How many days until a league opens, or null once it has opened (or never
+// said when it would). A league whose rounds are anchored to a future date
+// isn't running yet, and "3 days left in round 1" would say it is.
+export function daysUntilOpen(startsAt, now = new Date()) {
+  if (!startsAt) return null;
+  const open = new Date(startsAt);
+  const openDay = new Date(open.getFullYear(), open.getMonth(), open.getDate());
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const days = Math.round((openDay - today) / 86400000);
+  return days > 0 ? days : null;
+}
+
 export function daysLeftPhrase(daysLeft, t) {
   return daysLeft === 1 ? t("יום אחד נותר") : t("{n} ימים נותרו", { n: daysLeft });
 }
