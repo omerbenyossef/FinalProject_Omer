@@ -4,6 +4,7 @@ import { useAuth } from "../AuthContext.jsx";
 import { useSport } from "../SportContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import { api } from "../api.js";
+import Avatar from "../Avatar.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
 import EmptyState from "../EmptyState.jsx";
 import EmptyLine from "../EmptyLine.jsx";
@@ -225,6 +226,9 @@ export default function Rankings() {
           Array.from({ length: 8 }).map((_, i) => (
             <li className="rk-row rk-row-skel" key={i}>
               <SkeletonBar width={26} height={16} />
+              <span className="rk-face">
+                <SkeletonBar width={28} height={28} />
+              </span>
               <span className="rk-who">
                 <SkeletonBar width={90} height={14} />
                 <SkeletonBar width={50} height={10} style={{ marginTop: 4 }} />
@@ -263,6 +267,9 @@ export default function Rankings() {
             >
               <span className="rk-rank" dir="ltr">
                 {p.rank}
+              </span>
+              <span className="rk-face">
+                <Avatar name={p.display_name} photoUrl={p.photo_url} size={28} />
               </span>
               <span className="rk-who">
                 {p.id === user.id ? (
@@ -308,6 +315,10 @@ export default function Rankings() {
             <button type="button" className="rk-me" onClick={scrollToMe}>
               <span className="rk-rank" dir="ltr">
                 {me.rank}
+              </span>
+              {/* The pinned row is the same row, so it carries the same face. */}
+              <span className="rk-face">
+                <Avatar name={me.display_name} photoUrl={user?.photo_url} size={28} />
               </span>
               <span className="rk-who">
                 <span className="rk-name">

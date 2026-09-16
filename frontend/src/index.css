@@ -7826,3 +7826,11 @@ button:active { transform: translateY(1px); }
 .pp-photo { margin-top: 20px; }
 .pp-photo .avatar { box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.22); }
 .pp-photo + .pp-name { margin-top: 14px; }
+
+/* ranks-entry-173's row grew a face. The bar is still what the eye reads down
+   the list, so the name column gives up the width the avatar needs rather
+   than the bar. */
+.rk-face { flex: none; line-height: 0; }
+.rk-face .skeleton { border-radius: 50%; }
+.rk-row .rk-who,
+.rk-me .rk-who { width: 92px; }

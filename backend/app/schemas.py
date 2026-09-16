@@ -588,6 +588,7 @@ class RankingsPlayerOut(BaseModel):
     id: int
     rank: int
     display_name: str
+    photo_url: Optional[str] = None
     ntrp: float
     wins: int
     losses: int

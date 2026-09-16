@@ -66,6 +66,7 @@ def _ntrp_ranked_entries(db, sport_id):
             {
                 "id": uid,
                 "display_name": rating.user.name,
+                "photo_url": rating.user.photo_url,
                 "ntrp": round_to_half(rating.level),
                 "wins": wins,
                 "losses": losses,
