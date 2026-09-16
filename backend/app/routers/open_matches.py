@@ -78,6 +78,7 @@ def _item(match: models.Match, user_id: int) -> tuple[str, schemas.OpenMatchItem
     common = dict(
         match_id=match.id,
         opponent_name=name,
+        opponent_photo_url=opponent.photo_url if opponent else None,
         league_id=match.league_id,
         league_name=match.league.name if match.league_id else None,
         round=match.round_number,

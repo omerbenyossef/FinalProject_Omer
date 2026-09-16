@@ -4,6 +4,7 @@ import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import { useSport } from "../SportContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
+import Avatar from "../Avatar.jsx";
 import { useOpenAction } from "../OpenActionContext.jsx";
 import { BellIcon } from "../Icons.jsx";
 import { SkeletonMatchRow } from "../Skeleton.jsx";
@@ -218,7 +219,10 @@ export default function Home() {
           )}
         </div>
         <div className="hw-body">
-          <span className={`hw-opponent${dim ? " dim" : ""}`}>{match.opponent_name}</span>
+          <span className="hw-who">
+            <Avatar name={match.opponent_name} photoUrl={match.opponent_photo_url} size={30} />
+            <span className={`hw-opponent${dim ? " dim" : ""}`}>{match.opponent_name}</span>
+          </span>
           <span className="hw-sub">
             {match.league_name ? (
               <span dir="auto" style={{ unicodeBidi: "isolate" }}>

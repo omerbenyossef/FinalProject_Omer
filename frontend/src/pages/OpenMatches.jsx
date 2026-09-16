@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { useLanguage } from "../LanguageContext.jsx";
+import Avatar from "../Avatar.jsx";
 import { useOpenAction } from "../OpenActionContext.jsx";
 import { ChevronIcon } from "../Icons.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
@@ -191,6 +192,11 @@ export default function OpenMatches() {
                 <div className="om-card" key={item.match_id}>
                   <div className="om-titles">
                     <div className="om-card-top">
+                      <Avatar
+                        name={item.opponent_name}
+                        photoUrl={item.opponent_photo_url}
+                        size={28}
+                      />
                       <span className="om-name">{item.opponent_name}</span>
                       <span className="om-meta" dir="ltr">
                         {playedOn(item)}
@@ -305,6 +311,11 @@ export default function OpenMatches() {
                 <div className="om-row" key={item.match_id}>
                   <div className="om-titles">
                     <div className="om-card-top">
+                      <Avatar
+                        name={item.opponent_name}
+                        photoUrl={item.opponent_photo_url}
+                        size={28}
+                      />
                       <span className="om-row-name">{item.opponent_name}</span>
                       <span className="om-meta" dir="ltr">
                         {playedOn(item)}

@@ -220,6 +220,7 @@ def home_week(
                 schemas.HomeWeekMatchOut(
                     id=match.id,
                     opponent_name=opponent.name if opponent else "",
+                    opponent_photo_url=opponent.photo_url if opponent else None,
                     league_name=league.name,
                     round=match.round_number,
                     scheduled_at=match.scheduled_at if match.schedule_confirmed else None,
@@ -270,6 +271,7 @@ def home_week(
             schemas.HomeWeekMatchOut(
                 id=match.id,
                 opponent_name=opponent.name if opponent else "",
+                opponent_photo_url=opponent.photo_url if opponent else None,
                 league_name=None,
                 round=None,
                 scheduled_at=match.scheduled_at if match.schedule_confirmed else None,

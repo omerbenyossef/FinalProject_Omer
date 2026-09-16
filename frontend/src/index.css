@@ -7842,3 +7842,14 @@ button:active { transform: translateY(1px); }
   font: 500 11.5px/1.45 "IBM Plex Sans", var(--sans);
   color: #8b93a6;
 }
+
+/* The opponent's face beside their name on the week card. The name still
+   wraps to two lines when it needs to, so the circle sits at the top of the
+   pair rather than floating in the middle of it. */
+.hw-who { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.hw-who .avatar { flex: none; }
+.hw-who .hw-opponent { min-width: 0; }
+
+/* Same on the matches screen. The row aligns on the baseline of the name and
+   the date beside it, so the circle centres itself against the text instead. */
+.om-card-top > .avatar { flex: none; align-self: center; }

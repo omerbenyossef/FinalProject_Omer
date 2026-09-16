@@ -711,6 +711,7 @@ class MatchDetailOut(BaseModel):
 class HomeWeekMatchOut(BaseModel):
     id: int
     opponent_name: str
+    opponent_photo_url: Optional[str] = None
     league_name: Optional[str] = None
     round: Optional[int] = None
     # Null when no time is agreed — the card shows its "no date" column.
@@ -798,6 +799,7 @@ class OpenMatchItemOut(BaseModel):
 
     match_id: int
     opponent_name: str
+    opponent_photo_url: Optional[str] = None
     league_id: Optional[int] = None
     league_name: Optional[str] = None
     round: Optional[int] = None
