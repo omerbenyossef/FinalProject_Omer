@@ -31,16 +31,28 @@ function buildDayOptions(roundEndDate, roundStartDate) {
   });
 }
 
+// Courts here are booked late — a match at 23:00 is ordinary — so the day runs
+// to its own midnight. The last slot is held as hour 24 rather than 0 so that
+// setHours rolls it into the next calendar day on its own: "Thursday 00:00" is
+// Thursday night, not the small hours of Thursday morning.
+const LAST_SLOT = "24:00";
+
 function buildTimeSlots() {
   const slots = [];
-  for (let h = 7; h <= 22; h++) {
+  for (let h = 7; h <= 23; h++) {
     slots.push(`${String(h).padStart(2, "0")}:00`);
-    if (h < 22) slots.push(`${String(h).padStart(2, "0")}:30`);
+    slots.push(`${String(h).padStart(2, "0")}:30`);
   }
+  slots.push(LAST_SLOT);
   return slots;
 }
 
 const TIME_SLOTS = buildTimeSlots();
+
+// 24:00 is midnight at the end of the day, and that is how it reads.
+function slotLabel(slot) {
+  return slot === LAST_SLOT ? "00:00" : slot;
+}
 
 // A slot is impossible if it overlaps a match either player already has
 // confirmed — the server rejects those anyway (_enforce_schedule_conflicts),
@@ -161,8 +173,10 @@ export default function ProposeSchedule() {
   };
   const picksOn = (day) => {
     const from = new Date(day).setHours(0, 0, 0, 0);
+    // Inclusive of the closing midnight: that instant is this day's last slot,
+    // and no other day offers it (every day starts at 07:00).
     const to = from + 86400000;
-    return picks.filter((ms) => ms >= from && ms < to).length;
+    return picks.filter((ms) => ms >= from && ms <= to).length;
   };
   function togglePick(day, time) {
     const ms = slotMs(day, time);
@@ -294,7 +308,7 @@ export default function ProposeSchedule() {
               disabled={taken}
               onClick={() => togglePick(selectedDay, slot)}
             >
-              <span dir="ltr">{slot}</span>
+              <span dir="ltr">{slotLabel(slot)}</span>
               <span className="sched-time-end">
                 {note && <span className="sched-time-note">{note}</span>}
                 {isSelected && <CheckIcon aria-hidden="true" />}
