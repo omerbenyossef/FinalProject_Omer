@@ -1274,6 +1274,9 @@ const PAIRS = [
   ["המחזור הראשון נפתח ב{date}", "The first round opens on {date}"],
   ["בחר את היום שבו המחזור הראשון נפתח.", "Pick the day the first round opens."],
   ["נפתחת ב-{date}", "opens {date}"],
+  ["ההזמנה נשלחה", "Invitation sent"],
+  ["מכין קישור...", "Making a link..."],
+  ["הקישור הועתק — אפשר לשלוח אותו", "Link copied \u2014 send it to them"],
   [
     "המחזור הראשון נפתח ב{date}. שינוי התאריך מזיז את כל המחזורים.",
     "The first round opens on {date}. Changing the date moves every round with it.",

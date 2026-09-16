@@ -7853,3 +7853,29 @@ button:active { transform: translateY(1px); }
 /* Same on the matches screen. The row aligns on the baseline of the name and
    the date beside it, so the circle centres itself against the text instead. */
 .om-card-top > .avatar { flex: none; align-self: center; }
+
+/* The friendly invite's two confirmations. Sending used to leave the screen
+   and copying used to say nothing, so both looked like a dead button. */
+.friendly-sent {
+  flex: none;
+  font: 600 13px "IBM Plex Sans", var(--sans);
+  color: var(--court);
+}
+.friendly-copied {
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--card-alt);
+}
+.friendly-copied-title {
+  margin: 0;
+  font: 600 13px "IBM Plex Sans", var(--sans);
+  color: var(--court);
+}
+.friendly-copied-url {
+  margin: 6px 0 0;
+  font: 500 11.5px/1.5 "IBM Plex Mono", var(--mono);
+  color: #8b93a6;
+  word-break: break-all;
+  user-select: all;
+}

@@ -30,7 +30,11 @@ export default function FriendlyNew() {
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [invitingId, setInvitingId] = useState(null);
+  const [invitedIds, setInvitedIds] = useState([]);
   const [linkBusy, setLinkBusy] = useState(false);
+  // The copied link, kept on screen: a silent clipboard write is
+  // indistinguishable from a button that does nothing.
+  const [copiedLink, setCopiedLink] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -48,9 +52,13 @@ export default function FriendlyNew() {
     setError("");
     try {
       await api.createFriendlyInvite(playerId, selectedSportId);
-      navigate("/profile");
+      // Stay here and say so. Leaving for the home screen looked like the tap
+      // had done nothing: an invitation you sent doesn't appear there, only
+      // ones you received.
+      setInvitedIds((prev) => [...prev, playerId]);
     } catch (err) {
       setError(err.message);
+    } finally {
       setInvitingId(null);
     }
   }
@@ -58,16 +66,29 @@ export default function FriendlyNew() {
   async function handleInviteByLink() {
     setLinkBusy(true);
     setError("");
+    setCopiedLink("");
     try {
       const { token } = await api.createFriendlyInviteLink(selectedSportId);
       const url = `${window.location.origin}/signup?friendly=${token}`;
+      // The share sheet is its own confirmation. Without it, a clipboard write
+      // says nothing at all, so the link goes on screen either way — and it is
+      // the only way out if the clipboard refuses.
       if (navigator.share) {
-        await navigator.share({ url });
-      } else if (navigator.clipboard) {
-        await navigator.clipboard.writeText(url);
+        try {
+          await navigator.share({ url });
+        } catch (err) {
+          if (err?.name !== "AbortError") setCopiedLink(url);
+        }
+      } else {
+        try {
+          await navigator.clipboard?.writeText(url);
+        } catch {
+          // Blocked clipboard — the link below is still usable.
+        }
+        setCopiedLink(url);
       }
     } catch (err) {
-      if (err?.name !== "AbortError") setError(err.message || String(err));
+      setError(err.message || String(err));
     } finally {
       setLinkBusy(false);
     }
@@ -139,15 +160,19 @@ export default function FriendlyNew() {
                       {playedSub(p, t)}
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    className="my-match-report"
-                    disabled={invitingId === p.id}
-                    onClick={() => handleInvite(p.id)}
-                  >
-                    <span className="my-match-dot" aria-hidden="true" />
-                    {t("הזמן")}
-                  </button>
+                  {invitedIds.includes(p.id) ? (
+                    <span className="friendly-sent">{t("ההזמנה נשלחה")}</span>
+                  ) : (
+                    <button
+                      type="button"
+                      className="my-match-report"
+                      disabled={invitingId === p.id}
+                      onClick={() => handleInvite(p.id)}
+                    >
+                      <span className="my-match-dot" aria-hidden="true" />
+                      {invitingId === p.id ? t("שולח...") : t("הזמן")}
+                    </button>
+                  )}
                 </div>
               ))}
             {!loading && players.length === 0 && (
@@ -175,10 +200,22 @@ export default function FriendlyNew() {
             <Avatar dim icon={<PlusIcon width={16} height={16} aria-hidden="true" />} size={38} />
             <div className="friendly-player-body">
               <div className="friendly-player-name">{t("הזמנה בקישור")}</div>
-              <div className="friendly-player-sub">{t("וואטסאפ, או העתקת הקישור")}</div>
+              <div className="friendly-player-sub">
+                {linkBusy ? t("מכין קישור...") : t("וואטסאפ, או העתקת הקישור")}
+              </div>
             </div>
             <ChevronIcon className="chevron-icon" aria-hidden="true" />
           </button>
+
+          {copiedLink && (
+            <div className="friendly-copied">
+              <p className="friendly-copied-title">{t("הקישור הועתק — אפשר לשלוח אותו")}</p>
+              {/* Selectable, and the way out if the clipboard was blocked. */}
+              <p className="friendly-copied-url" dir="ltr">
+                {copiedLink}
+              </p>
+            </div>
+          )}
         </>
       )}
     </div>
