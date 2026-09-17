@@ -476,11 +476,10 @@ function NotificationsSection({ user, updateUser }) {
         </div>
       )}
 
-      <div className="settings-detail-row">
-        <div className="settings-detail-title">{t("תוצאה לאישור")}</div>
-        <Toggle className="settings-toggle" checked disabled locked onChange={() => {}} label={t("תוצאה לאישור")} />
-      </div>
-
+      {/* There used to be a "result to confirm" row here: a toggle that was
+          checked, disabled and locked, with an empty onChange. It existed to
+          say that those always arrive, but a switch nobody can move reads as a
+          broken control. The two rows below are the only real choices. */}
       <div className="settings-detail-row">
         <div className="settings-detail-title">{t("הצעות שעה")}</div>
         <Toggle

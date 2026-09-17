@@ -1244,6 +1244,7 @@ const PAIRS = [
   ["אין תמונה לשחקן הזה", "That player has no photo"],
   ["תוצאה מחכה לאישור שלך", "A result is waiting for you"],
   ["התראות עוד לא מוגדרות בשרת", "Notifications aren't set up on the server yet"],
+  ["התראות במכשיר", "Notifications on this device"],
   ["בדיקת התראה", "Test notification"],
   ["שנודיע לך על המשחקים שלך?", "Want us to tell you about your matches?"],
   [
