@@ -358,15 +358,20 @@ export default function OpenMatches() {
                         type="button"
                         className="om-mine-cancel"
                         disabled={busyId === m.id}
+                        // Withdrawing an invitation has to withdraw the
+                        // invitation. Proposing a time alongside it used to
+                        // send this down the schedule branch instead, which
+                        // only drops the time — the invite stayed pending, so
+                        // "ממתין לתשובה" sat in the tab bar after the cancel.
+                        // A league match is the other case: it still has to be
+                        // played, so there only the time can be taken back.
                         onClick={() =>
                           run(m.id, () =>
-                            isInvite && !m.scheduled_at
-                              ? api.cancelFriendlyInvite(m.id)
-                              : api.declineMatchSchedule(m.id)
+                            isInvite ? api.cancelFriendlyInvite(m.id) : api.declineMatchSchedule(m.id)
                           )
                         }
                       >
-                        {isInvite && !m.scheduled_at ? t("ביטול ההזמנה") : t("ביטול ההצעה")}
+                        {isInvite ? t("ביטול ההזמנה") : t("ביטול ההצעה")}
                       </button>
                     </div>
                   </div>

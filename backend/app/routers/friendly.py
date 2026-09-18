@@ -244,6 +244,17 @@ def cancel_invite(
         raise HTTPException(status_code=400, detail="ההזמנה כבר טופלה")
 
     match.invite_status = models.FriendlyInviteStatus.declined
+    # A time proposed alongside the invitation goes with it. Leaving it on a
+    # withdrawn invitation left a match carrying an unconfirmed time that no
+    # longer belonged to anything, which every "is this still open" check
+    # reads as live.
+    match.scheduled_at = None
+    match.scheduled_by = None
+    match.schedule_confirmed = False
+    match.schedule_proposed_at = None
+    match.court = None
+    match.duration_minutes = None
+    match.time_options.clear()
     # Nothing is being asked of them any more, so the rows that asked go.
     db.query(models.Notification).filter(
         models.Notification.user_id == match.player2_id,

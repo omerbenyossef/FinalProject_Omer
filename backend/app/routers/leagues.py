@@ -343,6 +343,15 @@ def _classify_open_item(match: models.Match, user_id: int, round_over: bool = Fa
         return "waiting" if match.reported_by == user_id else "confirm"
 
     if match.status == models.MatchStatus.pending:
+        # A friendly whose invitation was declined or withdrawn is over, and
+        # nothing about it is anyone's to do. Checked before the time fields
+        # below so a stale scheduled_at on a dead invitation can't bring it
+        # back as open work.
+        if (
+            match.kind == models.MatchKind.friendly
+            and match.invite_status == models.FriendlyInviteStatus.declined
+        ):
+            return None
         if (
             match.kind == models.MatchKind.friendly
             and match.invite_status == models.FriendlyInviteStatus.pending
