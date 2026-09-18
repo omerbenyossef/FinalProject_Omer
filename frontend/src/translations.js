@@ -1305,6 +1305,31 @@ const PAIRS = [
     "בלי תאריך, המחזורים נספרים מהיום שבו נוצר לוח המשחקים.",
     "With no date, rounds are counted from the day the schedule is created.",
   ],
+  ["INVITE", "INVITE"],
+  ["הקישור הזה לא תקין", "This link isn't valid"],
+  ["אפשר לבקש מהחבר/ה לשלוח קישור חדש.", "Ask them to send you a new one."],
+  ["לעמוד הליגות", "Go to leagues"],
+  ["זה הקישור שלך", "This is your own link"],
+  [
+    "שלח אותו למי שאתה רוצה לשחק נגדו — אי אפשר לשחק נגד עצמך.",
+    "Send it to whoever you want to play \u2014 you can't play yourself.",
+  ],
+  ["חזרה למשחק ידידותי", "Back to friendly match"],
+  ["הקישור הזה כבר נוצל", "This link has already been used"],
+  [
+    "{name} כבר קבע/ה משחק דרך הקישור הזה. אפשר לבקש קישור חדש.",
+    "{name} already set up a match through this link. Ask for a new one.",
+  ],
+  ["{name} מזמין/ה אותך למשחק", "{name} is inviting you to play"],
+  [
+    "{sport} · משחק ידידותי. הוא נספר בדירוג האישי שלכם ולא משפיע על טבלאות ליגה.",
+    "{sport} \u00b7 A friendly. It counts towards your personal rating and doesn't affect league tables.",
+  ],
+  ["מקבל את ההזמנה", "Accept the invite"],
+  ["מאשר...", "Accepting..."],
+  ["לא עכשיו", "Not now"],
+  ["זה קישור ההזמנה שלך — שלח אותו למישהו אחר", "That's your own invite link \u2014 send it to someone else"],
+  ["קישור ההזמנה לא תקין", "That invite link isn't valid"],
 ];
 
 const heToEn = {};

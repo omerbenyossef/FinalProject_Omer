@@ -206,6 +206,7 @@ export const api = {
     }),
   createFriendlyInviteLink: (sportId) =>
     request("/friendly/invite-links", { method: "POST", body: { sport_id: sportId } }),
+  getFriendlyInviteLink: (token) => request(`/friendly/invite-links/${token}`),
   redeemFriendlyInviteLink: (token) => request(`/friendly/invite-links/${token}/redeem`, { method: "POST" }),
 
   getVapidKey: () => request("/push/vapid-public-key", { auth: false }),

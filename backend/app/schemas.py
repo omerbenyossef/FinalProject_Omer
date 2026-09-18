@@ -490,6 +490,21 @@ class FriendlyInviteLinkOut(BaseModel):
     token: str
 
 
+class FriendlyInviteLinkInfoOut(BaseModel):
+    """What an invite link is, without spending it. The screen that opens a
+    link needs to tell "your friend Omer invited you" from "this is your own
+    link" from "already used" before it redeems anything."""
+
+    inviter_id: int
+    inviter_name: str
+    inviter_photo_url: Optional[str] = None
+    sport_id: int
+    sport_name: str
+    used: bool = False
+    is_mine: bool = False
+    match_id: Optional[int] = None
+
+
 class StandingRow(BaseModel):
     user: MemberOut
     played: int

@@ -380,6 +380,31 @@ def create_invite_link(
     return schemas.FriendlyInviteLinkOut(token=token)
 
 
+@router.get("/invite-links/{token}", response_model=schemas.FriendlyInviteLinkInfoOut)
+def describe_invite_link(
+    token: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Read a link without spending it. The screen that opens an invite link
+    has to say which of four things it is looking at — a real invitation, your
+    own link, one already used, or a dead token — and it can only do that if
+    it can ask before it redeems."""
+    link = db.query(models.FriendlyInviteLink).filter(models.FriendlyInviteLink.token == token).first()
+    if not link:
+        raise HTTPException(status_code=404, detail="קישור ההזמנה לא תקין")
+    return schemas.FriendlyInviteLinkInfoOut(
+        inviter_id=link.inviter_id,
+        inviter_name=link.inviter.name if link.inviter else "",
+        inviter_photo_url=link.inviter.photo_url if link.inviter else None,
+        sport_id=link.sport_id,
+        sport_name=link.sport.name if link.sport else "",
+        used=bool(link.used),
+        is_mine=link.inviter_id == current_user.id,
+        match_id=link.match_id,
+    )
+
+
 @router.post("/invite-links/{token}/redeem", response_model=schemas.MatchOut)
 def redeem_invite_link(
     token: str,
@@ -399,7 +424,7 @@ def redeem_invite_link(
     if not link or link.used:
         raise HTTPException(status_code=404, detail="קישור ההזמנה לא תקין או שכבר נוצל")
     if link.inviter_id == current_user.id:
-        raise HTTPException(status_code=400, detail="אי אפשר להשתמש בקישור ההזמנה של עצמך")
+        raise HTTPException(status_code=400, detail="זה קישור ההזמנה שלך — שלח אותו למישהו אחר")
 
     match = models.Match(
         league_id=None,

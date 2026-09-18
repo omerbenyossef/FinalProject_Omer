@@ -14,6 +14,7 @@ import OpenLeagues from "./pages/OpenLeagues.jsx";
 import LeaguePreview from "./pages/LeaguePreview.jsx";
 import JoinByCode from "./pages/JoinByCode.jsx";
 import FriendlyNew from "./pages/FriendlyNew.jsx";
+import FriendlyInvite from "./pages/FriendlyInvite.jsx";
 import LeagueDetail from "./pages/LeagueDetail.jsx";
 import LeagueManage from "./pages/LeagueManage.jsx";
 import RoundDetail from "./pages/RoundDetail.jsx";
@@ -98,6 +99,18 @@ export default function App() {
         <Route path="/" element={<Navigate to="/profile" replace />} />
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
+        {/* Protected on purpose: a friend with no account is bounced to
+            /signin?redirect=..., and the sign-up link there carries the same
+            redirect — so they land back here, on the invitation, once they
+            have an account instead of being handed a second one. */}
+        <Route
+          path="/friendly/invite/:token"
+          element={
+            <ProtectedRoute>
+              <FriendlyInvite />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/leagues" element={<Leagues />} />

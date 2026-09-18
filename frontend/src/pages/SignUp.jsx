@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
@@ -23,7 +23,7 @@ export default function SignUp() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [slow, setSlow] = useState(false);
-  const { loginWithToken } = useAuth();
+  const { user, loading, loginWithToken } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -55,11 +55,10 @@ export default function SignUp() {
       loginWithToken(data.access_token, data.user);
       const friendlyToken = searchParams.get("friendly");
       if (friendlyToken) {
-        try {
-          await api.redeemFriendlyInviteLink(friendlyToken);
-        } catch {
-          /* invite link may be invalid or already used — registration itself still succeeded */
-        }
+        // An old-style link. The invitation screen says what happened to it
+        // either way, so hand it over rather than redeeming blind here.
+        navigate(`/friendly/invite/${friendlyToken}`, { replace: true });
+        return;
       }
       const redirect = searchParams.get("redirect");
       navigate(redirect || "/profile");
@@ -70,6 +69,16 @@ export default function SignUp() {
       setSubmitting(false);
       setSlow(false);
     }
+  }
+
+  // Someone already signed in has no business on a sign-up form: that is how
+  // a person ended up with two accounts and a friendly match against
+  // themselves. Old-style invite links (/signup?friendly=TOKEN) are still in
+  // people's chats, so those go on to the invitation itself.
+  const friendlyParam = searchParams.get("friendly");
+  if (!loading && user) {
+    if (friendlyParam) return <Navigate to={`/friendly/invite/${friendlyParam}`} replace />;
+    return <Navigate to={searchParams.get("redirect") || "/profile"} replace />;
   }
 
   return (

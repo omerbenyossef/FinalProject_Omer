@@ -68,7 +68,10 @@ export default function FriendlyNew() {
     setCopiedLink("");
     try {
       const { token } = await api.createFriendlyInviteLink(selectedSportId);
-      const url = `${window.location.origin}/signup?friendly=${token}`;
+      // Not /signup: the link has to work for a friend who already has an
+      // account just as well as for one who doesn't, and it must not offer
+      // the sender a way to register again and play themselves.
+      const url = `${window.location.origin}/friendly/invite/${token}`;
       // The share sheet is its own confirmation. Without it, a clipboard write
       // says nothing at all, so the link goes on screen either way — and it is
       // the only way out if the clipboard refuses.

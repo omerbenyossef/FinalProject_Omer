@@ -447,13 +447,21 @@ def generate_schedule(
     if league.created_by != current_user.id:
         raise HTTPException(status_code=403, detail="רק יוצר הליגה יכול ליצור לוח משחקים")
 
-    member_ids = [
-        m.user_id
-        for m in db.query(models.LeagueMembership)
+    # Deduplicated: uq_league_user should make a repeat row impossible, but
+    # the circle method below pairs players by position, so the same id twice
+    # in this list is the same id on both sides of a match — a player drawn
+    # against themselves. Too cheap a guard to leave to a constraint.
+    seen: set[int] = set()
+    member_ids = []
+    for m in (
+        db.query(models.LeagueMembership)
         .filter(models.LeagueMembership.league_id == league_id)
         .order_by(models.LeagueMembership.id)
         .all()
-    ]
+    ):
+        if m.user_id not in seen:
+            seen.add(m.user_id)
+            member_ids.append(m.user_id)
     if len(member_ids) < 2:
         raise HTTPException(status_code=400, detail="צריך לפחות 2 שחקנים כדי ליצור לוח משחקים")
 
@@ -470,6 +478,8 @@ def generate_schedule(
         if not new_pairs:
             continue
         for p1, p2 in new_pairs:
+            if p1 == p2:
+                continue
             match = models.Match(
                 league_id=league_id, player1_id=p1, player2_id=p2, round_number=next_round_number
             )
