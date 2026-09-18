@@ -901,7 +901,12 @@ def _join_league_core(
     if existing:
         return _to_league_out(league)
 
-    if league.join_code and league.join_code != (code or "").strip().upper():
+    # Only a private league is gated by its code. A public one has a code too
+    # the moment anyone taps "invite a friend" on it — get_invite_code creates
+    # one on demand — and this check used to key off the code existing rather
+    # than the league being private, so sharing a public league turned it into
+    # a league nobody could join from the open list without the code.
+    if not league.is_open and league.join_code and league.join_code != (code or "").strip().upper():
         raise HTTPException(status_code=403, detail="קוד הזמנה שגוי")
 
     # Lock the league row for the capacity check + insert so two joins
