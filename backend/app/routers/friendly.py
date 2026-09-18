@@ -9,7 +9,7 @@ from .. import models, schemas
 from ..auth import get_current_user
 from ..database import get_db
 from ..push_utils import notify_user, resolve_match_notifications
-from ..rating_utils import match_winner_id, update_ratings_for_match
+from ..rating_utils import get_rating, match_winner_id, update_ratings_for_match
 from .matches import CONFIRMATION_WINDOW, REMIND_COOLDOWN, _auto_confirm_overdue, _to_naive_utc
 
 router = APIRouter(prefix="/friendly", tags=["friendly"])
@@ -107,6 +107,7 @@ def search_players(
     results = []
     for u in candidates:
         wins, losses, shared, last_played = _played_stats(db, current_user.id, u.id, sport_id)
+        rating = get_rating(db, u.id, sport_id)
         results.append(
             schemas.FriendlyPlayerOut(
                 id=u.id,
@@ -115,6 +116,15 @@ def search_players(
                 losses=losses,
                 shared_leagues=shared,
                 last_played_at=last_played,
+                # A name on its own doesn't say which person this is. Two
+                # players in the same test group shared one, and the row was
+                # a name and "0 shared leagues" — identical for both — so
+                # someone searched their own name, found a stranger wearing
+                # it, and invited them believing it was themselves.
+                photo_url=u.photo_url,
+                level=rating.level if rating else None,
+                provisional=bool(rating.provisional) if rating else False,
+                area=u.area,
             )
         )
     if not query:

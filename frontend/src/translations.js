@@ -1330,6 +1330,8 @@ const PAIRS = [
   ["לא עכשיו", "Not now"],
   ["זה קישור ההזמנה שלך — שלח אותו למישהו אחר", "That's your own invite link \u2014 send it to someone else"],
   ["קישור ההזמנה לא תקין", "That invite link isn't valid"],
+  ["שחקן חדש", "New player"],
+  ["שחקן אחר עם השם שלך — לא אתה", "A different player with your name \u2014 not you"],
 ];
 
 const heToEn = {};

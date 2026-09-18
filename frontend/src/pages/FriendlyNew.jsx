@@ -1,27 +1,54 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { api } from "../api";
+import { useAuth } from "../AuthContext.jsx";
 import { useSport } from "../SportContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import Avatar from "../Avatar.jsx";
 import { ChevronIcon, PlusIcon, SearchIcon } from "../Icons.jsx";
 
+// What the row has to answer first is *which person is this*. "0 shared
+// leagues" is the same sentence for everyone, so when two players share a
+// name their rows were indistinguishable — someone searched their own name,
+// found a stranger wearing it and invited them thinking it was themselves.
+// Level and area differ between people; the record only matters once you
+// have actually played them.
 function playedSub(p, t) {
-  if (p.wins > 0 || p.losses > 0) {
-    return (
-      <>
-        <span className="mono-num">
-          {p.wins}W-{p.losses}L
-        </span>{" "}
-        · {t("{n} ליגות משותפות", { n: p.shared_leagues })}
-      </>
+  const bits = [];
+  if (p.level != null) {
+    bits.push(
+      <span className="mono-num" key="level" dir="ltr">
+        {p.provisional ? "~" : ""}
+        {p.level.toFixed(1)}
+      </span>
     );
   }
-  return t("{n} ליגות משותפות", { n: p.shared_leagues });
+  if (p.area) bits.push(p.area);
+  if (p.wins > 0 || p.losses > 0) {
+    bits.push(
+      <span className="mono-num" key="record" dir="ltr">
+        {p.wins}W-{p.losses}L
+      </span>
+    );
+  } else if (p.shared_leagues > 0) {
+    bits.push(t("{n} ליגות משותפות", { n: p.shared_leagues }));
+  }
+  if (!bits.length) return t("שחקן חדש");
+  return bits.map((bit, i) => (
+    <span key={i}>
+      {i > 0 && " · "}
+      {bit}
+    </span>
+  ));
+}
+
+function isNamesake(p, user) {
+  return !!user && !!p.name && p.name.trim() === (user.name || "").trim();
 }
 
 export default function FriendlyNew() {
   const { selectedSportId } = useSport();
+  const { user } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
@@ -161,6 +188,13 @@ export default function FriendlyNew() {
                     <div className="friendly-player-sub" dir="ltr">
                       {playedSub(p, t)}
                     </div>
+                    {/* You are never in your own search results, so a row
+                        carrying your name is somebody else — and it used to
+                        look exactly like you. Say so instead of leaving them
+                        to find out by inviting a stranger. */}
+                    {isNamesake(p, user) && (
+                      <div className="friendly-player-warn">{t("שחקן אחר עם השם שלך — לא אתה")}</div>
+                    )}
                   </div>
                   <button
                     type="button"

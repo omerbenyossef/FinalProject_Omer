@@ -480,6 +480,12 @@ class FriendlyPlayerOut(BaseModel):
     losses: int
     shared_leagues: int
     last_played_at: Optional[UtcDatetime] = None
+    # Two people can share a name, and the row used to carry nothing else —
+    # so the only way to tell them apart was to invite one and find out.
+    photo_url: Optional[str] = None
+    level: Optional[float] = None
+    provisional: bool = False
+    area: Optional[str] = None
 
 
 class FriendlyInviteLinkCreate(BaseModel):
