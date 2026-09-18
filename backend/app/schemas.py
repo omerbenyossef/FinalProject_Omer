@@ -291,6 +291,9 @@ class LeaguePreviewOut(BaseModel):
     players: list[LeaguePreviewPlayerOut] = []
     level_buckets: list[LevelBucketOut] = []
     is_member: bool = False
+    # A public league is joined from the open list; a private one by its code.
+    # The screen shows the code only for the second kind.
+    is_open: bool = False
 
 
 class JoinByCodeRequest(BaseModel):

@@ -81,13 +81,18 @@ export default function LeagueManage() {
   async function handleShareWhatsApp() {
     setInviteLoading(true);
     try {
-      let code = inviteCode;
-      if (!code) {
-        const data = await api.getInviteCode(leagueId);
-        code = data.code;
-        setInviteCode(code);
+      // A public league needs no code — the link is enough, and whoever opens
+      // it joins from the league's own page if their level fits.
+      let url = `${window.location.origin}/leagues/${leagueId}`;
+      if (!league.is_open) {
+        let code = inviteCode;
+        if (!code) {
+          const data = await api.getInviteCode(leagueId);
+          code = data.code;
+          setInviteCode(code);
+        }
+        url = `${url}?code=${code}`;
       }
-      const url = `${window.location.origin}/leagues/${leagueId}?code=${code}`;
       const message = t('בוא/י תצטרף/י לליגה "{name}" ב-Rally!\n{url}', { name: league.name, url });
       window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
     } catch (err) {

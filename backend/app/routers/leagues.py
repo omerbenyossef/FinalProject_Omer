@@ -868,6 +868,7 @@ def preview_league(
     return schemas.LeaguePreviewOut(
         id=league.id,
         name=league.name,
+        is_open=bool(league.is_open),
         sport_id=league.sport_id,
         sport_name=league.sport.name,
         location_name=league.location_name,
@@ -1015,6 +1016,12 @@ def get_invite_code(
     # ownership) would lock them out of its own invite code.
     if not is_member and league.created_by != current_user.id:
         raise HTTPException(status_code=403, detail="רק חברי הליגה יכולים לראות את קוד ההזמנה")
+
+    # A code is how you get into a league that isn't listed. A public league is
+    # listed: anyone at its level joins from the open list, so it has no code to
+    # show — and generating one here is what used to make it demand one.
+    if league.is_open:
+        raise HTTPException(status_code=400, detail="ליגה ציבורית לא צריכה קוד הזמנה")
 
     if not league.join_code:
         league.join_code = _generate_join_code(db)

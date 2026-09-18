@@ -52,8 +52,11 @@ export default function LeaguePreview() {
 
   async function finishJoin() {
     await api.joinLeague(leagueId);
-    const code = await api.getInviteCode(leagueId);
-    setInviteCode(code.code);
+    // Only a private league has a code to pass on.
+    if (!preview?.is_open) {
+      const code = await api.getInviteCode(leagueId);
+      setInviteCode(code.code);
+    }
     setJoinedNow(true);
   }
 
@@ -62,8 +65,10 @@ export default function LeaguePreview() {
   async function handleRatingJoined() {
     setShowRatingGate(false);
     try {
-      const code = await api.getInviteCode(leagueId);
-      setInviteCode(code.code);
+      if (!preview?.is_open) {
+        const code = await api.getInviteCode(leagueId);
+        setInviteCode(code.code);
+      }
       setJoinedNow(true);
     } catch (err) {
       setError(err.message);
@@ -124,6 +129,7 @@ export default function LeaguePreview() {
           </div>
         </div>
 
+        {inviteCode && (
         <div className="lp-code">
           <div className="lp-code-label">{t("PRIVATE LEAGUE · INVITE CODE")}</div>
           <div className="lp-code-value" dir="ltr">
@@ -131,6 +137,7 @@ export default function LeaguePreview() {
           </div>
           <p className="lp-code-sub">{t("שתפו את הקוד הזה עם מי שתרצו להזמין ישירות לליגה.")}</p>
         </div>
+        )}
 
         <button type="button" className="lp-join-btn" onClick={() => navigate(`/leagues/${leagueId}`)}>
           {t("לעמוד הליגה")}

@@ -128,6 +128,30 @@ def seed_sports() -> None:
 seed_sports()
 
 
+def clear_public_league_codes() -> None:
+    """A public league is joined from the open list, not with a code, but
+    get_invite_code used to mint one for any league whose "invite a friend"
+    button was tapped — and the join check then demanded it. The check is
+    fixed; this clears the codes it left behind so the data says the same
+    thing as the rule."""
+    db = SessionLocal()
+    try:
+        stale = (
+            db.query(models.League)
+            .filter(models.League.is_open.is_(True), models.League.join_code.isnot(None))
+            .all()
+        )
+        for league in stale:
+            league.join_code = None
+        if stale:
+            db.commit()
+    finally:
+        db.close()
+
+
+clear_public_league_codes()
+
+
 def backfill_league_levels() -> None:
     """add_missing_columns() only adds the column; it can't set a default for
     rows that already existed, so leagues created before level ranges shipped
