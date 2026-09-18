@@ -1245,6 +1245,8 @@ const PAIRS = [
   ["תוצאה מחכה לאישור שלך", "A result is waiting for you"],
   ["התראות עוד לא מוגדרות בשרת", "Notifications aren't set up on the server yet"],
   ["התראות במכשיר", "Notifications on this device"],
+  ["ברמה שלי", "At my level"],
+  ["אין כרגע ליגה פתוחה בטווח הרמה שלך.", "No open league is in your level range right now."],
   [
     "הרמה שלך ({level}) מחוץ לטווח של הליגה הזו ({min}–{max}).",
     "Your level ({level}) is outside this league's range ({min}\u2013{max}).",

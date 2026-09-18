@@ -291,7 +291,15 @@ export default function Leagues() {
 
   const bySelectedSport = (l) => l.sport.id === selectedSportId;
   const myLeagueIds = new Set(myLeagues.map((l) => l.id));
-  const openLeagues = leagues.filter((l) => l.is_open && bySelectedSport(l) && !myLeagueIds.has(l.id));
+  // Only leagues that would actually take this player. The server refuses a
+  // join from outside a league's level range, so listing one here was offering
+  // something that could only come back refused.
+  const takesMe = (l) =>
+    myLevel == null ||
+    ((l.level_min ?? 1.5) <= myLevel && myLevel <= (l.level_max ?? 7.0));
+  const openLeagues = leagues.filter(
+    (l) => l.is_open && bySelectedSport(l) && !myLeagueIds.has(l.id) && takesMe(l)
+  );
   const myLeaguesForSport = myLeagues.filter(bySelectedSport);
   const selectedSport = sports.find((s) => s.id === selectedSportId);
 
@@ -380,8 +388,11 @@ export default function Leagues() {
         title={t("ליגות פתוחות")}
         end={
           myRange && (
-            <span className="lg-sec-range" dir="ltr">
-              NTRP {myRange[0].toFixed(1)}–{myRange[1].toFixed(1)}
+            <span className="lg-sec-range">
+              {t("ברמה שלי")}{" "}
+              <span dir="ltr">
+                {myRange[0].toFixed(1)}–{myRange[1].toFixed(1)}
+              </span>
             </span>
           )
         }
@@ -389,7 +400,13 @@ export default function Leagues() {
       {loading ? (
         <RowSkeletons />
       ) : openLeagues.length === 0 ? (
-        <EmptyState icon={<TrophyIcon aria-hidden="true" />}>{t("אין כרגע ליגות פתוחות.")}</EmptyState>
+        <EmptyState icon={<TrophyIcon aria-hidden="true" />}>
+          {/* There may well be open leagues — just none that would take this
+              player, which is a different thing to say. */}
+          {leagues.some((l) => l.is_open && bySelectedSport(l) && !myLeagueIds.has(l.id))
+            ? t("אין כרגע ליגה פתוחה בטווח הרמה שלך.")
+            : t("אין כרגע ליגות פתוחות.")}
+        </EmptyState>
       ) : (
         <div className="lg-list">
           {openLeagues.map((league) => {
@@ -402,7 +419,10 @@ export default function Leagues() {
                   </span>
                   <span className="lg-row-meta">
                     {t("{n} שחקנים", { n: league.member_count })} · {ruleLabels.frequencyLabel} ·{" "}
-                    {ruleLabels.bestOfLabel}
+                    <span dir="ltr" style={{ unicodeBidi: "isolate" }}>
+                      NTRP {(league.level_min ?? 1.5).toFixed(1)}–
+                      {(league.level_max ?? 7).toFixed(1)}
+                    </span>
                   </span>
                 </span>
                 <span className="lg-row-join">{t("הצטרף")}</span>
