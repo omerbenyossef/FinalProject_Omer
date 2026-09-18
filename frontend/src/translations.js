@@ -1245,6 +1245,14 @@ const PAIRS = [
   ["תוצאה מחכה לאישור שלך", "A result is waiting for you"],
   ["התראות עוד לא מוגדרות בשרת", "Notifications aren't set up on the server yet"],
   ["התראות במכשיר", "Notifications on this device"],
+  [
+    "הרמה שלך ({level}) מחוץ לטווח של הליגה הזו ({min}–{max}).",
+    "Your level ({level}) is outside this league's range ({min}\u2013{max}).",
+  ],
+  [
+    "תפסיק לשחק בה אבל תישאר מי שמנהל אותה — הגדרות, מחזורים ומחיקה נשארים אצלך.",
+    "You stop playing in it but stay the one who runs it \u2014 settings, rounds and deleting stay with you.",
+  ],
   ["בדיקת התראה", "Test notification"],
   ["שנודיע לך על המשחקים שלך?", "Want us to tell you about your matches?"],
   [

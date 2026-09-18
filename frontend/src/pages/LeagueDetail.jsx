@@ -66,10 +66,24 @@ export default function LeagueDetail() {
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [selectedRound, setSelectedRound] = useState(null);
   const [ratingFlow, setRatingFlow] = useState(null); // { existingResult, joinCode } | null
+  const [myRatings, setMyRatings] = useState([]);
   const autoJoinAttempted = useRef(false);
   const initialTabSet = useRef(false);
 
   const isMember = members.some((m) => m.id === user?.id);
+  const myLevel = myRatings.find((r) => r.sport_id === league?.sport?.id)?.level ?? null;
+  // Only a public league filters by level; a private one is joined by invite.
+  const outOfRange =
+    !!league?.is_open &&
+    myLevel != null &&
+    !(
+      (league.level_min ?? 1.5) <= myLevel && myLevel <= (league.level_max ?? 7)
+    );
+
+  useEffect(() => {
+    if (!user) return;
+    api.myRatings().then(setMyRatings).catch(() => {});
+  }, [user]);
 
   useEffect(() => {
     if (!league) return;
@@ -532,10 +546,22 @@ export default function LeagueDetail() {
       </header>
 
       <div className="league-detail-actions">
+        {/* A public league only takes players inside its level range, so say
+            so here rather than offering a button that comes back refused. */}
         {!isMember && user && (league.is_open || codeFromLink) && (
-          <button className="btn-primary" onClick={() => startJoinFlow()} disabled={busy}>
-            {busy ? t("מצטרף...") : t("הצטרפות לליגה")}
-          </button>
+          outOfRange ? (
+            <p className="muted">
+              {t("הרמה שלך ({level}) מחוץ לטווח של הליגה הזו ({min}–{max}).", {
+                level: myLevel.toFixed(1),
+                min: (league.level_min ?? 1.5).toFixed(1),
+                max: (league.level_max ?? 7).toFixed(1),
+              })}
+            </p>
+          ) : (
+            <button className="btn-primary" onClick={() => startJoinFlow()} disabled={busy}>
+              {busy ? t("מצטרף...") : t("הצטרפות לליגה")}
+            </button>
+          )
         )}
         {!isMember && user && !league.is_open && !codeFromLink && (
           <p className="muted">
@@ -635,7 +661,11 @@ export default function LeagueDetail() {
               </>
             )}
 
-            {isMember && !isCreator && (
+            {/* The creator can leave too. Playing in a league and running it
+                are separate things — created_by is untouched, so they keep
+                managing it — and an admin who opened a public league for other
+                people had no way out of it at all. */}
+            {isMember && (
               <button
                 type="button"
                 className="league-leave-chip"
@@ -933,6 +963,7 @@ export default function LeagueDetail() {
       {showLeaveConfirm && (
         <LeaveLeagueConfirmSheet
           busy={busy}
+          isCreator={isCreator}
           onConfirm={handleLeaveLeague}
           onClose={() => setShowLeaveConfirm(false)}
         />
@@ -952,7 +983,7 @@ export default function LeagueDetail() {
   );
 }
 
-function LeaveLeagueConfirmSheet({ busy, onConfirm, onClose }) {
+function LeaveLeagueConfirmSheet({ busy, isCreator, onConfirm, onClose }) {
   const { t } = useLanguage();
 
   return (
@@ -961,7 +992,9 @@ function LeaveLeagueConfirmSheet({ busy, onConfirm, onClose }) {
         <div className="confirm-sheet-handle" />
         <div className="confirm-sheet-title">{t("לצאת מהליגה?")}</div>
         <p className="add-round-subtitle">
-          {t("התוצאות שלך יישארו בטבלה עד סוף המחזור. כדי לחזור תצטרך הזמנה חדשה.")}
+          {isCreator
+            ? t("תפסיק לשחק בה אבל תישאר מי שמנהל אותה — הגדרות, מחזורים ומחיקה נשארים אצלך.")
+            : t("התוצאות שלך יישארו בטבלה עד סוף המחזור. כדי לחזור תצטרך הזמנה חדשה.")}
         </p>
 
         <div className="add-round-actions">
