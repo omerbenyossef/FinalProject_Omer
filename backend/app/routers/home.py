@@ -243,6 +243,8 @@ def home_week(
         .all()
     )
     invites: list[schemas.HomeWeekInviteOut] = []
+    # Held back rather than added: see the note where they are spent, below.
+    sent_invites: list[schemas.HomeWeekMatchOut] = []
     for match in friendlies:
         if sport_id is not None and match.sport_id != sport_id:
             continue
@@ -257,7 +259,7 @@ def home_week(
                 reference = match.scheduled_at or match.created_at
                 if reference and now - reference > FRIENDLY_WINDOW:
                     continue
-                matches.append(
+                sent_invites.append(
                     schemas.HomeWeekMatchOut(
                         id=match.id,
                         opponent_name=opponent.name if opponent else "",
@@ -296,6 +298,17 @@ def home_week(
                 state=_match_state(match, current_user.id),
             )
         )
+
+    # An invitation still waiting for an answer isn't this week's business —
+    # it lives on the matches screen, where it can be re-timed or withdrawn.
+    # The exception is the player who has nothing else at all: no league, no
+    # match, no invitation of their own to answer. Without this their week is
+    # empty, and an empty week with no league is what hands them to the old
+    # first-day screen. So it shows for the player whose first move in the app
+    # was to invite someone, and stops showing the moment they have anything
+    # else — a league, a match, or an invitation waiting on them.
+    if sent_invites and not my_leagues and not matches and not invites:
+        matches.extend(sent_invites)
 
     # Scheduled first, earliest to latest; everything without a time after.
     matches.sort(key=lambda m: (m.scheduled_at is None, m.scheduled_at or datetime.max))
