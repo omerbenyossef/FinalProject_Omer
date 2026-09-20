@@ -152,6 +152,38 @@ def clear_public_league_codes() -> None:
 clear_public_league_codes()
 
 
+def backfill_intro_seen() -> None:
+    """Anyone already playing has plainly finished the intro, whatever this
+    browser remembers. The flag used to live only in localStorage, so players
+    who switched device, installed the PWA or simply left the app alone for a
+    week were shown "three ways to play" again on top of a running season.
+    Marking them here means they don't have to sit through it once more just
+    to set the flag the new way."""
+    db = SessionLocal()
+    try:
+        active_ids = {
+            r[0] for r in db.query(models.LeagueMembership.user_id).distinct().all()
+        }
+        for column in (models.Match.player1_id, models.Match.player2_id):
+            active_ids.update(r[0] for r in db.query(column).distinct().all() if r[0])
+        if not active_ids:
+            return
+        stale = (
+            db.query(models.User)
+            .filter(models.User.id.in_(active_ids), models.User.intro_seen_at.is_(None))
+            .all()
+        )
+        for user in stale:
+            user.intro_seen_at = datetime.utcnow()
+        if stale:
+            db.commit()
+    finally:
+        db.close()
+
+
+backfill_intro_seen()
+
+
 def backfill_league_levels() -> None:
     """add_missing_columns() only adds the column; it can't set a default for
     rows that already existed, so leagues created before level ranges shipped

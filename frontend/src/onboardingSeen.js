@@ -13,3 +13,12 @@ export function hasSeenIntro() {
 export function markIntroSeen() {
   localStorage.setItem(SEEN_KEY, INTRO_VERSION);
 }
+
+// The server is the real record — localStorage is only a fast local copy, and
+// it is the copy that kept going missing (a second device, a fresh PWA
+// install, iOS evicting site data after a week away). Priming it from the
+// account keeps PageHelp and PushPrompt, which both read the local flag,
+// behaving the same everywhere.
+export function primeIntroSeen(user) {
+  if (user?.intro_seen) markIntroSeen();
+}

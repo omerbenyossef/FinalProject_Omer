@@ -78,6 +78,11 @@ def update_profile(
     for field in ("name", "age", "area", "travel_radius_km", "language"):
         if field in data:
             setattr(current_user, field, data[field])
+    # Finishing the intro is a one-way door — a client can say it happened,
+    # never that it un-happened, and the first time it says so is the one that
+    # counts (a later screen re-sending it shouldn't move the date).
+    if data.get("intro_seen") and current_user.intro_seen_at is None:
+        current_user.intro_seen_at = datetime.utcnow()
     db.commit()
     db.refresh(current_user)
     return current_user

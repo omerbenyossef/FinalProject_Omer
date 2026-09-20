@@ -4,7 +4,9 @@ import { useSport } from "./SportContext.jsx";
 import { api } from "./api";
 import RatingQuestionnaire from "./RatingQuestionnaire.jsx";
 import { HomeIcon, TrophyIcon, RanksIcon } from "./Icons.jsx";
-import { hasSeenIntro, markIntroSeen } from "./onboardingSeen.js";
+import { useAuth } from "./AuthContext.jsx";
+import { useOpenAction } from "./OpenActionContext.jsx";
+import { hasSeenIntro, markIntroSeen, primeIntroSeen } from "./onboardingSeen.js";
 
 const STEP_COUNT = 3;
 
@@ -107,10 +109,37 @@ function Row({ art, icon, iconActive, title, quiet, desc }) {
 export default function Onboarding() {
   const { t } = useLanguage();
   const { sports, selectedSportId } = useSport();
+  const { user } = useAuth();
+  const { nextMatches, matchesLoading } = useOpenAction();
   const [dismissed, setDismissed] = useState(hasSeenIntro());
   const [step, setStep] = useState(0);
   const [showRating, setShowRating] = useState(false);
   const [alreadyRated, setAlreadyRated] = useState(null);
+
+  // Two ways out that don't depend on this browser remembering anything.
+  //
+  // The account's own flag is the record now; the local key is a cache of it,
+  // and priming that cache keeps PageHelp and PushPrompt — which both read the
+  // local key — working on a device that has never seen the intro.
+  //
+  // And a player who already has a match does not need to be told how to start
+  // using the app. That covers everyone whose flag was lost before this
+  // shipped, without asking them to sit through it once more.
+  const hasActivity = !matchesLoading && nextMatches.length > 0;
+
+  useEffect(() => {
+    if (user?.intro_seen) {
+      primeIntroSeen(user);
+      setDismissed(true);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (dismissed || !hasActivity) return;
+    markIntroSeen();
+    setDismissed(true);
+    api.updateProfile({ intro_seen: true }).catch(() => {});
+  }, [dismissed, hasActivity]);
 
   // Whether to hand off to the questionnaire at the end: a player who somehow
   // already has a level for this sport would only hit "you already have a
@@ -133,6 +162,9 @@ export default function Onboarding() {
   function close() {
     markIntroSeen();
     setDismissed(true);
+    // Written to the account too, so this doesn't have to be re-done on the
+    // next device — or after iOS clears the key.
+    api.updateProfile({ intro_seen: true }).catch(() => {});
   }
 
   function next() {

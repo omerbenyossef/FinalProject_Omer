@@ -70,6 +70,11 @@ class User(Base):
     # carries a player's name.
     photo = Column(Text, nullable=True)
     photo_updated_at = Column(DateTime, nullable=True)
+    # When this player finished the intro screens. It used to live only in the
+    # browser's localStorage, so the intro came back on a second device, after
+    # installing the PWA, and whenever iOS evicted the key — players who had
+    # been using the app for weeks kept being told how to start.
+    intro_seen_at = Column(DateTime, nullable=True)
 
     memberships = relationship("LeagueMembership", back_populates="user")
     push_subscriptions = relationship("PushSubscription", back_populates="user")
@@ -83,6 +88,10 @@ class User(Base):
             return None
         stamp = int(self.photo_updated_at.timestamp()) if self.photo_updated_at else 0
         return f"/players/{self.id}/photo?v={stamp}"
+
+    @property
+    def intro_seen(self) -> bool:
+        return self.intro_seen_at is not None
 
     @property
     def is_admin(self) -> bool:

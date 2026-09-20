@@ -81,6 +81,8 @@ class UpdateProfileRequest(BaseModel):
     # "he" or "en" — which language this player reads the app in, so pushes
     # can be written in it.
     language: Optional[str] = None
+    # Only ever set to true — finishing the intro is not something to undo.
+    intro_seen: Optional[bool] = None
 
 
 class UpdateNotificationPreferencesRequest(BaseModel):
@@ -152,6 +154,8 @@ class UserOut(BaseModel):
     notify_round_opens: bool = True
     quiet_hours_from: Optional[str] = None
     quiet_hours_to: Optional[str] = None
+    # Server-side, so the intro doesn't reappear on another device.
+    intro_seen: bool = False
 
     class Config:
         from_attributes = True
