@@ -87,7 +87,22 @@ export default function Home() {
   // A player with no league, or with one league whose schedule hasn't started,
   // gets the dedicated first-day screens (109 / 151c) rather than an empty
   // diary — those still live on the old home component.
-  if (leagues && (sportLeagues.length === 0 || (soloLeague && !soloLeague.schedule_started_at))) {
+  //
+  // "Rather than an empty diary" is the whole reason, and the test used to be
+  // leagues alone. But homeWeek carries friendlies too — matches and
+  // invitations both — so a player whose only tennis is friendly had a full
+  // diary and was sent to the old screen anyway, permanently, because a
+  // friendly belongs to no league. Ask whether the diary is actually empty.
+  //
+  // Waiting for `week` as well as `leagues` keeps the old screen from flashing
+  // up in the moment before the diary arrives; if it fails to load, Home shows
+  // its own error rather than pretending this is day one.
+  const weekIsEmpty = !!week && week.matches.length === 0 && week.invites.length === 0;
+  if (
+    leagues &&
+    weekIsEmpty &&
+    (sportLeagues.length === 0 || (soloLeague && !soloLeague.schedule_started_at))
+  ) {
     return <Profile />;
   }
 
