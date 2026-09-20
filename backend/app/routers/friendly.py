@@ -170,15 +170,20 @@ def create_friendly_invite(
     db.commit()
     db.refresh(match)
 
-    notify_user(
-        db,
-        opponent.id,
-        "הזמנה למשחק ידידותי",
-        f"{current_user.name} הזמין/ה אותך למשחק ידידותי",
-        "/profile",
-        title_en="Friendly invite",
-        body_en=f"{current_user.name} invited you to a friendly match",
-    )
+    # The invitation and its time travel together now: the propose call that
+    # follows this one is what reaches the opponent, as a single message with
+    # a time in it. Telling them here as well would be the old behaviour —
+    # a ping about an invitation whose sender hadn't picked a time yet.
+    if not invite_in.defer_notification:
+        notify_user(
+            db,
+            opponent.id,
+            "הזמנה למשחק ידידותי",
+            f"{current_user.name} הזמין/ה אותך למשחק ידידותי",
+            "/profile",
+            title_en="Friendly invite",
+            body_en=f"{current_user.name} invited you to a friendly match",
+        )
     return match
 
 

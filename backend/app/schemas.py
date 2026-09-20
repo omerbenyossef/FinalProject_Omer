@@ -461,6 +461,10 @@ class OpenItemsOut(BaseModel):
 class FriendlyInviteCreate(BaseModel):
     opponent_id: int
     sport_id: int
+    # The invitation and its time are now sent together, and the propose call
+    # is what tells the opponent. Set while that pair is in flight so they
+    # aren't pinged about an invitation with no time in it.
+    defer_notification: bool = False
 
 
 class FriendlyScoreUpdate(BaseModel):
@@ -684,6 +688,16 @@ class BusyWindowOut(BaseModel):
     start: UtcDatetime
     end: UtcDatetime
     whose: str  # me | opponent | both
+
+
+class FriendlyDraftOut(BaseModel):
+    """Everything the propose screen needs for a friendly that doesn't exist
+    yet. The match is created only once a time has actually been picked, so
+    until then there is no match id to hang this off."""
+
+    opponent: MemberOut
+    busy_windows: list[BusyWindowOut] = []
+    conflict_gap_minutes: int = 60
 
 
 class MatchDetailOut(BaseModel):

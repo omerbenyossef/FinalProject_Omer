@@ -1332,6 +1332,7 @@ const PAIRS = [
   ["קישור ההזמנה לא תקין", "That invite link isn't valid"],
   ["שחקן חדש", "New player"],
   ["שחקן אחר עם השם שלך — לא אתה", "A different player with your name \u2014 not you"],
+  ["בחר שעה אחת, והיריב יאשר אותה", "Pick one time, and they confirm it"],
 ];
 
 const heToEn = {};

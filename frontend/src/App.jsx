@@ -99,6 +99,17 @@ export default function App() {
         <Route path="/" element={<Navigate to="/profile" replace />} />
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
+        {/* The propose screen for a friendly that doesn't exist yet — the
+            opponent rides in on router state, and the match is created only
+            once a time has been picked. */}
+        <Route
+          path="/friendly/schedule"
+          element={
+            <ProtectedRoute>
+              <ProposeSchedule />
+            </ProtectedRoute>
+          }
+        />
         {/* Protected on purpose: a friend with no account is bounced to
             /signin?redirect=..., and the sign-up link there carries the same
             redirect — so they land back here, on the invitation, once they

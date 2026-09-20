@@ -193,8 +193,12 @@ export const api = {
 
   searchFriendlyPlayers: (sportId, q) =>
     request(`/friendly/players/search?sport_id=${sportId}${q ? `&q=${encodeURIComponent(q)}` : ""}`),
-  createFriendlyInvite: (opponentId, sportId) =>
-    request("/friendly/matches", { method: "POST", body: { opponent_id: opponentId, sport_id: sportId } }),
+  createFriendlyInvite: (opponentId, sportId, { deferNotification = false } = {}) =>
+    request("/friendly/matches", {
+      method: "POST",
+      body: { opponent_id: opponentId, sport_id: sportId, defer_notification: deferNotification },
+    }),
+  friendlyDraft: (opponentId) => request(`/matches/friendly-draft?opponent_id=${opponentId}`),
   acceptFriendlyInvite: (matchId) => request(`/friendly/matches/${matchId}/accept`, { method: "POST" }),
   declineFriendlyInvite: (matchId) => request(`/friendly/matches/${matchId}/decline`, { method: "POST" }),
   cancelFriendlyInvite: (matchId) => request(`/friendly/matches/${matchId}/cancel`, { method: "POST" }),

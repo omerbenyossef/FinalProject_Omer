@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api";
 import { useLanguage } from "../LanguageContext.jsx";
+import { useSport } from "../SportContext.jsx";
 import { ChevronIcon, CheckIcon } from "../Icons.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
 import { roundDueDateObj, hasHebrewChars, daysWord, weekdayName } from "../matchUtils.js";
@@ -76,7 +77,10 @@ function slotState(day, time, minutes, busyWindows, gapMs) {
   return { kind: "free" };
 }
 
-const MAX_PICKS = 5;
+// One time per proposal for now. The multi-slot machinery underneath still
+// works — the server takes up to five and the opponent's screen can pick
+// between them — so raising this is the only change needed to bring it back.
+const MAX_PICKS = 1;
 
 const DURATION_OPTIONS = [60, 90, 120];
 function durationLabel(minutes) {
@@ -89,9 +93,19 @@ export default function ProposeSchedule() {
   const { matchId } = useParams();
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { selectedSportId } = useSport();
   // Set when the player got here by turning down a proposal — a "no" should
   // arrive with times attached, not empty.
-  const cameFromDecline = !!useLocation().state?.counter;
+  const cameFromDecline = !!location.state?.counter;
+  // Draft mode: an invitation that hasn't been sent, and has no match behind
+  // it yet. The opponent rides in on router state; the match is created when
+  // a time is actually picked, so leaving this screen sends nothing.
+  const draftOpponent = matchId ? null : location.state?.opponent ?? null;
+  // The conflict warning sends handleSend round a second time. In draft mode
+  // the first pass has already created the invitation, so remember it —
+  // otherwise confirming the warning would invite the same person twice.
+  const draftMatchIdRef = useRef(null);
 
   const [detail, setDetail] = useState(null);
   const [error, setError] = useState("");
@@ -106,6 +120,28 @@ export default function ProposeSchedule() {
   const [editingCourt, setEditingCourt] = useState(false);
 
   useEffect(() => {
+    if (draftOpponent) {
+      api
+        .friendlyDraft(draftOpponent.id)
+        .then((data) =>
+          // Shaped like a match detail so everything below this point stays
+          // one code path: a friendly has no round, no league and no court to
+          // inherit, which is exactly what those nulls say.
+          setDetail({
+            ...data,
+            id: null,
+            kind: "friendly",
+            round_number: null,
+            league_id: null,
+            league_name: null,
+            duration_minutes: null,
+            default_court: null,
+            time_options: [],
+          })
+        )
+        .catch((err) => setError(err.message));
+      return;
+    }
     api
       .getMatchDetail(matchId)
       .then((data) => {
@@ -113,7 +149,7 @@ export default function ProposeSchedule() {
         setCourt(data.default_court || "");
       })
       .catch((err) => setError(err.message));
-  }, [matchId]);
+  }, [matchId, draftOpponent]);
 
   if (error) return <p className="error">{t(error)}</p>;
 
@@ -180,13 +216,14 @@ export default function ProposeSchedule() {
   };
   function togglePick(day, time) {
     const ms = slotMs(day, time);
-    setPicks((prev) =>
-      prev.includes(ms)
-        ? prev.filter((x) => x !== ms)
-        : prev.length >= MAX_PICKS
-          ? prev
-          : [...prev, ms]
-    );
+    setPicks((prev) => {
+      if (prev.includes(ms)) return prev.filter((x) => x !== ms);
+      // At one pick, tapping another time means "that one instead" — being
+      // told the limit is reached and having to un-tap first is a worse
+      // answer than simply moving the pick.
+      if (MAX_PICKS === 1) return [ms];
+      return prev.length >= MAX_PICKS ? prev : [...prev, ms];
+    });
   }
 
   function slotNote(state) {
@@ -204,8 +241,21 @@ export default function ProposeSchedule() {
     setBusy(true);
     setError("");
     try {
+      let targetId = matchId;
+      if (draftOpponent) {
+        // Now there is a time, so now there is an invitation. It is created
+        // silently — the propose call right after is what reaches the
+        // opponent, as one message with the time in it.
+        if (draftMatchIdRef.current == null) {
+          const created = await api.createFriendlyInvite(draftOpponent.id, selectedSportId, {
+            deferNotification: true,
+          });
+          draftMatchIdRef.current = created.id;
+        }
+        targetId = draftMatchIdRef.current;
+      }
       await api.proposeMatchSchedule(
-        matchId,
+        targetId,
         [...picks].sort((a, b) => a - b).map((ms) => new Date(ms).toISOString()),
         court.trim() || null,
         {
@@ -213,7 +263,7 @@ export default function ProposeSchedule() {
           overrideConflictWarning,
         }
       );
-      navigate(-1);
+      navigate(draftOpponent ? "/needs-you" : -1, draftOpponent ? { replace: true } : undefined);
     } catch (err) {
       if (err.status === 409) {
         setConflictWarning(err.message);
@@ -286,16 +336,20 @@ export default function ProposeSchedule() {
 
       <div className="sched-section-label">
         {t("TIME")}
-        {picks.length > 0 && ` · ${picks.length}/${MAX_PICKS}`}
+        {MAX_PICKS > 1 && picks.length > 0 && ` · ${picks.length}/${MAX_PICKS}`}
       </div>
-      {picks.length < 2 && (
-        <p className="sched-multi-hint">{t("אפשר לסמן כמה זמנים, והיריב יבחר אחד מהם")}</p>
+      {MAX_PICKS > 1 ? (
+        picks.length < 2 && (
+          <p className="sched-multi-hint">{t("אפשר לסמן כמה זמנים, והיריב יבחר אחד מהם")}</p>
+        )
+      ) : (
+        <p className="sched-multi-hint">{t("בחר שעה אחת, והיריב יאשר אותה")}</p>
       )}
       <div className="sched-times">
         {TIME_SLOTS.map((slot) => {
           const isSelected = selectedDay ? picks.includes(slotMs(selectedDay, slot)) : false;
           const state = selectedDay ? stateFor(selectedDay, slot) : { kind: "free" };
-          const maxed = !isSelected && picks.length >= MAX_PICKS;
+          const maxed = MAX_PICKS > 1 && !isSelected && picks.length >= MAX_PICKS;
           const taken = state.kind === "past" || state.kind === "busy" || maxed;
           const note = slotNote(state);
           return (

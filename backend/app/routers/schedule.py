@@ -141,6 +141,29 @@ def _default_court(db: Session, match: models.Match) -> str | None:
     return recent.court if recent else None
 
 
+@router.get("/friendly-draft", response_model=schemas.FriendlyDraftOut)
+def get_friendly_draft(
+    opponent_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """The propose screen, for a friendly nobody has created yet. Tapping
+    "invite" used to create the match then and there and notify the opponent,
+    so the invitation went out before its sender had picked a time — and it
+    went out with no time in it. Now nothing exists until a time is chosen,
+    and this is what fills the screen in the meantime."""
+    if opponent_id == current_user.id:
+        raise HTTPException(status_code=400, detail="You cannot invite yourself")
+    opponent = db.query(models.User).filter(models.User.id == opponent_id).first()
+    if not opponent:
+        raise HTTPException(status_code=404, detail="Player not found")
+    return schemas.FriendlyDraftOut(
+        opponent=opponent,
+        busy_windows=_busy_windows_for(db, current_user.id, opponent_id, 0),
+        conflict_gap_minutes=int(CONFLICT_GAP_WINDOW.total_seconds() // 60),
+    )
+
+
 @router.get("/{match_id}", response_model=schemas.MatchDetailOut)
 def get_match_detail(
     match_id: int,
@@ -274,11 +297,20 @@ def _busy_windows(db: Session, match: models.Match, viewer_id: int) -> list[sche
     engine checks the same thing at propose time, but only as a rejection —
     handing the windows to the client lets the grid grey those slots out
     before anyone taps them."""
-    now = datetime.utcnow()
     opponent_id = match.player2_id if viewer_id == match.player1_id else match.player1_id
+    return _busy_windows_for(db, viewer_id, opponent_id, match.id)
+
+
+def _busy_windows_for(
+    db: Session, viewer_id: int, opponent_id: int, exclude_match_id: int
+) -> list[schemas.BusyWindowOut]:
+    """The same thing keyed off two player ids rather than a match, so the
+    propose screen can grey slots out for a friendly that hasn't been created
+    yet."""
+    now = datetime.utcnow()
     by_window: dict[tuple[datetime, datetime], set[str]] = {}
     for user_id, whose in ((viewer_id, "me"), (opponent_id, "opponent")):
-        for other in _other_confirmed_matches(db, user_id, match.id):
+        for other in _other_confirmed_matches(db, user_id, exclude_match_id):
             start, end = _match_window(other)
             if end <= now:
                 continue
