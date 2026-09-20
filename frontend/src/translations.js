@@ -1345,6 +1345,15 @@ const PAIRS = [
   ["שוחקו", "played"],
   ["{sport} · נפתחה על ידי {name}", "{sport} \u00b7 opened by {name}"],
   ["לא נמצאו ליגות", "No leagues found"],
+  ["מחק", "Delete"],
+  ["מחיקת חשבון", "Delete account"],
+  ["למחוק את החשבון של {name}?", "Delete {name}'s account?"],
+  [
+    "משחקים שלא שוחקו יימחקו, תוצאות שכבר נרשמו יישארו כדי לא לשנות טבלאות של אחרים, והוא לא יוכל להתחבר שוב. אין דרך חזרה.",
+    "Matches never played are removed, results already recorded stay so nobody else's table changes, and they can't sign in again. There is no way back.",
+  ],
+  ["כן, למחוק", "Yes, delete"],
+  ["מוחק...", "Deleting..."],
 ];
 
 const heToEn = {};

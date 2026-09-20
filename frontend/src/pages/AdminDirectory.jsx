@@ -26,6 +26,12 @@ export default function AdminDirectory() {
   const [error, setError] = useState("");
   const [tab, setTab] = useState("users");
   const [query, setQuery] = useState("");
+  // Two taps to close an account, and the second one lives on the row itself:
+  // a native confirm is a thumb-width away from "OK" on a phone, and this is
+  // not undoable.
+  const [confirmingId, setConfirmingId] = useState(null);
+  const [busyId, setBusyId] = useState(null);
+  const [notice, setNotice] = useState("");
 
   useEffect(() => {
     api
@@ -33,6 +39,21 @@ export default function AdminDirectory() {
       .then(setData)
       .catch((err) => setError(err.message));
   }, []);
+
+  async function handleDelete(u) {
+    setBusyId(u.id);
+    setError("");
+    try {
+      const res = await api.adminDeleteUser(u.id);
+      setData((prev) => ({ ...prev, users: prev.users.filter((row) => row.id !== u.id) }));
+      setNotice(res.message);
+      setConfirmingId(null);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusyId(null);
+    }
+  }
 
   const needle = query.trim().toLowerCase();
 
@@ -92,6 +113,9 @@ export default function AdminDirectory() {
             </div>
           </div>
 
+          {notice && <p className="adm-notice">{notice}</p>}
+          {error && <p className="error">{t(error)}</p>}
+
           <div className="adm-tabs">
             {TABS.map((key) => (
               <button
@@ -116,24 +140,72 @@ export default function AdminDirectory() {
 
           {tab === "users" ? (
             <div className="adm-rows">
-              {users.map((u) => (
-                <Link to={`/players/${u.id}`} className="adm-row" key={u.id}>
-                  <Avatar name={u.name} photoUrl={u.photo_url} size={34} />
-                  <div className="adm-row-body">
-                    <div className="adm-row-title">
-                      <span dir="auto" style={{ unicodeBidi: "isolate" }}>{u.name}</span>
-                      {u.is_admin && <span className="adm-badge">{t("אדמין")}</span>}
-                    </div>
-                    <div className="adm-row-sub" dir="ltr">{u.email}</div>
-                    <div className="adm-row-meta" dir="ltr">
-                      NTRP {levelText(u.levels)} · {u.leagues} {t("ליגות")} · {u.matches_played}{" "}
-                      {t("שוחקו")}
-                      {u.created_at ? ` · ${formatDayMonth(new Date(u.created_at))}` : ""}
+              {users.map((u) =>
+                confirmingId === u.id ? (
+                  <div className="adm-row adm-row--confirm" key={u.id}>
+                    <div className="adm-row-body">
+                      <div className="adm-confirm-title">
+                        {t("למחוק את החשבון של {name}?", { name: u.name })}
+                      </div>
+                      <div className="adm-confirm-text">
+                        {t(
+                          "משחקים שלא שוחקו יימחקו, תוצאות שכבר נרשמו יישארו כדי לא לשנות טבלאות של אחרים, והוא לא יוכל להתחבר שוב. אין דרך חזרה."
+                        )}
+                      </div>
+                      <div className="adm-confirm-actions">
+                        <button
+                          type="button"
+                          className="adm-confirm-go"
+                          disabled={busyId === u.id}
+                          onClick={() => handleDelete(u)}
+                        >
+                          {busyId === u.id ? t("מוחק...") : t("כן, למחוק")}
+                        </button>
+                        <button
+                          type="button"
+                          className="adm-confirm-cancel"
+                          onClick={() => setConfirmingId(null)}
+                        >
+                          {t("ביטול")}
+                        </button>
+                      </div>
                     </div>
                   </div>
-                  <ChevronIcon className="adm-row-chev chevron-icon" aria-hidden="true" />
-                </Link>
-              ))}
+                ) : (
+                  <div className="adm-row" key={u.id}>
+                    <Link to={`/players/${u.id}`} className="adm-row-link">
+                      <Avatar name={u.name} photoUrl={u.photo_url} size={34} />
+                      <div className="adm-row-body">
+                        <div className="adm-row-title">
+                          <span dir="auto" style={{ unicodeBidi: "isolate" }}>{u.name}</span>
+                          {u.is_admin && <span className="adm-badge">{t("אדמין")}</span>}
+                        </div>
+                        <div className="adm-row-sub" dir="ltr">{u.email}</div>
+                        <div className="adm-row-meta" dir="ltr">
+                          NTRP {levelText(u.levels)} · {u.leagues} {t("ליגות")} · {u.matches_played}{" "}
+                          {t("שוחקו")}
+                          {u.created_at ? ` · ${formatDayMonth(new Date(u.created_at))}` : ""}
+                        </div>
+                      </div>
+                    </Link>
+                    {/* The admin's own account, and any other admin, has no
+                        delete here — the server refuses both anyway. */}
+                    {!u.is_admin && (
+                      <button
+                        type="button"
+                        className="adm-row-del"
+                        onClick={() => {
+                          setNotice("");
+                          setConfirmingId(u.id);
+                        }}
+                        aria-label={t("מחיקת חשבון")}
+                      >
+                        {t("מחק")}
+                      </button>
+                    )}
+                  </div>
+                )
+              )}
               {users.length === 0 && <p className="muted">{t("לא נמצאו שחקנים")}</p>}
             </div>
           ) : (

@@ -7952,4 +7952,29 @@ button:active { transform: translateY(1px); }
 }
 .adm-badge.open { background: #24331a; color: #c6f24e; }
 
+.adm-row-link { display: flex; align-items: center; gap: 11px; flex: 1; min-width: 0; text-decoration: none; color: inherit; }
+.adm-row-del {
+  flex: none; padding: 5px 10px; border: 1px solid #3a2226; border-radius: 8px; background: transparent;
+  font: 600 12px "IBM Plex Sans", var(--sans); color: #e07070; cursor: pointer;
+}
+.adm-row-del:active { background: #2a1a1d; }
+
+.adm-row--confirm { align-items: stretch; background: #171315; border-bottom-color: #3a2226; }
+.adm-confirm-title { font: 700 14px "IBM Plex Sans", var(--sans); color: var(--ink); }
+.adm-confirm-text { margin-top: 4px; font: 500 12.5px/1.45 "IBM Plex Sans", var(--sans); color: #a3abbb; }
+.adm-confirm-actions { display: flex; gap: 8px; margin-top: 10px; }
+.adm-confirm-go {
+  padding: 7px 14px; border: 0; border-radius: 8px; background: #b4453f; color: #fff;
+  font: 700 13px "IBM Plex Sans", var(--sans); cursor: pointer;
+}
+.adm-confirm-cancel {
+  padding: 7px 14px; border: 1px solid #262c36; border-radius: 8px; background: transparent;
+  color: #a3abbb; font: 600 13px "IBM Plex Sans", var(--sans); cursor: pointer;
+}
+
+.adm-notice {
+  margin-top: 14px; padding: 9px 11px; border-radius: 9px; background: #1b2418;
+  font: 600 13px "IBM Plex Sans", var(--sans); color: #c6f24e;
+}
+
 .mp-settings--admin .mp-settings-title { color: #c6f24e; }

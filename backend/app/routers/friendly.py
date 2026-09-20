@@ -78,7 +78,13 @@ def search_players(
     if query:
         candidates = (
             db.query(models.User)
-            .filter(models.User.id != current_user.id, models.User.name.ilike(f"%{query}%"))
+            .filter(
+                models.User.id != current_user.id,
+                # A closed account is anonymised rather than removed, so it
+                # would otherwise sit here as "Deleted user", invitable.
+                models.User.deleted_at.is_(None),
+                models.User.name.ilike(f"%{query}%"),
+            )
             .order_by(models.User.name)
             .limit(20)
             .all()
@@ -102,7 +108,11 @@ def search_players(
         }
         if not opponent_ids:
             return []
-        candidates = db.query(models.User).filter(models.User.id.in_(opponent_ids)).all()
+        candidates = (
+            db.query(models.User)
+            .filter(models.User.id.in_(opponent_ids), models.User.deleted_at.is_(None))
+            .all()
+        )
 
     results = []
     for u in candidates:

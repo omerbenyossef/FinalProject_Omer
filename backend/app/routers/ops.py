@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session, joinedload
 from .. import models, schemas
 from ..auth import get_current_user
 from ..database import get_db
+from .auth import _delete_user_account
 from .leagues import _week_end_saturday
 
 router = APIRouter(prefix="/ops", tags=["ops"])
@@ -251,7 +252,12 @@ def admin_directory(
             matches_played=played_per_user.get(u.id, 0),
             levels=sorted(levels_per_user.get(u.id, []), key=lambda l: l.sport_name),
         )
-        for u in db.query(models.User).order_by(models.User.id.desc()).all()
+        for u in (
+            db.query(models.User)
+            .filter(models.User.deleted_at.is_(None))
+            .order_by(models.User.id.desc())
+            .all()
+        )
     ]
 
     members_per_league = dict(
@@ -302,3 +308,36 @@ def admin_directory(
     ]
 
     return schemas.AdminDirectoryOut(users=users, leagues=leagues)
+
+
+@router.delete("/users/{user_id}", response_model=schemas.MessageOut)
+def admin_delete_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Close a player's account from the admin screen.
+
+    Runs the same cleanup as a player deleting their own account: the
+    account is anonymised and deactivated rather than erased, because its id
+    is a foreign key on matches, memberships and leagues, and the other
+    players' standings and history have to survive it. Matches of theirs
+    that were never played are dropped; results that were are kept, so
+    nobody else's record changes underneath them.
+
+    Irreversible — there is no undo path back to a live account."""
+    _require_admin(current_user)
+    if user_id == current_user.id:
+        # Deleting the operator account from the operator screen is a trap,
+        # not a feature. Their own profile has the usual way out.
+        raise HTTPException(status_code=400, detail="אי אפשר למחוק את החשבון שלך מכאן")
+
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user or user.deleted_at is not None:
+        raise HTTPException(status_code=404, detail="המשתמש לא נמצא")
+    if user.is_admin:
+        raise HTTPException(status_code=400, detail="אי אפשר למחוק חשבון מנהל")
+
+    name = user.name
+    _delete_user_account(db, user)
+    return schemas.MessageOut(message=f"החשבון של {name} נמחק")
