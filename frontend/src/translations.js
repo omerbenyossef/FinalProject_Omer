@@ -1334,6 +1334,17 @@ const PAIRS = [
   ["שחקן אחר עם השם שלך — לא אתה", "A different player with your name \u2014 not you"],
   ["בחר שעה אחת, והיריב יאשר אותה", "Pick one time, and they confirm it"],
   ["מחכה שיאשרו את ההזמנה", "Waiting for them to accept"],
+  ["ניהול", "Admin"],
+  ["כל השחקנים · כל הליגות", "Every player \u00b7 every league"],
+  ["משתמשים", "Players"],
+  ["חיפוש לפי שם או אימייל", "Search by name or email"],
+  ["חיפוש לפי שם ליגה או מי פתח", "Search by league or who opened it"],
+  ["אדמין", "ADMIN"],
+  ["ציבורית", "PUBLIC"],
+  ["פרטית", "PRIVATE"],
+  ["שוחקו", "played"],
+  ["{sport} · נפתחה על ידי {name}", "{sport} \u00b7 opened by {name}"],
+  ["לא נמצאו ליגות", "No leagues found"],
 ];
 
 const heToEn = {};

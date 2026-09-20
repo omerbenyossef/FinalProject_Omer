@@ -36,6 +36,7 @@ import MatchSchedule from "./pages/MatchSchedule.jsx";
 import ConfirmResult from "./pages/ConfirmResult.jsx";
 import CorrectScore from "./pages/CorrectScore.jsx";
 import Operator from "./pages/Operator.jsx";
+import AdminDirectory from "./pages/AdminDirectory.jsx";
 
 // loading138b.md: the app-wide Loading overlay already covers this whole
 // window (it's the same auth loading flag), so there's nothing useful to
@@ -219,6 +220,16 @@ export default function App() {
             <ProtectedRoute>
               <Home />
             </ProtectedRoute>
+          }
+        />
+        {/* Admin only, on the server as well as here: /ops/directory answers
+            403 to anyone else, so hiding the route is the lesser half of it. */}
+        <Route
+          path="/admin"
+          element={
+            <AdminRoute>
+              <AdminDirectory />
+            </AdminRoute>
           }
         />
         <Route

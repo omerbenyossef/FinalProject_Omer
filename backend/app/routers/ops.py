@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy import func, or_
+from sqlalchemy.orm import Session, joinedload
 
 from .. import models, schemas
 from ..auth import get_current_user
@@ -182,3 +183,122 @@ def ops_overview(
         flagged=flagged,
         healthy=healthy,
     )
+
+
+def _require_admin(user: models.User) -> None:
+    """The only gate that counts. Hiding the way in on the client is a
+    courtesy; this is what makes the screen the admin's alone."""
+    if not user.is_admin:
+        raise HTTPException(status_code=403, detail="רק מנהל המערכת יכול לגשת למסך הזה")
+
+
+@router.get("/directory", response_model=schemas.AdminDirectoryOut)
+def admin_directory(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Every player and every league, for the admin's management screen.
+
+    Counted with group-by queries rather than a loop per row: at a few
+    hundred players a per-row count is hundreds of round trips, and this
+    screen is meant to open instantly however big the app gets."""
+    _require_admin(current_user)
+
+    leagues_per_user = dict(
+        db.query(models.LeagueMembership.user_id, func.count(models.LeagueMembership.id))
+        .group_by(models.LeagueMembership.user_id)
+        .all()
+    )
+
+    # A completed match counts for both of its players, so the two columns are
+    # counted separately and added together.
+    played_per_user: dict[int, int] = {}
+    for column in (models.Match.player1_id, models.Match.player2_id):
+        rows = (
+            db.query(column, func.count(models.Match.id))
+            .filter(models.Match.status == models.MatchStatus.completed)
+            .group_by(column)
+            .all()
+        )
+        for user_id, count in rows:
+            if user_id is not None:
+                played_per_user[user_id] = played_per_user.get(user_id, 0) + count
+
+    levels_per_user: dict[int, list[schemas.AdminUserLevel]] = {}
+    for rating, sport_name in (
+        db.query(models.PlayerRating, models.Sport.name)
+        .join(models.Sport, models.Sport.id == models.PlayerRating.sport_id)
+        .all()
+    ):
+        levels_per_user.setdefault(rating.user_id, []).append(
+            schemas.AdminUserLevel(
+                sport_name=sport_name,
+                level=rating.level,
+                provisional=bool(rating.provisional),
+            )
+        )
+
+    users = [
+        schemas.AdminUserRow(
+            id=u.id,
+            name=u.name,
+            email=u.email,
+            photo_url=u.photo_url,
+            created_at=u.created_at,
+            is_admin=u.is_admin,
+            intro_seen=u.intro_seen,
+            leagues=leagues_per_user.get(u.id, 0),
+            matches_played=played_per_user.get(u.id, 0),
+            levels=sorted(levels_per_user.get(u.id, []), key=lambda l: l.sport_name),
+        )
+        for u in db.query(models.User).order_by(models.User.id.desc()).all()
+    ]
+
+    members_per_league = dict(
+        db.query(models.LeagueMembership.league_id, func.count(models.LeagueMembership.id))
+        .group_by(models.LeagueMembership.league_id)
+        .all()
+    )
+    matches_per_league = dict(
+        db.query(models.Match.league_id, func.count(models.Match.id))
+        .filter(models.Match.league_id.isnot(None))
+        .group_by(models.Match.league_id)
+        .all()
+    )
+    played_per_league = dict(
+        db.query(models.Match.league_id, func.count(models.Match.id))
+        .filter(
+            models.Match.league_id.isnot(None),
+            models.Match.status == models.MatchStatus.completed,
+        )
+        .group_by(models.Match.league_id)
+        .all()
+    )
+    creator_names = dict(db.query(models.User.id, models.User.name).all())
+
+    leagues = [
+        schemas.AdminLeagueRow(
+            id=l.id,
+            name=l.name,
+            sport_name=l.sport.name if l.sport else "",
+            is_open=bool(l.is_open),
+            creator_name=creator_names.get(l.created_by, ""),
+            member_count=members_per_league.get(l.id, 0),
+            capacity=l.capacity,
+            level_min=l.level_min,
+            level_max=l.level_max,
+            created_at=l.created_at,
+            starts_at=l.starts_at,
+            schedule_started_at=l.schedule_started_at,
+            matches_total=matches_per_league.get(l.id, 0),
+            matches_played=played_per_league.get(l.id, 0),
+        )
+        for l in (
+            db.query(models.League)
+            .options(joinedload(models.League.sport))
+            .order_by(models.League.id.desc())
+            .all()
+        )
+    ]
+
+    return schemas.AdminDirectoryOut(users=users, leagues=leagues)

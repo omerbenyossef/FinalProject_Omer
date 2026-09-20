@@ -7901,3 +7901,55 @@ button:active { transform: translateY(1px); }
   cursor: pointer;
 }
 .om-mine-cancel:disabled { opacity: 0.55; cursor: default; }
+
+/* Admin directory (/admin) — everyone and every league, admin only. */
+.adm { padding-bottom: 28px; }
+.adm-nav { display: flex; align-items: center; gap: 10px; padding-top: 6px; }
+
+.adm-totals { display: flex; gap: 30px; margin-top: 18px; }
+.adm-total-value { font: 400 40px/1 "Anton", sans-serif; color: #eef1f7; font-variant-numeric: tabular-nums; }
+.adm-total-label {
+  margin-top: 5px; font: 600 10px "IBM Plex Mono", "IBM Plex Sans", monospace;
+  letter-spacing: .1em; text-transform: uppercase; color: #8b93a6;
+}
+
+.adm-tabs { display: flex; gap: 8px; margin-top: 22px; }
+.adm-tab {
+  flex: 1; padding: 9px 0; border: 1px solid #262c36; border-radius: 10px; background: transparent;
+  font: 600 13px "IBM Plex Sans", var(--sans); color: #8b93a6; cursor: pointer;
+}
+.adm-tab.on { background: #c6f24e; border-color: #c6f24e; color: #0e1116; }
+
+.adm-search {
+  display: flex; align-items: center; gap: 8px; margin-top: 12px; padding: 0 12px;
+  height: 40px; border: 1px solid #262c36; border-radius: 10px; color: #8b93a6;
+}
+.adm-search input {
+  flex: 1; min-width: 0; border: 0; background: transparent; outline: none;
+  font: 500 14px "IBM Plex Sans", var(--sans); color: var(--ink);
+}
+
+.adm-rows { display: flex; flex-direction: column; margin-top: 8px; }
+.adm-row {
+  display: flex; align-items: center; gap: 11px; padding: 12px 2px;
+  border-bottom: 1px solid #1c212a; text-decoration: none; color: inherit;
+}
+.adm-row-body { flex: 1; min-width: 0; }
+.adm-row-title {
+  display: flex; align-items: center; gap: 7px;
+  font: 700 15px "IBM Plex Sans", var(--sans); color: var(--ink);
+}
+.adm-row-sub { margin-top: 2px; font: 500 12.5px "IBM Plex Sans", var(--sans); color: #a3abbb; }
+.adm-row-meta {
+  margin-top: 3px; font: 500 11.5px "IBM Plex Mono", monospace; color: #6f7787;
+  font-variant-numeric: tabular-nums;
+}
+.adm-row-chev { flex: none; color: #4b5261; }
+
+.adm-badge {
+  flex: none; padding: 1px 6px; border-radius: 5px; background: #262c36; color: #a3abbb;
+  font: 600 10px "IBM Plex Mono", monospace; letter-spacing: .06em;
+}
+.adm-badge.open { background: #24331a; color: #c6f24e; }
+
+.mp-settings--admin .mp-settings-title { color: #c6f24e; }

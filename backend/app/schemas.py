@@ -924,6 +924,49 @@ class OpsHealthyLeague(BaseModel):
     matches_played: int = 0
 
 
+class AdminUserLevel(BaseModel):
+    sport_name: str
+    level: float
+    provisional: bool = False
+
+
+class AdminUserRow(BaseModel):
+    id: int
+    name: str
+    email: str
+    photo_url: Optional[str] = None
+    created_at: Optional[UtcDatetime] = None
+    is_admin: bool = False
+    intro_seen: bool = False
+    leagues: int = 0
+    matches_played: int = 0
+    levels: list[AdminUserLevel] = []
+
+
+class AdminLeagueRow(BaseModel):
+    id: int
+    name: str
+    sport_name: str
+    is_open: bool = False
+    creator_name: str = ""
+    member_count: int = 0
+    capacity: Optional[int] = None
+    level_min: Optional[float] = None
+    level_max: Optional[float] = None
+    created_at: Optional[UtcDatetime] = None
+    starts_at: Optional[UtcDatetime] = None
+    schedule_started_at: Optional[UtcDatetime] = None
+    matches_total: int = 0
+    matches_played: int = 0
+
+
+class AdminDirectoryOut(BaseModel):
+    """Everyone and every league, for the admin-only management screen."""
+
+    users: list[AdminUserRow] = []
+    leagues: list[AdminLeagueRow] = []
+
+
 class OpsOverviewOut(BaseModel):
     range: str
     leagues_count: int

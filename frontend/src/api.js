@@ -213,6 +213,8 @@ export const api = {
   getFriendlyInviteLink: (token) => request(`/friendly/invite-links/${token}`),
   redeemFriendlyInviteLink: (token) => request(`/friendly/invite-links/${token}/redeem`, { method: "POST" }),
 
+  adminDirectory: () => request("/ops/directory"),
+
   getVapidKey: () => request("/push/vapid-public-key", { auth: false }),
   subscribePush: (subscription) => request("/push/subscribe", { method: "POST", body: subscription }),
   unsubscribePush: (endpoint) => request("/push/unsubscribe", { method: "POST", body: { endpoint } }),

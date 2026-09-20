@@ -138,6 +138,16 @@ export default function MyProfile() {
         </div>
       </div>
 
+      {user?.is_admin && (
+        <Link to="/admin" className="mp-settings mp-settings--admin">
+          <span className="mp-settings-text">
+            <span className="mp-settings-title">{t("ניהול")}</span>
+            <span className="mp-settings-sub">{t("כל השחקנים · כל הליגות")}</span>
+          </span>
+          <ChevronIcon className="mp-settings-chev" aria-hidden="true" />
+        </Link>
+      )}
+
       <Link to="/settings" className="mp-settings">
         <SettingsIcon className="mp-settings-icon" aria-hidden="true" />
         <span className="mp-settings-text">
