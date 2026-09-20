@@ -734,7 +734,10 @@ export default function Profile() {
             />
           </div>
         </div>
-        {!isNoLeague && !isRoundNotOpened && (
+        {/* Only once there is something to count. A player with no league and
+            no finished match got "-% · 0W-0L · 0 ליגות", which is three
+            zeros where a record should be. */}
+        {!isRoundNotOpened && (myLeaguesForSport.length > 0 || !hasNoMatches) && (
           <div className="home-stats" dir="ltr">
             <span className="home-stat">
               {winRate !== null ? winRate : "–"}% <span className="home-stat-unit">{t("ניצחונות")}</span>
@@ -847,20 +850,12 @@ export default function Profile() {
           );
         })}
 
+      {/* No "NTRP 1.5 · PROVISIONAL / three matches to go" block here: the
+          rating bar in the header says exactly that, and its own footer
+          already carries the countdown. Two copies of one sentence, one
+          above the other, is what a player with no matches used to get. */}
       {stats &&
-        !isNoLeague &&
-        (hasNoMatches ? (
-          <div className="home-empty-rating">
-            <div className="home-empty-rating-line" dir="ltr">
-              NTRP {myRating ? myRating.level.toFixed(1) : "—"} · {t("PROVISIONAL")}
-            </div>
-            <div className="home-empty-rating-sub">
-              {t("עוד {n} משחקים והדירוג נקבע", {
-                n: myRating ? Math.max(0, 3 - myRating.rated_matches) : 3,
-              })}
-            </div>
-          </div>
-        ) : (
+        !hasNoMatches && (
           <>
             <div className="home-form">
               <div className="home-form-head" dir="ltr">
@@ -878,7 +873,7 @@ export default function Profile() {
               </div>
             </div>
           </>
-        ))}
+        )}
 
       {(matchesLoading || combinedToPlay.length > 0) && (
         <div className="tp-head">
