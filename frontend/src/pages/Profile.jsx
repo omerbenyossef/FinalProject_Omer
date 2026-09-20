@@ -514,7 +514,9 @@ export default function Profile() {
   // 109: a brand-new player (no league at all) and a player with exactly one
   // not-yet-scheduled league both get a dedicated hero instead of the usual
   // to-play/my-leagues body — see firstdayandemptystates109.md sections 1-2.
-  const isNoLeague = myLeaguesForSport.length === 0;
+  // isNoLeague is defined further down: it also depends on friendly matches,
+  // and those aren't derived until sportEntries exists.
+  const hasNoLeagues = myLeaguesForSport.length === 0;
   const soloLeague = myLeaguesForSport.length === 1 ? myLeaguesForSport[0] : null;
   const isRoundNotOpened = !!soloLeague && !soloLeague.schedule_started_at;
   const openLeagueCount = allLeagues.filter((l) => l.is_open && l.sport.id === selectedSportId).length;
@@ -590,6 +592,12 @@ export default function Profile() {
       !isUnansweredInvite(entry)
   );
   const inviteCount = sportEntries.filter(isUnansweredInvite).length;
+  // "Day 1" used to mean "in no league", which counted friendlies as nothing:
+  // a player whose matches are all friendly was asked how they'd like to start
+  // forever, with a match of theirs live in the tab bar underneath. It means
+  // "nothing going on" now, and a friendly is something going on — the body
+  // below already knows how to draw one.
+  const isNoLeague = hasNoLeagues && friendlyMatchesForSport.length === 0 && inviteCount === 0;
   const combinedToPlay = [...leagueMatchesForSport, ...friendlyMatchesForSport];
   const sortedToPlay = user ? sortToPlay(combinedToPlay, user.id, roundLengthById) : [];
   // 109c: "all matches of the round have been played" — only meaningful when
