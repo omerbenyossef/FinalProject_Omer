@@ -35,6 +35,7 @@ def _match_state(match: models.Match, user_id: int) -> str:
     waiting_on_them    — I reported, they haven't answered
     confirm_mine       — they reported, it's waiting on me
     not_played         — both sides agreed it never happened
+    invite_sent        — I invited them and they haven't answered yet
     """
     if _not_played_void(match):
         return "not_played"
@@ -247,9 +248,26 @@ def home_week(
             continue
         opponent = match.player2 if match.player1_id == current_user.id else match.player1
         if match.invite_status == models.FriendlyInviteStatus.pending:
-            # An invitation I sent isn't mine to answer — it shows on the
-            # matches screen under "waiting on them".
+            # An invitation I sent isn't mine to answer, so it isn't an invite
+            # row — but it is still something of mine happening this week, at a
+            # time I proposed. Leaving it out entirely meant a player whose only
+            # tennis was an invitation they'd sent had an empty diary and got
+            # sent to the old home screen and left there.
             if match.player1_id == current_user.id:
+                reference = match.scheduled_at or match.created_at
+                if reference and now - reference > FRIENDLY_WINDOW:
+                    continue
+                matches.append(
+                    schemas.HomeWeekMatchOut(
+                        id=match.id,
+                        opponent_name=opponent.name if opponent else "",
+                        opponent_photo_url=opponent.photo_url if opponent else None,
+                        league_name=None,
+                        round=None,
+                        scheduled_at=match.scheduled_at,
+                        state="invite_sent",
+                    )
+                )
                 continue
             rating = get_rating(db, match.player1_id, match.sport_id)
             invites.append(

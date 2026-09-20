@@ -1333,6 +1333,7 @@ const PAIRS = [
   ["שחקן חדש", "New player"],
   ["שחקן אחר עם השם שלך — לא אתה", "A different player with your name \u2014 not you"],
   ["בחר שעה אחת, והיריב יאשר אותה", "Pick one time, and they confirm it"],
+  ["מחכה שיאשרו את ההזמנה", "Waiting for them to accept"],
 ];
 
 const heToEn = {};

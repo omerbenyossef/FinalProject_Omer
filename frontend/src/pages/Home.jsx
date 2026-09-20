@@ -156,8 +156,11 @@ export default function Home() {
   function cardFor(match) {
     const scheduled = match.scheduled_at ? new Date(match.scheduled_at) : null;
     const voided = match.state === "not_played";
-    const dim = match.state === "waiting_on_them" || match.state === "no_time" || voided;
-    const limeDate = !!scheduled && !voided && match.state !== "waiting_on_them";
+    // An invitation I sent reads like anything else I'm waiting on: the time
+    // is only a proposal until they answer, so it isn't lime yet.
+    const sentInvite = match.state === "invite_sent";
+    const dim = match.state === "waiting_on_them" || match.state === "no_time" || voided || sentInvite;
+    const limeDate = !!scheduled && !voided && !sentInvite && match.state !== "waiting_on_them";
 
     // Three cards or more and a full-size button stops fitting: the action
     // becomes a lime line instead (168a's short-card rule).
@@ -184,7 +187,11 @@ export default function Home() {
     if (!label) {
       action = (
         <span className="hw-mono-action">
-          {match.state === "waiting_on_them" ? t("מחכה לתשובה שלו") : t("הכול מוכן")}
+          {sentInvite
+            ? t("מחכה שיאשרו את ההזמנה")
+            : match.state === "waiting_on_them"
+              ? t("מחכה לתשובה שלו")
+              : t("הכול מוכן")}
         </span>
       );
     } else if (compact) {
@@ -205,13 +212,16 @@ export default function Home() {
       );
     }
 
+    // Where a sent invitation can be re-timed or withdrawn.
     const route = voided
       ? `/matches/${match.id}/reschedule`
-      : match.state === "waiting_on_them"
-        ? `/matches/${match.id}/pending`
-        : match.state === "no_time"
-          ? `/matches/${match.id}/schedule`
-          : `/matches/${match.id}`;
+      : sentInvite
+        ? "/needs-you"
+        : match.state === "waiting_on_them"
+          ? `/matches/${match.id}/pending`
+          : match.state === "no_time"
+            ? `/matches/${match.id}/schedule`
+            : `/matches/${match.id}`;
 
     return (
       <div
