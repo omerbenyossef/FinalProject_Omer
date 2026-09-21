@@ -229,25 +229,63 @@ def _delete_user_account(db: Session, user: models.User) -> None:
     those rows to stay intact. Mirrors leave_league's own cleanup (drop
     pending matches + membership, keep completed ones) applied across every
     league at once, plus removing anything that's exclusively theirs."""
+    mine = or_(models.Match.player1_id == user.id, models.Match.player2_id == user.id)
+
     membership_league_ids = [
         m.league_id
         for m in db.query(models.LeagueMembership).filter(models.LeagueMembership.user_id == user.id).all()
     ]
+
+    # Which matches are going: this player's unplayed league matches, and
+    # their unplayed friendlies. Collected as ids first because four other
+    # tables point at matches.id, and those rows have to go before these do.
+    doomed_ids: set[int] = set()
     if membership_league_ids:
-        db.query(models.Match).filter(
-            models.Match.league_id.in_(membership_league_ids),
+        doomed_ids.update(
+            r[0]
+            for r in db.query(models.Match.id).filter(
+                models.Match.league_id.in_(membership_league_ids),
+                models.Match.status == models.MatchStatus.pending,
+                mine,
+            )
+        )
+    doomed_ids.update(
+        r[0]
+        for r in db.query(models.Match.id).filter(
+            models.Match.kind == models.MatchKind.friendly,
             models.Match.status == models.MatchStatus.pending,
-            or_(models.Match.player1_id == user.id, models.Match.player2_id == user.id),
-        ).delete(synchronize_session=False)
+            mine,
+        )
+    )
+
     db.query(models.LeagueMembership).filter(models.LeagueMembership.user_id == user.id).delete(
         synchronize_session=False
     )
 
-    db.query(models.Match).filter(
-        models.Match.kind == models.MatchKind.friendly,
-        models.Match.status == models.MatchStatus.pending,
-        or_(models.Match.player1_id == user.id, models.Match.player2_id == user.id),
-    ).delete(synchronize_session=False)
+    if doomed_ids:
+        ids = list(doomed_ids)
+        # A bulk delete() bypasses the ORM's own cascades, so nothing clears
+        # these for us. SQLite doesn't enforce foreign keys by default and let
+        # the delete through regardless; Postgres does, and refused it — which
+        # is why closing an account worked in development and raised in
+        # production.
+        db.query(models.MatchTimeOption).filter(models.MatchTimeOption.match_id.in_(ids)).delete(
+            synchronize_session=False
+        )
+        # These rows ask the player to do something about a match that is
+        # about to stop existing.
+        db.query(models.Notification).filter(models.Notification.match_id.in_(ids)).delete(
+            synchronize_session=False
+        )
+        # A rating sample and an invite link both outlive their match, so they
+        # keep their row and let go of the reference.
+        db.query(models.RatingSample).filter(models.RatingSample.match_id.in_(ids)).update(
+            {models.RatingSample.match_id: None}, synchronize_session=False
+        )
+        db.query(models.FriendlyInviteLink).filter(models.FriendlyInviteLink.match_id.in_(ids)).update(
+            {models.FriendlyInviteLink.match_id: None}, synchronize_session=False
+        )
+        db.query(models.Match).filter(models.Match.id.in_(ids)).delete(synchronize_session=False)
 
     db.query(models.PlayerRating).filter(models.PlayerRating.user_id == user.id).delete(synchronize_session=False)
     db.query(models.RatingSample).filter(models.RatingSample.user_id == user.id).delete(synchronize_session=False)
