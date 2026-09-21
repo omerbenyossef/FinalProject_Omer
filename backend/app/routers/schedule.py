@@ -13,6 +13,7 @@ from ..rating_utils import match_winner_id, round_to_half, update_ratings_for_ma
 from .friendly import MAX_SETS as FRIENDLY_MAX_SETS
 from .leagues import _accumulate_stats, _empty_stats
 from .leagues import _current_round_number, _round_ends_at
+from .chat import unread_count
 from .matches import CONFIRMATION_WINDOW, _auto_confirm_overdue, _to_naive_utc
 
 router = APIRouter(prefix="/matches", tags=["schedule"])
@@ -270,6 +271,7 @@ def get_match_detail(
         time_options=match.time_options,
         busy_windows=_busy_windows(db, match, current_user.id),
         conflict_gap_minutes=int(CONFLICT_GAP_WINDOW.total_seconds() // 60),
+        unread_messages=unread_count(db, match.id, current_user.id),
     )
 
 

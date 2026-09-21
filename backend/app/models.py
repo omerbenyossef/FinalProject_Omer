@@ -228,6 +228,17 @@ class Match(Base):
         cascade="all, delete-orphan",
         order_by="MatchTimeOption.start_at",
     )
+    # Cascades so db.delete(match) takes the conversation with it. The two
+    # places that delete matches in bulk clear these themselves — a bulk
+    # delete() goes round the ORM and would leave them orphaned, which
+    # Postgres refuses.
+    messages = relationship(
+        "MatchMessage",
+        back_populates="match",
+        cascade="all, delete-orphan",
+        order_by="MatchMessage.id",
+    )
+    chat_reads = relationship("MatchChatRead", cascade="all, delete-orphan")
 
     @property
     def time_options_count(self) -> int:
@@ -253,6 +264,38 @@ class MatchTimeOption(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     match = relationship("Match", back_populates="time_options")
+
+
+class MatchMessage(Base):
+    """A line of the two players' conversation about one match. Every match
+    that is meant to be played has one — a league match from the moment it is
+    drawn, a friendly once the invitation is accepted — because the questions
+    it exists to answer ("running late", "which court?") are the same either
+    way."""
+
+    __tablename__ = "match_messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    match_id = Column(Integer, ForeignKey("matches.id"), nullable=False, index=True)
+    sender_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    body = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    match = relationship("Match", back_populates="messages")
+    sender = relationship("User")
+
+
+class MatchChatRead(Base):
+    """How far each player has read. One row per player per match, so the
+    unread count is a comparison rather than a flag per message."""
+
+    __tablename__ = "match_chat_reads"
+    __table_args__ = (UniqueConstraint("match_id", "user_id", name="uq_chat_read_match_user"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    match_id = Column(Integer, ForeignKey("matches.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    last_read_at = Column(DateTime, default=datetime.utcnow)
 
 
 class RatingSample(Base):

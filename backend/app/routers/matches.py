@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session, joinedload
 from .. import models, schemas
 from ..auth import get_current_user
 from ..database import get_db
+from ..match_cleanup import purge_match_references
 from ..push_utils import notify_user, resolve_match_notifications
 from ..rating_utils import update_ratings_for_match
 
@@ -696,5 +697,9 @@ def cancel_match(
     if match.status != models.MatchStatus.pending:
         raise HTTPException(status_code=400, detail="אי אפשר לבטל משחק שכבר דווח")
 
+    # The ORM cascades cover the chat and the time options, but notifications
+    # and rating samples aren't relationships on Match — clear them all through
+    # the one place that knows about every reference.
+    purge_match_references(db, [match.id])
     db.delete(match)
     db.commit()

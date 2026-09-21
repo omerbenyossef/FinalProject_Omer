@@ -282,6 +282,21 @@ export default function ProposeSchedule() {
           <ChevronIcon aria-hidden="true" />
         </button>
         <span className="sched-nav-label">{t("SCHEDULE")}</span>
+        {/* A match with no time yet is exactly when "when can you play?" needs
+            somewhere to be asked. Not on a draft invitation, which has no
+            match behind it to talk about yet. */}
+        {!draftOpponent && (
+          <button
+            type="button"
+            className="sched-nav-chat"
+            onClick={() => navigate(`/matches/${matchId}/chat`)}
+          >
+            {t("צ'אט")}
+            {detail.unread_messages > 0 && (
+              <span className="sched-nav-chat-dot" aria-hidden="true" />
+            )}
+          </button>
+        )}
       </div>
 
       <h1 className="sched-title">{t("מול {name}", { name: detail.opponent.name })}</h1>

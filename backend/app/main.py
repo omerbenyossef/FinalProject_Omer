@@ -8,6 +8,7 @@ from . import models
 from .database import Base, engine, SessionLocal
 from .routers import (
     auth,
+    chat,
     home,
     friendly,
     leagues,
@@ -327,6 +328,7 @@ app.include_router(home.router)
 app.include_router(open_matches.router)
 app.include_router(schedule.router)
 app.include_router(ops.router)
+app.include_router(chat.router)
 app.include_router(notifications.router)
 
 

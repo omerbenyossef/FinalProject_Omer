@@ -694,6 +694,29 @@ class BusyWindowOut(BaseModel):
     whose: str  # me | opponent | both
 
 
+class MatchMessageOut(BaseModel):
+    id: int
+    sender_id: int
+    sender_name: str = ""
+    sender_photo_url: Optional[str] = None
+    body: str
+    created_at: UtcDatetime
+    mine: bool = False
+
+
+class MatchMessageCreate(BaseModel):
+    body: str = Field(min_length=1, max_length=2000)
+
+
+class MatchChatOut(BaseModel):
+    """The conversation plus who it is with, so the screen needs one call."""
+
+    match_id: int
+    opponent: MemberOut
+    can_send: bool = True
+    messages: list[MatchMessageOut] = []
+
+
 class FriendlyDraftOut(BaseModel):
     """Everything the propose screen needs for a friendly that doesn't exist
     yet. The match is created only once a time has actually been picked, so
@@ -748,6 +771,8 @@ class MatchDetailOut(BaseModel):
     time_options: list[MatchTimeOptionOut] = []
     busy_windows: list[BusyWindowOut] = []
     conflict_gap_minutes: int = 60
+    # Messages from the opponent since this viewer last opened the chat.
+    unread_messages: int = 0
 
 
 class HomeWeekMatchOut(BaseModel):

@@ -195,6 +195,18 @@ export default function MatchSet({ detail, matchId, onChanged }) {
         <button
           type="button"
           className="ms-secondary"
+          onClick={() => navigate(`/matches/${matchId}/chat`)}
+        >
+          {t("צ'אט")}
+          {detail.unread_messages > 0 && (
+            <span className="ms-unread" dir="ltr">
+              {detail.unread_messages}
+            </span>
+          )}
+        </button>
+        <button
+          type="button"
+          className="ms-secondary"
           onClick={() => navigate(`/matches/${matchId}/schedule`)}
         >
           {t("הצע זמן אחר")}

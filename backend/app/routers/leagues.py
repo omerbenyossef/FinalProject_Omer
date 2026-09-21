@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session, joinedload
 from .. import models, schemas
 from ..auth import get_current_user
 from ..database import get_db
+from ..match_cleanup import purge_match_references
 from ..push_utils import notify_user
 from ..rating_utils import get_rating, match_winner_id, round_to_half
 from .matches import _auto_confirm_overdue
@@ -1053,16 +1054,19 @@ def delete_league(
     match_ids = [
         m.id for m in db.query(models.Match.id).filter(models.Match.league_id == league_id).all()
     ]
-    if match_ids:
-        # A completed, rated match has a RatingSample row pointing at it
-        # (match_id FK) — deleting the match first would violate that
-        # constraint on Postgres (SQLite doesn't enforce FKs by default,
-        # which is why this only ever showed up in production).
-        db.query(models.RatingSample).filter(models.RatingSample.match_id.in_(match_ids)).delete(
-            synchronize_session=False
-        )
+    # Five tables point at matches.id. This delete only ever worked in
+    # development, where SQLite wasn't enforcing them; on Postgres a league
+    # whose matches had a time proposal or a notification could not be
+    # deleted at all. See match_cleanup.
+    purge_match_references(db, match_ids)
     db.query(models.Match).filter(models.Match.league_id == league_id).delete()
     db.query(models.LeagueMembership).filter(models.LeagueMembership.league_id == league_id).delete()
+    # Notifications reference the league directly as well as through its
+    # matches — "a new member joined", "round 3 is open" — and those rows
+    # outlive the matches. Without this the league row itself can't go.
+    db.query(models.Notification).filter(models.Notification.league_id == league_id).delete(
+        synchronize_session=False
+    )
     db.delete(league)
     db.commit()
 

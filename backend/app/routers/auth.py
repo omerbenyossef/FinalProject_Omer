@@ -12,6 +12,7 @@ from .. import models, schemas
 from ..auth import create_access_token, hash_password, verify_password, get_current_user
 from ..database import get_db
 from ..email_utils import email_configured, send_reset_email
+from ..match_cleanup import purge_match_references
 from ..rating_utils import match_winner_id
 from .matches import _auto_confirm_overdue
 
@@ -264,27 +265,9 @@ def _delete_user_account(db: Session, user: models.User) -> None:
 
     if doomed_ids:
         ids = list(doomed_ids)
-        # A bulk delete() bypasses the ORM's own cascades, so nothing clears
-        # these for us. SQLite doesn't enforce foreign keys by default and let
-        # the delete through regardless; Postgres does, and refused it — which
-        # is why closing an account worked in development and raised in
-        # production.
-        db.query(models.MatchTimeOption).filter(models.MatchTimeOption.match_id.in_(ids)).delete(
-            synchronize_session=False
-        )
-        # These rows ask the player to do something about a match that is
-        # about to stop existing.
-        db.query(models.Notification).filter(models.Notification.match_id.in_(ids)).delete(
-            synchronize_session=False
-        )
-        # A rating sample and an invite link both outlive their match, so they
-        # keep their row and let go of the reference.
-        db.query(models.RatingSample).filter(models.RatingSample.match_id.in_(ids)).update(
-            {models.RatingSample.match_id: None}, synchronize_session=False
-        )
-        db.query(models.FriendlyInviteLink).filter(models.FriendlyInviteLink.match_id.in_(ids)).update(
-            {models.FriendlyInviteLink.match_id: None}, synchronize_session=False
-        )
+        # Five tables point at matches.id and a bulk delete() goes round the
+        # ORM's cascades, so they are cleared first. See match_cleanup.
+        purge_match_references(db, ids)
         db.query(models.Match).filter(models.Match.id.in_(ids)).delete(synchronize_session=False)
 
     db.query(models.PlayerRating).filter(models.PlayerRating.user_id == user.id).delete(synchronize_session=False)
