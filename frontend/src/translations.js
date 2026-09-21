@@ -1353,6 +1353,8 @@ const PAIRS = [
     "Matches never played are removed, results already recorded stay so nobody else's table changes, and they can't sign in again. There is no way back.",
   ],
   ["כן, למחוק", "Yes, delete"],
+  ["אשר את השעה", "Confirm the time"],
+  ["מחכה שיאשרו את השעה", "Waiting for them to confirm"],
   ["מוחק...", "Deleting..."],
 ];
 

@@ -6,7 +6,7 @@ import { useLanguage } from "../LanguageContext.jsx";
 import { useOpenAction } from "../OpenActionContext.jsx";
 import { ChevronIcon } from "../Icons.jsx";
 import EmptyLine from "../EmptyLine.jsx";
-import { formatWeekdayDateTime, timeAgoLabel } from "../matchUtils.js";
+import { acceptFriendlyInvitation, formatWeekdayDateTime, timeAgoLabel } from "../matchUtils.js";
 
 // Friendly invitations waiting for an answer. They are deliberately kept out
 // of the week's carousel — nothing is scheduled until one is accepted.
@@ -32,6 +32,12 @@ export default function Invites() {
       await fn();
       await reload();
     } catch (err) {
+      // 409 means several times were offered and one has to be picked — that
+      // choice lives on the match's own screen.
+      if (err.status === 409) {
+        navigate(`/matches/${matchId}`);
+        return;
+      }
       setError(err.message);
     } finally {
       setBusyId(null);
@@ -86,7 +92,7 @@ export default function Invites() {
                   type="button"
                   className="needs-action-primary lime"
                   disabled={busy}
-                  onClick={() => run(m.id, () => api.acceptFriendlyInvite(m.id))}
+                  onClick={() => run(m.id, () => acceptFriendlyInvitation(api, m))}
                 >
                   <span className="needs-action-dot" aria-hidden="true" />
                   {t("אשר הזמנה")}

@@ -621,3 +621,19 @@ export function nextSchedulePreview(members, allMatches) {
   }
   return { pairs, roundsToCreate };
 }
+
+// Saying yes to an invitation that already carries a time has to say yes to
+// the time as well. Accepting the invitation alone left it proposed but
+// unconfirmed, and both players were then asked to propose one — as if the
+// time on the card they had just tapped did not exist.
+//
+// confirm_match_schedule accepts the invitation itself on the way through
+// (its accepts_invite branch), so the one call does both. It answers 409 when
+// several times were offered and none was picked; the caller sends the player
+// to the match screen to choose.
+export async function acceptFriendlyInvitation(api, match) {
+  if (match.scheduled_at) {
+    return api.confirmMatchSchedule(match.id);
+  }
+  return api.acceptFriendlyInvite(match.id);
+}

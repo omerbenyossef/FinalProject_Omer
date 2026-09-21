@@ -8,7 +8,14 @@ import Avatar from "../Avatar.jsx";
 import { useOpenAction } from "../OpenActionContext.jsx";
 import { BellIcon } from "../Icons.jsx";
 import { SkeletonMatchRow } from "../Skeleton.jsx";
-import { NTRP_STEPS, WEEKDAY_SHORT, formatSets, monthName, weekdayName } from "../matchUtils.js";
+import {
+  NTRP_STEPS,
+  WEEKDAY_SHORT,
+  acceptFriendlyInvitation,
+  formatSets,
+  monthName,
+  weekdayName,
+} from "../matchUtils.js";
 import Profile from "./Profile.jsx";
 
 // The scale runs the app's full NTRP range, 1.5 to 7. A level between steps
@@ -119,6 +126,12 @@ export default function Home() {
       load();
       reloadOpenAction();
     } catch (err) {
+      // Several times were offered and one has to be picked; that choice
+      // lives on the match's own screen.
+      if (err.status === 409) {
+        navigate(`/matches/${id}`);
+        return;
+      }
       setError(err.message);
     } finally {
       setBusyId(null);
@@ -159,8 +172,13 @@ export default function Home() {
     // An invitation I sent reads like anything else I'm waiting on: the time
     // is only a proposal until they answer, so it isn't lime yet.
     const sentInvite = match.state === "invite_sent";
-    const dim = match.state === "waiting_on_them" || match.state === "no_time" || voided || sentInvite;
-    const limeDate = !!scheduled && !voided && !sentInvite && match.state !== "waiting_on_them";
+    // A time one side put forward and the other hasn't agreed to yet.
+    const timeFromMe = match.state === "time_from_me";
+    const timeFromThem = match.state === "time_from_them";
+    const unsettled = sentInvite || timeFromMe || timeFromThem;
+    const dim =
+      match.state === "waiting_on_them" || match.state === "no_time" || voided || sentInvite || timeFromMe;
+    const limeDate = !!scheduled && !voided && !unsettled && match.state !== "waiting_on_them";
 
     // Three cards or more and a full-size button stops fitting: the action
     // becomes a lime line instead (168a's short-card rule).
@@ -169,11 +187,13 @@ export default function Home() {
         ? t("דווח תוצאה")
         : match.state === "no_time"
           ? t("הצע שעה")
-          : match.state === "confirm_mine"
-            ? t("אשר תוצאה")
-            : voided
-              ? t("תיאום במחזור אחר")
-              : null;
+          : timeFromThem
+            ? t("אשר את השעה")
+            : match.state === "confirm_mine"
+              ? t("אשר תוצאה")
+              : voided
+                ? t("תיאום במחזור אחר")
+                : null;
     const target =
       match.state === "no_time"
         ? `/matches/${match.id}/schedule`
@@ -189,9 +209,11 @@ export default function Home() {
         <span className="hw-mono-action">
           {sentInvite
             ? t("מחכה שיאשרו את ההזמנה")
-            : match.state === "waiting_on_them"
-              ? t("מחכה לתשובה שלו")
-              : t("הכול מוכן")}
+            : timeFromMe
+              ? t("מחכה שיאשרו את השעה")
+              : match.state === "waiting_on_them"
+                ? t("מחכה לתשובה שלו")
+                : t("הכול מוכן")}
         </span>
       );
     } else if (compact) {
@@ -215,8 +237,11 @@ export default function Home() {
     // Where a sent invitation can be re-timed or withdrawn.
     const route = voided
       ? `/matches/${match.id}/reschedule`
-      : sentInvite
-        ? "/needs-you"
+      : timeFromMe
+        // Their screen to answer; this one shows what was offered.
+        ? `/matches/${match.id}`
+        : sentInvite
+          ? "/needs-you"
         : match.state === "waiting_on_them"
           ? `/matches/${match.id}/pending`
           : match.state === "no_time"
@@ -502,7 +527,7 @@ export default function Home() {
                             type="button"
                             className="hw-btn hw-btn--lime hw-btn--sm"
                             disabled={busyId === invite.id}
-                            onClick={() => act(invite.id, () => api.acceptFriendlyInvite(invite.id))}
+                            onClick={() => act(invite.id, () => acceptFriendlyInvitation(api, { id: invite.id, scheduled_at: invite.proposed_at }))}
                           >
                             {t("אשר")}
                           </button>

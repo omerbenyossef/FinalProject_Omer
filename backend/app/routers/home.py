@@ -31,7 +31,9 @@ def _match_state(match: models.Match, user_id: int) -> str:
 
     scheduled          — time agreed, hasn't been played/reported yet
     played             — the time has passed, nobody reported
-    no_time            — no time agreed
+    no_time            — nobody has put a time forward at all
+    time_from_them     — they proposed a time, mine to accept or turn down
+    time_from_me       — I proposed a time, waiting on them
     waiting_on_them    — I reported, they haven't answered
     confirm_mine       — they reported, it's waiting on me
     not_played         — both sides agreed it never happened
@@ -43,8 +45,15 @@ def _match_state(match: models.Match, user_id: int) -> str:
         if match.corrected_sets is not None:
             return "waiting_on_them" if match.corrected_by == user_id else "confirm_mine"
         return "waiting_on_them" if match.reported_by == user_id else "confirm_mine"
-    if not match.scheduled_at or not match.schedule_confirmed:
+    # "No time agreed" used to cover a proposed-but-unconfirmed time as well
+    # as no time at all, and the card for it says "propose a time". So after
+    # someone accepted an invitation that already carried a time, both players
+    # were told to propose one — as though hers had never existed. It had: it
+    # was still on the match, just never confirmed, and this branch hid it.
+    if not match.scheduled_at:
         return "no_time"
+    if not match.schedule_confirmed:
+        return "time_from_me" if match.scheduled_by == user_id else "time_from_them"
     return "played" if match.scheduled_at <= datetime.utcnow() else "scheduled"
 
 
@@ -224,7 +233,7 @@ def home_week(
                     opponent_photo_url=opponent.photo_url if opponent else None,
                     league_name=league.name,
                     round=match.round_number,
-                    scheduled_at=match.scheduled_at if match.schedule_confirmed else None,
+                    scheduled_at=match.scheduled_at,
                     state=_match_state(match, current_user.id),
                     note=_void_note(match, current_user.id) if _not_played_void(match) else None,
                 )
@@ -294,7 +303,7 @@ def home_week(
                 opponent_photo_url=opponent.photo_url if opponent else None,
                 league_name=None,
                 round=None,
-                scheduled_at=match.scheduled_at if match.schedule_confirmed else None,
+                scheduled_at=match.scheduled_at,
                 state=_match_state(match, current_user.id),
             )
         )
