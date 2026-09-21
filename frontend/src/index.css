@@ -7978,3 +7978,101 @@ button:active { transform: translateY(1px); }
 }
 
 .mp-settings--admin .mp-settings-title { color: #c6f24e; }
+
+/* match-set-180a — the screen for a match whose time is agreed. One column:
+   when, against whom, the details, then what can be done about it. */
+.ms { display: flex; flex-direction: column; min-height: 100vh; }
+.ms-spacer { flex: 1; }
+
+.ms-head { display: flex; align-items: center; gap: 12px; padding: 16px 20px 0; }
+.ms-back {
+  flex: none; width: 22px; height: 22px; padding: 0; border: 0; background: transparent;
+  color: #a3abbb; cursor: pointer;
+}
+.ms-back svg { width: 22px; height: 22px; }
+[dir="ltr"] .ms-back { transform: scaleX(-1); }
+.ms-head-label {
+  font: 600 15px "IBM Plex Sans", var(--sans); color: #c9cfdb;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.ms-when { display: flex; flex-direction: column; gap: 10px; margin: 30px 20px 0; }
+.ms-when-tag {
+  display: flex; align-items: center; gap: 7px;
+  font: 500 11px "IBM Plex Mono", monospace; letter-spacing: .16em; color: #c6f24e;
+}
+.ms-when-dot { width: 6px; height: 6px; border-radius: 50%; background: #c6f24e; }
+.ms-when-row { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.ms-when-time { font: 400 62px/.86 "Anton", sans-serif; color: #eef1f7; }
+.ms-when-date { font: 700 22px/1.1 "IBM Plex Sans", var(--sans); letter-spacing: -.02em; color: #c9cfdb; }
+.ms-when-rel { font: 400 14px "IBM Plex Sans", var(--sans); color: #8b93a6; }
+
+.ms-opp {
+  display: flex; align-items: center; gap: 13px; width: auto;
+  margin: 26px 20px 0; padding: 16px 17px; border: 0; border-radius: 20px;
+  background: #151a21; text-align: start; cursor: pointer;
+}
+.ms-opp-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.ms-opp-name { font: 700 19px "IBM Plex Sans", var(--sans); letter-spacing: -.02em; color: #eef1f7; }
+.ms-opp-meta { font: 500 12px "IBM Plex Mono", monospace; color: #8b93a6; }
+.ms-opp-chev { flex: none; width: 20px; height: 20px; color: #69728a; }
+
+.ms-rows { margin: 22px 20px 0; }
+.ms-row {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  padding: 14px 0; border-top: 1px solid rgba(148, 163, 184, .14);
+}
+.ms-row.is-last { border-bottom: 1px solid rgba(148, 163, 184, .14); }
+.ms-row-label { font: 400 13.5px "IBM Plex Sans", var(--sans); color: #8b93a6; }
+.ms-row-value { font: 600 13.5px "IBM Plex Sans", var(--sans); color: #eef1f7; text-align: end; }
+.ms-row-value.is-empty { color: #69728a; font-weight: 400; }
+.ms-row-range { font: 500 13px "IBM Plex Mono", monospace; color: #8b93a6; }
+.ms-row-mono { font: 500 13.5px "IBM Plex Mono", monospace; }
+
+.ms-error { margin: 14px 20px 0; }
+
+.ms-actions { display: flex; flex-direction: column; margin: 0 20px 24px; }
+.ms-primary {
+  height: 52px; border: 0; border-radius: 26px; background: #c6f24e;
+  font: 700 15.5px "IBM Plex Sans", var(--sans); color: #10140a; cursor: pointer;
+}
+.ms-secondary {
+  margin-top: 10px; height: 52px; border: 1px solid rgba(148, 163, 184, .26); border-radius: 26px;
+  background: transparent; font: 600 15.5px "IBM Plex Sans", var(--sans); color: #eef1f7; cursor: pointer;
+}
+.ms-cancel {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  margin-top: 14px; padding-top: 16px; border: 0; border-top: 1px solid rgba(148, 163, 184, .14);
+  background: transparent; font: 600 14.5px "IBM Plex Sans", var(--sans); color: #f08c7a; cursor: pointer;
+}
+
+/* 180d — the cancellation sheet. */
+.ms-sheet-overlay {
+  position: fixed; inset: 0; z-index: 60; display: flex; align-items: flex-end;
+  background: rgba(6, 8, 11, .68);
+}
+.ms-sheet {
+  width: 100%; padding: 26px 22px calc(26px + env(safe-area-inset-bottom));
+  background: #151a21; border-radius: 28px 28px 0 0;
+  box-shadow: 0 -24px 60px -20px rgba(0, 0, 0, .7);
+  display: flex; flex-direction: column;
+}
+.ms-sheet-grip {
+  align-self: center; width: 40px; height: 4px; border-radius: 2px;
+  background: rgba(148, 163, 184, .3); margin-bottom: 18px;
+}
+.ms-sheet-title {
+  margin: 0; font: 700 25px/1.2 "IBM Plex Sans", var(--sans); letter-spacing: -.025em; color: #eef1f7;
+}
+.ms-sheet-body {
+  margin: 10px 0 20px; font: 400 14.5px/1.55 "IBM Plex Sans", var(--sans); color: #a3abbb;
+  text-wrap: pretty;
+}
+.ms-sheet-go {
+  height: 52px; border: 0; border-radius: 26px; background: #f08c7a;
+  font: 700 15.5px "IBM Plex Sans", var(--sans); color: #2a0a02; cursor: pointer;
+}
+.ms-sheet-keep {
+  height: 52px; margin-top: 4px; border: 0; background: transparent;
+  font: 600 15.5px "IBM Plex Sans", var(--sans); color: #c9cfdb; cursor: pointer;
+}

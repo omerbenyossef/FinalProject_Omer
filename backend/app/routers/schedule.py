@@ -736,6 +736,73 @@ def decline_match_schedule(
     return match
 
 
+@router.post("/{match_id}/cancel", response_model=schemas.MatchOut)
+def cancel_match(
+    match_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """180d — calling off a match whose time was already agreed. Either player,
+    any time before a result is reported; once one is, the screen offers a
+    dispute instead and this is gone.
+
+    The two kinds part ways on what "cancelled" leaves behind. A league match
+    still has to be played, so it keeps its place in the round and simply
+    loses its time — back to "no time agreed". A friendly is the arrangement
+    and nothing else, so cancelling ends it: it is marked declined, the same
+    state a friendly that was never accepted sits in, which is what every list
+    already reads as "this one is over". (A cancelled status of its own would
+    be truer, but MatchStatus is a native enum on Postgres and adding a value
+    to one of those in place is not a safe migration.)"""
+    match = _get_match_for_participant(db, match_id, current_user.id)
+    if match.status != models.MatchStatus.pending:
+        raise HTTPException(status_code=400, detail="כבר יש תוצאה למשחק הזה — אפשר לערער עליה")
+
+    was_at = match.scheduled_at
+    opponent_id = match.player2_id if current_user.id == match.player1_id else match.player1_id
+
+    match.scheduled_at = None
+    match.scheduled_by = None
+    match.schedule_confirmed = False
+    match.schedule_proposed_at = None
+    match.court = None
+    match.duration_minutes = None
+    match.time_options.clear()
+    if match.kind == models.MatchKind.friendly:
+        match.invite_status = models.FriendlyInviteStatus.declined
+    db.commit()
+    db.refresh(match)
+
+    when = f"{was_at.day}.{was_at.month}" if was_at else None
+    body = (
+        f"{current_user.name} ביטל/ה את המשחק ב-{when}"
+        if when
+        else f"{current_user.name} ביטל/ה את המשחק שלכם"
+    )
+    body_en = (
+        f"{current_user.name} cancelled the match on {when}"
+        if when
+        else f"{current_user.name} cancelled your match"
+    )
+    if match.kind == models.MatchKind.league:
+        body += ". המשחק חוזר לרשימת המשחקים שצריך לקבוע להם זמן"
+        body_en += ". It goes back to the matches that still need a time"
+    notify_user(
+        db,
+        opponent_id,
+        "המשחק בוטל",
+        body,
+        f"/matches/{match.id}" if match.kind == models.MatchKind.league else "/leagues",
+        type="match_cancelled",
+        actor_name=current_user.name,
+        league_id=match.league_id,
+        match_id=match.id,
+        title_en="Match cancelled",
+        body_en=body_en,
+    )
+    return match
+
+
 @router.post("/{match_id}/report-not-played", response_model=schemas.MatchOut)
 def report_match_not_played(
     match_id: int,

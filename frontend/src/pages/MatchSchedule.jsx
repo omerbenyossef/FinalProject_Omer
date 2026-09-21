@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api";
+import MatchSet from "./MatchSet.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import { useAuth } from "../AuthContext.jsx";
 import { ChevronIcon } from "../Icons.jsx";
@@ -365,6 +366,15 @@ export default function MatchSchedule() {
   // but change it; once it has passed, this is where the result gets reported
   // (the NEEDS YOU screen's "report" row lands right here).
   const duePassed = scheduledDate ? scheduledDate.getTime() <= Date.now() : false;
+
+  // match-set-180a: before the match there is nothing to report, so the screen
+  // is about the arrangement itself — when, who, the details, and calling it
+  // off. After the time has passed this is the reporting screen and keeps its
+  // own layout, which is also why 180d's cancel isn't offered there: a match
+  // that may well have been played gets "המשחק לא בוצע", not a cancellation.
+  if (!duePassed && !reporting) {
+    return <MatchSet detail={detail} matchId={matchId} onChanged={reload} />;
+  }
 
   return (
     <div className="sched-page">

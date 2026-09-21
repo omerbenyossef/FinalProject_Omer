@@ -169,6 +169,7 @@ export const api = {
       body: { override_conflict_warning: !!overrideConflictWarning, option_id: optionId },
     }),
   declineMatchSchedule: (matchId) => request(`/matches/${matchId}/schedule/decline`, { method: "POST" }),
+  cancelMatch: (matchId) => request(`/matches/${matchId}/cancel`, { method: "POST" }),
   reportMatchNotPlayed: (matchId) => request(`/matches/${matchId}/report-not-played`, { method: "POST" }),
   rescheduleRounds: (matchId) => request(`/matches/${matchId}/reschedule-rounds`),
   rescheduleToRound: (matchId, roundNumber) =>

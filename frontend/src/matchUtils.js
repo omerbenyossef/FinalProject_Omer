@@ -61,6 +61,16 @@ export function weekdayShort(date, t) {
   return weekdayName(date, t);
 }
 
+// The weekday written out. WEEKDAY_SHORT's three-letter keys read fine in a
+// dense row, but a screen whose whole subject is one date says the day in
+// full — match-set-180a's "שלישי, 22.9".
+export const WEEKDAY_FULL = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
+
+export function weekdayFull(date, t) {
+  const key = WEEKDAY_FULL[date.getDay()];
+  return t ? t(key) : key;
+}
+
 // formatWeekdayTime plus the calendar date — for screens where deciding
 // whether you can make it depends on knowing which day it actually is, not
 // just which weekday.
