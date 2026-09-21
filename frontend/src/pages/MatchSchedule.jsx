@@ -16,6 +16,27 @@ import {
   daysWord,
 } from "../matchUtils.js";
 
+function MatchNav({ label, matchId, unread, t, navigate }) {
+  return (
+    <div className="sched-nav">
+      <button type="button" className="sched-nav-back" onClick={() => navigate(-1)} aria-label={t("חזרה")}>
+        <ChevronIcon aria-hidden="true" />
+      </button>
+      {label && <span className="sched-nav-label">{label}</span>}
+      {matchId != null && (
+        <button
+          type="button"
+          className="sched-nav-chat"
+          onClick={() => navigate(`/matches/${matchId}/chat`)}
+        >
+          {t("צ'אט")}
+          {unread > 0 && <span className="sched-nav-chat-dot" aria-hidden="true" />}
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function MatchSchedule() {
   const { matchId } = useParams();
   const { t } = useLanguage();
@@ -45,11 +66,7 @@ export default function MatchSchedule() {
   if (!detail) {
     return (
       <div>
-        <div className="sched-nav">
-          <button type="button" className="sched-nav-back" onClick={() => navigate(-1)} aria-label={t("חזרה")}>
-            <ChevronIcon aria-hidden="true" />
-          </button>
-        </div>
+        <MatchNav t={t} navigate={navigate} />
         <SkeletonBar width={200} height={32} style={{ marginTop: 18 }} />
       </div>
     );
@@ -174,12 +191,13 @@ export default function MatchSchedule() {
   if (detail.status === "asked_you") {
     return (
       <div className="sched-page">
-        <div className="sched-nav">
-          <button type="button" className="sched-nav-back" onClick={() => navigate(-1)} aria-label={t("חזרה")}>
-            <ChevronIcon aria-hidden="true" />
-          </button>
-          <span className="sched-nav-label">{t("TIME PROPOSED")}</span>
-        </div>
+        <MatchNav
+          label={t("TIME PROPOSED")}
+          matchId={matchId}
+          unread={detail.unread_messages}
+          t={t}
+          navigate={navigate}
+        />
 
         <h1 className="sched-title">
           {multi
@@ -327,11 +345,7 @@ export default function MatchSchedule() {
   if (detail.status === "sent") {
     return (
       <div className="sched-page">
-        <div className="sched-nav">
-          <button type="button" className="sched-nav-back" onClick={() => navigate(-1)} aria-label={t("חזרה")}>
-            <ChevronIcon aria-hidden="true" />
-          </button>
-        </div>
+        <MatchNav matchId={matchId} unread={detail.unread_messages} t={t} navigate={navigate} />
         <h1 className="sched-title">{t("מול {name}", { name: detail.opponent.name })}</h1>
         {multi ? (
           <div className="sched-options">
@@ -378,12 +392,13 @@ export default function MatchSchedule() {
 
   return (
     <div className="sched-page">
-      <div className="sched-nav">
-        <button type="button" className="sched-nav-back" onClick={() => navigate(-1)} aria-label={t("חזרה")}>
-          <ChevronIcon aria-hidden="true" />
-        </button>
-        <span className="sched-nav-label">{t(duePassed ? "דיווח התוצאה" : "המשחק קבוע")}</span>
-      </div>
+      <MatchNav
+        label={t(duePassed ? "דיווח התוצאה" : "המשחק קבוע")}
+        matchId={matchId}
+        unread={detail.unread_messages}
+        t={t}
+        navigate={navigate}
+      />
       <h1 className="sched-title">{t("מול {name}", { name: detail.opponent.name })}</h1>
       <p className="sched-sub" dir="ltr">
         {detail.round_number ? (
