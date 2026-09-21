@@ -19,7 +19,9 @@ export function opsTagText(item, t) {
 export function opsReasonLine(item, t) {
   if (item.flag === "stalled") {
     const due = roundDueDateObj(item.schedule_started_at, item.round_number, item.round_length_days || 7);
-    return `${t("ROUND ENDED")} ${timeAgoLabel(due)}`;
+    // timeAgoLabel only interpolates when it is handed t; without it the row
+    // read "ROUND ENDED לפני {n} ימים", placeholder and all.
+    return `${t("ROUND ENDED")} ${timeAgoLabel(due, t)}`;
   }
   if (item.flag === "never_started") {
     return `${t("CREATED")} ${weeksAgoLabel(new Date(item.created_at))}`;
