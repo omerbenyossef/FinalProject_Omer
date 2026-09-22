@@ -170,6 +170,10 @@ export const api = {
     }),
   declineMatchSchedule: (matchId) => request(`/matches/${matchId}/schedule/decline`, { method: "POST" }),
   cancelMatch: (matchId) => request(`/matches/${matchId}/cancel`, { method: "POST" }),
+  setMatchCost: (matchId, amount) =>
+    request(`/matches/${matchId}/cost`, { method: "POST", body: { amount } }),
+  claimMatchCost: (matchId) => request(`/matches/${matchId}/cost/claim`, { method: "POST" }),
+  settleMatchCost: (matchId) => request(`/matches/${matchId}/cost/settle`, { method: "POST" }),
   getMatchChat: (matchId) => request(`/matches/${matchId}/chat`),
   sendMatchMessage: (matchId, body) =>
     request(`/matches/${matchId}/chat`, { method: "POST", body: { body } }),

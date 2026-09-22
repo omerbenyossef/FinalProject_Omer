@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api";
 import MatchSet from "./MatchSet.jsx";
+import MatchCost from "../MatchCost.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import { useAuth } from "../AuthContext.jsx";
 import { ChevronIcon } from "../Icons.jsx";
@@ -387,7 +388,7 @@ export default function MatchSchedule() {
   // own layout, which is also why 180d's cancel isn't offered there: a match
   // that may well have been played gets "המשחק לא בוצע", not a cancellation.
   if (!duePassed && !reporting) {
-    return <MatchSet detail={detail} matchId={matchId} onChanged={reload} />;
+    return <MatchSet detail={detail} matchId={matchId} me={user?.id} onChanged={reload} />;
   }
 
   return (
@@ -443,6 +444,10 @@ export default function MatchSchedule() {
             : ""}
         </div>
       </div>
+
+      {!reporting && (
+        <MatchCost detail={detail} matchId={matchId} me={user?.id} onChanged={reload} />
+      )}
 
       {reporting ? (
         <SetScoreForm

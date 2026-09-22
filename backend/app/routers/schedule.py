@@ -272,6 +272,7 @@ def get_match_detail(
         busy_windows=_busy_windows(db, match, current_user.id),
         conflict_gap_minutes=int(CONFLICT_GAP_WINDOW.total_seconds() // 60),
         unread_messages=unread_count(db, match.id, current_user.id),
+        **_cost_state(match, current_user.id),
     )
 
 
@@ -803,6 +804,154 @@ def cancel_match(
         body_en=body_en,
     )
     return match
+
+
+def _my_share(match: models.Match) -> float | None:
+    """A match is two people, so a share is half. Rounded to the agora, and
+    the halves are allowed to differ by one when the total is odd — better
+    than inventing a third of a shekel."""
+    if match.court_cost is None:
+        return None
+    return round(match.court_cost / 2, 2)
+
+
+def _cost_state(match: models.Match, viewer_id: int) -> dict:
+    return dict(
+        booked_by=match.booked_by,
+        court_cost=match.court_cost,
+        my_share=_my_share(match),
+        cost_claimed_at=match.cost_claimed_at,
+        cost_settled_at=match.cost_settled_at,
+    )
+
+
+@router.post("/{match_id}/cost", response_model=schemas.MatchDetailOut)
+def set_match_cost(
+    match_id: int,
+    payload: schemas.MatchCostIn,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Whoever booked the court says what it cost. The app remembers the
+    number and who is owed — it never moves the money, because the transfer
+    is the easy part and every payment app in the country already does it."""
+    match = _get_match_for_participant(db, match_id, current_user.id)
+    amount = round(payload.amount, 2)
+    changed = match.court_cost != amount or match.booked_by != current_user.id
+    match.booked_by = current_user.id
+    match.court_cost = amount
+    if changed:
+        # A new number is a new debt: whatever was claimed or settled against
+        # the old one no longer means anything.
+        match.cost_claimed_at = None
+        match.cost_settled_at = None
+    db.commit()
+    db.refresh(match)
+
+    if changed:
+        other_id = match.player2_id if current_user.id == match.player1_id else match.player1_id
+        share = _my_share(match)
+        notify_user(
+            db,
+            other_id,
+            "הוזמן מגרש",
+            f"{current_user.name} הזמין/ה את המגרש ב-{amount:g} ₪. חלקך: {share:g} ₪",
+            f"/matches/{match.id}",
+            type="court_cost",
+            actor_name=current_user.name,
+            league_id=match.league_id,
+            match_id=match.id,
+            title_en="Court booked",
+            body_en=f"{current_user.name} booked the court for {amount:g}₪. Your share: {share:g}₪",
+        )
+    return get_match_detail(match.id, db, current_user)
+
+
+@router.delete("/{match_id}/cost", response_model=schemas.MatchDetailOut)
+def clear_match_cost(
+    match_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    match = _get_match_for_participant(db, match_id, current_user.id)
+    if match.booked_by not in (None, current_user.id):
+        raise HTTPException(status_code=403, detail="רק מי שרשם את העלות יכול להסיר אותה")
+    match.booked_by = None
+    match.court_cost = None
+    match.cost_claimed_at = None
+    match.cost_settled_at = None
+    db.commit()
+    return get_match_detail(match.id, db, current_user)
+
+
+@router.post("/{match_id}/cost/claim", response_model=schemas.MatchDetailOut)
+def claim_cost_paid(
+    match_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """The one who owes says they sent it."""
+    match = _get_match_for_participant(db, match_id, current_user.id)
+    if match.court_cost is None:
+        raise HTTPException(status_code=400, detail="אין עלות רשומה למשחק הזה")
+    if match.booked_by == current_user.id:
+        raise HTTPException(status_code=400, detail="אתה מי שהזמין — אין לך מה להעביר")
+    if match.cost_settled_at is not None:
+        raise HTTPException(status_code=400, detail="ההתחשבנות כבר נסגרה")
+
+    match.cost_claimed_at = datetime.utcnow()
+    db.commit()
+    db.refresh(match)
+    share = _my_share(match)
+    notify_user(
+        db,
+        match.booked_by,
+        "העבירו לך",
+        f"{current_user.name} סימן/ה שהעביר/ה לך {share:g} ₪ על המגרש",
+        f"/matches/{match.id}",
+        type="cost_claimed",
+        actor_name=current_user.name,
+        league_id=match.league_id,
+        match_id=match.id,
+        title_en="They marked it paid",
+        body_en=f"{current_user.name} marked their {share:g}₪ share as sent",
+    )
+    return get_match_detail(match.id, db, current_user)
+
+
+@router.post("/{match_id}/cost/settle", response_model=schemas.MatchDetailOut)
+def settle_cost(
+    match_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """The booker confirms it arrived, and the two of them are square."""
+    match = _get_match_for_participant(db, match_id, current_user.id)
+    if match.court_cost is None:
+        raise HTTPException(status_code=400, detail="אין עלות רשומה למשחק הזה")
+    if match.booked_by != current_user.id:
+        raise HTTPException(status_code=403, detail="רק מי שהזמין יכול לאשר שקיבל")
+    if match.cost_settled_at is not None:
+        return get_match_detail(match.id, db, current_user)
+
+    match.cost_settled_at = datetime.utcnow()
+    db.commit()
+    db.refresh(match)
+    other_id = match.player2_id if current_user.id == match.player1_id else match.player1_id
+    notify_user(
+        db,
+        other_id,
+        "ההתחשבנות נסגרה",
+        f"{current_user.name} אישר/ה שקיבל/ה את חלקך על המגרש",
+        f"/matches/{match.id}",
+        type="cost_settled",
+        actor_name=current_user.name,
+        league_id=match.league_id,
+        match_id=match.id,
+        title_en="Settled up",
+        body_en=f"{current_user.name} confirmed your share arrived",
+    )
+    return get_match_detail(match.id, db, current_user)
 
 
 @router.post("/{match_id}/report-not-played", response_model=schemas.MatchOut)

@@ -222,6 +222,16 @@ class Match(Base):
     sport = relationship("Sport")
     player1 = relationship("User", foreign_keys=[player1_id])
     player2 = relationship("User", foreign_keys=[player2_id])
+    # Who booked the court and what it cost. The app never touches the money —
+    # it only remembers the number, because "how much was it again" and "did
+    # you ever pay me back" are the awkward parts, not the transfer itself.
+    booked_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    court_cost = Column(Float, nullable=True)
+    # The other player says they sent their half; the booker confirms it
+    # arrived. Same report-then-confirm shape as a reported score.
+    cost_claimed_at = Column(DateTime, nullable=True)
+    cost_settled_at = Column(DateTime, nullable=True)
+
     time_options = relationship(
         "MatchTimeOption",
         back_populates="match",

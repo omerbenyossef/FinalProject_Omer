@@ -6,7 +6,7 @@ import Avatar from "../Avatar.jsx";
 import { ChevronIcon, CloseIcon } from "../Icons.jsx";
 import { weekdayFull } from "../matchUtils.js";
 import { downloadCalendarFile, matchCalendarFile } from "../calendar.js";
-import { openBooking } from "../booking.js";
+import MatchCost from "../MatchCost.jsx";
 
 /* match-set-180a — the screen for a match whose time both players have agreed
    to. One column, in the order the questions actually get asked: when, against
@@ -52,7 +52,7 @@ function formatLabel(detail, t) {
   return detail.max_sets === 5 ? t("חמש סטים") : t("שלוש סטים");
 }
 
-export default function MatchSet({ detail, matchId, onChanged }) {
+export default function MatchSet({ detail, matchId, me, onChanged }) {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [confirming, setConfirming] = useState(false);
@@ -185,6 +185,8 @@ export default function MatchSet({ detail, matchId, onChanged }) {
         </div>
       </div>
 
+      <MatchCost detail={detail} matchId={matchId} me={me} onChanged={onChanged} />
+
       {error && <p className="ms-error error">{t(error)}</p>}
 
       <div className="ms-spacer" />
@@ -192,11 +194,6 @@ export default function MatchSet({ detail, matchId, onChanged }) {
       <div className="ms-actions">
         <button type="button" className="ms-primary" onClick={handleCalendar}>
           {t("הוסף ליומן")}
-        </button>
-        {/* A link out, not a booking flow: Lazuz has no public API, so this
-            hands them over rather than pretending to book on their behalf. */}
-        <button type="button" className="ms-secondary" onClick={openBooking}>
-          {t("הזמן מגרש")}
         </button>
         <button
           type="button"

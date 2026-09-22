@@ -694,6 +694,11 @@ class BusyWindowOut(BaseModel):
     whose: str  # me | opponent | both
 
 
+class MatchCostIn(BaseModel):
+    # A court, not a car. Anything outside this is a typo.
+    amount: float = Field(gt=0, le=5000)
+
+
 class MatchMessageOut(BaseModel):
     id: int
     sender_id: int
@@ -773,6 +778,12 @@ class MatchDetailOut(BaseModel):
     conflict_gap_minutes: int = 60
     # Messages from the opponent since this viewer last opened the chat.
     unread_messages: int = 0
+    # What the court cost and where the two of them are on settling it.
+    booked_by: Optional[int] = None
+    court_cost: Optional[float] = None
+    my_share: Optional[float] = None
+    cost_claimed_at: Optional[UtcDatetime] = None
+    cost_settled_at: Optional[UtcDatetime] = None
 
 
 class HomeWeekMatchOut(BaseModel):
