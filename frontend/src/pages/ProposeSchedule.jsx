@@ -3,7 +3,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api";
 import { useLanguage } from "../LanguageContext.jsx";
 import { useSport } from "../SportContext.jsx";
-import { BOOKING_LINK_PROPS } from "../booking.js";
+import BookCourtLink from "../BookCourtLink.jsx";
 import { ChevronIcon, CheckIcon } from "../Icons.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
 import { roundDueDateObj, hasHebrewChars, daysWord, weekdayName } from "../matchUtils.js";
@@ -352,9 +352,7 @@ export default function ProposeSchedule() {
 
       {/* Checking what's free on Lazuz is what decides which time to offer,
           so the way there belongs here, not only after the time is agreed. */}
-      <a className="sched-book-link" {...BOOKING_LINK_PROPS}>
-        {t("בדוק זמינות מגרשים")}
-      </a>
+      <BookCourtLink className="sched-book-link">{t("בדוק זמינות מגרשים")}</BookCourtLink>
 
       <div className="sched-section-label">
         {t("TIME")}

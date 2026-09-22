@@ -8,15 +8,3 @@
 // No www. This is the host Omer's own link came from — the www form was a
 // guess of mine off a search result, and it wouldn't load on his phone.
 export const BOOKING_URL = "https://lazuz.co.il";
-
-// Deliberately not window.open(). Inside an installed iOS web app, an
-// anchor with target="_blank" opens Safari's in-app browser over the top and
-// leaves the app running underneath; window.open() is the unreliable one
-// there, and can navigate the app itself away — after which coming back
-// restarts it from scratch, which looks to the player like being logged out
-// and handed the first-run questionnaire again.
-export const BOOKING_LINK_PROPS = {
-  href: BOOKING_URL,
-  target: "_blank",
-  rel: "noopener noreferrer",
-};

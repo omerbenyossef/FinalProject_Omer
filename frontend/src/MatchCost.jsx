@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { api } from "./api";
 import { useLanguage } from "./LanguageContext.jsx";
-import { BOOKING_LINK_PROPS } from "./booking.js";
+import BookCourtLink from "./BookCourtLink.jsx";
 
 /* What the court cost, and where the two of them are on settling it.
    The app never moves money — Bit does that in ten seconds and everyone
@@ -48,9 +48,7 @@ export default function MatchCost({ detail, matchId, me, onChanged }) {
           <>
             <p className="mc-sub">{t("מי שהזמין יכול לרשום כמה זה עלה, וכמה מגיע לו בחזרה.")}</p>
             <div className="mc-actions">
-              <a className="mc-ghost" {...BOOKING_LINK_PROPS}>
-                {t("הזמן מגרש")}
-              </a>
+              <BookCourtLink className="mc-ghost">{t("הזמן מגרש")}</BookCourtLink>
               <button type="button" className="mc-ghost" onClick={() => setEditing(true)}>
                 {t("הזמנתי — רשום עלות")}
               </button>
