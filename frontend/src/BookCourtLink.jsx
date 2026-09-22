@@ -16,12 +16,16 @@ function isIosStandalone() {
   return typeof navigator !== "undefined" && navigator.standalone === true;
 }
 
-export default function BookCourtLink({ className, children }) {
+export default function BookCourtLink({ className, children, url }) {
   const standalone = isIosStandalone();
+  // The venue agreed for this match, when there is one and it carries a
+  // link. Otherwise the default — which is one hard-coded venue, and the
+  // reason the venue list exists.
+  const href = url || BOOKING_URL;
   return (
     <a
       className={className}
-      href={BOOKING_URL}
+      href={href}
       {...(standalone ? {} : { target: "_blank", rel: "noopener noreferrer" })}
     >
       {children}

@@ -48,7 +48,9 @@ export default function MatchCost({ detail, matchId, me, onChanged }) {
           <>
             <p className="mc-sub">{t("מי שהזמין יכול לרשום כמה זה עלה, וכמה מגיע לו בחזרה.")}</p>
             <div className="mc-actions">
-              <BookCourtLink className="mc-ghost">{t("הזמן מגרש")}</BookCourtLink>
+              <BookCourtLink className="mc-ghost" url={detail.venue?.booking_url}>
+                {detail.venue ? t("הזמן ב{name}", { name: detail.venue.name }) : t("הזמן מגרש")}
+              </BookCourtLink>
               <button type="button" className="mc-ghost" onClick={() => setEditing(true)}>
                 {t("הזמנתי — רשום עלות")}
               </button>

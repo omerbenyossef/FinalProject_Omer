@@ -380,6 +380,9 @@ class MatchScheduleProposal(BaseModel):
     scheduled_at: Optional[UtcDatetime] = None
     scheduled_at_options: list[UtcDatetime] = []
     court: Optional[str] = None
+    # A venue from the app's own list. `court` still carries a free-text
+    # place for anywhere that isn't on it.
+    venue_id: Optional[int] = None
     duration_minutes: Optional[int] = None
     override_conflict_warning: bool = False
 
@@ -694,6 +697,22 @@ class BusyWindowOut(BaseModel):
     whose: str  # me | opponent | both
 
 
+class VenueOut(BaseModel):
+    id: int
+    name: str
+    area: Optional[str] = None
+    booking_url: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class VenueIn(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    area: Optional[str] = Field(default=None, max_length=120)
+    booking_url: Optional[str] = Field(default=None, max_length=500)
+
+
 class MatchCostIn(BaseModel):
     # A court, not a car. Anything outside this is a typo.
     amount: float = Field(gt=0, le=5000)
@@ -779,6 +798,7 @@ class MatchDetailOut(BaseModel):
     # Messages from the opponent since this viewer last opened the chat.
     unread_messages: int = 0
     # What the court cost and where the two of them are on settling it.
+    venue: Optional[VenueOut] = None
     booked_by: Optional[int] = None
     court_cost: Optional[float] = None
     my_share: Optional[float] = None

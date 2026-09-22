@@ -179,8 +179,11 @@ export default function MatchSet({ detail, matchId, me, onChanged }) {
         </div>
         <div className="ms-row is-last">
           <span className="ms-row-label">{t("מקום")}</span>
-          <span className={`ms-row-value${detail.court ? "" : " is-empty"}`} dir="auto">
-            {detail.court || t("לא נקבע")}
+          <span
+            className={`ms-row-value${detail.venue || detail.court ? "" : " is-empty"}`}
+            dir="auto"
+          >
+            {detail.venue?.name || detail.court || t("לא נקבע")}
           </span>
         </div>
       </div>

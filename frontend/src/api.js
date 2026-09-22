@@ -153,12 +153,18 @@ export const api = {
   getMatchDetail: (matchId) => request(`/matches/${matchId}`),
   // scheduledAt takes one ISO string or several — a proposal can offer up to
   // five slots for the opponent to pick from.
-  proposeMatchSchedule: (matchId, scheduledAt, court, { durationMinutes, overrideConflictWarning } = {}) =>
+  proposeMatchSchedule: (
+    matchId,
+    scheduledAt,
+    court,
+    { durationMinutes, overrideConflictWarning, venueId } = {}
+  ) =>
     request(`/matches/${matchId}/schedule`, {
       method: "POST",
       body: {
         scheduled_at_options: Array.isArray(scheduledAt) ? scheduledAt : [scheduledAt],
         court: court || null,
+        venue_id: venueId ?? null,
         duration_minutes: durationMinutes || null,
         override_conflict_warning: !!overrideConflictWarning,
       },
@@ -220,6 +226,11 @@ export const api = {
     request("/friendly/invite-links", { method: "POST", body: { sport_id: sportId } }),
   getFriendlyInviteLink: (token) => request(`/friendly/invite-links/${token}`),
   redeemFriendlyInviteLink: (token) => request(`/friendly/invite-links/${token}/redeem`, { method: "POST" }),
+
+  venues: () => request("/venues"),
+  createVenue: (body) => request("/venues", { method: "POST", body }),
+  updateVenue: (id, body) => request(`/venues/${id}`, { method: "PATCH", body }),
+  deleteVenue: (id) => request(`/venues/${id}`, { method: "DELETE" }),
 
   adminDirectory: () => request("/ops/directory"),
   adminDeleteUser: (userId) => request(`/ops/users/${userId}`, { method: "DELETE" }),

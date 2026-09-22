@@ -21,6 +21,7 @@ from .routers import (
     ratings,
     schedule,
     sports,
+    venues,
 )
 
 Base.metadata.create_all(bind=engine)
@@ -329,6 +330,7 @@ app.include_router(open_matches.router)
 app.include_router(schedule.router)
 app.include_router(ops.router)
 app.include_router(chat.router)
+app.include_router(venues.router)
 app.include_router(notifications.router)
 
 

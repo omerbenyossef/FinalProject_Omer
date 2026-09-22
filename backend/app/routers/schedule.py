@@ -554,6 +554,16 @@ def propose_match_schedule(
     match.schedule_confirmed = False
     match.schedule_proposed_at = datetime.utcnow()
     match.court = proposal.court
+    # A venue off the list wins; its own name is what the screens show, so
+    # the free-text court is cleared rather than left to contradict it.
+    if proposal.venue_id is not None:
+        venue = db.query(models.Venue).filter(models.Venue.id == proposal.venue_id).first()
+        if not venue:
+            raise HTTPException(status_code=404, detail="המגרש לא נמצא")
+        match.venue_id = venue.id
+        match.court = None
+    else:
+        match.venue_id = None
     match.duration_minutes = duration_minutes
     db.commit()
     db.refresh(match)
@@ -817,6 +827,7 @@ def _my_share(match: models.Match) -> float | None:
 
 def _cost_state(match: models.Match, viewer_id: int) -> dict:
     return dict(
+        venue=match.venue,
         booked_by=match.booked_by,
         court_cost=match.court_cost,
         my_share=_my_share(match),

@@ -118,7 +118,15 @@ export default function ProposeSchedule() {
   const [picks, setPicks] = useState([]);
   const [duration, setDuration] = useState(null);
   const [court, setCourt] = useState("");
+  // Venues the app knows, so "where" can be a choice with a booking link
+  // behind it rather than a line of text nobody can act on.
+  const [venues, setVenues] = useState([]);
+  const [venueId, setVenueId] = useState(null);
   const [editingCourt, setEditingCourt] = useState(false);
+
+  useEffect(() => {
+    api.venues().then(setVenues).catch(() => setVenues([]));
+  }, []);
 
   useEffect(() => {
     if (draftOpponent) {
@@ -262,6 +270,7 @@ export default function ProposeSchedule() {
         {
           durationMinutes: isFriendly ? duration : null,
           overrideConflictWarning,
+          venueId,
         }
       );
       navigate(draftOpponent ? "/needs-you" : -1, draftOpponent ? { replace: true } : undefined);
@@ -352,7 +361,12 @@ export default function ProposeSchedule() {
 
       {/* Checking what's free on Lazuz is what decides which time to offer,
           so the way there belongs here, not only after the time is agreed. */}
-      <BookCourtLink className="sched-book-link">{t("בדוק זמינות מגרשים")}</BookCourtLink>
+      <BookCourtLink
+        className="sched-book-link"
+        url={venues.find((v) => v.id === venueId)?.booking_url}
+      >
+        {t("בדוק זמינות מגרשים")}
+      </BookCourtLink>
 
       <div className="sched-section-label">
         {t("TIME")}
@@ -421,21 +435,52 @@ export default function ProposeSchedule() {
       )}
 
       <div className="sched-section-label">{t("COURT")}</div>
+      {venues.length > 0 && (
+        <div className="venue-picks">
+          {venues.map((v) => (
+            <button
+              type="button"
+              key={v.id}
+              className={`venue-pick${venueId === v.id ? " on" : ""}`}
+              onClick={() => {
+                setVenueId(venueId === v.id ? null : v.id);
+                setCourt("");
+                setEditingCourt(false);
+              }}
+            >
+              <span className="venue-pick-name" dir="auto">
+                {v.name}
+              </span>
+              {v.area && <span className="venue-pick-area">{v.area}</span>}
+            </button>
+          ))}
+        </div>
+      )}
+      {/* Anywhere that isn't on the list is still allowed — it just doesn't
+          come with a way to book it. */}
       <div className="sched-court-row">
         {editingCourt ? (
           <input
             type="text"
             className="sched-court-input"
             value={court}
-            onChange={(e) => setCourt(e.target.value)}
+            onChange={(e) => {
+              setCourt(e.target.value);
+              setVenueId(null);
+            }}
             onBlur={() => setEditingCourt(false)}
+            placeholder={t("מקום אחר")}
             autoFocus
           />
         ) : (
-          <span className="sched-court-value">{court || t("טרם נקבעה")}</span>
+          <span className="sched-court-value">
+            {venueId
+              ? venues.find((v) => v.id === venueId)?.name
+              : court || t("טרם נקבעה")}
+          </span>
         )}
         <button type="button" className="sched-court-edit" onClick={() => setEditingCourt((v) => !v)}>
-          {t("עריכה")}
+          {venueId ? t("מקום אחר") : t("עריכה")}
         </button>
       </div>
 

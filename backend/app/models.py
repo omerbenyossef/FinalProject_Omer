@@ -220,11 +220,15 @@ class Match(Base):
 
     league = relationship("League", back_populates="matches")
     sport = relationship("Sport")
+    venue = relationship("Venue")
     player1 = relationship("User", foreign_keys=[player1_id])
     player2 = relationship("User", foreign_keys=[player2_id])
     # Who booked the court and what it cost. The app never touches the money —
     # it only remembers the number, because "how much was it again" and "did
     # you ever pay me back" are the awkward parts, not the transfer itself.
+    # Which venue, when it is one the app knows. `court` stays alongside it
+    # for anywhere that isn't on the list.
+    venue_id = Column(Integer, ForeignKey("venues.id"), nullable=True)
     booked_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     court_cost = Column(Float, nullable=True)
     # The other player says they sent their half; the booker confirms it
@@ -274,6 +278,25 @@ class MatchTimeOption(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     match = relationship("Match", back_populates="time_options")
+
+
+class Venue(Base):
+    """A place people actually play, with the address that books it.
+
+    "Where" used to be free text typed into each match, which meant the app
+    could show it and nothing else. A venue is a row, so the booking button
+    can open the right court instead of one hard-coded one — and so there is
+    somewhere for a per-venue booking parameter to live later."""
+
+    __tablename__ = "venues"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    area = Column(String, nullable=True)
+    # Lazuz today, whatever books it tomorrow. Optional: a venue with no link
+    # is still worth listing, it just doesn't offer the button.
+    booking_url = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
 
 class MatchMessage(Base):
