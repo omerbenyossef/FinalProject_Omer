@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
+import BookCourtLink from "../BookCourtLink.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import Avatar from "../Avatar.jsx";
 import { ChevronIcon, CloseIcon } from "../Icons.jsx";
 import { weekdayFull } from "../matchUtils.js";
 import { downloadCalendarFile, matchCalendarFile } from "../calendar.js";
-import MatchCost from "../MatchCost.jsx";
 
 /* match-set-180a — the screen for a match whose time both players have agreed
    to. One column, in the order the questions actually get asked: when, against
@@ -188,7 +188,12 @@ export default function MatchSet({ detail, matchId, me, onChanged }) {
         </div>
       </div>
 
-      <MatchCost detail={detail} matchId={matchId} me={me} onChanged={onChanged} />
+      {/* The court's own booking page, for whoever is taking care of it. */}
+      {detail.venue?.booking_url && (
+        <BookCourtLink className="ms-book" url={detail.venue.booking_url}>
+          {t("הזמן ב{name}", { name: detail.venue.name })} ↗
+        </BookCourtLink>
+      )}
 
       {error && <p className="ms-error error">{t(error)}</p>}
 

@@ -223,18 +223,12 @@ class Match(Base):
     venue = relationship("Venue")
     player1 = relationship("User", foreign_keys=[player1_id])
     player2 = relationship("User", foreign_keys=[player2_id])
-    # Who booked the court and what it cost. The app never touches the money —
-    # it only remembers the number, because "how much was it again" and "did
-    # you ever pay me back" are the awkward parts, not the transfer itself.
     # Which venue, when it is one the app knows. `court` stays alongside it
     # for anywhere that isn't on the list.
+    # (Databases created before this also carry booked_by/court_cost/
+    # cost_claimed_at/cost_settled_at, from a court-cost feature that was
+    # taken back out. They are nullable and nothing reads them.)
     venue_id = Column(Integer, ForeignKey("venues.id"), nullable=True)
-    booked_by = Column(Integer, ForeignKey("users.id"), nullable=True)
-    court_cost = Column(Float, nullable=True)
-    # The other player says they sent their half; the booker confirms it
-    # arrived. Same report-then-confirm shape as a reported score.
-    cost_claimed_at = Column(DateTime, nullable=True)
-    cost_settled_at = Column(DateTime, nullable=True)
 
     time_options = relationship(
         "MatchTimeOption",

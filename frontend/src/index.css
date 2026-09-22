@@ -8200,49 +8200,11 @@ button:active { transform: translateY(1px); }
   border-radius: 50%; background: #c6f24e;
 }
 
-/* What the court cost and where the two of them are on settling it. */
-.mc {
-  margin: 22px 20px 0; padding: 15px 16px;
-  border: 1px solid rgba(148, 163, 184, .14); border-radius: 18px; background: #131820;
-}
-.mc-head {
-  font: 600 10.5px "IBM Plex Mono", monospace; letter-spacing: .13em; text-transform: uppercase;
-  color: #8b93a6;
-}
-.mc-sub { margin: 8px 0 0; font: 400 13px/1.45 "IBM Plex Sans", var(--sans); color: #8b93a6; }
-.mc-total { display: flex; align-items: baseline; gap: 10px; margin-top: 8px; }
-.mc-total-num { font: 700 26px/1 "IBM Plex Sans", var(--sans); color: #eef1f7; }
-.mc-total-share { font: 500 13px "IBM Plex Mono", monospace; color: #8b93a6; }
-.mc-state { margin: 9px 0 0; font: 500 13px "IBM Plex Sans", var(--sans); color: #c9cfdb; }
-.mc-state.is-done { color: #c6f24e; }
-
-.mc-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-.mc-go {
-  padding: 9px 16px; border: 0; border-radius: 20px; background: #c6f24e;
-  font: 700 13.5px "IBM Plex Sans", var(--sans); color: #10140a; cursor: pointer;
-}
-.mc-go:disabled { background: #2a3140; color: #69728a; cursor: default; }
-.mc-ghost {
-  display: inline-block; text-decoration: none; padding: 9px 16px; border: 1px solid rgba(148, 163, 184, .26); border-radius: 20px;
-  background: transparent; font: 600 13.5px "IBM Plex Sans", var(--sans); color: #c9cfdb; cursor: pointer;
-}
-.mc-cancel {
-  padding: 9px 12px; border: 0; background: transparent;
-  font: 600 13.5px "IBM Plex Sans", var(--sans); color: #8b93a6; cursor: pointer;
-}
-.mc-form { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
-.mc-form input {
-  flex: 1; min-width: 120px; height: 40px; padding: 0 13px;
-  border: 1px solid rgba(148, 163, 184, .26); border-radius: 12px; background: #0e1116;
-  font: 500 15px "IBM Plex Sans", var(--sans); color: var(--ink); outline: none;
-}
-.mc-error { margin: 10px 0 0; }
-
-.sched-book-link {
-  display: block; width: 100%; margin-top: 18px; padding: 11px 0;
-  text-align: center; text-decoration: none;
-  border: 1px solid rgba(148, 163, 184, .26); border-radius: 14px; background: transparent;
-  font: 600 13.5px "IBM Plex Sans", var(--sans); color: #c9cfdb; cursor: pointer;
+/* The court's own booking page, from the match screen. */
+.ms-book {
+  display: block; margin: 16px 20px 0; padding: 12px 0; text-align: center; text-decoration: none;
+  border: 1px solid rgba(148, 163, 184, .22); border-radius: 14px;
+  font: 600 13.5px "IBM Plex Sans", var(--sans); color: #c9cfdb;
 }
 
 /* Choosing where to play. Two actions per row, deliberately separate:

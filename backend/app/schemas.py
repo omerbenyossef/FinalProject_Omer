@@ -806,13 +806,8 @@ class MatchDetailOut(BaseModel):
     invite_status: Optional[str] = None
     # Who sent the invitation, so the screen knows which side of it to show.
     invited_by: Optional[int] = None
-    # What the court cost and where the two of them are on settling it.
+    # Where they are playing, and how to book it.
     venue: Optional[VenueOut] = None
-    booked_by: Optional[int] = None
-    court_cost: Optional[float] = None
-    my_share: Optional[float] = None
-    cost_claimed_at: Optional[UtcDatetime] = None
-    cost_settled_at: Optional[UtcDatetime] = None
 
 
 class HomeWeekMatchOut(BaseModel):

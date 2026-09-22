@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api";
 import MatchSet from "./MatchSet.jsx";
-import MatchCost from "../MatchCost.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import { useAuth } from "../AuthContext.jsx";
 import { ChevronIcon } from "../Icons.jsx";
@@ -556,10 +555,6 @@ export default function MatchSchedule() {
             : ""}
         </div>
       </div>
-
-      {!reporting && (
-        <MatchCost detail={detail} matchId={matchId} me={user?.id} onChanged={reload} />
-      )}
 
       {reporting ? (
         <SetScoreForm
