@@ -6,6 +6,7 @@ tiles. One request, because the screen has no second state to load into.
 """
 
 from datetime import datetime, timedelta
+from typing import Optional
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import or_
@@ -55,6 +56,13 @@ def _match_state(match: models.Match, user_id: int) -> str:
     if not match.schedule_confirmed:
         return "time_from_me" if match.scheduled_by == user_id else "time_from_them"
     return "played" if match.scheduled_at <= datetime.utcnow() else "scheduled"
+
+
+def _match_place(match: models.Match) -> Optional[str]:
+    """The venue if it is one the app knows, otherwise whatever was typed in."""
+    if match.venue is not None:
+        return match.venue.name
+    return match.court or None
 
 
 def _void_note(match: models.Match, user_id: int) -> str:
@@ -113,6 +121,7 @@ def _last_match(db: Session, user_id: int, sport_id: int | None) -> schemas.Home
             joinedload(models.Match.player1),
             joinedload(models.Match.player2),
             joinedload(models.Match.league),
+            joinedload(models.Match.venue),
         )
         .filter(models.Match.status == models.MatchStatus.completed, mine)
     )
@@ -199,7 +208,11 @@ def home_week(
 
         rows = (
             db.query(models.Match)
-            .options(joinedload(models.Match.player1), joinedload(models.Match.player2))
+            .options(
+                joinedload(models.Match.player1),
+                joinedload(models.Match.player2),
+                joinedload(models.Match.venue),
+            )
             .filter(
                 models.Match.league_id == league.id,
                 models.Match.status.in_(
@@ -235,13 +248,18 @@ def home_week(
                     round=match.round_number,
                     scheduled_at=match.scheduled_at,
                     state=_match_state(match, current_user.id),
+                    place=_match_place(match),
                     note=_void_note(match, current_user.id) if _not_played_void(match) else None,
                 )
             )
 
     friendlies = (
         db.query(models.Match)
-        .options(joinedload(models.Match.player1), joinedload(models.Match.player2))
+        .options(
+            joinedload(models.Match.player1),
+            joinedload(models.Match.player2),
+            joinedload(models.Match.venue),
+        )
         .filter(
             models.Match.kind == models.MatchKind.friendly,
             models.Match.status.in_(
@@ -277,6 +295,7 @@ def home_week(
                         round=None,
                         scheduled_at=match.scheduled_at,
                         state="invite_sent",
+                        place=_match_place(match),
                     )
                 )
                 continue
@@ -305,6 +324,7 @@ def home_week(
                 round=None,
                 scheduled_at=match.scheduled_at,
                 state=_match_state(match, current_user.id),
+                place=_match_place(match),
             )
         )
 

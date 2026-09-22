@@ -404,6 +404,8 @@ class MatchOut(BaseModel):
     scheduled_by: Optional[int] = None
     schedule_confirmed: bool = False
     court: Optional[str] = None
+    # The venue's name when it is one the app knows; `court` is the free text.
+    venue_name: Optional[str] = None
     duration_minutes: Optional[int] = None
     player1: MemberOut
     player2: MemberOut
@@ -819,6 +821,9 @@ class HomeWeekMatchOut(BaseModel):
     # Null when no time is agreed — the card shows its "no date" column.
     scheduled_at: Optional[UtcDatetime] = None
     state: str
+    # Where it is being played, once that is settled — the card is the only
+    # place most players look before leaving the house.
+    place: Optional[str] = None
     # Only for the "not_played" state: what actually happened to the match.
     note: Optional[str] = None
 

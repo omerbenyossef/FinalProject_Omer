@@ -230,6 +230,11 @@ class Match(Base):
     # taken back out. They are nullable and nothing reads them.)
     venue_id = Column(Integer, ForeignKey("venues.id"), nullable=True)
 
+    @property
+    def venue_name(self) -> str | None:
+        """The place, for the lists that only need its name."""
+        return self.venue.name if self.venue is not None else None
+
     time_options = relationship(
         "MatchTimeOption",
         back_populates="match",

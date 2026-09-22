@@ -6989,6 +6989,10 @@ button:active { transform: translateY(1px); }
 .hw-opponent.dim { color: #C9CBCD; }
 .hw-sub { font: 500 11.5px "IBM Plex Mono", "IBM Plex Sans", monospace; color: #84878C;   text-transform: uppercase;
 }
+/* Where it is being played. Sans, not the mono of the line above it, because
+   it is a name rather than a label. */
+.hw-place { margin-top: 2px; font: 500 13px "IBM Plex Sans", var(--sans); color: #C9CBCD; }
+
 /* The one line a card needs when the state is the whole story: a match both
    players said never happened. */
 .hw-note { margin-top: 3px; font: 500 12.5px "IBM Plex Sans", var(--sans); color: #C9CBCD; }

@@ -136,6 +136,7 @@ function ToPlayCard({
   const oppNtrpText = oppNtrp != null ? oppNtrp.toFixed(1) : "—";
   const h2hText = `${h2h?.wins ?? 0}-${h2h?.losses ?? 0}`;
   const timeText = m.scheduled_at ? formatWeekdayDateTime(new Date(m.scheduled_at), t) : "not set";
+  const placeText = m.venue_name || m.court || null;
   // Once a match has been reported the scheduled time is beside the point, and
   // leaving it there reads as "you still have to play this". Say what is
   // actually pending instead.
@@ -237,6 +238,16 @@ function ToPlayCard({
             {statusText || timeText}
           </span>
         </div>
+        {/* Where, whenever it is settled — the row above says when, and on its
+            own that is not enough to turn up. */}
+        {placeText && !statusText && (
+          <div className="tp-row">
+            <span className="tp-row-label">COURT</span>
+            <span className="tp-row-value" dir="auto">
+              {placeText}
+            </span>
+          </div>
+        )}
       </div>
 
       {pendingInvite && !isInviter ? (

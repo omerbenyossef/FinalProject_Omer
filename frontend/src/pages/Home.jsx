@@ -281,6 +281,13 @@ export default function Home() {
             )}
             {match.round ? ` · ${t("מחזור {n}", { n: match.round })}` : ""}
           </span>
+          {/* Where to go. The card is the last thing most players look at
+              before leaving the house, and it did not say. */}
+          {match.place && (
+            <span className="hw-place" dir="auto">
+              {match.place}
+            </span>
+          )}
           {voided && match.note && <span className="hw-note">{t(match.note)}</span>}
           <div className="hw-action" onClick={(e) => e.stopPropagation()}>
             {action}
