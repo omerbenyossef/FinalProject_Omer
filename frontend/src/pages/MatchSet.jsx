@@ -213,9 +213,9 @@ export default function MatchSet({ detail, matchId, me, onChanged }) {
         <button
           type="button"
           className="ms-secondary"
-          onClick={() => navigate(`/matches/${matchId}/schedule`)}
+          onClick={() => navigate(`/matches/${matchId}/schedule?step=when`)}
         >
-          {t("הצע זמן אחר")}
+          {t("שנה את הזמן")}
         </button>
         <button type="button" className="ms-cancel" onClick={() => setConfirming(true)}>
           <CloseIcon width={17} height={17} aria-hidden="true" />

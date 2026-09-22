@@ -453,13 +453,13 @@ export default function LeagueDetail() {
         .join(" · ");
     } else {
       leagueActionSub = t("עוד לא נקבעה שעה");
-      leagueActionBtnLabel = t("קבע שעה");
+      leagueActionBtnLabel = t("קבעו זמן");
     }
   }
 
   function handleOpenLeagueAction() {
     if (!leagueOpenAction) {
-      if (leagueActionMatch) navigate(`/matches/${leagueActionMatch.id}/schedule`);
+      if (leagueActionMatch) navigate(`/matches/${leagueActionMatch.id}`);
       return;
     }
     if (leagueOpenAction.kind === "confirm") {
@@ -862,7 +862,7 @@ export default function LeagueDetail() {
                         busy={busy}
                         maxSets={league.best_of}
                         daysLeft={shownRoundDaysLeft}
-                        onSchedule={() => navigate(`/matches/${myShownMatch.id}/schedule`)}
+                        onSchedule={() => navigate(`/matches/${myShownMatch.id}`)}
                         onQuickConfirmSchedule={() => handleQuickConfirmSchedule(myShownMatch.id)}
                         onCancelSchedule={() => handleCancelSchedule(myShownMatch.id)}
                         onReport={(sets) => handleReportScore(myShownMatch.id, sets)}
@@ -1200,7 +1200,7 @@ function MyMatchBlock({
       .join(" · ");
     action = (
       <button type="button" className="mm-btn" onClick={onSchedule}>
-        {t("קבע שעה")}
+        {t("קבעו זמן")}
       </button>
     );
   } else if (rowStatus === "sent") {
@@ -1218,7 +1218,7 @@ function MyMatchBlock({
           {t("אשר")}
         </button>
         <button type="button" className="mm-secondary" onClick={onSchedule}>
-          {t("הצע שעה אחרת")}
+          {t("שנה את הזמן")}
         </button>
       </div>
     );
@@ -1453,8 +1453,8 @@ function FixtureRow({
       {mine && match.status === "pending" && onStartReport && !isReporting && (
         <div className={`fx-actions${rowStatus === "asked_you" ? " is-asked" : ""}`}>
           {rowStatus === "no_time" && (
-            <Link to={`/matches/${match.id}/schedule`} className="fx-report">
-              {t("קבע שעה")}
+            <Link to={`/matches/${match.id}`} className="fx-report">
+              {t("קבעו זמן")}
               <ChevronIcon aria-hidden="true" />
             </Link>
           )}
@@ -1474,9 +1474,9 @@ function FixtureRow({
               <button
                 type="button"
                 className="fx-secondary"
-                onClick={() => navigate(`/matches/${match.id}/schedule`)}
+                onClick={() => navigate(`/matches/${match.id}/schedule?step=when`)}
               >
-                {t("הצע שעה אחרת")}
+                {t("שנה את הזמן")}
               </button>
             </>
           )}

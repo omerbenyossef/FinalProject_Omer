@@ -97,7 +97,7 @@ export default function RescheduleRound() {
       reloadOpenAction();
       // The match is a plain unscheduled league match now, so hand them
       // straight to the time it still needs.
-      navigate(`/matches/${matchId}/schedule`, { replace: true });
+      navigate(`/matches/${matchId}`, { replace: true });
     } catch (err) {
       setError(err.message);
       setBusy(false);

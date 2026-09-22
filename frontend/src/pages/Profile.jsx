@@ -162,7 +162,7 @@ function ToPlayCard({
   } else if (pendingInvite) {
     if (isInviter) action = { title: t("תזכורת"), onPress: onRemind };
   } else if (scheduleState === "unscheduled") {
-    action = { title: t("קבע שעה"), onPress: onStartSchedule };
+    action = { title: t("קבעו זמן"), onPress: onStartSchedule };
   } else if (scheduleState === "proposed_by_them") {
     action = { title: t("אשר את השעה"), onPress: onOpenProposal };
   } else if (scheduleState === "proposed_by_me") {
@@ -922,7 +922,7 @@ export default function Profile() {
                     setReportingMatchId(entry.match.id);
                     setFriendlyRequireConfirm(true);
                   }}
-                  onStartSchedule={() => navigate(`/matches/${entry.match.id}/schedule`)}
+                  onStartSchedule={() => navigate(`/matches/${entry.match.id}`)}
                   onCancelForm={() => setReportingMatchId(null)}
                   onSubmitScore={(sets) => handleReportScore(entry, entry.match.id, sets)}
                   onOpenProposal={() => navigate(`/matches/${entry.match.id}`)}

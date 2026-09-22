@@ -186,7 +186,7 @@ export default function Home() {
       match.state === "played"
         ? t("דווח תוצאה")
         : match.state === "no_time"
-          ? t("הצע שעה")
+          ? t("קבעו זמן")
           : timeFromThem
             ? t("אשר את השעה")
             : match.state === "confirm_mine"
@@ -196,7 +196,7 @@ export default function Home() {
                 : null;
     const target =
       match.state === "no_time"
-        ? `/matches/${match.id}/schedule`
+        ? `/matches/${match.id}`
         : match.state === "confirm_mine"
           ? `/matches/${match.id}/confirm`
           : voided
@@ -244,9 +244,7 @@ export default function Home() {
           ? "/needs-you"
         : match.state === "waiting_on_them"
           ? `/matches/${match.id}/pending`
-          : match.state === "no_time"
-            ? `/matches/${match.id}/schedule`
-            : `/matches/${match.id}`;
+          : `/matches/${match.id}`;
 
     return (
       <div

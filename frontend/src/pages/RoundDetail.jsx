@@ -219,10 +219,10 @@ export default function RoundDetail() {
             <button
               type="button"
               className="my-match-report"
-              onClick={() => navigate(`/matches/${myMatch.id}/schedule`)}
+              onClick={() => navigate(`/matches/${myMatch.id}`)}
             >
               <span className="my-match-dot" aria-hidden="true" />
-              {t("קבע שעה")}
+              {t("קבעו זמן")}
             </button>
           )}
           {myScheduleState === "proposed_by_them" && (
@@ -233,9 +233,9 @@ export default function RoundDetail() {
               <button
                 type="button"
                 className="decline"
-                onClick={() => navigate(`/matches/${myMatch.id}/schedule`)}
+                onClick={() => navigate(`/matches/${myMatch.id}/schedule?step=when`)}
               >
-                {t("הצע שעה אחרת")}
+                {t("שנה את הזמן")}
               </button>
             </div>
           )}

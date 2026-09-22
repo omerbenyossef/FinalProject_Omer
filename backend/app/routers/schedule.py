@@ -241,6 +241,8 @@ def get_match_detail(
         schedule_started_at=match.league.schedule_started_at if match.league_id else None,
         round_length_days=match.league.round_length_days if match.league_id else None,
         status=_schedule_status(match, current_user.id),
+        invite_status=match.invite_status.value if match.invite_status else None,
+        invited_by=match.player1_id if match.kind == models.MatchKind.friendly else None,
         scheduled_at=match.scheduled_at,
         scheduled_by=match.scheduled_by,
         schedule_proposed_at=match.schedule_proposed_at,
@@ -577,8 +579,8 @@ def propose_match_schedule(
             models.Notification.match_id == match.id,
         ).delete(synchronize_session=False)
         db.commit()
-    title = "הזמנה למשחק ידידותי" if pending_invite else "הצעת זמן למשחק"
-    title_en = "Friendly invite" if pending_invite else "A time for your match"
+    title = "הזמנה למשחק ידידותי" if pending_invite else "הזמן למשחק שלכם"
+    title_en = "Friendly invite" if pending_invite else "Your match time"
     if pending_invite:
         body = (
             f"{current_user.name} מזמין/ה אותך למשחק ידידותי והציע/ה שעה"
@@ -591,13 +593,15 @@ def propose_match_schedule(
             else f"{current_user.name} invited you to a friendly and suggested {len(starts)} times"
         )
     else:
+        # The time was settled between them in the chat; this is the other
+        # one writing it down, and all that is left is to say it is right.
         body = (
-            f"{current_user.name} הציע/ה שעה למשחק שלכם, ומחכה לאישור שלך"
+            f"{current_user.name} הזין/ה את הזמן שקבעתם — אשר/י שזה מה שסיכמתם"
             if len(starts) == 1
             else f"{current_user.name} הציע/ה {len(starts)} זמנים למשחק שלכם, בחר/י אחד מהם"
         )
         body_en = (
-            f"{current_user.name} proposed a time for your match and is waiting for you"
+            f"{current_user.name} entered the time you agreed — confirm it"
             if len(starts) == 1
             else f"{current_user.name} proposed {len(starts)} times for your match — pick one"
         )

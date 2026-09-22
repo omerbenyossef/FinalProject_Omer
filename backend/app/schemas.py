@@ -801,6 +801,11 @@ class MatchDetailOut(BaseModel):
     conflict_gap_minutes: int = 60
     # Messages from the opponent since this viewer last opened the chat.
     unread_messages: int = 0
+    # A friendly nobody has accepted yet has nothing to arrange: the screen
+    # asks for the invitation first.
+    invite_status: Optional[str] = None
+    # Who sent the invitation, so the screen knows which side of it to show.
+    invited_by: Optional[int] = None
     # What the court cost and where the two of them are on settling it.
     venue: Optional[VenueOut] = None
     booked_by: Optional[int] = None

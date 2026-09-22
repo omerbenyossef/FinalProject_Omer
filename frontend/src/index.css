@@ -6590,6 +6590,23 @@ button:active { transform: translateY(1px); }
   letter-spacing: .08em; color: #8b93a6; text-decoration: underline; cursor: pointer;
 }
 
+/* The screen for a match with no time yet: talk, look at courts, write it down. */
+.notime-hint {
+  margin: 18px 0 0; padding: 13px 15px; border-radius: 12px; background: rgba(148, 163, 184, .06);
+  font: 400 13.5px/1.55 "IBM Plex Sans", var(--sans); color: #a3abbb;
+}
+.notime-actions { margin-top: 22px; display: flex; flex-direction: column; gap: 10px; }
+.notime-chat { position: relative; }
+.notime-chat-dot {
+  position: absolute; top: 13px; inset-inline-end: 16px; width: 8px; height: 8px; border-radius: 4px;
+  background: var(--court, #c6f24e);
+}
+.notime-ghost {
+  width: 100%; height: 46px; border-radius: 23px; border: 1px solid rgba(148, 163, 184, .22);
+  background: transparent; font: 600 14.5px "IBM Plex Sans", var(--sans); color: #c9cfdb; cursor: pointer;
+}
+.notime-ghost:disabled { opacity: .5; cursor: default; }
+
 .sched-bottom { margin-top: 32px; }
 .sched-send {
   width: 100%; height: 48px; border-radius: 24px; border: 0; background: #eef1f7; color: #0e1116;

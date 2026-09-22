@@ -73,10 +73,6 @@ export default function MatchSchedule() {
     );
   }
 
-  if (detail.status === "no_time") {
-    return <Navigate to={`/matches/${matchId}/schedule`} replace />;
-  }
-
   // Both players agreed it was never played: the only thing left to do with
   // it is put it in a later round.
   if (
@@ -113,17 +109,30 @@ export default function MatchSchedule() {
     }
   }
 
-  // "Can't make it" never ends the conversation empty-handed: the player who
-  // said no lands straight on the propose screen with their own slots.
-  async function handleDecline(counter = false) {
+  // Saying "that isn't what we agreed" is not a counter-proposal — there are
+  // no proposals any more. It clears the time and drops both of them back
+  // into the conversation that produced it.
+  async function handleDecline(toChat = false) {
     setBusy(true);
     setError("");
     try {
       await api.declineMatchSchedule(matchId);
-      navigate(
-        counter ? `/matches/${matchId}/schedule` : -1,
-        counter ? { replace: true, state: { counter: true } } : undefined
-      );
+      navigate(toChat ? `/matches/${matchId}/chat` : -1, toChat ? { replace: true } : undefined);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleInvite(accept) {
+    setBusy(true);
+    setError("");
+    try {
+      if (accept) await api.acceptFriendlyInvite(matchId);
+      else await api.declineFriendlyInvite(matchId);
+      if (accept) reload();
+      else navigate(-1);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -188,12 +197,117 @@ export default function MatchSchedule() {
   const daysUntilMatch = scheduledDate ? Math.ceil((scheduledDate.getTime() - Date.now()) / 86400000) : null;
   const daysUntilRoundEnd = roundEnd ? Math.max(0, Math.ceil((roundEnd.getTime() - Date.now()) / 86400000)) : null;
   const proposalExpired = scheduledDate ? scheduledDate.getTime() < Date.now() : false;
+  const placeName = detail.venue?.name || detail.court || null;
+
+  // Nothing is agreed yet. Everything that used to happen here — offer a time,
+  // accept it, offer another, say you can't make it — happens in the chat now,
+  // between two people who know their own week better than a grid of slots
+  // does. This screen only has to get them there, give them a way to look at
+  // the courts, and take the answer down once they have one.
+  if (detail.status === "no_time") {
+    const invitePending = detail.kind === "friendly" && detail.invite_status === "pending";
+    const iInvited = detail.invited_by === user?.id;
+    return (
+      <div className="sched-page">
+        <MatchNav label={t("SCHEDULE")} t={t} navigate={navigate} />
+
+        <h1 className="sched-title">
+          {!invitePending
+            ? t("קבעו זמן לשחק")
+            : iInvited
+            ? t("ההזמנה נשלחה")
+            : t("{name} מזמין/ה אותך לשחק", { name: detail.opponent.name })}
+        </h1>
+        <p className="sched-sub" dir="ltr">
+          {detail.round_number ? (
+            <>
+              {hasHebrewChars(detail.league_name) ? (
+                <span className="sched-sub-sans" dir="auto" style={{ unicodeBidi: "isolate" }}>
+                  {detail.league_name}
+                </span>
+              ) : (
+                detail.league_name?.toUpperCase()
+              )}{" "}
+              · {t("מחזור {n}", { n: detail.round_number })}
+              {daysUntilRoundEnd !== null &&
+                ` · ${t("נסגר בעוד")} ${daysUntilRoundEnd} ${daysWord(daysUntilRoundEnd, t)}`}
+            </>
+          ) : (
+            <span dir="auto">
+              {t("ידידותי")} · <span style={{ unicodeBidi: "isolate" }}>{detail.opponent.name}</span>
+            </span>
+          )}
+        </p>
+
+        {error && <p className="error">{t(error)}</p>}
+
+        {/* An invitation nobody has answered has nothing to arrange yet. */}
+        {invitePending ? (
+          iInvited ? (
+            <p className="notime-hint">
+              {t("ברגע ש{name} יאשר/תאשר, תוכלו לתאם ביניכם", { name: detail.opponent.name })}
+            </p>
+          ) : (
+            <div className="notime-actions">
+              <button
+                type="button"
+                className="sched-send"
+                disabled={busy}
+                onClick={() => handleInvite(true)}
+              >
+                {t("אשר הזמנה")}
+              </button>
+              <button
+                type="button"
+                className="notime-ghost"
+                disabled={busy}
+                onClick={() => handleInvite(false)}
+              >
+                {t("דחה הזמנה")}
+              </button>
+            </div>
+          )
+        ) : (
+          <>
+            <p className="notime-hint">
+              {t("סכמו ביניכם בצ'אט מתי ואיפה, ואז הזינו כאן את הזמן שקבעתם")}
+            </p>
+            <div className="notime-actions">
+              <button
+                type="button"
+                className="sched-send notime-chat"
+                onClick={() => navigate(`/matches/${matchId}/chat`)}
+              >
+                {t("צ'אט לתאם זמן")}
+                {detail.unread_messages > 0 && <span className="notime-chat-dot" aria-hidden="true" />}
+              </button>
+              {/* The courts, and the way out to their own booking pages. */}
+              <button
+                type="button"
+                className="notime-ghost"
+                onClick={() => navigate(`/matches/${matchId}/schedule`)}
+              >
+                {t("בדוק זמינות מגרשים")}
+              </button>
+              <button
+                type="button"
+                className="notime-ghost"
+                onClick={() => navigate(`/matches/${matchId}/schedule?step=when`)}
+              >
+                {t("קבענו — הזן זמן")}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
 
   if (detail.status === "asked_you") {
     return (
       <div className="sched-page">
         <MatchNav
-          label={t("TIME PROPOSED")}
+          label={t("לאישור")}
           matchId={matchId}
           unread={detail.unread_messages}
           t={t}
@@ -203,7 +317,7 @@ export default function MatchSchedule() {
         <h1 className="sched-title">
           {multi
             ? t("{name} הציע {count} זמנים", { name: detail.opponent.name, count: options.length })
-            : t("{name} הציע", { name: detail.opponent.name })}
+            : t("{name} קבע/ה", { name: detail.opponent.name })}
         </h1>
         <p className="sched-sub" dir="ltr">
           {detail.round_number ? (
@@ -252,14 +366,14 @@ export default function MatchSchedule() {
                 );
               })}
             </div>
-            {detail.court && <p className="sched-options-court">{detail.court}</p>}
+            {placeName && <p className="sched-options-court">{placeName}</p>}
           </>
         ) : (
           <div className="sched-hero">
             <div className="sched-hero-time" dir="ltr">
               {formatWeekdayDateTime(scheduledDate, t)}
             </div>
-            {detail.court && <div className="sched-hero-court">{detail.court}</div>}
+            {placeName && <div className="sched-hero-court">{placeName}</div>}
             <div className="sched-hero-meta" dir="ltr">
               {proposalExpired
                 ? "השעה עברה"
@@ -283,7 +397,7 @@ export default function MatchSchedule() {
 
         <div className="sched-bottom">
           {proposalExpired && !multi ? (
-            <p className="sched-expired-note">{t("הזמן שהוצע כבר עבר, צריך להציע שעה חדשה")}</p>
+            <p className="sched-expired-note">{t("הזמן שנקבע כבר עבר, קבעו ביניכם זמן חדש")}</p>
           ) : multi && activeOption == null ? (
             <p className="sched-expired-note">{t("אף אחד מהזמנים לא פנוי לך, הצע שעה אחרת")}</p>
           ) : (
@@ -293,19 +407,17 @@ export default function MatchSchedule() {
               disabled={busy}
               onClick={() => handleConfirm(false)}
             >
-              {multi ? t("מאשר את הזמן שבחרתי") : t("מאשר, נשחק")}
+              {multi ? t("מאשר את הזמן שבחרתי") : t("כן, זה מה שסיכמנו")}
             </button>
           )}
           <div className="sched-bottom-row">
             <button
               type="button"
               className="sched-other-link"
-              onClick={() => navigate(`/matches/${matchId}/schedule`)}
+              disabled={busy}
+              onClick={() => handleDecline(true)}
             >
-              {t("הצע שעה אחרת")}
-            </button>
-            <button type="button" className="sched-cant" disabled={busy} onClick={() => handleDecline(true)}>
-              {t("CANT MAKE IT")}
+              {t("לא זה מה שסיכמנו")}
             </button>
           </div>
         </div>
@@ -363,12 +475,12 @@ export default function MatchSchedule() {
             <div className="sched-hero-time" dir="ltr">
               {formatWeekdayDateTime(scheduledDate, t)}
             </div>
-            {detail.court && <div className="sched-hero-court">{detail.court}</div>}
+            {placeName && <div className="sched-hero-court">{placeName}</div>}
           </div>
         )}
         {error && <p className="error">{t(error)}</p>}
         <p className="sched-waiting">
-          {t("WAITING FOR HIM")} ·{" "}
+          {t("ממתין לאישור של {name}", { name: detail.opponent.name })} ·{" "}
           <button type="button" className="sched-cancel-link" disabled={busy} onClick={() => handleDecline(false)}>
             {t("CANCEL")}
           </button>
@@ -424,7 +536,7 @@ export default function MatchSchedule() {
         <div className="sched-hero-time" dir="ltr">
           {formatWeekdayDateTime(scheduledDate, t)}
         </div>
-        {detail.court && <div className="sched-hero-court">{detail.court}</div>}
+        {placeName && <div className="sched-hero-court">{placeName}</div>}
         <div className="sched-hero-meta" dir="ltr">
           {duePassed
             ? "השעה עברה"
@@ -480,7 +592,7 @@ export default function MatchSchedule() {
                 <button
                   type="button"
                   className="sched-other-link"
-                  onClick={() => navigate(`/matches/${matchId}/schedule`)}
+                  onClick={() => navigate(`/matches/${matchId}/schedule?step=when`)}
                 >
                   {t("קבע זמן חדש")}
                 </button>
@@ -494,9 +606,9 @@ export default function MatchSchedule() {
               <button
                 type="button"
                 className="sched-other-link"
-                onClick={() => navigate(`/matches/${matchId}/schedule`)}
+                onClick={() => navigate(`/matches/${matchId}/schedule?step=when`)}
               >
-                {t("הצע שעה אחרת")}
+                {t("שנה את הזמן")}
               </button>
             </div>
           )}

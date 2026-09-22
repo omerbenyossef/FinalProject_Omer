@@ -61,6 +61,8 @@ export default function FriendlyNew() {
   // indistinguishable from a button that does nothing.
   const [copiedLink, setCopiedLink] = useState("");
   const [error, setError] = useState("");
+  // Which player's invitation is in flight, so the row can say so.
+  const [inviting, setInviting] = useState(null);
 
   useEffect(() => {
     if (!selectedSportId || presetOpponent) return;
@@ -72,15 +74,19 @@ export default function FriendlyNew() {
       .finally(() => setLoading(false));
   }, [selectedSportId, query, presetOpponent]);
 
-  function handleInvite(player) {
-    // Nothing is sent yet. Creating the invitation here is what made it reach
-    // the opponent before its sender had picked a time — and with no time in
-    // it. The propose screen creates the match when a time is chosen, so
-    // backing out of it sends nothing at all.
+  async function handleInvite(player) {
+    // An invitation carries no time any more — "let's play" is the whole of
+    // it, and when and where are settled afterwards in the chat. So there is
+    // nothing to fill in first: the invitation goes now.
     setError("");
-    navigate("/friendly/schedule", {
-      state: { opponent: { id: player.id, name: player.name, photo_url: player.photo_url ?? null } },
-    });
+    setInviting(player.id);
+    try {
+      const match = await api.createFriendlyInvite(player.id, selectedSportId);
+      navigate(`/matches/${match.id}`, { replace: true });
+    } catch (err) {
+      setError(err.message);
+      setInviting(null);
+    }
   }
 
   async function handleInviteByLink() {
@@ -144,10 +150,11 @@ export default function FriendlyNew() {
             <button
               type="button"
               className="my-match-report"
+              disabled={inviting != null}
               onClick={() => handleInvite(presetOpponent)}
             >
               <span className="my-match-dot" aria-hidden="true" />
-              {t("הזמן")}
+              {inviting === presetOpponent.id ? t("שולח…") : t("הזמן")}
             </button>
           </div>
         </div>
@@ -192,10 +199,11 @@ export default function FriendlyNew() {
                   <button
                     type="button"
                     className="my-match-report"
+                    disabled={inviting != null}
                     onClick={() => handleInvite(p)}
                   >
                     <span className="my-match-dot" aria-hidden="true" />
-                    {t("הזמן")}
+                    {inviting === p.id ? t("שולח…") : t("הזמן")}
                   </button>
                 </div>
               ))}

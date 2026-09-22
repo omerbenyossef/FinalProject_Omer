@@ -120,7 +120,7 @@ export default function Notifications() {
       // A score needs a form, so this one opens the match screen.
       return { label: t("דווח תוצאה"), run: () => navigate(`/matches/${item.match_id}`) };
     }
-    return { label: t("הצע שעה"), run: () => navigate(`/matches/${item.match_id}/schedule`) };
+    return { label: t("קבעו זמן"), run: () => navigate(`/matches/${item.match_id}`) };
   }
 
   function secondaryFor(item) {
@@ -128,7 +128,7 @@ export default function Notifications() {
       return { label: t("חולק"), run: () => navigate(`/matches/${item.match_id}/correct`) };
     }
     if (item.type === "TIME PROPOSED") {
-      return { label: t("שעה אחרת"), run: () => navigate(`/matches/${item.match_id}/schedule`) };
+      return { label: t("שנה את הזמן"), run: () => navigate(`/matches/${item.match_id}/schedule?step=when`) };
     }
     return null;
   }

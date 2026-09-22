@@ -212,7 +212,6 @@ export const api = {
       method: "POST",
       body: { opponent_id: opponentId, sport_id: sportId, defer_notification: deferNotification },
     }),
-  friendlyDraft: (opponentId) => request(`/matches/friendly-draft?opponent_id=${opponentId}`),
   acceptFriendlyInvite: (matchId) => request(`/friendly/matches/${matchId}/accept`, { method: "POST" }),
   declineFriendlyInvite: (matchId) => request(`/friendly/matches/${matchId}/decline`, { method: "POST" }),
   cancelFriendlyInvite: (matchId) => request(`/friendly/matches/${matchId}/cancel`, { method: "POST" }),

@@ -350,9 +350,9 @@ export default function OpenMatches() {
                       <button
                         type="button"
                         className="om-remind"
-                        onClick={() => navigate(`/matches/${m.id}/schedule`)}
+                        onClick={() => navigate(m.scheduled_at ? `/matches/${m.id}/schedule?step=when` : `/matches/${m.id}`)}
                       >
-                        {m.scheduled_at ? t("שינוי השעה") : t("הצעת שעה")}
+                        {m.scheduled_at ? t("שנה את הזמן") : t("קבעו זמן")}
                       </button>
                       <button
                         type="button"

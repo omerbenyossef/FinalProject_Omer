@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { api } from "../api";
 import { useLanguage } from "../LanguageContext.jsx";
@@ -113,18 +113,6 @@ export default function ProposeSchedule() {
   const navigate = useNavigate();
   const location = useLocation();
   const { selectedSportId } = useSport();
-  // Set when the player got here by turning down a proposal — a "no" should
-  // arrive with times attached, not empty.
-  const cameFromDecline = !!location.state?.counter;
-  // Draft mode: an invitation that hasn't been sent, and has no match behind
-  // it yet. The opponent rides in on router state; the match is created when
-  // a time is actually picked, so leaving this screen sends nothing.
-  const draftOpponent = matchId ? null : location.state?.opponent ?? null;
-  // The conflict warning sends handleSend round a second time. In draft mode
-  // the first pass has already created the invitation, so remember it —
-  // otherwise confirming the warning would invite the same person twice.
-  const draftMatchIdRef = useRef(null);
-
   const [detail, setDetail] = useState(null);
   const [error, setError] = useState("");
   const [conflictWarning, setConflictWarning] = useState(null);
@@ -172,28 +160,6 @@ export default function ProposeSchedule() {
   }
 
   useEffect(() => {
-    if (draftOpponent) {
-      api
-        .friendlyDraft(draftOpponent.id)
-        .then((data) =>
-          // Shaped like a match detail so everything below this point stays
-          // one code path: a friendly has no round, no league and no court to
-          // inherit, which is exactly what those nulls say.
-          setDetail({
-            ...data,
-            id: null,
-            kind: "friendly",
-            round_number: null,
-            league_id: null,
-            league_name: null,
-            duration_minutes: null,
-            default_court: null,
-            time_options: [],
-          })
-        )
-        .catch((err) => setError(err.message));
-      return;
-    }
     api
       .getMatchDetail(matchId)
       .then((data) => {
@@ -201,7 +167,7 @@ export default function ProposeSchedule() {
         setCourt(data.default_court || "");
       })
       .catch((err) => setError(err.message));
-  }, [matchId, draftOpponent]);
+  }, [matchId]);
 
   if (error) return <p className="error">{t(error)}</p>;
 
@@ -212,7 +178,7 @@ export default function ProposeSchedule() {
           <button type="button" className="sched-nav-back" onClick={() => navigate(-1)} aria-label={t("חזרה")}>
             <ChevronIcon aria-hidden="true" />
           </button>
-          <span className="sched-nav-label">{t("SCHEDULE")}</span>
+          <span className="sched-nav-label">{t("הזנת זמן")}</span>
         </div>
         <SkeletonBar width={200} height={32} style={{ marginTop: 18 }} />
       </div>
@@ -312,21 +278,8 @@ export default function ProposeSchedule() {
     setBusy(true);
     setError("");
     try {
-      let targetId = matchId;
-      if (draftOpponent) {
-        // Now there is a time, so now there is an invitation. It is created
-        // silently — the propose call right after is what reaches the
-        // opponent, as one message with the time in it.
-        if (draftMatchIdRef.current == null) {
-          const created = await api.createFriendlyInvite(draftOpponent.id, selectedSportId, {
-            deferNotification: true,
-          });
-          draftMatchIdRef.current = created.id;
-        }
-        targetId = draftMatchIdRef.current;
-      }
       await api.proposeMatchSchedule(
-        targetId,
+        matchId,
         [...picks].sort((a, b) => a - b).map((ms) => new Date(ms).toISOString()),
         court.trim() || null,
         {
@@ -335,7 +288,9 @@ export default function ProposeSchedule() {
           venueId,
         }
       );
-      navigate(draftOpponent ? "/needs-you" : -1, draftOpponent ? { replace: true } : undefined);
+      // Back to the match, not back through the steps: what changed is the
+      // match's state, and going -1 can land on the venue list again.
+      navigate(`/matches/${matchId}`, { replace: true });
     } catch (err) {
       if (err.status === 409) {
         setConflictWarning(err.message);
@@ -353,22 +308,17 @@ export default function ProposeSchedule() {
         <button type="button" className="sched-nav-back" onClick={() => navigate(-1)} aria-label={t("חזרה")}>
           <ChevronIcon aria-hidden="true" />
         </button>
-        <span className="sched-nav-label">{t("SCHEDULE")}</span>
-        {/* A match with no time yet is exactly when "when can you play?" needs
-            somewhere to be asked. Not on a draft invitation, which has no
-            match behind it to talk about yet. */}
-        {!draftOpponent && (
-          <button
-            type="button"
-            className="sched-nav-chat"
-            onClick={() => navigate(`/matches/${matchId}/chat`)}
-          >
-            {t("צ'אט")}
-            {detail.unread_messages > 0 && (
-              <span className="sched-nav-chat-dot" aria-hidden="true" />
-            )}
-          </button>
-        )}
+        <span className="sched-nav-label">{t("הזנת זמן")}</span>
+        {/* The conversation that produced this time is one tap away, because
+            it is where any correction to it will happen too. */}
+        <button
+          type="button"
+          className="sched-nav-chat"
+          onClick={() => navigate(`/matches/${matchId}/chat`)}
+        >
+          {t("צ'אט")}
+          {detail.unread_messages > 0 && <span className="sched-nav-chat-dot" aria-hidden="true" />}
+        </button>
       </div>
 
       <h1 className="sched-title">{t("מול {name}", { name: detail.opponent.name })}</h1>
@@ -486,10 +436,6 @@ export default function ProposeSchedule() {
     <div className="sched-page">
       {header}
 
-      {cameFromDecline && (
-        <p className="sched-counter-note">{t("הזמן שהוצע לא התאים לך — סמן/י מתי כן, והיריב יבחר")}</p>
-      )}
-
       {/* 1 · where, already chosen on the screen before this one. It stays
           visible and changeable — the time is picked against it. */}
       <StepLabel n={1} done={!!venueId || !!court.trim()}>
@@ -578,7 +524,7 @@ export default function ProposeSchedule() {
         hint={
           MAX_PICKS > 1
             ? t("אפשר לסמן כמה זמנים, והיריב יבחר אחד מהם")
-            : t("סמנו את השעה שמצאתם, והיריב יאשר אותה")
+            : t("סמנו את השעה שסיכמתם בצ'אט, והיריב יאשר אותה")
         }
       >
         {t("יום ושעה")}
@@ -653,7 +599,7 @@ export default function ProposeSchedule() {
         >
           {picks.length > 1
             ? t("שלח {count} זמנים ל{name}", { count: picks.length, name: detail.opponent.name })
-            : t("שלח הצעה ל{name}", { name: detail.opponent.name })}
+            : t("שלח ל{name} לאישור", { name: detail.opponent.name })}
         </button>
         <p className="sched-pending">
           {picks.length > 1 ? t("HE PICKS ONE · THEN IT IS SET") : t("HE CONFIRMS · THEN IT IS SET")}

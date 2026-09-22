@@ -34,7 +34,7 @@ export default function FriendlyInvite() {
       const match = await api.redeemFriendlyInviteLink(token);
       // Accepted, but with no time yet — same as any other friendly, so it
       // goes on to the one question that's left.
-      navigate(`/matches/${match.id}/schedule`, { replace: true });
+      navigate(`/matches/${match.id}`, { replace: true });
     } catch (err) {
       setError(err.message);
       setBusy(false);
