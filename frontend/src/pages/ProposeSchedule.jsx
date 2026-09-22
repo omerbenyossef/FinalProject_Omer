@@ -83,6 +83,23 @@ function slotState(day, time, minutes, busyWindows, gapMs) {
 // between them — so raising this is the only change needed to bring it back.
 const MAX_PICKS = 1;
 
+// The screen is a sequence, not a form: the court is booked on somebody
+// else's site, so "check the hours there" has to come before "pick a time
+// here", and sending to the opponent is the last thing that happens.
+function StepLabel({ n, children, hint, done }) {
+  return (
+    <div className={`sched-step${done ? " done" : ""}`}>
+      <span className="sched-step-head">
+        <span className="sched-step-n" aria-hidden="true">
+          {done ? <CheckIcon /> : n}
+        </span>
+        <span className="sched-step-title">{children}</span>
+      </span>
+      {hint && <span className="sched-step-hint">{hint}</span>}
+    </div>
+  );
+}
+
 const DURATION_OPTIONS = [60, 90, 120];
 function durationLabel(minutes) {
   if (minutes === 60) return "1H";
@@ -245,6 +262,24 @@ export default function ProposeSchedule() {
     return t("{name} תפוס", { name: detail.opponent.name });
   }
 
+  // Steps are numbered as they are shown, and a friendly has one more of
+  // them than a league match does.
+  const timeStep = isFriendly ? 3 : 2;
+  const sendStep = timeStep + 1;
+
+  // What the send button is about to say, in words rather than in state.
+  const pickedLabel =
+    picks.length === 1
+      ? (() => {
+          const d = new Date(picks[0]);
+          const hh = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+          return `${weekdayName(d, t)} ${d.getDate()}.${d.getMonth() + 1} · ${hh}`;
+        })()
+      : picks.length > 1
+      ? t("{count} זמנים", { count: picks.length })
+      : null;
+  const placeLabel = venueId ? venues.find((v) => v.id === venueId)?.name : court.trim() || null;
+
   async function handleSend(overrideConflictWarning = false) {
     if (picks.length === 0) return;
     if (isFriendly && !duration) return;
@@ -339,94 +374,16 @@ export default function ProposeSchedule() {
         <p className="sched-counter-note">{t("הזמן שהוצע לא התאים לך — סמן/י מתי כן, והיריב יבחר")}</p>
       )}
 
-      <div className="sched-section-label">{t("DAY")}</div>
-      <div className="sched-days">
-        {days.map((d) => {
-          const isSelected = selectedDay && d.getTime() === selectedDay.getTime();
-          const nothingLeft = freeSlotsOn(d) === 0;
-          return (
-            <button
-              type="button"
-              key={d.getTime()}
-              className={`sched-day${isSelected ? " on" : ""}${nothingLeft ? " off" : ""}`}
-              disabled={nothingLeft}
-              onClick={() => setSelectedDay(d)}
-            >
-              <span className="sched-day-weekday">{weekdayName(d, t)}</span>
-              <span className="sched-day-date">{d.getDate()}</span>
-              {picksOn(d) > 0 && <span className="sched-day-picks">{picksOn(d)}</span>}
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="sched-section-label">
-        {t("TIME")}
-        {MAX_PICKS > 1 && picks.length > 0 && ` · ${picks.length}/${MAX_PICKS}`}
-      </div>
-      {MAX_PICKS > 1 ? (
-        picks.length < 2 && (
-          <p className="sched-multi-hint">{t("אפשר לסמן כמה זמנים, והיריב יבחר אחד מהם")}</p>
-        )
-      ) : (
-        <p className="sched-multi-hint">{t("בחר שעה אחת, והיריב יאשר אותה")}</p>
-      )}
-      <div className="sched-times">
-        {TIME_SLOTS.map((slot) => {
-          const isSelected = selectedDay ? picks.includes(slotMs(selectedDay, slot)) : false;
-          const state = selectedDay ? stateFor(selectedDay, slot) : { kind: "free" };
-          const maxed = MAX_PICKS > 1 && !isSelected && picks.length >= MAX_PICKS;
-          const taken = state.kind === "past" || state.kind === "busy" || maxed;
-          const note = slotNote(state);
-          return (
-            <button
-              type="button"
-              key={slot}
-              className={`sched-time-row${isSelected ? " on" : ""}${taken ? " off" : ""}${
-                state.kind === "tight" ? " tight" : ""
-              }`}
-              disabled={taken}
-              onClick={() => togglePick(selectedDay, slot)}
-            >
-              <span dir="ltr">{slotLabel(slot)}</span>
-              <span className="sched-time-end">
-                {note && <span className="sched-time-note">{note}</span>}
-                {isSelected && <CheckIcon aria-hidden="true" />}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      {isFriendly && (
-        <>
-          <div className="sched-section-label">{t("DURATION")}</div>
-          <div className="sched-durations">
-            {DURATION_OPTIONS.map((mins) => (
-              <button
-                type="button"
-                key={mins}
-                className={`sched-duration${duration === mins ? " on" : ""}`}
-                onClick={() => {
-                  setDuration(mins);
-                  // A longer match can run into a slot that was free at 1h.
-                  setPicks((prev) =>
-                    prev.filter((ms) => {
-                      const d = new Date(ms);
-                      const time = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-                      return slotState(d, time, mins, busyWindows, gapMs).kind !== "busy";
-                    })
-                  );
-                }}
-              >
-                {t(durationLabel(mins))}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-
-      <div className="sched-section-label">{t("COURT")}</div>
+      {/* 1 · where. The court is booked on the venue's own site, so looking at
+          its hours has to come before picking a time here — a time chosen
+          against a court nobody checked is a time that falls through. */}
+      <StepLabel
+        n={1}
+        done={!!venueId || !!court.trim()}
+        hint={t("בחרו מגרש, ובדקו אצלו אילו שעות פנויות")}
+      >
+        {t("מקום")}
+      </StepLabel>
       {venues.length > 0 && (
         <div className="venue-list">
           {venues.map((v) => (
@@ -485,7 +442,112 @@ export default function ProposeSchedule() {
         </button>
       </div>
 
+      {/* 2 · how long, for a friendly — it decides which slots are even
+          offered below, so it is asked before the grid, not after it. */}
+      {isFriendly && (
+        <>
+          <StepLabel n={2} done={!!duration}>
+            {t("משך")}
+          </StepLabel>
+          <div className="sched-durations">
+            {DURATION_OPTIONS.map((mins) => (
+              <button
+                type="button"
+                key={mins}
+                className={`sched-duration${duration === mins ? " on" : ""}`}
+                onClick={() => {
+                  setDuration(mins);
+                  // A longer match can run into a slot that was free at 1h.
+                  setPicks((prev) =>
+                    prev.filter((ms) => {
+                      const d = new Date(ms);
+                      const time = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+                      return slotState(d, time, mins, busyWindows, gapMs).kind !== "busy";
+                    })
+                  );
+                }}
+              >
+                {t(durationLabel(mins))}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* 3 · when. */}
+      <StepLabel
+        n={timeStep}
+        done={picks.length > 0}
+        hint={
+          MAX_PICKS > 1
+            ? t("אפשר לסמן כמה זמנים, והיריב יבחר אחד מהם")
+            : t("סמנו את השעה שמצאתם, והיריב יאשר אותה")
+        }
+      >
+        {t("יום ושעה")}
+      </StepLabel>
+      <div className="sched-days">
+        {days.map((d) => {
+          const isSelected = selectedDay && d.getTime() === selectedDay.getTime();
+          const nothingLeft = freeSlotsOn(d) === 0;
+          return (
+            <button
+              type="button"
+              key={d.getTime()}
+              className={`sched-day${isSelected ? " on" : ""}${nothingLeft ? " off" : ""}`}
+              disabled={nothingLeft}
+              onClick={() => setSelectedDay(d)}
+            >
+              <span className="sched-day-weekday">{weekdayName(d, t)}</span>
+              <span className="sched-day-date">{d.getDate()}</span>
+              {picksOn(d) > 0 && <span className="sched-day-picks">{picksOn(d)}</span>}
+            </button>
+          );
+        })}
+      </div>
+      <div className="sched-times">
+        {TIME_SLOTS.map((slot) => {
+          const isSelected = selectedDay ? picks.includes(slotMs(selectedDay, slot)) : false;
+          const state = selectedDay ? stateFor(selectedDay, slot) : { kind: "free" };
+          const maxed = MAX_PICKS > 1 && !isSelected && picks.length >= MAX_PICKS;
+          const taken = state.kind === "past" || state.kind === "busy" || maxed;
+          const note = slotNote(state);
+          return (
+            <button
+              type="button"
+              key={slot}
+              className={`sched-time-row${isSelected ? " on" : ""}${taken ? " off" : ""}${
+                state.kind === "tight" ? " tight" : ""
+              }`}
+              disabled={taken}
+              onClick={() => togglePick(selectedDay, slot)}
+            >
+              <span dir="ltr">{slotLabel(slot)}</span>
+              <span className="sched-time-end">
+                {note && <span className="sched-time-note">{note}</span>}
+                {isSelected && <CheckIcon aria-hidden="true" />}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* 4 · and only now does anything leave the app. */}
+      <StepLabel n={sendStep}>{t("שליחה")}</StepLabel>
       <div className="sched-bottom">
+        {/* Spelled out, because everything above it was chosen in pieces and
+            on two different sites. */}
+        <div className="sched-recap">
+          <span className={pickedLabel ? undefined : "sched-recap-missing"} dir="auto">
+            {pickedLabel || t("טרם נבחרה שעה")}
+          </span>
+          <span className="sched-recap-sep" aria-hidden="true">
+            ·
+          </span>
+          <span className={placeLabel ? undefined : "sched-recap-missing"} dir="auto">
+            {placeLabel || t("טרם נקבעה")}
+          </span>
+        </div>
         <button
           type="button"
           className="sched-send"

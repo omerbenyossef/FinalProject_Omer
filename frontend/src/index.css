@@ -6481,7 +6481,35 @@ button:active { transform: translateY(1px); }
 .sched-sub { margin: 8px 0 0; font: 500 11.5px "IBM Plex Mono", "IBM Plex Sans", monospace; letter-spacing: .04em; color: #8b93a6; text-transform: uppercase; }
 .sched-sub-sans { font: 500 12.5px "IBM Plex Sans", var(--sans); text-transform: none; }
 
-.sched-section-label { margin-top: 24px; margin-bottom: 8px; font: 600 10px "IBM Plex Mono", "IBM Plex Sans", monospace; letter-spacing: .16em; color: #8b93a6; text-transform: uppercase; }
+/* Numbered steps, because this screen is a sequence that crosses over to the
+   venue's own site in the middle of it. */
+.sched-step { margin-top: 26px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 5px; }
+.sched-step-head { display: flex; align-items: center; gap: 9px; }
+.sched-step-n {
+  flex: none; width: 19px; height: 19px; border-radius: 50%; background: rgba(148, 163, 184, .14);
+  display: inline-flex; align-items: center; justify-content: center;
+  font: 700 10.5px "IBM Plex Mono", "IBM Plex Sans", monospace; color: #c9cfdb;
+}
+.sched-step.done .sched-step-n { background: var(--court, #c6f24e); color: #0e1116; }
+.sched-step.done .sched-step-n svg { width: 11px; height: 11px; stroke: #0e1116; stroke-width: 3; }
+.sched-step-title {
+  font: 600 10px "IBM Plex Mono", "IBM Plex Sans", monospace; letter-spacing: .16em;
+  color: #8b93a6; text-transform: uppercase;
+}
+.sched-step-hint {
+  margin-inline-start: 28px; font: 400 12.5px/1.45 "IBM Plex Sans", var(--sans); color: #6f7787;
+}
+.sched-step + .sched-bottom { margin-top: 0; }
+.sched-days + .sched-times { margin-top: 14px; }
+
+/* The one line that says what is actually about to be sent. */
+.sched-recap {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px;
+  padding: 12px 14px; border-radius: 12px; background: rgba(148, 163, 184, .06);
+  font: 600 13.5px "IBM Plex Sans", var(--sans); color: #eef1f7;
+}
+.sched-recap-missing { font-weight: 500; color: #6f7787; }
+.sched-recap-sep { color: #454c5a; }
 
 .sched-days { display: flex; gap: 8px; }
 .sched-day {
@@ -6529,10 +6557,6 @@ button:active { transform: translateY(1px); }
 .sched-counter-note {
   margin: 16px 0 0; padding: 12px 14px; border-radius: 12px; background: rgba(198, 242, 78, .07);
   font: 500 13.5px/1.5 "IBM Plex Sans", var(--sans); color: #c9cfdb;
-}
-
-.sched-multi-hint {
-  margin: 0 0 6px; font: 400 12.5px/1.45 "IBM Plex Sans", var(--sans); color: #6f7787;
 }
 
 /* One row per offered slot, on the receiving side. */
