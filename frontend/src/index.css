@@ -8230,6 +8230,33 @@ button:active { transform: translateY(1px); }
 
 /* Choosing where to play. Two actions per row, deliberately separate:
    looking at a venue's free hours must never commit you to it. */
+/* The venue screen: every court there is, read by area. */
+.venue-search {
+  width: 100%; margin-bottom: 6px; padding: 11px 13px; border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, .18); background: #131820;
+  font: 500 14px "IBM Plex Sans", var(--sans); color: var(--ink);
+}
+.venue-group {
+  margin-top: 16px; font: 600 10px "IBM Plex Mono", "IBM Plex Sans", monospace;
+  letter-spacing: .14em; color: #8b93a6; text-transform: uppercase;
+}
+.venue-empty { margin: 18px 0; font: 500 13.5px "IBM Plex Sans", var(--sans); color: #6f7787; }
+.venue-escape { margin-top: 24px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.venue-escape-btn {
+  width: 100%; padding: 13px 0; border: 1px dashed rgba(148, 163, 184, .3); border-radius: 14px;
+  background: transparent; font: 600 14px "IBM Plex Sans", var(--sans); color: #c9cfdb; cursor: pointer;
+}
+.venue-escape-skip { font: 500 13px "IBM Plex Sans", var(--sans); color: #6f7787; }
+
+/* And on the time screen, the one line it left behind. */
+.venue-chosen {
+  display: flex; align-items: center; gap: 10px; padding: 11px 13px;
+  border: 1px solid rgba(148, 163, 184, .16); border-radius: 14px; background: #131820;
+}
+.venue-chosen-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.venue-chosen-name { font: 600 14.5px "IBM Plex Sans", var(--sans); color: var(--court, #c6f24e); }
+.venue-chosen-name.is-empty { font-weight: 500; color: #6f7787; }
+
 .venue-list { display: flex; flex-direction: column; margin-top: 10px; }
 .venue-row {
   display: flex; align-items: center; gap: 8px;

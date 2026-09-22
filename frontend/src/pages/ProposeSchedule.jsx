@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { api } from "../api";
 import { useLanguage } from "../LanguageContext.jsx";
 import { useSport } from "../SportContext.jsx";
@@ -138,13 +138,38 @@ export default function ProposeSchedule() {
   // Venues the app knows, so "where" can be a choice with a booking link
   // behind it rather than a line of text nobody can act on.
   const [venues, setVenues] = useState([]);
+  const [venuesLoaded, setVenuesLoaded] = useState(false);
   const [venueId, setVenueId] = useState(null);
   const [editingCourt, setEditingCourt] = useState(false);
+  const [venueSearch, setVenueSearch] = useState("");
 
   useEffect(() => {
     if (!selectedSportId) return;
-    api.venues(selectedSportId).then(setVenues).catch(() => setVenues([]));
+    api
+      .venues(selectedSportId)
+      .then(setVenues)
+      .catch(() => setVenues([]))
+      .finally(() => setVenuesLoaded(true));
   }, [selectedSportId]);
+
+  // Where comes before when, and each half is its own screen — the list of
+  // courts is long, and reading it means leaving for the venue's own site and
+  // coming back. Kept in the URL so the phone's back button walks the same
+  // path the player walked, and so every existing link into this screen still
+  // lands on its first step.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const askedForWhen = searchParams.get("step") === "when";
+  // Nothing to choose from is not a step.
+  const phase = askedForWhen || (venuesLoaded && venues.length === 0) ? "when" : "where";
+  function goToWhere() {
+    setSearchParams({}, { state: location.state });
+  }
+  function goToWhen(opts = {}) {
+    if (opts.venue !== undefined) setVenueId(opts.venue);
+    if (opts.venue) setCourt("");
+    setEditingCourt(!!opts.freeText);
+    setSearchParams({ step: "when" }, { state: location.state });
+  }
 
   useEffect(() => {
     if (draftOpponent) {
@@ -278,7 +303,8 @@ export default function ProposeSchedule() {
       : picks.length > 1
       ? t("{count} זמנים", { count: picks.length })
       : null;
-  const placeLabel = venueId ? venues.find((v) => v.id === venueId)?.name : court.trim() || null;
+  const chosenVenue = venueId ? venues.find((v) => v.id === venueId) ?? null : null;
+  const placeLabel = chosenVenue ? chosenVenue.name : court.trim() || null;
 
   async function handleSend(overrideConflictWarning = false) {
     if (picks.length === 0) return;
@@ -321,8 +347,8 @@ export default function ProposeSchedule() {
     }
   }
 
-  return (
-    <div className="sched-page">
+  const header = (
+    <>
       <div className="sched-nav">
         <button type="button" className="sched-nav-back" onClick={() => navigate(-1)} aria-label={t("חזרה")}>
           <ChevronIcon aria-hidden="true" />
@@ -369,55 +395,108 @@ export default function ProposeSchedule() {
       </p>
 
       {error && <p className="error">{t(error)}</p>}
+    </>
+  );
+
+  // The first half of the screen is its own screen: the list of courts is long,
+  // and reading it means stepping out to the venue's own site and coming back.
+  // Picking one lands on the second half with it already chosen.
+  if (phase === "where") {
+    const needle = venueSearch.trim().toLowerCase();
+    const filtered = needle
+      ? venues.filter((v) => `${v.name} ${v.area ?? ""}`.toLowerCase().includes(needle))
+      : venues;
+    // Grouped by area, because "all the courts" is a list you read by
+    // neighbourhood — the one nearest you is the one you can actually reach.
+    const areas = [];
+    for (const v of filtered) {
+      const key = v.area?.trim() || t("מקומות נוספים");
+      const group = areas.find((g) => g.key === key);
+      if (group) group.items.push(v);
+      else areas.push({ key, items: [v] });
+    }
+    return (
+      <div className="sched-page">
+        {header}
+        <StepLabel n={1} hint={t("בדקו מתי המגרש פנוי, ואז בחרו אותו — היום והשעה במסך הבא")}>
+          {t("מקום")}
+        </StepLabel>
+        {venues.length > 6 && (
+          <input
+            type="search"
+            className="venue-search"
+            value={venueSearch}
+            onChange={(e) => setVenueSearch(e.target.value)}
+            placeholder={t("חיפוש מגרש")}
+          />
+        )}
+        {areas.map((g) => (
+          <div key={g.key}>
+            <div className="venue-group">{g.key}</div>
+            <div className="venue-list">
+              {g.items.map((v) => (
+                <div className={`venue-row${venueId === v.id ? " on" : ""}`} key={v.id}>
+                  {/* Tapping the name takes this venue to the next screen. */}
+                  <button
+                    type="button"
+                    className="venue-row-pick"
+                    onClick={() => goToWhen({ venue: v.id })}
+                  >
+                    <span className="venue-row-name" dir="auto">
+                      {v.name}
+                    </span>
+                  </button>
+                  {/* And "hours" only looks. Checking three venues before
+                      finding a free slot must not commit you to the first one
+                      you opened. */}
+                  {v.booking_url && (
+                    <BookCourtLink className="venue-row-hours" url={v.booking_url}>
+                      {t("שעות")} ↗
+                    </BookCourtLink>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+        {filtered.length === 0 && <p className="venue-empty">{t("אין מגרש בשם הזה")}</p>}
+        {/* Anywhere that isn't on the list is still allowed — it just doesn't
+            come with a way to book it. And "later" is a real answer too. */}
+        <div className="venue-escape">
+          <button
+            type="button"
+            className="venue-escape-btn"
+            onClick={() => goToWhen({ venue: null, freeText: true })}
+          >
+            {t("מקום אחר")}
+          </button>
+          <button
+            type="button"
+            className="link-btn venue-escape-skip"
+            onClick={() => goToWhen({ venue: null })}
+          >
+            {t("אבחר מקום אחר כך")}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="sched-page">
+      {header}
 
       {cameFromDecline && (
         <p className="sched-counter-note">{t("הזמן שהוצע לא התאים לך — סמן/י מתי כן, והיריב יבחר")}</p>
       )}
 
-      {/* 1 · where. The court is booked on the venue's own site, so looking at
-          its hours has to come before picking a time here — a time chosen
-          against a court nobody checked is a time that falls through. */}
-      <StepLabel
-        n={1}
-        done={!!venueId || !!court.trim()}
-        hint={t("בחרו מגרש, ובדקו אצלו אילו שעות פנויות")}
-      >
+      {/* 1 · where, already chosen on the screen before this one. It stays
+          visible and changeable — the time is picked against it. */}
+      <StepLabel n={1} done={!!venueId || !!court.trim()}>
         {t("מקום")}
       </StepLabel>
-      {venues.length > 0 && (
-        <div className="venue-list">
-          {venues.map((v) => (
-            <div className={`venue-row${venueId === v.id ? " on" : ""}`} key={v.id}>
-              {/* Tapping the name chooses this venue for the match. */}
-              <button
-                type="button"
-                className="venue-row-pick"
-                onClick={() => {
-                  setVenueId(venueId === v.id ? null : v.id);
-                  setCourt("");
-                  setEditingCourt(false);
-                }}
-              >
-                <span className="venue-row-name" dir="auto">
-                  {v.name}
-                </span>
-                {v.area && <span className="venue-row-area">{v.area}</span>}
-              </button>
-              {/* And "hours" only looks. Checking three venues before finding
-                  a free slot must not commit you to the first one you opened. */}
-              {v.booking_url && (
-                <BookCourtLink className="venue-row-hours" url={v.booking_url}>
-                  {t("שעות")} ↗
-                </BookCourtLink>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-      {/* Anywhere that isn't on the list is still allowed — it just doesn't
-          come with a way to book it. */}
-      <div className="sched-court-row">
-        {editingCourt ? (
+      {editingCourt ? (
+        <div className="sched-court-row">
           <input
             type="text"
             className="sched-court-input"
@@ -430,17 +509,35 @@ export default function ProposeSchedule() {
             placeholder={t("מקום אחר")}
             autoFocus
           />
-        ) : (
-          <span className="sched-court-value">
-            {venueId
-              ? venues.find((v) => v.id === venueId)?.name
-              : court || t("טרם נקבעה")}
-          </span>
-        )}
-        <button type="button" className="sched-court-edit" onClick={() => setEditingCourt((v) => !v)}>
-          {venueId ? t("מקום אחר") : t("עריכה")}
-        </button>
-      </div>
+          <button type="button" className="sched-court-edit" onClick={() => setEditingCourt(false)}>
+            {t("סיום")}
+          </button>
+        </div>
+      ) : (
+        <div className="venue-chosen">
+          <div className="venue-chosen-main">
+            <span className={placeLabel ? "venue-chosen-name" : "venue-chosen-name is-empty"} dir="auto">
+              {placeLabel || t("טרם נקבעה")}
+            </span>
+            {chosenVenue?.area && <span className="venue-row-area">{chosenVenue.area}</span>}
+          </div>
+          {chosenVenue?.booking_url && (
+            <BookCourtLink className="venue-row-hours" url={chosenVenue.booking_url}>
+              {t("שעות")} ↗
+            </BookCourtLink>
+          )}
+          {/* With a list to go back to, "change" means the list. Without one,
+              there is nothing to go back to and the only place to say is
+              typed here. */}
+          <button
+            type="button"
+            className="sched-court-edit"
+            onClick={() => (venues.length > 0 ? goToWhere() : setEditingCourt(true))}
+          >
+            {venues.length > 0 ? t("החלף") : t("עריכה")}
+          </button>
+        </div>
+      )}
 
       {/* 2 · how long, for a friendly — it decides which slots are even
           offered below, so it is asked before the grid, not after it. */}

@@ -987,6 +987,12 @@ const PAIRS = [
 
   // Schedule flow (107)
   ["תיאום", "SCHEDULE"],
+  ["החלף", "Change"],
+  ["מקומות נוספים", "More places"],
+  ["אין מגרש בשם הזה", "No venue by that name"],
+  ["אבחר מקום אחר כך", "I'll pick a place later"],
+  ["בדקו מתי המגרש פנוי, ואז בחרו אותו — היום והשעה במסך הבא",
+    "Check when a venue is free, then pick it — the day and time come next"],
   ["יום ושעה", "DAY & TIME"],
   ["שליחה", "SEND"],
   ["בחרו מגרש, ובדקו אצלו אילו שעות פנויות", "Pick a venue, and check which hours are free there"],
