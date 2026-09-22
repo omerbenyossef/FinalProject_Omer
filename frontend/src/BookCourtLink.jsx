@@ -1,17 +1,15 @@
 import { BOOKING_URL } from "./booking.js";
 
-/* The way out to Lazuz, which has to be built differently depending on where
-   the app is running.
+/* The way out to Lazuz.
 
-   Inside an installed iOS web app, a link with target="_blank" opens a view
-   that never finishes loading and then dismisses itself — a long-standing
-   iOS standalone bug, and exactly what Omer saw. A plain link is what works
-   there: iOS sees an address outside the app's scope, hands it to Safari (or
-   to Lazuz's own app, if they publish universal links) and leaves the app
-   running behind it.
+   In a browser tab, on Android and on desktop, target="_blank" is right: a
+   plain link would navigate the app itself away.
 
-   Everywhere else — a browser tab, Android, desktop — target="_blank" is the
-   right thing, because a plain link really would navigate the app away. */
+   Inside an installed iOS home-screen app it is left off. Not because
+   target="_blank" was ever shown to be broken here — the hang we chased for a
+   day turned out to be a bad URL — but because a plain link is what lets iOS
+   hand the address to Lazuz's own app if they publish universal links, which
+   would open it already signed in. */
 
 function isIosStandalone() {
   // navigator.standalone is iOS-only and true only for a home-screen app.
