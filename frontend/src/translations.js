@@ -1376,6 +1376,7 @@ const PAIRS = [
   ["מקום", "Venue"],
   ["לא נקבע", "Not set"],
   ["הוסף ליומן", "Add to calendar"],
+  ["הזמן מגרש", "Book a court"],
   ["הצע זמן אחר", "Suggest another time"],
   ["בטל את המשחק", "Cancel the match"],
   ["לבטל את המשחק?", "Cancel the match?"],

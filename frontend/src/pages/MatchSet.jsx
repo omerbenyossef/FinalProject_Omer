@@ -6,6 +6,7 @@ import Avatar from "../Avatar.jsx";
 import { ChevronIcon, CloseIcon } from "../Icons.jsx";
 import { weekdayFull } from "../matchUtils.js";
 import { downloadCalendarFile, matchCalendarFile } from "../calendar.js";
+import { openBooking } from "../booking.js";
 
 /* match-set-180a — the screen for a match whose time both players have agreed
    to. One column, in the order the questions actually get asked: when, against
@@ -191,6 +192,11 @@ export default function MatchSet({ detail, matchId, onChanged }) {
       <div className="ms-actions">
         <button type="button" className="ms-primary" onClick={handleCalendar}>
           {t("הוסף ליומן")}
+        </button>
+        {/* A link out, not a booking flow: Lazuz has no public API, so this
+            hands them over rather than pretending to book on their behalf. */}
+        <button type="button" className="ms-secondary" onClick={openBooking}>
+          {t("הזמן מגרש")}
         </button>
         <button
           type="button"
