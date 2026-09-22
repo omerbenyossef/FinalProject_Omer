@@ -8203,3 +8203,46 @@ button:active { transform: translateY(1px); }
   border: 1px solid rgba(148, 163, 184, .26); border-radius: 14px; background: transparent;
   font: 600 13.5px "IBM Plex Sans", var(--sans); color: #c9cfdb; cursor: pointer;
 }
+
+/* Choosing where to play. Two actions per row, deliberately separate:
+   looking at a venue's free hours must never commit you to it. */
+.venue-list { display: flex; flex-direction: column; margin-top: 10px; }
+.venue-row {
+  display: flex; align-items: center; gap: 8px;
+  border: 1px solid rgba(148, 163, 184, .16); border-radius: 14px;
+  margin-bottom: 8px; padding: 4px 6px 4px 4px; background: #131820;
+}
+.venue-row.on { border-color: #c6f24e; background: #1a2116; }
+.venue-row-pick {
+  flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;
+  padding: 9px 10px; border: 0; background: transparent; text-align: start; cursor: pointer;
+}
+.venue-row-name { font: 600 14.5px "IBM Plex Sans", var(--sans); color: var(--ink); }
+.venue-row.on .venue-row-name { color: #c6f24e; }
+.venue-row-area { font: 500 12px "IBM Plex Sans", var(--sans); color: #8b93a6; }
+.venue-row-hours {
+  flex: none; padding: 7px 11px; border: 1px solid rgba(148, 163, 184, .26); border-radius: 11px;
+  font: 600 12.5px "IBM Plex Sans", var(--sans); color: #c9cfdb; text-decoration: none;
+  white-space: nowrap;
+}
+
+/* Managing them. */
+.adm-add {
+  margin: 4px 0 12px; padding: 10px 0; border: 1px dashed rgba(148, 163, 184, .3);
+  border-radius: 12px; background: transparent;
+  font: 600 13.5px "IBM Plex Sans", var(--sans); color: #c6f24e; cursor: pointer;
+}
+.adm-venue-form {
+  display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; padding: 13px;
+  border: 1px solid rgba(148, 163, 184, .2); border-radius: 14px; background: #131820;
+}
+.adm-venue-form input,
+.adm-venue-form select {
+  height: 40px; padding: 0 12px; border: 1px solid rgba(148, 163, 184, .24); border-radius: 10px;
+  background: #0e1116; font: 500 14px "IBM Plex Sans", var(--sans); color: var(--ink); outline: none;
+}
+.adm-venue-actions { display: flex; gap: 8px; align-items: center; }
+.adm-row-edit {
+  flex: none; padding: 5px 10px; border: 1px solid rgba(148, 163, 184, .26); border-radius: 8px;
+  background: transparent; font: 600 12px "IBM Plex Sans", var(--sans); color: #c9cfdb; cursor: pointer;
+}

@@ -6,7 +6,8 @@ opens the wrong court is worse than no link at all.
 """
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy import or_
+from sqlalchemy.orm import Session, joinedload
 
 from .. import models, schemas
 from ..auth import get_current_user
@@ -34,12 +35,31 @@ def _clean_url(url: str | None) -> str | None:
     return url
 
 
+def _out(venue: models.Venue) -> schemas.VenueOut:
+    return schemas.VenueOut(
+        id=venue.id,
+        name=venue.name,
+        area=venue.area,
+        sport_id=venue.sport_id,
+        sport_name=venue.sport.name if venue.sport else None,
+        booking_url=venue.booking_url,
+    )
+
+
 @router.get("", response_model=list[schemas.VenueOut])
 def list_venues(
+    sport_id: int | None = None,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    return db.query(models.Venue).order_by(models.Venue.name).all()
+    """With a sport, the venues that host it plus the ones that host
+    anything. Without, everything — which is what the admin screen wants."""
+    query = db.query(models.Venue).options(joinedload(models.Venue.sport))
+    if sport_id is not None:
+        query = query.filter(
+            or_(models.Venue.sport_id == sport_id, models.Venue.sport_id.is_(None))
+        )
+    return [_out(v) for v in query.order_by(models.Venue.name).all()]
 
 
 @router.post("", response_model=schemas.VenueOut)
@@ -52,12 +72,13 @@ def create_venue(
     venue = models.Venue(
         name=payload.name.strip(),
         area=(payload.area or "").strip() or None,
+        sport_id=payload.sport_id,
         booking_url=_clean_url(payload.booking_url),
     )
     db.add(venue)
     db.commit()
     db.refresh(venue)
-    return venue
+    return _out(venue)
 
 
 @router.patch("/{venue_id}", response_model=schemas.VenueOut)
@@ -73,10 +94,11 @@ def update_venue(
         raise HTTPException(status_code=404, detail="המגרש לא נמצא")
     venue.name = payload.name.strip()
     venue.area = (payload.area or "").strip() or None
+    venue.sport_id = payload.sport_id
     venue.booking_url = _clean_url(payload.booking_url)
     db.commit()
     db.refresh(venue)
-    return venue
+    return _out(venue)
 
 
 @router.delete("/{venue_id}", status_code=204)

@@ -293,10 +293,16 @@ class Venue(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
     area = Column(String, nullable=True)
+    # Which game is played here. A padel complex has no business appearing to
+    # someone arranging a tennis match — and the first link we had was exactly
+    # that. Null means "any sport", for a venue that hosts several.
+    sport_id = Column(Integer, ForeignKey("sports.id"), nullable=True)
     # Lazuz today, whatever books it tomorrow. Optional: a venue with no link
     # is still worth listing, it just doesn't offer the button.
     booking_url = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    sport = relationship("Sport")
 
 
 class MatchMessage(Base):

@@ -701,6 +701,8 @@ class VenueOut(BaseModel):
     id: int
     name: str
     area: Optional[str] = None
+    sport_id: Optional[int] = None
+    sport_name: Optional[str] = None
     booking_url: Optional[str] = None
 
     class Config:
@@ -710,6 +712,8 @@ class VenueOut(BaseModel):
 class VenueIn(BaseModel):
     name: str = Field(min_length=1, max_length=120)
     area: Optional[str] = Field(default=None, max_length=120)
+    # None means the venue hosts any sport.
+    sport_id: Optional[int] = None
     booking_url: Optional[str] = Field(default=None, max_length=500)
 
 

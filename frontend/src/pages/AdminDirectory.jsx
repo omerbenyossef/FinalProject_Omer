@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { useLanguage } from "../LanguageContext.jsx";
+import { useSport } from "../SportContext.jsx";
 import Avatar from "../Avatar.jsx";
 import { ChevronIcon, SearchIcon } from "../Icons.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
@@ -12,7 +13,7 @@ import { formatDayMonth } from "../matchUtils.js";
    The server refuses this data to anyone else (403); hiding the way in is
    only a courtesy on top of that. */
 
-const TABS = ["users", "leagues"];
+const TABS = ["users", "leagues", "venues"];
 
 function levelText(levels) {
   if (!levels?.length) return "—";
@@ -29,6 +30,11 @@ export default function AdminDirectory() {
   // Two taps to close an account, and the second one lives on the row itself:
   // a native confirm is a thumb-width away from "OK" on a phone, and this is
   // not undoable.
+  const { sports } = useSport();
+  const [venues, setVenues] = useState([]);
+  // The venue being added or edited: null when the form is closed, an object
+  // with an id when editing, an object without one when adding.
+  const [venueDraft, setVenueDraft] = useState(null);
   const [confirmingId, setConfirmingId] = useState(null);
   const [busyId, setBusyId] = useState(null);
   const [notice, setNotice] = useState("");
@@ -38,7 +44,46 @@ export default function AdminDirectory() {
       .adminDirectory()
       .then(setData)
       .catch((err) => setError(err.message));
+    loadVenues();
   }, []);
+
+  function loadVenues() {
+    api.venues().then(setVenues).catch(() => setVenues([]));
+  }
+
+  async function saveVenue(draft) {
+    const body = {
+      name: draft.name.trim(),
+      area: draft.area?.trim() || null,
+      sport_id: draft.sport_id ?? null,
+      booking_url: draft.booking_url?.trim() || null,
+    };
+    setBusyId("venue");
+    setError("");
+    try {
+      if (draft.id) await api.updateVenue(draft.id, body);
+      else await api.createVenue(body);
+      setVenueDraft(null);
+      loadVenues();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function removeVenue(venue) {
+    setBusyId(`venue-${venue.id}`);
+    setError("");
+    try {
+      await api.deleteVenue(venue.id);
+      loadVenues();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusyId(null);
+    }
+  }
 
   async function handleDelete(u) {
     setBusyId(u.id);
@@ -124,7 +169,7 @@ export default function AdminDirectory() {
                 className={`adm-tab${tab === key ? " on" : ""}`}
                 onClick={() => setTab(key)}
               >
-                {key === "users" ? t("משתמשים") : t("ליגות")}
+                {key === "users" ? t("משתמשים") : key === "leagues" ? t("ליגות") : t("מגרשים")}
               </button>
             ))}
           </div>
@@ -134,7 +179,13 @@ export default function AdminDirectory() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder={tab === "users" ? t("חיפוש לפי שם או אימייל") : t("חיפוש לפי שם ליגה או מי פתח")}
+              placeholder={
+                tab === "users"
+                  ? t("חיפוש לפי שם או אימייל")
+                  : tab === "leagues"
+                    ? t("חיפוש לפי שם ליגה או מי פתח")
+                    : t("חיפוש מגרש")
+              }
             />
           </div>
 
@@ -208,7 +259,7 @@ export default function AdminDirectory() {
               )}
               {users.length === 0 && <p className="muted">{t("לא נמצאו שחקנים")}</p>}
             </div>
-          ) : (
+          ) : tab === "leagues" ? (
             <div className="adm-rows">
               {leagues.map((l) => (
                 <Link to={`/leagues/${l.id}`} className="adm-row" key={l.id}>
@@ -239,6 +290,111 @@ export default function AdminDirectory() {
                 </Link>
               ))}
               {leagues.length === 0 && <p className="muted">{t("לא נמצאו ליגות")}</p>}
+            </div>
+          ) : (
+            <div className="adm-rows">
+              <button
+                type="button"
+                className="adm-add"
+                onClick={() => setVenueDraft({ name: "", area: "", sport_id: null, booking_url: "" })}
+              >
+                {t("הוספת מגרש")}
+              </button>
+
+              {venueDraft && (
+                <form
+                  className="adm-venue-form"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!venueDraft.name.trim()) return;
+                    saveVenue(venueDraft);
+                  }}
+                >
+                  <input
+                    value={venueDraft.name}
+                    onChange={(e) => setVenueDraft({ ...venueDraft, name: e.target.value })}
+                    placeholder={t("שם המגרש")}
+                    autoFocus
+                  />
+                  <input
+                    value={venueDraft.area ?? ""}
+                    onChange={(e) => setVenueDraft({ ...venueDraft, area: e.target.value })}
+                    placeholder={t("אזור")}
+                  />
+                  <select
+                    value={venueDraft.sport_id ?? ""}
+                    onChange={(e) =>
+                      setVenueDraft({
+                        ...venueDraft,
+                        sport_id: e.target.value ? Number(e.target.value) : null,
+                      })
+                    }
+                  >
+                    <option value="">{t("כל הענפים")}</option>
+                    {sports.map((sport) => (
+                      <option value={sport.id} key={sport.id}>
+                        {t(sport.name)}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    value={venueDraft.booking_url ?? ""}
+                    onChange={(e) => setVenueDraft({ ...venueDraft, booking_url: e.target.value })}
+                    placeholder={t("קישור הזמנה")}
+                    dir="ltr"
+                  />
+                  <div className="adm-venue-actions">
+                    <button type="submit" className="mc-go" disabled={busyId === "venue"}>
+                      {busyId === "venue" ? t("שומר...") : t("שמור")}
+                    </button>
+                    <button type="button" className="mc-cancel" onClick={() => setVenueDraft(null)}>
+                      {t("ביטול")}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {venues
+                .filter(
+                  (v) =>
+                    !needle ||
+                    v.name.toLowerCase().includes(needle) ||
+                    (v.area ?? "").toLowerCase().includes(needle)
+                )
+                .map((v) => (
+                  <div className="adm-row" key={v.id}>
+                    <div className="adm-row-body">
+                      <div className="adm-row-title">
+                        <span dir="auto" style={{ unicodeBidi: "isolate" }}>
+                          {v.name}
+                        </span>
+                        <span className="adm-badge">{v.sport_name ? t(v.sport_name) : t("כל הענפים")}</span>
+                      </div>
+                      <div className="adm-row-sub">{v.area || t("בלי אזור")}</div>
+                      <div className="adm-row-meta" dir="ltr">
+                        {v.booking_url || t("בלי קישור הזמנה")}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="adm-row-edit"
+                      onClick={() => setVenueDraft({ ...v })}
+                    >
+                      {t("עריכה")}
+                    </button>
+                    <button
+                      type="button"
+                      className="adm-row-del"
+                      disabled={busyId === `venue-${v.id}`}
+                      onClick={() => removeVenue(v)}
+                    >
+                      {t("מחק")}
+                    </button>
+                  </div>
+                ))}
+              {venues.length === 0 && !venueDraft && (
+                <p className="muted">{t("עוד אין מגרשים. הוסף את הראשון.")}</p>
+              )}
             </div>
           )}
         </>

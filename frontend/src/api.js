@@ -227,7 +227,7 @@ export const api = {
   getFriendlyInviteLink: (token) => request(`/friendly/invite-links/${token}`),
   redeemFriendlyInviteLink: (token) => request(`/friendly/invite-links/${token}/redeem`, { method: "POST" }),
 
-  venues: () => request("/venues"),
+  venues: (sportId) => request(`/venues${sportId ? `?sport_id=${sportId}` : ""}`),
   createVenue: (body) => request("/venues", { method: "POST", body }),
   updateVenue: (id, body) => request(`/venues/${id}`, { method: "PATCH", body }),
   deleteVenue: (id) => request(`/venues/${id}`, { method: "DELETE" }),

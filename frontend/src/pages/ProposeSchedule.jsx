@@ -125,8 +125,9 @@ export default function ProposeSchedule() {
   const [editingCourt, setEditingCourt] = useState(false);
 
   useEffect(() => {
-    api.venues().then(setVenues).catch(() => setVenues([]));
-  }, []);
+    if (!selectedSportId) return;
+    api.venues(selectedSportId).then(setVenues).catch(() => setVenues([]));
+  }, [selectedSportId]);
 
   useEffect(() => {
     if (draftOpponent) {
@@ -359,15 +360,6 @@ export default function ProposeSchedule() {
         })}
       </div>
 
-      {/* Checking what's free on Lazuz is what decides which time to offer,
-          so the way there belongs here, not only after the time is agreed. */}
-      <BookCourtLink
-        className="sched-book-link"
-        url={venues.find((v) => v.id === venueId)?.booking_url}
-      >
-        {t("בדוק זמינות מגרשים")}
-      </BookCourtLink>
-
       <div className="sched-section-label">
         {t("TIME")}
         {MAX_PICKS > 1 && picks.length > 0 && ` · ${picks.length}/${MAX_PICKS}`}
@@ -436,23 +428,32 @@ export default function ProposeSchedule() {
 
       <div className="sched-section-label">{t("COURT")}</div>
       {venues.length > 0 && (
-        <div className="venue-picks">
+        <div className="venue-list">
           {venues.map((v) => (
-            <button
-              type="button"
-              key={v.id}
-              className={`venue-pick${venueId === v.id ? " on" : ""}`}
-              onClick={() => {
-                setVenueId(venueId === v.id ? null : v.id);
-                setCourt("");
-                setEditingCourt(false);
-              }}
-            >
-              <span className="venue-pick-name" dir="auto">
-                {v.name}
-              </span>
-              {v.area && <span className="venue-pick-area">{v.area}</span>}
-            </button>
+            <div className={`venue-row${venueId === v.id ? " on" : ""}`} key={v.id}>
+              {/* Tapping the name chooses this venue for the match. */}
+              <button
+                type="button"
+                className="venue-row-pick"
+                onClick={() => {
+                  setVenueId(venueId === v.id ? null : v.id);
+                  setCourt("");
+                  setEditingCourt(false);
+                }}
+              >
+                <span className="venue-row-name" dir="auto">
+                  {v.name}
+                </span>
+                {v.area && <span className="venue-row-area">{v.area}</span>}
+              </button>
+              {/* And "hours" only looks. Checking three venues before finding
+                  a free slot must not commit you to the first one you opened. */}
+              {v.booking_url && (
+                <BookCourtLink className="venue-row-hours" url={v.booking_url}>
+                  {t("שעות")} ↗
+                </BookCourtLink>
+              )}
+            </div>
           ))}
         </div>
       )}
