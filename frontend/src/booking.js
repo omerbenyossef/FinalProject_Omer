@@ -5,7 +5,9 @@
 // alone on purpose: pointing it at a per-venue deep link, at a different
 // provider, or at a URL carrying an affiliate parameter is a change to this
 // file and nothing else.
-export const BOOKING_URL = "https://www.lazuz.co.il";
+// No www. This is the host Omer's own link came from — the www form was a
+// guess of mine off a search result, and it wouldn't load on his phone.
+export const BOOKING_URL = "https://lazuz.co.il";
 
 // Deliberately not window.open(). Inside an installed iOS web app, an
 // anchor with target="_blank" opens Safari's in-app browser over the top and
