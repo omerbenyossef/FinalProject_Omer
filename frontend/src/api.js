@@ -226,6 +226,12 @@ export const api = {
   createVenue: (body) => request("/venues", { method: "POST", body }),
   updateVenue: (id, body) => request(`/venues/${id}`, { method: "PATCH", body }),
   deleteVenue: (id) => request(`/venues/${id}`, { method: "DELETE" }),
+  // The picture goes as a data URL the browser already scaled down, the same
+  // way a player's own photo does — the venue is identified by its id, so it
+  // has to exist before it can be given one.
+  setVenueImage: (id, dataUrl) =>
+    request(`/venues/${id}/image`, { method: "POST", body: { data_url: dataUrl } }),
+  deleteVenueImage: (id) => request(`/venues/${id}/image`, { method: "DELETE" }),
 
   adminDirectory: () => request("/ops/directory"),
   adminDeleteUser: (userId) => request(`/ops/users/${userId}`, { method: "DELETE" }),

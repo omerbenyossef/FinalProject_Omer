@@ -706,6 +706,8 @@ class VenueOut(BaseModel):
     sport_id: Optional[int] = None
     sport_name: Optional[str] = None
     booking_url: Optional[str] = None
+    # Path to the picture endpoint, or None — never the image itself.
+    image_url: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -717,6 +719,14 @@ class VenueIn(BaseModel):
     # None means the venue hosts any sport.
     sport_id: Optional[int] = None
     booking_url: Optional[str] = Field(default=None, max_length=500)
+    # The picture is not part of the form: it has its own endpoint, because it
+    # needs a venue id to belong to and is sent as its own request.
+
+
+class VenueImageIn(BaseModel):
+    """A data: URL, already scaled down by the browser that sent it."""
+
+    data_url: str
 
 
 class MatchCostIn(BaseModel):

@@ -5,13 +5,23 @@ Only the admin edits it: a venue carries a booking link, and a link that
 opens the wrong court is worse than no link at all.
 """
 
-from fastapi import APIRouter, Depends, HTTPException
+import base64
+import binascii
+from datetime import datetime
+
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy import or_
 from sqlalchemy.orm import Session, joinedload
 
 from .. import models, schemas
 from ..auth import get_current_user
 from ..database import get_db
+from .auth import _decode_data_url
+
+# The browser scales a venue picture to a 1200px-wide JPEG before sending it,
+# which lands well under this. Anything much bigger is a client that skipped
+# that step, and every venue read would carry the weight.
+MAX_VENUE_IMAGE_BYTES = 1024 * 1024
 
 router = APIRouter(prefix="/venues", tags=["venues"])
 
@@ -43,6 +53,7 @@ def _out(venue: models.Venue) -> schemas.VenueOut:
         sport_id=venue.sport_id,
         sport_name=venue.sport.name if venue.sport else None,
         booking_url=venue.booking_url,
+        image_url=venue.image_url,
     )
 
 
@@ -119,3 +130,66 @@ def delete_venue(
     )
     db.delete(venue)
     db.commit()
+
+
+@router.get("/{venue_id}/image")
+def venue_image(venue_id: int, db: Session = Depends(get_db)):
+    """The picture on its own, so a venue's details and its photograph don't
+    have to travel together in every list. The URL carries the stamp of the
+    picture it points at, so the answer can be cached for as long as the
+    browser likes. No sign-in: it is a photograph of a public tennis court."""
+    venue = db.query(models.Venue).filter(models.Venue.id == venue_id).first()
+    if not venue or not venue.image:
+        raise HTTPException(status_code=404, detail="אין תמונה למגרש הזה")
+    prefix, _, payload = venue.image.partition(",")
+    media_type = prefix[len("data:") : -len(";base64")] or "image/jpeg"
+    try:
+        raw = base64.b64decode(payload)
+    except (binascii.Error, ValueError):
+        raise HTTPException(status_code=404, detail="אין תמונה למגרש הזה")
+    return Response(
+        content=raw,
+        media_type=media_type,
+        headers={"Cache-Control": "public, max-age=31536000, immutable"},
+    )
+
+
+@router.post("/{venue_id}/image", response_model=schemas.VenueOut)
+def set_venue_image(
+    venue_id: int,
+    payload: schemas.VenueImageIn,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Admin only, like everything else that edits a venue. A picture on the
+    picker is a claim about a real place, and a wrong one misleads exactly as
+    much as a wrong booking link."""
+    _require_admin(current_user)
+    venue = db.query(models.Venue).filter(models.Venue.id == venue_id).first()
+    if not venue:
+        raise HTTPException(status_code=404, detail="המגרש לא נמצא")
+    media_type, raw = _decode_data_url(payload.data_url, MAX_VENUE_IMAGE_BYTES)
+    # Re-encoded from the bytes that were validated, so what gets stored is
+    # only ever something this endpoint could decode.
+    venue.image = f"data:{media_type};base64," + base64.b64encode(raw).decode()
+    venue.image_updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(venue)
+    return _out(venue)
+
+
+@router.delete("/{venue_id}/image", response_model=schemas.VenueOut)
+def delete_venue_image(
+    venue_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    _require_admin(current_user)
+    venue = db.query(models.Venue).filter(models.Venue.id == venue_id).first()
+    if not venue:
+        raise HTTPException(status_code=404, detail="המגרש לא נמצא")
+    venue.image = None
+    venue.image_updated_at = None
+    db.commit()
+    db.refresh(venue)
+    return _out(venue)

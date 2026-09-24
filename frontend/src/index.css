@@ -8214,22 +8214,100 @@ button:active { transform: translateY(1px); }
 /* Choosing where to play. Two actions per row, deliberately separate:
    looking at a venue's free hours must never commit you to it. */
 /* The venue screen: every court there is, read by area. */
-.venue-search {
-  width: 100%; margin-bottom: 6px; padding: 11px 13px; border-radius: 12px;
-  border: 1px solid rgba(148, 163, 184, .18); background: #131820;
-  font: 500 14px "IBM Plex Sans", var(--sans); color: var(--ink);
-}
-.venue-group {
-  margin-top: 16px; font: 600 10px "IBM Plex Mono", "IBM Plex Sans", monospace;
-  letter-spacing: .14em; color: #8b93a6; text-transform: uppercase;
-}
 .venue-empty { margin: 18px 0; font: 500 13.5px "IBM Plex Sans", var(--sans); color: #6f7787; }
-.venue-escape { margin-top: 24px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
-.venue-escape-btn {
-  width: 100%; padding: 13px 0; border: 1px dashed rgba(148, 163, 184, .3); border-radius: 14px;
-  background: transparent; font: 600 14px "IBM Plex Sans", var(--sans); color: #c9cfdb; cursor: pointer;
+
+/* 182a — choosing a venue is its own screen, and every venue on it is a card
+   with a picture of the place and two buttons that say what they do. */
+.vp-page { display: flex; flex-direction: column; background: #0e1116; color: #eef1f7; }
+.vp-head { padding: 16px 20px 0; display: flex; align-items: center; gap: 12px; }
+.vp-back { flex: none; padding: 0; border: 0; background: none; cursor: pointer; display: flex; }
+.vp-back svg { width: 22px; height: 22px; stroke: #a3abbb; }
+.vp-head-title {
+  flex: 1; min-width: 0; font: 600 15px "IBM Plex Sans", var(--sans); color: #c9cfdb;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.venue-escape-skip { font: 500 13px "IBM Plex Sans", var(--sans); color: #6f7787; }
+.vp-chat {
+  position: relative; flex: none; padding: 0; border: 0; background: none; cursor: pointer;
+  font: 600 14px "IBM Plex Sans", var(--sans); color: #8b93a6;
+}
+
+.vp-step { margin-top: 24px; padding: 0 20px; display: flex; align-items: center; gap: 10px; }
+.vp-step-n {
+  flex: none; width: 24px; height: 24px; border-radius: 50%; background: #c6f24e;
+  display: inline-flex; align-items: center; justify-content: center;
+  font: 700 12px "IBM Plex Mono", "IBM Plex Sans", monospace; color: #0e1116;
+}
+.vp-step-title { margin: 0; font: 700 24px "IBM Plex Sans", var(--sans); letter-spacing: -.025em; }
+
+.vp-search {
+  margin: 16px 20px 0; height: 44px; border-radius: 22px; background: #151a21;
+  padding: 0 16px; display: flex; align-items: center; gap: 10px;
+}
+.vp-search-icon { width: 17px; height: 17px; flex: none; stroke: #69728a; }
+.vp-search input {
+  flex: 1; min-width: 0; height: 100%; border: 0; background: none; outline: none;
+  font: 500 14.5px "IBM Plex Sans", var(--sans); color: #eef1f7;
+}
+.vp-search input::-webkit-search-cancel-button { filter: grayscale(1) opacity(.5); }
+
+.vp-list { padding: 0 20px 8px; }
+.vp-area { margin-top: 22px; font: 600 13px "IBM Plex Sans", var(--sans); color: #8b93a6; }
+.vp-cards { margin-top: 10px; display: flex; flex-direction: column; gap: 12px; }
+
+.vc { border-radius: 20px; background: #151a21; overflow: hidden; display: flex; flex-direction: column; }
+/* Chosen already — you got here from "change" on the screen after this one. */
+.vc.on { box-shadow: inset 0 0 0 1.5px #c6f24e; }
+.vc-strip { height: 116px; background: #1a2029; display: flex; align-items: center; justify-content: center; }
+.vc-strip img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.vc-initials { font: 400 40px/1 "Anton", sans-serif; color: #2c3440; }
+.vc-body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 14px; }
+.vc-body.is-row { flex-direction: row; align-items: center; gap: 12px; }
+.vc-body-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.vc-name { font: 700 17px "IBM Plex Sans", var(--sans); letter-spacing: -.015em; color: #eef1f7; }
+.vc-nobooking { font: 400 12.5px "IBM Plex Sans", var(--sans); color: #8b93a6; }
+.vc-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.vc-hours {
+  height: 40px; border-radius: 20px; border: 1px solid rgba(148, 163, 184, .26);
+  display: flex; align-items: center; justify-content: center; text-decoration: none;
+  font: 600 13.5px "IBM Plex Sans", var(--sans); color: #eef1f7;
+}
+.vc-choose {
+  height: 40px; border-radius: 20px; border: 0; background: rgba(198, 242, 78, .12);
+  font: 700 13.5px "IBM Plex Sans", var(--sans); color: #c6f24e; cursor: pointer;
+}
+.vc-body.is-row .vc-choose { flex: none; padding: 0 20px; }
+.vc-choose.on { background: #c6f24e; color: #10140a; }
+
+/* At the end of the list rather than pinned to the viewport: the app's own
+   tab bar is already fixed down there, and two bars stacked on each other is
+   worse than scrolling one line further. */
+.vp-foot {
+  margin-top: 6px; padding: 14px 20px 24px;
+  border-top: 1px solid rgba(148, 163, 184, .14);
+  display: flex; align-items: center; justify-content: center; gap: 22px;
+}
+.vp-foot-other, .vp-foot-later { border: 0; background: none; padding: 0; cursor: pointer; }
+.vp-foot-other { font: 600 14.5px "IBM Plex Sans", var(--sans); color: #eef1f7; }
+.vp-foot-later { font: 500 14px "IBM Plex Sans", var(--sans); color: #8b93a6; }
+.vp-foot-sep { width: 1px; height: 16px; background: rgba(148, 163, 184, .26); }
+
+/* The admin's side of the same picture. */
+.adm-venue-image { display: flex; flex-direction: column; gap: 8px; }
+.adm-venue-preview {
+  width: 100%; height: 116px; border-radius: 14px; background: #1a2029; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+}
+.adm-venue-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.adm-venue-initials { font: 400 40px/1 "Anton", sans-serif; color: #2c3440; }
+.adm-venue-initials.is-small { font-size: 18px; }
+.adm-venue-image-actions { display: flex; align-items: center; gap: 12px; }
+.adm-venue-image-remove { font: 500 13px "IBM Plex Sans", var(--sans); color: #8b93a6; }
+.adm-venue-thumb {
+  flex: none; width: 46px; height: 46px; border-radius: 10px; background: #1a2029;
+  overflow: hidden; display: flex; align-items: center; justify-content: center;
+  margin-inline-end: 10px;
+}
+.adm-venue-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
 /* And on the time screen, the one line it left behind. */
 .venue-chosen {
@@ -8240,19 +8318,6 @@ button:active { transform: translateY(1px); }
 .venue-chosen-name { font: 600 14.5px "IBM Plex Sans", var(--sans); color: var(--court, #c6f24e); }
 .venue-chosen-name.is-empty { font-weight: 500; color: #6f7787; }
 
-.venue-list { display: flex; flex-direction: column; margin-top: 10px; }
-.venue-row {
-  display: flex; align-items: center; gap: 8px;
-  border: 1px solid rgba(148, 163, 184, .16); border-radius: 14px;
-  margin-bottom: 8px; padding: 4px 6px 4px 4px; background: #131820;
-}
-.venue-row.on { border-color: #c6f24e; background: #1a2116; }
-.venue-row-pick {
-  flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;
-  padding: 9px 10px; border: 0; background: transparent; text-align: start; cursor: pointer;
-}
-.venue-row-name { font: 600 14.5px "IBM Plex Sans", var(--sans); color: var(--ink); }
-.venue-row.on .venue-row-name { color: #c6f24e; }
 .venue-row-area { font: 500 12px "IBM Plex Sans", var(--sans); color: #8b93a6; }
 .venue-row-hours {
   flex: none; padding: 7px 11px; border: 1px solid rgba(148, 163, 184, .26); border-radius: 11px;

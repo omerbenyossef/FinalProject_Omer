@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { api } from "../api";
+import { api, mediaUrl } from "../api";
 import { useLanguage } from "../LanguageContext.jsx";
 import { useSport } from "../SportContext.jsx";
 import BookCourtLink from "../BookCourtLink.jsx";
-import { ChevronIcon, CheckIcon } from "../Icons.jsx";
+import { ChevronIcon, CheckIcon, SearchIcon } from "../Icons.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
 import { roundDueDateObj, hasHebrewChars, daysWord, weekdayName } from "../matchUtils.js";
 
@@ -82,6 +82,66 @@ function slotState(day, time, minutes, busyWindows, gapMs) {
 // works — the server takes up to five and the opponent's screen can pick
 // between them — so raising this is the only change needed to bring it back.
 const MAX_PICKS = 1;
+
+// One venue, as a card you can look at. The old row had two tap targets side
+// by side with nothing to tell them apart — "hours" only looked, the name
+// chose, and both were just text. Here they are two labelled buttons under a
+// photograph of the place.
+function VenueCard({ venue, selected, onChoose, t }) {
+  const [broken, setBroken] = useState(false);
+  const showImage = !!venue.image_url && !broken;
+  const strip = (
+    <div className="vc-strip">
+      {showImage ? (
+        <img
+          src={mediaUrl(venue.image_url)}
+          alt=""
+          loading="lazy"
+          onError={() => setBroken(true)}
+        />
+      ) : (
+        <span className="vc-initials" dir="auto">
+          {(venue.name || "").trim().slice(0, 2)}
+        </span>
+      )}
+    </div>
+  );
+  const choose = (
+    <button type="button" className={`vc-choose${selected ? " on" : ""}`} onClick={onChoose}>
+      {t("בחר")}
+    </button>
+  );
+  return (
+    <div className={`vc${selected ? " on" : ""}`}>
+      {strip}
+      {venue.booking_url ? (
+        <div className="vc-body">
+          <span className="vc-name" dir="auto">
+            {venue.name}
+          </span>
+          <div className="vc-actions">
+            {/* Looking only. Checking three venues before finding a free slot
+                must not commit you to the first one you opened. */}
+            <BookCourtLink className="vc-hours" url={venue.booking_url}>
+              {t("בדוק שעות")} ↗
+            </BookCourtLink>
+            {choose}
+          </div>
+        </div>
+      ) : (
+        <div className="vc-body is-row">
+          <span className="vc-body-main">
+            <span className="vc-name" dir="auto">
+              {venue.name}
+            </span>
+            <span className="vc-nobooking">{t("בלי הזמנה אונליין")}</span>
+          </span>
+          {choose}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // The screen is a sequence, not a form: the court is booked on somebody
 // else's site, so "check the hours there" has to come before "pick a time
@@ -366,66 +426,88 @@ export default function ProposeSchedule() {
       else areas.push({ key, items: [v] });
     }
     return (
-      <div className="sched-page">
-        {header}
-        <StepLabel n={1} hint={t("בדקו מתי המגרש פנוי, ואז בחרו אותו — היום והשעה במסך הבא")}>
-          {t("מקום")}
-        </StepLabel>
-        {venues.length > 6 && (
-          <input
-            type="search"
-            className="venue-search"
-            value={venueSearch}
-            onChange={(e) => setVenueSearch(e.target.value)}
-            placeholder={t("חיפוש מגרש")}
-          />
-        )}
-        {areas.map((g) => (
-          <div key={g.key}>
-            <div className="venue-group">{g.key}</div>
-            <div className="venue-list">
-              {g.items.map((v) => (
-                <div className={`venue-row${venueId === v.id ? " on" : ""}`} key={v.id}>
-                  {/* Tapping the name takes this venue to the next screen. */}
-                  <button
-                    type="button"
-                    className="venue-row-pick"
-                    onClick={() => goToWhen({ venue: v.id })}
-                  >
-                    <span className="venue-row-name" dir="auto">
-                      {v.name}
-                    </span>
-                  </button>
-                  {/* And "hours" only looks. Checking three venues before
-                      finding a free slot must not commit you to the first one
-                      you opened. */}
-                  {v.booking_url && (
-                    <BookCourtLink className="venue-row-hours" url={v.booking_url}>
-                      {t("שעות")} ↗
-                    </BookCourtLink>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-        {filtered.length === 0 && <p className="venue-empty">{t("אין מגרש בשם הזה")}</p>}
-        {/* Anywhere that isn't on the list is still allowed — it just doesn't
-            come with a way to book it. And "later" is a real answer too. */}
-        <div className="venue-escape">
+      <div className="vp-page">
+        {/* Its own header: the big title and the league line belong to the
+            "when" screen, which is where the match's details matter. Here the
+            screen is a list, and the list should start near the top. */}
+        <div className="vp-head">
           <button
             type="button"
-            className="venue-escape-btn"
+            className="vp-back"
+            onClick={() => navigate(-1)}
+            aria-label={t("חזרה")}
+          >
+            <ChevronIcon aria-hidden="true" />
+          </button>
+          <span className="vp-head-title" dir="auto">
+            {t("הזנת זמן · מול {name}", { name: detail.opponent.name })}
+          </span>
+          <button
+            type="button"
+            className="vp-chat"
+            onClick={() => navigate(`/matches/${matchId}/chat`)}
+          >
+            {t("צ'אט")}
+            {detail.unread_messages > 0 && <span className="sched-nav-chat-dot" aria-hidden="true" />}
+          </button>
+        </div>
+
+        <div className="vp-step">
+          <span className="vp-step-n" aria-hidden="true">
+            1
+          </span>
+          <h1 className="vp-step-title">{t("בחרו מגרש")}</h1>
+        </div>
+
+        {venues.length > 6 && (
+          <div className="vp-search">
+            <SearchIcon className="vp-search-icon" aria-hidden="true" />
+            <input
+              type="search"
+              value={venueSearch}
+              onChange={(e) => setVenueSearch(e.target.value)}
+              placeholder={t("חיפוש מגרש או אזור")}
+            />
+          </div>
+        )}
+
+        <div className="vp-list">
+          {areas.map((g) => (
+            <div key={g.key}>
+              <div className="vp-area">{g.key}</div>
+              <div className="vp-cards">
+                {g.items.map((v) => (
+                  <VenueCard
+                    key={v.id}
+                    venue={v}
+                    selected={venueId === v.id}
+                    onChoose={() => goToWhen({ venue: v.id })}
+                    t={t}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+          {filtered.length === 0 && <p className="venue-empty">{t("אין מגרש בשם הזה")}</p>}
+        </div>
+
+        {/* Anywhere that isn't on the list is still allowed — it just doesn't
+            come with a way to book it. And "later" is a real answer too. */}
+        <div className="vp-foot">
+          <button
+            type="button"
+            className="vp-foot-other"
             onClick={() => goToWhen({ venue: null, freeText: true })}
           >
             {t("מקום אחר")}
           </button>
+          <span className="vp-foot-sep" aria-hidden="true" />
           <button
             type="button"
-            className="link-btn venue-escape-skip"
+            className="vp-foot-later"
             onClick={() => goToWhen({ venue: null })}
           >
-            {t("אבחר מקום אחר כך")}
+            {t("אבחר אחר כך")}
           </button>
         </div>
       </div>

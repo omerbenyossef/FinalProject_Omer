@@ -299,7 +299,22 @@ class Venue(Base):
     # Lazuz today, whatever books it tomorrow. Optional: a venue with no link
     # is still worth listing, it just doesn't offer the button.
     booking_url = Column(String, nullable=True)
+    # A picture of the place, as a data URL. In the row and not on disk for the
+    # same reason player photos are: the production filesystem doesn't survive
+    # a deploy, so anything written to it is gone by the next one. Only the
+    # admin can set it; players only ever see it.
+    image = Column(Text, nullable=True)
+    image_updated_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    @property
+    def image_url(self) -> str | None:
+        """Where to fetch this venue's picture, or None. The stamp means a new
+        picture is a new URL, so the answer can be cached forever."""
+        if not self.image:
+            return None
+        stamp = int(self.image_updated_at.timestamp()) if self.image_updated_at else 0
+        return f"/venues/{self.id}/image?v={stamp}"
 
     sport = relationship("Sport")
 

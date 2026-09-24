@@ -1,12 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { api } from "../api";
+import { api, mediaUrl } from "../api";
 import { useLanguage } from "../LanguageContext.jsx";
 import { useSport } from "../SportContext.jsx";
 import Avatar from "../Avatar.jsx";
 import { ChevronIcon, SearchIcon } from "../Icons.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
 import { formatDayMonth } from "../matchUtils.js";
+import { toWideJpeg } from "../imageScale.js";
 
 /* The admin's own screen: everyone in the app, and every league in it —
    including the ones the admin isn't a member of, which is the whole point.
@@ -14,6 +15,12 @@ import { formatDayMonth } from "../matchUtils.js";
    only a courtesy on top of that. */
 
 const TABS = ["users", "leagues", "venues"];
+
+// Two letters standing in for a photograph nobody has taken yet, so every
+// card and row keeps the same shape either way.
+export function initialsOf(name) {
+  return (name || "").trim().slice(0, 2);
+}
 
 function levelText(levels) {
   if (!levels?.length) return "—";
@@ -36,6 +43,7 @@ export default function AdminDirectory() {
   // with an id when editing, an object without one when adding.
   const [venueDraft, setVenueDraft] = useState(null);
   const [confirmingId, setConfirmingId] = useState(null);
+  const imageInputRef = useRef(null);
   const [busyId, setBusyId] = useState(null);
   const [notice, setNotice] = useState("");
 
@@ -64,6 +72,36 @@ export default function AdminDirectory() {
       if (draft.id) await api.updateVenue(draft.id, body);
       else await api.createVenue(body);
       setVenueDraft(null);
+      loadVenues();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function uploadVenueImage(file) {
+    if (!file || !venueDraft?.id) return;
+    setBusyId("venue-image");
+    setError("");
+    try {
+      const saved = await api.setVenueImage(venueDraft.id, await toWideJpeg(file));
+      setVenueDraft({ ...venueDraft, image_url: saved.image_url });
+      loadVenues();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function removeVenueImage() {
+    if (!venueDraft?.id) return;
+    setBusyId("venue-image");
+    setError("");
+    try {
+      await api.deleteVenueImage(venueDraft.id);
+      setVenueDraft({ ...venueDraft, image_url: null });
       loadVenues();
     } catch (err) {
       setError(err.message);
@@ -310,6 +348,56 @@ export default function AdminDirectory() {
                     saveVenue(venueDraft);
                   }}
                 >
+                  {/* Only once the venue exists: the picture belongs to an
+                      id, so a new venue is saved first and given one after. */}
+                  {venueDraft.id && (
+                    <div className="adm-venue-image">
+                      <div className="adm-venue-preview">
+                        {venueDraft.image_url ? (
+                          <img src={mediaUrl(venueDraft.image_url)} alt="" />
+                        ) : (
+                          <span className="adm-venue-initials" dir="auto">
+                            {initialsOf(venueDraft.name)}
+                          </span>
+                        )}
+                      </div>
+                      <div className="adm-venue-image-actions">
+                        <button
+                          type="button"
+                          className="mc-cancel"
+                          disabled={busyId === "venue-image"}
+                          onClick={() => imageInputRef.current?.click()}
+                        >
+                          {busyId === "venue-image"
+                            ? t("מעלה…")
+                            : venueDraft.image_url
+                              ? t("החלפת תמונה")
+                              : t("העלאת תמונה")}
+                        </button>
+                        {venueDraft.image_url && (
+                          <button
+                            type="button"
+                            className="link-btn adm-venue-image-remove"
+                            disabled={busyId === "venue-image"}
+                            onClick={removeVenueImage}
+                          >
+                            {t("הסרה")}
+                          </button>
+                        )}
+                      </div>
+                      <input
+                        ref={imageInputRef}
+                        type="file"
+                        accept="image/*"
+                        hidden
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          e.target.value = "";
+                          uploadVenueImage(file);
+                        }}
+                      />
+                    </div>
+                  )}
                   <input
                     value={venueDraft.name}
                     onChange={(e) => setVenueDraft({ ...venueDraft, name: e.target.value })}
@@ -363,6 +451,15 @@ export default function AdminDirectory() {
                 )
                 .map((v) => (
                   <div className="adm-row" key={v.id}>
+                    <div className="adm-venue-thumb">
+                      {v.image_url ? (
+                        <img src={mediaUrl(v.image_url)} alt="" loading="lazy" />
+                      ) : (
+                        <span className="adm-venue-initials is-small" dir="auto">
+                          {initialsOf(v.name)}
+                        </span>
+                      )}
+                    </div>
                     <div className="adm-row-body">
                       <div className="adm-row-title">
                         <span dir="auto" style={{ unicodeBidi: "isolate" }}>

@@ -309,9 +309,11 @@ MAX_PHOTO_BYTES = 300 * 1024
 PHOTO_TYPES = ("image/jpeg", "image/png", "image/webp")
 
 
-def _decode_data_url(data_url: str) -> tuple[str, bytes]:
+def _decode_data_url(data_url: str, max_bytes: int = MAX_PHOTO_BYTES) -> tuple[str, bytes]:
     """Splits "data:<type>;base64,<payload>" into its media type and bytes,
-    raising a 400 for anything that isn't one of the image types we serve."""
+    raising a 400 for anything that isn't one of the image types we serve.
+    The size ceiling is the caller's: an avatar is a small square, a venue
+    picture is a wide strip, and they have no business sharing a limit."""
     prefix, _, payload = data_url.partition(",")
     if not payload or not prefix.startswith("data:") or not prefix.endswith(";base64"):
         raise HTTPException(status_code=400, detail="קובץ התמונה לא תקין")
@@ -324,7 +326,7 @@ def _decode_data_url(data_url: str) -> tuple[str, bytes]:
         raise HTTPException(status_code=400, detail="קובץ התמונה לא תקין")
     if not raw:
         raise HTTPException(status_code=400, detail="קובץ התמונה לא תקין")
-    if len(raw) > MAX_PHOTO_BYTES:
+    if len(raw) > max_bytes:
         raise HTTPException(status_code=400, detail="התמונה גדולה מדי")
     return media_type, raw
 
