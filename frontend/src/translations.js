@@ -993,6 +993,7 @@ const PAIRS = [
   ["אבחר מקום אחר כך", "I'll pick a place later"],
   ["בדקו מתי המגרש פנוי, ואז בחרו אותו — היום והשעה במסך הבא",
     "Check when a venue is free, then pick it — the day and time come next"],
+  ["הזמן עבר · קבעו זמן חדש", "Time passed · set a new one"],
   ["קבעו זמן", "Set a time"],
   ["קבעו זמן לשחק", "Set a time to play"],
   ["סכמו ביניכם בצ'אט מתי ואיפה, ואז הזינו כאן את הזמן שקבעתם",

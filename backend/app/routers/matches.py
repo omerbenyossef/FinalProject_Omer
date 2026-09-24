@@ -123,6 +123,7 @@ def _auto_confirm_overdue(db: Session) -> None:
     _auto_remind_overdue_matches(db)
     _auto_remind_pending_confirmations(db)
     _auto_remind_pending_proposals(db)
+    _expire_passed_friendly_times(db)
     _auto_void_abandoned_friendlies(db)
 
 
@@ -295,6 +296,75 @@ def _auto_remind_pending_proposals(db: Session) -> None:
                 title_en="A time proposal is waiting",
                 body_en=body_en,
             )
+
+
+def _expire_passed_friendly_times(db: Session) -> None:
+    """A time one player put forward, the other never confirmed, and which has
+    now come and gone. There is nothing left to agree to — confirming it would
+    mean agreeing to an hour that is already behind them, and the server
+    refuses that anyway — so the screen asking for it is a dead end.
+
+    For a friendly the whole thing is let go: nobody is obliged to play it, and
+    a league's schedule doesn't depend on it. The player who proposed the time
+    is told, because from their side a match they arranged simply vanishes."""
+    now = datetime.utcnow()
+    stale = (
+        db.query(models.Match)
+        .filter(
+            models.Match.kind == models.MatchKind.friendly,
+            models.Match.status == models.MatchStatus.pending,
+            models.Match.schedule_confirmed.is_(False),
+            models.Match.scheduled_at.isnot(None),
+            models.Match.scheduled_at < now,
+        )
+        .all()
+    )
+    if not stale:
+        return
+    # scheduled_by is about to be cleared, so note who proposed each one first.
+    proposers = [(match, match.scheduled_by) for match in stale]
+    for match in stale:
+        # Exactly what cancelling a friendly does (see cancel_match): the time
+        # goes, and the match is marked declined — the state every list already
+        # reads as "this one is over". Not a voided match: nothing was ever
+        # agreed here, so there is no match that failed to happen.
+        match.scheduled_at = None
+        match.scheduled_by = None
+        match.schedule_confirmed = False
+        match.schedule_proposed_at = None
+        match.court = None
+        match.venue_id = None
+        match.duration_minutes = None
+        match.time_options.clear()
+        match.invite_status = models.FriendlyInviteStatus.declined
+    db.commit()
+
+    for match, proposer_id in proposers:
+        if proposer_id is None:
+            continue
+        other_id = match.player2_id if proposer_id == match.player1_id else match.player1_id
+        other = db.get(models.User, other_id)
+        name = other.name if other else ""
+        # The other player was the one being nagged to answer; the thing they
+        # were being nagged about no longer exists.
+        resolve_match_notifications(
+            db,
+            other_id,
+            match.id,
+            "ההצעה למשחק פגה — הזמן שהוצע עבר",
+            body_en="The proposed time passed, so the match proposal expired",
+        )
+        notify_user(
+            db,
+            proposer_id,
+            "ההצעה למשחק בוטלה",
+            f"{name} לא אישר/ה את הזמן שהצעת לפני שהוא עבר, אז ההצעה בוטלה",
+            "/profile",
+            type="proposal_expired",
+            match_id=match.id,
+            title_en="Match proposal cancelled",
+            body_en=f"{name} didn't confirm the time before it passed, so the proposal was cancelled",
+        )
 
 
 def _auto_void_abandoned_friendlies(db: Session) -> None:

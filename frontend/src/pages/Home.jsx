@@ -175,6 +175,12 @@ export default function Home() {
     // A time one side put forward and the other hasn't agreed to yet.
     const timeFromMe = match.state === "time_from_me";
     const timeFromThem = match.state === "time_from_them";
+    // A proposed time that has already gone by. There is nothing to confirm —
+    // the server refuses a past time — so the card must not keep asking.
+    // Friendlies are swept away entirely; a league match still has to be
+    // played, so it goes back to arranging one.
+    const staleProposal =
+      (timeFromMe || timeFromThem) && !!scheduled && scheduled.getTime() < Date.now();
     const unsettled = sentInvite || timeFromMe || timeFromThem;
     const dim =
       match.state === "waiting_on_them" || match.state === "no_time" || voided || sentInvite || timeFromMe;
@@ -185,6 +191,8 @@ export default function Home() {
     const label =
       match.state === "played"
         ? t("דווח תוצאה")
+        : staleProposal
+          ? t("הזמן עבר · קבעו זמן חדש")
         : match.state === "no_time"
           ? t("קבעו זמן")
           : timeFromThem
@@ -195,7 +203,7 @@ export default function Home() {
                 ? t("תיאום במחזור אחר")
                 : null;
     const target =
-      match.state === "no_time"
+      match.state === "no_time" || staleProposal
         ? `/matches/${match.id}`
         : match.state === "confirm_mine"
           ? `/matches/${match.id}/confirm`
