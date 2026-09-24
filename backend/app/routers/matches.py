@@ -40,6 +40,28 @@ def _to_naive_utc(dt: datetime) -> datetime:
     return dt
 
 
+def _claim_match(db: Session, match_id: int, values: dict, *still_true) -> bool:
+    """Take a match off the pile before acting on it, and say whether we got it.
+
+    There is no scheduler here: every sweep below runs on every request that
+    reads match data, and the app fires several of those at once when it
+    opens. Each of them used to see the same overdue match, act on it, and
+    tell both players — five identical pushes for one event, and in
+    _auto_confirm_overdue's case two rating changes for one result.
+
+    The update carries the condition that made the match eligible, so only the
+    first caller to reach it changes a row; everyone else gets zero back and
+    leaves it alone. Postgres re-checks the predicate after the row lock, and
+    SQLite serializes writes outright, so on both the claim is exclusive."""
+    claimed = (
+        db.query(models.Match)
+        .filter(models.Match.id == match_id, *still_true)
+        .update(values, synchronize_session=False)
+    )
+    db.commit()
+    return claimed == 1
+
+
 def _auto_confirm_overdue(db: Session) -> None:
     """Opportunistic sweep run on every match read: there's no background
     scheduler, so a match past its auto_confirm_at is finalized lazily the
@@ -62,28 +84,44 @@ def _auto_confirm_overdue(db: Session) -> None:
             # A "match didn't happen" claim nobody answered — there's no
             # score to fall back on (unlike a normal disputed report), so
             # silence resolves it to voided rather than completed.
-            match.status = models.MatchStatus.disputed
-            match.disputed_at = now
-            voided.append(match)
+            values = {
+                models.Match.status: models.MatchStatus.disputed,
+                models.Match.disputed_at: now,
+            }
+            bucket = voided
         elif match.void_reason == "not_played" and match.corrected_sets is not None:
             # The other side said "we did play, here's the score" and got
             # no response — favor that real score over an empty not-played
             # claim, since there's nothing else to silently keep.
-            match.sets = match.corrected_sets
-            match.player1_score = sum(1 for s in match.corrected_sets if s["player1_games"] > s["player2_games"])
-            match.player2_score = sum(1 for s in match.corrected_sets if s["player2_games"] > s["player1_games"])
-            match.void_reason = None
-            match.status = models.MatchStatus.completed
-            match.confirmed_by = None
-            match.confirmed_at = now
-            completed.append(match)
+            values = {
+                models.Match.sets: match.corrected_sets,
+                models.Match.player1_score: sum(
+                    1 for s in match.corrected_sets if s["player1_games"] > s["player2_games"]
+                ),
+                models.Match.player2_score: sum(
+                    1 for s in match.corrected_sets if s["player2_games"] > s["player1_games"]
+                ),
+                models.Match.void_reason: None,
+                models.Match.status: models.MatchStatus.completed,
+                models.Match.confirmed_by: None,
+                models.Match.confirmed_at: now,
+            }
+            bucket = completed
         else:
-            match.status = models.MatchStatus.completed
-            match.confirmed_by = None
-            match.confirmed_at = now
-            completed.append(match)
-    if overdue:
-        db.commit()
+            values = {
+                models.Match.status: models.MatchStatus.completed,
+                models.Match.confirmed_by: None,
+                models.Match.confirmed_at: now,
+            }
+            bucket = completed
+        # Still pending_confirmation, or another request already finalized it —
+        # and running the ratings twice would move both players twice.
+        if _claim_match(
+            db, match.id, values, models.Match.status == models.MatchStatus.pending_confirmation
+        ):
+            db.refresh(match)
+            bucket.append(match)
+    if completed or voided:
         for match in completed:
             update_ratings_for_match(db, match)
             # Neither player asked for this to happen (that's the point of
@@ -154,12 +192,24 @@ def _auto_remind_pending_confirmations(db: Session) -> None:
         )
         .all()
     )
-    for match in waiting:
-        match.confirm_remind_count = (match.confirm_remind_count or 0) + 1
-        match.confirm_reminded_at = now
-    if not waiting:
-        return
-    db.commit()
+    # Claimed on the same condition that selected it, so twelve requests at
+    # once send one reminder rather than twelve.
+    waiting = [
+        match
+        for match in waiting
+        if _claim_match(
+            db,
+            match.id,
+            {
+                models.Match.confirm_remind_count: (match.confirm_remind_count or 0) + 1,
+                models.Match.confirm_reminded_at: now,
+            },
+            or_(
+                models.Match.confirm_reminded_at.is_(None),
+                models.Match.confirm_reminded_at <= threshold,
+            ),
+        )
+    ]
     for match in waiting:
         # Whoever moved last isn't the one being waited on: normally that's the
         # reporter, but once a correction is in it's the reporter who owes the
@@ -210,11 +260,23 @@ def _auto_remind_overdue_matches(db: Session) -> None:
         )
         .all()
     )
-    for match in overdue:
-        match.auto_remind_count = (match.auto_remind_count or 0) + 1
-        match.last_reminded_at = now
+    overdue = [
+        match
+        for match in overdue
+        if _claim_match(
+            db,
+            match.id,
+            {
+                models.Match.auto_remind_count: (match.auto_remind_count or 0) + 1,
+                models.Match.last_reminded_at: now,
+            },
+            or_(
+                models.Match.last_reminded_at.is_(None),
+                models.Match.last_reminded_at <= threshold,
+            ),
+        )
+    ]
     if overdue:
-        db.commit()
         for match in overdue:
             url = f"/leagues/{match.league_id}" if match.league_id else "/profile"
             for player_id in (match.player1_id, match.player2_id):
@@ -260,11 +322,23 @@ def _auto_remind_pending_proposals(db: Session) -> None:
         )
         .all()
     )
-    for match in waiting:
-        match.proposal_remind_count = (match.proposal_remind_count or 0) + 1
-        match.proposal_reminded_at = now
+    waiting = [
+        match
+        for match in waiting
+        if _claim_match(
+            db,
+            match.id,
+            {
+                models.Match.proposal_remind_count: (match.proposal_remind_count or 0) + 1,
+                models.Match.proposal_reminded_at: now,
+            },
+            or_(
+                models.Match.proposal_reminded_at.is_(None),
+                models.Match.proposal_reminded_at <= threshold,
+            ),
+        )
+    ]
     if waiting:
-        db.commit()
         for match in waiting:
             proposer = db.query(models.User).filter(models.User.id == match.scheduled_by).first()
             recipient_id = (
@@ -319,30 +393,37 @@ def _expire_passed_friendly_times(db: Session) -> None:
         )
         .all()
     )
-    if not stale:
-        return
-    # scheduled_by is about to be cleared, so note who proposed each one first.
-    proposers = [(match, match.scheduled_by) for match in stale]
     for match in stale:
+        target, proposer_id = match.id, match.scheduled_by
+        p1, p2 = match.player1_id, match.player2_id
         # Exactly what cancelling a friendly does (see cancel_match): the time
         # goes, and the match is marked declined — the state every list already
         # reads as "this one is over". Not a voided match: nothing was ever
         # agreed here, so there is no match that failed to happen.
-        match.scheduled_at = None
-        match.scheduled_by = None
-        match.schedule_confirmed = False
-        match.schedule_proposed_at = None
-        match.court = None
-        match.venue_id = None
-        match.duration_minutes = None
-        match.time_options.clear()
-        match.invite_status = models.FriendlyInviteStatus.declined
-    db.commit()
+        if not _claim_match(
+            db,
+            target,
+            {
+                models.Match.scheduled_at: None,
+                models.Match.scheduled_by: None,
+                models.Match.schedule_confirmed: False,
+                models.Match.schedule_proposed_at: None,
+                models.Match.court: None,
+                models.Match.venue_id: None,
+                models.Match.duration_minutes: None,
+                models.Match.invite_status: models.FriendlyInviteStatus.declined,
+            },
+            models.Match.scheduled_at.isnot(None),
+        ):
+            continue
+        db.query(models.MatchTimeOption).filter(
+            models.MatchTimeOption.match_id == target
+        ).delete(synchronize_session=False)
+        db.commit()
 
-    for match, proposer_id in proposers:
         if proposer_id is None:
             continue
-        other_id = match.player2_id if proposer_id == match.player1_id else match.player1_id
+        other_id = p2 if proposer_id == p1 else p1
         other = db.get(models.User, other_id)
         name = other.name if other else ""
         # The other player was the one being nagged to answer; the thing they
@@ -350,7 +431,7 @@ def _expire_passed_friendly_times(db: Session) -> None:
         resolve_match_notifications(
             db,
             other_id,
-            match.id,
+            target,
             "ההצעה למשחק פגה — הזמן שהוצע עבר",
             body_en="The proposed time passed, so the match proposal expired",
         )
@@ -361,7 +442,7 @@ def _expire_passed_friendly_times(db: Session) -> None:
             f"{name} לא אישר/ה את הזמן שהצעת לפני שהוא עבר, אז ההצעה בוטלה",
             "/profile",
             type="proposal_expired",
-            match_id=match.id,
+            match_id=target,
             title_en="Match proposal cancelled",
             body_en=f"{name} didn't confirm the time before it passed, so the proposal was cancelled",
         )
@@ -389,12 +470,21 @@ def _auto_void_abandoned_friendlies(db: Session) -> None:
         )
         .all()
     )
-    for match in abandoned:
-        match.status = models.MatchStatus.disputed
-        match.void_reason = "not_played"
-        match.disputed_at = now
+    abandoned = [
+        match
+        for match in abandoned
+        if _claim_match(
+            db,
+            match.id,
+            {
+                models.Match.status: models.MatchStatus.disputed,
+                models.Match.void_reason: "not_played",
+                models.Match.disputed_at: now,
+            },
+            models.Match.status == models.MatchStatus.pending,
+        )
+    ]
     if abandoned:
-        db.commit()
         for match in abandoned:
             for player_id in (match.player1_id, match.player2_id):
                 notify_user(
