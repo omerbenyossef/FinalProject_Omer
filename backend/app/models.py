@@ -52,6 +52,10 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+    # Set when the account is linked to a Google sign-in. Kept alongside the
+    # email rather than instead of it: an email address can change hands, this
+    # cannot, so it is what identifies a returning Google user.
+    google_sub = Column(String, unique=True, index=True, nullable=True)
     reset_token = Column(String, unique=True, index=True, nullable=True)
     reset_token_expires = Column(DateTime, nullable=True)
     deleted_at = Column(DateTime, nullable=True)

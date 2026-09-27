@@ -161,6 +161,12 @@ class UserOut(BaseModel):
         from_attributes = True
 
 
+class GoogleSignIn(BaseModel):
+    """The JWT Google's button handed the browser. Verified server-side."""
+
+    credential: str
+
+
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"

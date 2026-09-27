@@ -59,6 +59,10 @@ async function request(path, { method = "GET", body, auth = true } = {}) {
 export const api = {
   register: (data) => request("/auth/register", { method: "POST", body: data, auth: false }),
   login: (data) => request("/auth/login", { method: "POST", body: data, auth: false }),
+  // The JWT Google's button handed the browser. The server checks its
+  // signature before it means anything.
+  googleSignIn: (credential) =>
+    request("/auth/google", { method: "POST", body: { credential }, auth: false }),
   me: () => request("/auth/me"),
   forgotPassword: (email) =>
     request("/auth/forgot-password", { method: "POST", body: { email }, auth: false }),

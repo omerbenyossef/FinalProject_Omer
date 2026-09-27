@@ -5,12 +5,13 @@ import secrets
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import or_
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from .. import models, schemas
 from ..auth import create_access_token, hash_password, verify_password, get_current_user
 from ..database import get_db
+from ..google_auth import verify_google_id_token
 from ..email_utils import email_configured, send_reset_email
 from ..match_cleanup import purge_match_references
 from ..rating_utils import match_winner_id
@@ -56,6 +57,51 @@ def login(credentials: schemas.UserLogin, db: Session = Depends(get_db)):
     if not user or not verify_password(credentials.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
+    token = create_access_token({"sub": str(user.id)})
+    return schemas.Token(access_token=token, user=user)
+
+
+@router.post("/google", response_model=schemas.Token)
+def google_sign_in(payload: schemas.GoogleSignIn, db: Session = Depends(get_db)):
+    """One door for both signing up and signing in. Which of the two it is
+    depends on whether we have seen this person before, and the answer is worth
+    getting right: a second account for someone who already has one is how a
+    player ended up able to invite themselves to a match.
+
+    So the lookup goes by Google's own subject id first, and falls back to the
+    email — which is how an account that was opened with a password gets
+    adopted by the same person's Google sign-in rather than duplicated."""
+    claims = verify_google_id_token(payload.credential)
+    email = claims["email"].strip()
+
+    user = db.query(models.User).filter(models.User.google_sub == claims["sub"]).first()
+    if not user:
+        user = (
+            db.query(models.User)
+            .filter(func.lower(models.User.email) == email.lower())
+            .first()
+        )
+        if user:
+            # Same verified address, so this is the same person coming in
+            # through a different door. Link, don't duplicate.
+            user.google_sub = claims["sub"]
+
+    if not user:
+        user = models.User(
+            name=(claims.get("name") or email.split("@")[0]).strip(),
+            email=email,
+            google_sub=claims["sub"],
+            # There is no password to store, and the column is NOT NULL in
+            # production. A hash of something nobody knows keeps the schema as
+            # it is and locks the password door, while "forgot password" still
+            # works for anyone who later wants one — it goes to the address
+            # Google just vouched for.
+            hashed_password=hash_password(secrets.token_urlsafe(32)),
+        )
+        db.add(user)
+
+    db.commit()
+    db.refresh(user)
     token = create_access_token({"sub": str(user.id)})
     return schemas.Token(access_token=token, user=user)
 
@@ -279,6 +325,9 @@ def _delete_user_account(db: Session, user: models.User) -> None:
         models.FriendlyInviteLink.inviter_id == user.id, models.FriendlyInviteLink.used.is_(False)
     ).delete(synchronize_session=False)
 
+    # Otherwise signing in with the same Google account would walk straight
+    # back into the account that was just deleted.
+    user.google_sub = None
     user.name = "Deleted user"
     user.email = f"deleted-{user.id}@deleted.rally.local"
     user.hashed_password = hash_password(secrets.token_urlsafe(32))

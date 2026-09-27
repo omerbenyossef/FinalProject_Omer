@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../api";
+import GoogleSignInButton from "../GoogleSignInButton.jsx";
 import { useAuth } from "../AuthContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import { useSplashDone } from "../SplashContext.jsx";
@@ -86,6 +87,11 @@ export default function SignIn() {
           under the splash that sheet comes up over a full-screen logo with
           nothing behind it to fill. */}
       {splashDone && (
+        <>
+          {/* Above the form, because it is the shorter way in and the one most
+              people will take. Inside the splash guard with it, so Google's
+              script isn't asked to draw into a box that is still hidden. */}
+          <GoogleSignInButton onError={(msg) => setFieldErrors({ password: msg })} />
       <form className="signscreen-form" onSubmit={handleSubmit} noValidate>
         <div className="signfield">
           <label className="signfield-label" htmlFor="signin-email" dir="ltr">
@@ -144,6 +150,7 @@ export default function SignIn() {
         </button>
         {slow && <p className="muted signscreen-slow">{t("השרת מתעורר, זה עשוי לקחת עד דקה בפעם הראשונה...")}</p>}
       </form>
+        </>
       )}
 
       <p className="signscreen-footer">

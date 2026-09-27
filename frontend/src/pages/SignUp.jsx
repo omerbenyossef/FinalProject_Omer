@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../api";
+import GoogleSignInButton from "../GoogleSignInButton.jsx";
 import { useAuth } from "../AuthContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 
@@ -85,6 +86,9 @@ export default function SignUp() {
     <div className="signscreen signscreen-signup">
       <h1 className="signscreen-title">{t("שלושה שדות ואתם בפנים")}</h1>
 
+      {/* Above the form, because it is the shorter way in and the one
+          most people will take. */}
+      <GoogleSignInButton onError={(msg) => setFieldErrors({ email: msg })} />
       <form className="signscreen-form" onSubmit={handleSubmit} noValidate>
         <div className="signfield">
           <label className="signfield-label signfield-label-name" htmlFor="signup-name" dir="ltr">

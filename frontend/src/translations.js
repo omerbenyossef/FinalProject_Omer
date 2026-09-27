@@ -994,6 +994,8 @@ const PAIRS = [
   ["בדקו מתי המגרש פנוי, ואז בחרו אותו — היום והשעה במסך הבא",
     "Check when a venue is free, then pick it — the day and time come next"],
   ["הזמן עבר · קבעו זמן חדש", "Time passed · set a new one"],
+  ["לא הצלחנו לטעון את ההתחברות עם גוגל", "We couldn't load Google sign-in"],
+  ["או", "or"],
   ["קבעו זמן", "Set a time"],
   ["קבעו זמן לשחק", "Set a time to play"],
   ["סכמו ביניכם בצ'אט מתי ואיפה, ואז הזינו כאן את הזמן שקבעתם",

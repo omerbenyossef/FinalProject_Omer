@@ -8345,3 +8345,18 @@ button:active { transform: translateY(1px); }
   flex: none; padding: 5px 10px; border: 1px solid rgba(148, 163, 184, .26); border-radius: 8px;
   background: transparent; font: 600 12px "IBM Plex Sans", var(--sans); color: #c9cfdb; cursor: pointer;
 }
+
+/* The way in with a Google account, above the email form on both screens. */
+.gsi { margin-bottom: 4px; }
+.gsi-box { display: flex; justify-content: center; min-height: 44px; }
+.gsi-failed {
+  margin: 8px 0 0; text-align: center;
+  font: 500 12.5px "IBM Plex Sans", var(--sans); color: #8b93a6;
+}
+.gsi-or { margin: 18px 0 14px; display: flex; align-items: center; gap: 12px; }
+.gsi-or span:first-child, .gsi-or span:last-child {
+  flex: 1; height: 1px; background: rgba(148, 163, 184, .18);
+}
+.gsi-or-word {
+  flex: none; font: 500 12px "IBM Plex Sans", var(--sans); color: #6f7787;
+}
