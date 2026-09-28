@@ -15,8 +15,14 @@ import urllib.request
 from fastapi import HTTPException
 from jose import jwt, JWTError
 
-# The same id the button is drawn with, on the browser's side. It is public.
-GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
+# The same id the button is drawn with, on the browser's side. It is public,
+# but it is not decoration: a token is only accepted if Google addressed it to
+# this exact app, which is what stops a token minted for some other site from
+# being replayed here. GOOGLE_CLIENT_ID overrides it.
+GOOGLE_CLIENT_ID = os.environ.get(
+    "GOOGLE_CLIENT_ID",
+    "803410034957-02cud2sjitn1ln67rdt2tup1j90jb8vk.apps.googleusercontent.com",
+)
 
 CERTS_URL = "https://www.googleapis.com/oauth2/v3/certs"
 # Google rotates these keys. An hour is well inside the rotation period and

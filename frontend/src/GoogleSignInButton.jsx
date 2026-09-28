@@ -11,7 +11,13 @@ import { useLanguage } from "./LanguageContext.jsx";
    With no client id configured the whole thing renders nothing, so the app
    works exactly as it did before anyone set one up. */
 
-const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+// Google's own id for this app. It is public by design — it is in the button
+// Google draws, in the page source, and in every request the browser makes —
+// so it lives here rather than in a dashboard nobody remembers to fill in.
+// VITE_GOOGLE_CLIENT_ID overrides it, for anyone running their own copy.
+const CLIENT_ID =
+  import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+  "803410034957-02cud2sjitn1ln67rdt2tup1j90jb8vk.apps.googleusercontent.com";
 const SCRIPT_SRC = "https://accounts.google.com/gsi/client";
 
 function loadScript() {

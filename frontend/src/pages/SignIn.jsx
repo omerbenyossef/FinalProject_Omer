@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../api";
 import GoogleSignInButton from "../GoogleSignInButton.jsx";
 import { useAuth } from "../AuthContext.jsx";
@@ -13,11 +13,19 @@ export default function SignIn() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [slow, setSlow] = useState(false);
-  const { loginWithToken } = useAuth();
+  const { user, loading, loginWithToken } = useAuth();
   const { t } = useLanguage();
   const splashDone = useSplashDone();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+
+  // Whoever is already signed in is done here. The email form navigated by
+  // itself once it had a token, but the Google button only hands one to the
+  // auth context — without this, signing in with Google left the player
+  // logged in and still looking at the sign-in screen.
+  if (!loading && user) {
+    return <Navigate to={searchParams.get("redirect") || "/profile"} replace />;
+  }
 
   const redirectSuffix = searchParams.get("redirect")
     ? `?redirect=${encodeURIComponent(searchParams.get("redirect"))}`
