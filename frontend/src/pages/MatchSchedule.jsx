@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api";
 import MatchSet from "./MatchSet.jsx";
+import FriendlyPending from "./FriendlyPending.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import { useAuth } from "../AuthContext.jsx";
 import { ChevronIcon } from "../Icons.jsx";
@@ -300,6 +301,19 @@ export default function MatchSchedule() {
         )}
       </div>
     );
+  }
+
+  // friendly-pending-185a — a friendly with a time on it that nobody has
+  // answered yet gets its own screen, from either side. League matches keep
+  // the older layout: they carry a round and a deadline this one doesn't say
+  // anything about.
+  if (
+    detail.kind === "friendly" &&
+    (detail.status === "asked_you" || detail.status === "sent") &&
+    !multi &&
+    !proposalExpired
+  ) {
+    return <FriendlyPending detail={detail} matchId={matchId} onChanged={() => navigate(-1)} />;
   }
 
   if (detail.status === "asked_you") {

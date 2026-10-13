@@ -5,7 +5,7 @@ import BookCourtLink from "../BookCourtLink.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import Avatar from "../Avatar.jsx";
 import { ChevronIcon, CloseIcon } from "../Icons.jsx";
-import { weekdayFull } from "../matchUtils.js";
+import { durationLabel, weekdayFull } from "../matchUtils.js";
 import { downloadCalendarFile, matchCalendarFile } from "../calendar.js";
 
 /* match-set-180a — the screen for a match whose time both players have agreed
@@ -38,13 +38,6 @@ function whenLabel(date, t) {
   if (days > 1) return t("בעוד {n} ימים", { n: days });
   if (days === -1) return t("היה אתמול");
   return t("לפני {n} ימים", { n: Math.abs(days) });
-}
-
-function durationLabel(minutes, t) {
-  if (minutes === 60) return t("שעה");
-  if (minutes === 90) return t("שעה וחצי");
-  if (minutes === 120) return t("שעתיים");
-  return t("{n} דקות", { n: minutes });
 }
 
 function formatLabel(detail, t) {

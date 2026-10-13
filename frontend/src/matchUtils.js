@@ -56,6 +56,14 @@ export const MONTH_SHORT = [
 // Weekday and month names follow the language like any other word. Pass `t`
 // wherever the label is shown to a reader; without it these stay Latin (a few
 // internal/sorting uses don't care).
+// "an hour and a half" rather than "90 minutes" — how the players say it.
+export function durationLabel(minutes, t) {
+  if (minutes === 60) return t("שעה");
+  if (minutes === 90) return t("שעה וחצי");
+  if (minutes === 120) return t("שעתיים");
+  return t("{n} דקות", { n: minutes });
+}
+
 export function weekdayName(date, t) {
   const key = WEEKDAY_SHORT[date.getDay()];
   return t ? t(key) : key;

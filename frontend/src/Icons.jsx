@@ -99,6 +99,18 @@ export function CloseIcon(props) {
   );
 }
 
+export function ChatIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" {...props}>
+      <path
+        d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9.8 9.8 0 0 1-2.9-.4L4 21l1.4-3.9A8.2 8.2 0 0 1 3 11.5 8.4 8.4 0 0 1 12 3a8.4 8.4 0 0 1 9 8.5z"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function QuestionIcon(props) {
   return (
     <svg {...common} strokeWidth={2.4} {...props}>

@@ -8483,3 +8483,76 @@ button:active { transform: translateY(1px); }
 @media (max-height: 700px) {
   .gsi { margin-top: 28px; }
 }
+
+/* friendly-pending-185a — a friendly whose time is waiting on an answer. */
+/* The actions belong at the bottom of the screen, so the column has to be as
+   tall as the screen: the viewport less what .content already reserves for the
+   top bar's gap and the dock. (180a's .ms uses a plain 100vh and overshoots by
+   exactly that much.) */
+.fp {
+  display: flex; flex-direction: column;
+  min-height: calc(100vh - 160px);
+  min-height: calc(100dvh - 160px);
+}
+.fp-head { padding: 16px 20px 0; display: flex; align-items: center; gap: 12px; }
+.fp-back { flex: none; padding: 0; border: 0; background: none; cursor: pointer; display: flex; }
+.fp-back svg { width: 22px; height: 22px; stroke: #A3ABBB; stroke-width: 1.9; }
+.fp-head-label { font: 600 15px "IBM Plex Sans Hebrew", var(--sans); color: #C9CFDB; }
+
+.fp-top { margin-top: 34px; padding: 0 20px; display: flex; flex-direction: column; gap: 12px; }
+.fp-status {
+  display: flex; align-items: center; gap: 8px;
+  font: 500 12px "IBM Plex Mono", "IBM Plex Sans", var(--mono);
+  letter-spacing: .04em; color: #F2C14E;
+}
+.fp-status-dot { flex: none; width: 6px; height: 6px; border-radius: 3px; background: #F2C14E; }
+.fp-opp {
+  margin: 0; font: 700 26px "IBM Plex Sans Hebrew", var(--sans); letter-spacing: -.02em;
+  color: #EEF1F7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* One line, always — the date used to wrap under the clock. */
+.fp-when { margin-top: 22px; padding: 0 20px; display: flex; align-items: baseline; gap: 14px; }
+.fp-when-time {
+  flex: none; font: 400 38px/.9 "Anton", sans-serif; color: #EEF1F7; white-space: nowrap;
+}
+.fp-when-date {
+  font: 700 20px "IBM Plex Sans Hebrew", var(--sans); color: #C9CFDB; white-space: nowrap;
+}
+
+.fp-rows { margin: 30px 20px 0; display: flex; flex-direction: column; }
+.fp-row {
+  padding: 14px 0; border-top: 1px solid rgba(148, 163, 184, .14);
+  display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+}
+.fp-row.is-last { border-bottom: 1px solid rgba(148, 163, 184, .14); }
+.fp-row-label { font: 400 13.5px "IBM Plex Sans Hebrew", var(--sans); color: #8B93A6; }
+.fp-row-value {
+  font: 600 13.5px "IBM Plex Sans Hebrew", var(--sans); color: #EEF1F7;
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.fp-row-value.is-empty { color: #69728A; }
+
+.fp-error { margin: 16px 20px 0; }
+/* Deliberately empty: the actions sit at the bottom of the screen. */
+.fp-spacer { flex: 1; min-height: 24px; }
+
+.fp-actions {
+  padding: 0 20px 26px; display: flex; flex-direction: column; align-items: center; gap: 16px;
+}
+.fp-confirm, .fp-chat {
+  width: 100%; height: 52px; border-radius: 26px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font: 700 15.5px "IBM Plex Sans Hebrew", var(--sans);
+}
+.fp-confirm { border: 0; background: #C6F24E; color: #10140A; }
+.fp-chat {
+  gap: 9px; border: 1px solid rgba(148, 163, 184, .26); background: transparent;
+  color: #EEF1F7; font-weight: 600;
+}
+.fp-chat svg { flex: none; }
+.fp-confirm:disabled, .fp-drop:disabled { opacity: .55; cursor: default; }
+.fp-drop {
+  border: 0; background: none; padding: 4px 0; cursor: pointer;
+  font: 600 14px "IBM Plex Sans Hebrew", var(--sans); color: #8B93A6; text-decoration: none;
+}
