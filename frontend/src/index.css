@@ -3495,7 +3495,7 @@ button:active { transform: translateY(1px); }
 /* signin-logo-174a — the tile the user tapped on their home screen a second
    ago, above the name. The block grew, so it starts higher. */
 .signscreen-brand {
-  padding-top: 72px;
+  padding-top: 56px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -3520,12 +3520,20 @@ button:active { transform: translateY(1px); }
 
 /* 44px is what separates a symbol from typography; under ~32px they read as
    one lump. */
-.signscreen-brand .signscreen-wordmark { margin-top: 44px; }
+.signscreen-brand .signscreen-wordmark { margin-top: 36px; }
 .signscreen-brand .signscreen-tagline { margin-top: 16px; }
 
+/* A 667px-tall screen has to hold the brand, the Google button and the form
+   at once. Everything above the button gives a little back rather than the
+   screen scrolling on the smallest phones still in use. */
 @media (max-height: 700px) {
-  .signscreen-brand { padding-top: 48px; }
-  .signscreen-brand .signscreen-wordmark { margin-top: 32px; }
+  .auth-content { padding-top: 16px; padding-bottom: 16px; }
+  .signscreen { gap: 12px; padding-bottom: 8px; }
+  .signscreen-brand { padding-top: 10px; }
+  .signscreen-brand .signscreen-mark { width: 60px; height: 60px; border-radius: 16px; }
+  .signscreen-brand .signscreen-wordmark { margin-top: 14px; font-size: 56px; }
+  .signscreen-brand .signscreen-tagline { margin-top: 10px; }
+  .signscreen-form { margin-top: 16px; gap: 16px; }
 }
 
 .signscreen-signup .signscreen-title {
@@ -3563,6 +3571,7 @@ button:active { transform: translateY(1px); }
 }
 
 .signscreen-form {
+  margin-top: 26px;
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -8347,18 +8356,39 @@ button:active { transform: translateY(1px); }
 }
 
 /* The way in with a Google account, above the email form on both screens. */
-.gsi { margin-bottom: 4px; }
-.gsi-box { display: flex; justify-content: center; min-height: 44px; }
+/* signin-google-184b — our own button in place of Google's iframe. */
+.gsi { margin-top: 40px; }
+/* Google's rendered button, kept only to be clicked. Out of the flow so it
+   can't shift anything, and unreachable so it can't be tabbed into. */
+.gsi-hidden {
+  position: absolute; opacity: 0; pointer-events: none; width: 0; height: 0;
+  overflow: hidden;
+}
+/* Unless it is all we have left, in which case it comes back as itself. */
+.gsi-hidden.is-shown {
+  position: static; opacity: 1; pointer-events: auto; width: auto; height: auto;
+  display: flex; justify-content: center;
+}
+.gbtn {
+  width: 100%; height: 48px; box-sizing: border-box; border: none; border-radius: 24px;
+  background: #1A1F27; color: #EEF1F7; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  font: 600 15px "IBM Plex Sans Hebrew", var(--sans);
+}
+.gbtn:active { background: #232935; }
+.gbtn:disabled { opacity: .55; cursor: default; }
+.gbtn svg { flex: none; }
 .gsi-failed {
   margin: 8px 0 0; text-align: center;
   font: 500 12.5px "IBM Plex Sans", var(--sans); color: #8b93a6;
 }
-.gsi-or { margin: 18px 0 14px; display: flex; align-items: center; gap: 12px; }
+.gsi-or { margin-top: 22px; display: flex; align-items: center; gap: 12px; }
 .gsi-or span:first-child, .gsi-or span:last-child {
   flex: 1; height: 1px; background: rgba(148, 163, 184, .18);
 }
 .gsi-or-word {
-  flex: none; font: 500 12px "IBM Plex Sans", var(--sans); color: #6f7787;
+  flex: none; font: 500 10.5px "IBM Plex Mono", "IBM Plex Sans", var(--mono);
+  letter-spacing: .16em; color: #6F7787; text-transform: uppercase;
 }
 
 /* home-week-empty-183c — the week with nothing in it. */
@@ -8449,3 +8479,7 @@ button:active { transform: translateY(1px); }
 .nm-opt-go svg { width: 17px; height: 17px; }
 .nm-opt-chev { flex: none; color: #6E7176; display: flex; }
 .nm-opt-chev svg { width: 17px; height: 17px; }
+
+@media (max-height: 700px) {
+  .gsi { margin-top: 28px; }
+}
