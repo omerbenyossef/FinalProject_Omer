@@ -12,6 +12,8 @@ import {
   NTRP_STEPS,
   WEEKDAY_SHORT,
   acceptFriendlyInvitation,
+  calendarDaysUntil as daysUntil,
+  dayMonthPadded as dayMonth,
   formatSets,
   monthName,
   weekdayName,
@@ -27,20 +29,6 @@ function activeStep(level) {
     if (Math.abs(step - level) < Math.abs(best - level)) best = step;
   }
   return best;
-}
-
-function dayMonth(date) {
-  return `${String(date.getDate()).padStart(2, "0")}.${String(date.getMonth() + 1).padStart(2, "0")}`;
-}
-
-function startOfDay(date) {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-function daysUntil(date) {
-  return Math.max(0, Math.round((startOfDay(date) - startOfDay(new Date())) / 86400000));
 }
 
 function hhmm(date) {
@@ -145,7 +133,9 @@ export default function Home() {
 
   const metaLine = (() => {
     if (!week) return "";
-    if (matches.length === 0) return `${t("השבוע")} · ${t("אין משחקים")}`;
+    // 183c: the headline right below says "no matches this week" in full, so
+    // the mono row above it is just the period it is talking about.
+    if (matches.length === 0) return t("השבוע");
     const parts = [
       t("השבוע"),
       matches.length === 1 ? t("משחק אחד") : t("{n} משחקים", { n: matches.length }),
@@ -308,20 +298,25 @@ export default function Home() {
   // home-week-empty-170a: a week with nothing to play isn't one stretched
   // empty card — it's the countdown to the next round, what to do meanwhile,
   // and the last result, with only the last block growing.
+  // home-week-empty-183c — a week with nothing in it is not a problem to
+  // explain, it is a prompt. The big "days free" number and the paragraph
+  // about why the diary is empty are gone; what is left is the state, one
+  // action, and the last thing that actually happened.
   function emptyWeek() {
     const nextStart = week?.next_round_starts_at ? new Date(week.next_round_starts_at) : null;
     const days = nextStart ? daysUntil(nextStart) : null;
     const last = week?.last_match ?? null;
-    const near = week?.players_near_level ?? 0;
+    const hasLast = last && (last.opponent_name || (last.my_sets ?? []).length > 0);
 
     return (
       <>
-        {days !== null && (
-          <div className="hw-free" dir="ltr">
-            <span className="hw-free-num">{days}</span>
-            <span className="hw-free-side">
-              <span className="hw-free-label">{days === 1 ? t("יום פנוי") : t("ימים פנויים")}</span>
-              <span className="hw-free-sub">
+        <div className="hwe-head">
+          <div className="hwe-head-text">
+            <h2 className="hwe-title">
+              {t("אין משחקים השבוע")}
+            </h2>
+            {days !== null && (
+              <div className="hwe-next">
                 {days === 0
                   ? t("המחזור הבא מתחיל היום")
                   : days === 1
@@ -330,73 +325,41 @@ export default function Home() {
                         day: weekdayName(nextStart, t),
                         date: dayMonth(nextStart),
                       })}
-              </span>
-            </span>
+              </div>
+            )}
           </div>
-        )}
-
-        <p className="hw-explain">
-          {days !== null
-            ? t("כל משחקי הליגה שלך שוחקו. משחקים חדשים יופיעו כאן כשייפתח המחזור הבא.")
-            : t("כל משחקי הליגה שלך שוחקו. משחקים חדשים יופיעו כאן כשהליגה תפתח מחזור חדש.")}
-        </p>
-
-        <div className="hw-cta-stack">
-          <button type="button" className="hw-cta" onClick={() => navigate("/friendly/new")}>
-            <span className="hw-cta-text">
-              <span className="hw-cta-title">{t("מצא משחק ידידותי")}</span>
-              {near > 0 && week?.my_level != null && (
-                <span className="hw-cta-sub">
-                  {near === 1
-                    ? t("שחקן אחד ברמה {level}", { level: week.my_level.toFixed(1) })
-                    : t("{n} שחקנים ברמה {level}", { n: near, level: week.my_level.toFixed(1) })}
-                </span>
-              )}
-            </span>
-            <span className="hw-cta-go" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
-                <path d="M5 12h13M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </span>
-          </button>
-          <button
-            type="button"
-            className="hw-cta hw-cta--ghost"
-            onClick={() => navigate("/leagues/open")}
-          >
-            <span className="hw-cta-title">{t("עיין בליגות פתוחות")}</span>
-            <span className="hw-cta-chev" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M9 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </span>
+          <button type="button" className="hwe-go" onClick={() => navigate("/new-match")}>
+            {t("קבע משחק")}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true">
+              <path d="M5 12h13M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </button>
         </div>
 
-        {last && (last.opponent_name || (last.my_sets ?? []).length > 0) ? (
-          <div className="hw-last">
-            <div className="hw-last-top" dir="ltr">
-              <span className="hw-last-label">
+        {/* Pinned to the bottom of the diary, against the leagues bar. A player
+            with no history at all has nothing to pin, and gets nothing. */}
+        {hasLast && (
+          <div className="hwe-last">
+            <div className="hwe-last-top" dir="ltr">
+              <span className="hwe-last-label">
                 {t("המשחק האחרון")}
                 {last.round ? ` · ${t("מחזור {n}", { n: last.round })}` : ""}
               </span>
-              <span className="hw-last-rule" />
-              <span className={`hw-last-result${last.won ? " won" : ""}`}>
+              <span className="hwe-last-rule" />
+              <span className={`hwe-last-result${last.won ? " won" : ""}`}>
                 {last.won ? t("ניצחון") : t("הפסד")}
               </span>
             </div>
-            <div className="hw-last-mid">
-              <span className="hw-last-name">
-                {`${t("מול")} `}
-                <span dir="auto" style={{ unicodeBidi: "isolate" }}>
-                  {last.opponent_name}
-                </span>
-              </span>
-              <span className="hw-last-score" dir="ltr">
-                {formatSets(last.my_sets)}
+            <div className="hwe-last-score" dir="ltr">
+              {formatSets(last.my_sets)}
+            </div>
+            <div className="hwe-last-name">
+              {`${t("מול")} `}
+              <span dir="auto" style={{ unicodeBidi: "isolate" }}>
+                {last.opponent_name}
               </span>
             </div>
-            <div className="hw-last-sub">
+            <div className="hwe-last-sub">
               {last.played_at && (
                 <>
                   {weekdayName(new Date(last.played_at), t)} {dayMonth(new Date(last.played_at))}
@@ -413,10 +376,6 @@ export default function Home() {
               {last.ntrp_delta != null &&
                 ` · NTRP ${last.ntrp_delta > 0 ? "+" : "−"}${Math.abs(last.ntrp_delta).toFixed(1)}`}
             </div>
-          </div>
-        ) : (
-          <div className="hw-last hw-last--none">
-            <span className="hw-last-empty">{t("עוד לא שיחקת משחקים")}</span>
           </div>
         )}
       </>

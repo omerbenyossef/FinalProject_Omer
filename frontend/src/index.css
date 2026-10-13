@@ -7044,7 +7044,7 @@ button:active { transform: translateY(1px); }
    can be taller than the space. It scrolls in that case rather than cutting
    the last card in half, and the rhythm tightens first so most phones never
    get there. */
-.hw-diary--empty { gap: 14px; padding-top: 12px; overflow-y: auto; }
+.hw-diary--empty { gap: 0; padding: 18px 22px 22px; overflow: hidden; }
 .hw-free { flex: none; display: flex; align-items: flex-end; gap: 14px; }
 .hw-free-num {
   font: 400 76px/.82 "Anton", var(--display); letter-spacing: -.01em; color: #C6F24E;
@@ -7132,7 +7132,7 @@ button:active { transform: translateY(1px); }
    has to scroll. Must come after the rules it overrides — the blocks above
    set font shorthands. */
 @media (max-height: 830px) {
-  .hw-diary--empty { gap: 10px; padding-top: 8px; }
+  .hw-diary--empty { gap: 0; padding-top: 12px; }
   .hw-free-num { font-size: 62px; }
   .hw-free-label { font-size: 21px; }
   .hw-free { gap: 12px; }
@@ -8360,3 +8360,92 @@ button:active { transform: translateY(1px); }
 .gsi-or-word {
   flex: none; font: 500 12px "IBM Plex Sans", var(--sans); color: #6f7787;
 }
+
+/* home-week-empty-183c — the week with nothing in it. */
+.hwe-head {
+  flex: none; margin-top: 18px; display: flex; flex-direction: column;
+  align-items: flex-start; gap: 18px;
+}
+.hwe-head-text { display: flex; flex-direction: column; gap: 8px; }
+.hwe-title {
+  margin: 0; font: 400 26px/1 "Anton", sans-serif; letter-spacing: .01em; color: #F2F2EF;
+}
+.hwe-next {
+  font: 500 11.5px "IBM Plex Mono", monospace; letter-spacing: .08em; color: #84878C;
+  text-transform: uppercase;
+}
+.hwe-go {
+  height: 48px; padding: 0 20px 0 22px; border: 0; border-radius: 24px;
+  background: #C6F24E; color: #0F1113; cursor: pointer;
+  display: flex; align-items: center; gap: 10px;
+  font: 700 15px "IBM Plex Sans Hebrew", var(--sans);
+}
+.hwe-go svg { width: 17px; height: 17px; flex: none; }
+
+/* Pinned to the bottom of the diary. */
+.hwe-last {
+  flex: none; margin-top: auto; padding: 15px 18px; background: #181B1F; border-radius: 18px;
+  display: flex; flex-direction: column; justify-content: center; gap: 10px;
+}
+.hwe-last-top { display: flex; align-items: center; gap: 9px; }
+.hwe-last-label {
+  font: 500 11px "IBM Plex Mono", monospace; letter-spacing: .16em; color: #6E7176;
+  text-transform: uppercase; white-space: nowrap;
+}
+.hwe-last-rule { flex: 1; height: 1px; background: rgba(242, 242, 239, .12); }
+.hwe-last-result {
+  font: 500 11px "IBM Plex Mono", monospace; letter-spacing: .08em; color: #84878C;
+  text-transform: uppercase; white-space: nowrap;
+}
+.hwe-last-result.won { color: #C6F24E; }
+.hwe-last-score {
+  font: 500 17px "IBM Plex Mono", monospace; letter-spacing: .02em; color: #F2F2EF;
+}
+.hwe-last-name {
+  font: 700 18px "IBM Plex Sans Hebrew", var(--sans); color: #F2F2EF;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.hwe-last-sub {
+  font: 500 11px "IBM Plex Mono", monospace; letter-spacing: .06em; color: #84878C;
+  text-transform: uppercase;
+}
+
+/* 183b — the screen the button opens. */
+.nm {
+  min-height: 100dvh; background: #0F1113; color: #F2F2EF;
+  padding: 22px 22px 30px; display: flex; flex-direction: column; gap: 28px;
+}
+.nm-back {
+  width: 40px; height: 40px; margin-inline-start: -8px; flex: none;
+  border: 0; background: none; padding: 0; cursor: pointer; color: #C9CBCD;
+  display: flex; align-items: center; justify-content: center;
+}
+.nm-back svg { width: 20px; height: 20px; }
+.nm-head { display: flex; flex-direction: column; gap: 8px; }
+.nm-title { margin: 0; font: 400 44px/.92 "Anton", sans-serif; letter-spacing: .01em; }
+.nm-sub {
+  margin: 0; font: 500 11.5px "IBM Plex Mono", monospace; letter-spacing: .08em;
+  color: #84878C; text-transform: uppercase;
+}
+.nm-options { display: flex; flex-direction: column; gap: 10px; }
+.nm-opt {
+  width: 100%; padding: 18px; border: 0; border-radius: 18px; background: #181B1F;
+  color: inherit; cursor: pointer; text-align: start;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.nm-opt--ghost { background: transparent; border: 1px solid rgba(242, 242, 239, .14); }
+.nm-opt-text { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.nm-opt-title { font: 700 17px "IBM Plex Sans Hebrew", var(--sans); color: #F2F2EF; }
+.nm-opt--ghost .nm-opt-title { font-weight: 600; font-size: 16px; color: #C9CBCD; }
+.nm-opt-sub {
+  font: 500 11px "IBM Plex Mono", monospace; letter-spacing: .06em; color: #84878C;
+  text-transform: uppercase;
+}
+.nm-opt--ghost .nm-opt-sub { color: #6E7176; }
+.nm-opt-go {
+  flex: none; width: 36px; height: 36px; border-radius: 18px; background: #C6F24E;
+  color: #0F1113; display: flex; align-items: center; justify-content: center;
+}
+.nm-opt-go svg { width: 17px; height: 17px; }
+.nm-opt-chev { flex: none; color: #6E7176; display: flex; }
+.nm-opt-chev svg { width: 17px; height: 17px; }

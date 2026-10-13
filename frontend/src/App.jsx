@@ -32,6 +32,7 @@ import Settings from "./pages/Settings.jsx";
 import HeadToHead from "./pages/HeadToHead.jsx";
 import PlayerProfile from "./pages/PlayerProfile.jsx";
 import ProposeSchedule from "./pages/ProposeSchedule.jsx";
+import NewMatch from "./pages/NewMatch.jsx";
 import MatchSchedule from "./pages/MatchSchedule.jsx";
 import MatchChat from "./pages/MatchChat.jsx";
 import ConfirmResult from "./pages/ConfirmResult.jsx";
@@ -161,6 +162,16 @@ export default function App() {
           element={
             <ProtectedRoute>
               <LeaguePreview />
+            </ProtectedRoute>
+          }
+        />
+        {/* 183b — the two ways to get a match when the league isn't offering
+            one. Its own screen, reached from the empty week. */}
+        <Route
+          path="/new-match"
+          element={
+            <ProtectedRoute>
+              <NewMatch />
             </ProtectedRoute>
           }
         />

@@ -25,6 +25,23 @@ export function formatDayMonth(date) {
   return `${date.getDate()}.${date.getMonth() + 1}`;
 }
 
+// "09.09" — zero padded, for the places that line dates up in a mono column.
+export function dayMonthPadded(date) {
+  return `${String(date.getDate()).padStart(2, "0")}.${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+// Whole days between today and a date, counting by the calendar rather than
+// by the clock: today is 0, tomorrow is 1. Distinct from daysUntil above,
+// which answers "how many days left" and gives null once the day has come.
+export function calendarDaysUntil(date) {
+  const floor = (d) => {
+    const copy = new Date(d);
+    copy.setHours(0, 0, 0, 0);
+    return copy;
+  };
+  return Math.max(0, Math.round((floor(date) - floor(new Date())) / 86400000));
+}
+
 export function formatDayMonthTime(date) {
   const h = String(date.getHours()).padStart(2, "0");
   const m = String(date.getMinutes()).padStart(2, "0");

@@ -25,6 +25,9 @@ export default function Layout({ children }) {
   // ranks-entry-173: the rankings are pushed over the profile, not a tab —
   // the only way out is back.
   const isRanks = location.pathname === "/ranks";
+  // 183b: a screen that asks one question and offers two answers, reached from
+  // the home screen and left by its own back arrow.
+  const isNewMatch = location.pathname === "/new-match";
 
   if (isAuthRoute) {
     return <main className="content auth-content">{children}</main>;
@@ -84,7 +87,7 @@ export default function Layout({ children }) {
       {user && <InstallPrompt />}
       {user && <PushPrompt />}
       <main className="content">{children}</main>
-      {user && location.pathname !== "/ops" && !isJoinPreview && !isRanks && (
+      {user && location.pathname !== "/ops" && !isJoinPreview && !isRanks && !isNewMatch && (
         <nav className="tabbar">
           <div className="tabbar-row">
             <div className={`tabbar-inner${openAction ? "" : " wide"}`}>
