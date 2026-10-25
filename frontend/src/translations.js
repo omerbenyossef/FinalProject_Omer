@@ -1009,6 +1009,7 @@ const PAIRS = [
   ["{name} לא יקבל/תקבל את הזמן הזה, ותוכלו לסכם זמן אחר בצ'אט.", "{name} won't get this time, and the two of you can agree another in the chat."],
   ["כן, בטל את ההצעה", "Yes, cancel it"],
   ["השאר אותה", "Keep it"],
+  ["נסגר היום", "Closes today"],
   ["קבעו זמן", "Set a time"],
   ["קבעו זמן לשחק", "Set a time to play"],
   ["סכמו ביניכם בצ'אט מתי ואיפה, ואז הזינו כאן את הזמן שקבעתם",

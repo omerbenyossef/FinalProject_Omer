@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api";
 import MatchSet from "./MatchSet.jsx";
-import FriendlyPending from "./FriendlyPending.jsx";
+import MatchPending from "./MatchPending.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import { useAuth } from "../AuthContext.jsx";
 import { ChevronIcon } from "../Icons.jsx";
@@ -303,17 +303,13 @@ export default function MatchSchedule() {
     );
   }
 
-  // friendly-pending-185a — a friendly with a time on it that nobody has
-  // answered yet gets its own screen, from either side. League matches keep
-  // the older layout: they carry a round and a deadline this one doesn't say
-  // anything about.
-  if (
-    detail.kind === "friendly" &&
-    (detail.status === "asked_you" || detail.status === "sent") &&
-    !multi &&
-    !proposalExpired
-  ) {
-    return <FriendlyPending detail={detail} matchId={matchId} onChanged={() => navigate(-1)} />;
+  // friendly-pending-185a — a time on a match that nobody has answered yet
+  // gets its own screen, from either side, league or friendly. Two states
+  // stay behind: several times offered at once, which needs a list to pick
+  // from, and a time that has already passed, which needs its own sentence
+  // rather than a confirm button for an hour that is gone.
+  if ((detail.status === "asked_you" || detail.status === "sent") && !multi && !proposalExpired) {
+    return <MatchPending detail={detail} matchId={matchId} onChanged={() => navigate(-1)} />;
   }
 
   if (detail.status === "asked_you") {

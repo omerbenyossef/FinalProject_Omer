@@ -3,10 +3,19 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { useLanguage } from "../LanguageContext.jsx";
 import { ChatIcon, ChevronIcon } from "../Icons.jsx";
-import { durationLabel, formatDayMonth, weekdayFull } from "../matchUtils.js";
+import {
+  daysWord,
+  durationLabel,
+  formatDayMonth,
+  roundDueDateObj,
+  weekdayFull,
+} from "../matchUtils.js";
 
-/* friendly-pending-185a — a friendly whose time one player has put down and
-   the other hasn't answered yet.
+/* friendly-pending-185a — a match whose time one player has put down and the
+   other hasn't answered yet. Written for friendlies and since taken over by
+   league matches too, which carry two more things worth knowing before you
+   agree to a time: which round it settles, and how long that round has left.
+   The CSS keeps the fp- prefix it was born with.
 
    The screen it replaces broke the date across two lines and ran the status
    and the way out together on one ("waiting · cancel"), which made cancelling
@@ -18,7 +27,7 @@ function hhmm(date) {
   return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
 }
 
-export default function FriendlyPending({ detail, matchId, onChanged }) {
+export default function MatchPending({ detail, matchId, onChanged }) {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
@@ -30,6 +39,14 @@ export default function FriendlyPending({ detail, matchId, onChanged }) {
   // "asked_you" is the other player's time waiting on me; "sent" is mine
   // waiting on them.
   const mineToAnswer = detail.status === "asked_you";
+  // A league match is played inside a round that closes; a friendly answers
+  // to nobody's calendar but theirs.
+  const roundEnd = detail.round_number
+    ? roundDueDateObj(detail.schedule_started_at, detail.round_number, detail.round_length_days || 7)
+    : null;
+  const daysLeft = roundEnd
+    ? Math.max(0, Math.ceil((roundEnd.getTime() - Date.now()) / 86400000))
+    : null;
 
   async function run(fn, after) {
     setBusy(true);
@@ -49,7 +66,9 @@ export default function FriendlyPending({ detail, matchId, onChanged }) {
         <button type="button" className="fp-back" onClick={() => navigate(-1)} aria-label={t("חזרה")}>
           <ChevronIcon aria-hidden="true" />
         </button>
-        <span className="fp-head-label">{t("משחק ידידותי")}</span>
+        <span className="fp-head-label" dir="auto" style={{ unicodeBidi: "isolate" }}>
+          {detail.kind === "friendly" ? t("משחק ידידותי") : detail.league_name}
+        </span>
       </div>
 
       <div className="fp-top">
@@ -89,10 +108,28 @@ export default function FriendlyPending({ detail, matchId, onChanged }) {
             {detail.venue?.name || detail.court || t("לא נקבע")}
           </span>
         </div>
-        <div className="fp-row is-last">
+        <div className={`fp-row${detail.round_number ? "" : " is-last"}`}>
           <span className="fp-row-label">{t("משך")}</span>
           <span className="fp-row-value">{durationLabel(detail.duration_minutes || 60, t)}</span>
         </div>
+        {/* Only a league match has one, and it is the thing that makes the
+            answer urgent: the round closes whether or not they played. */}
+        {detail.round_number && (
+          <div className="fp-row is-last">
+            <span className="fp-row-label">{t("מחזור")}</span>
+            <span className="fp-row-value">
+              {detail.round_number}
+              {daysLeft !== null && (
+                <span className="fp-row-after">
+                  {" · "}
+                  {daysLeft === 0
+                    ? t("נסגר היום")
+                    : `${t("נסגר בעוד")} ${daysLeft} ${daysWord(daysLeft, t)}`}
+                </span>
+              )}
+            </span>
+          </div>
+        )}
       </div>
 
       {error && <p className="fp-error error">{t(error)}</p>}
