@@ -182,6 +182,14 @@ export default function SignUp() {
         <button type="submit" className="btn-bright" disabled={submitting}>
           {submitting ? t("נרשם...") : t("פתיחת חשבון")}
         </button>
+
+        {/* The moment consent is actually given, so this is where it is said. */}
+        <p className="signscreen-consent">
+          {t("בהרשמה אני מאשר/ת את")}{" "}
+          <Link to="/terms">{t("תנאי השימוש")}</Link>
+          {" "}{t("ואת")}{" "}
+          <Link to="/privacy">{t("מדיניות הפרטיות")}</Link>
+        </p>
         {slow && <p className="muted signscreen-slow">{t("השרת מתעורר, זה עשוי לקחת עד דקה בפעם הראשונה...")}</p>}
       </form>
 

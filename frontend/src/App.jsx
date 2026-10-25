@@ -33,6 +33,7 @@ import HeadToHead from "./pages/HeadToHead.jsx";
 import PlayerProfile from "./pages/PlayerProfile.jsx";
 import ProposeSchedule from "./pages/ProposeSchedule.jsx";
 import NewMatch from "./pages/NewMatch.jsx";
+import LegalPage from "./pages/LegalPage.jsx";
 import MatchSchedule from "./pages/MatchSchedule.jsx";
 import MatchChat from "./pages/MatchChat.jsx";
 import ConfirmResult from "./pages/ConfirmResult.jsx";
@@ -100,6 +101,11 @@ export default function App() {
       <Layout>
       <Routes>
         <Route path="/" element={<Navigate to="/profile" replace />} />
+        {/* Readable without an account: Google checks them before it will
+            publish the sign-in, and someone deciding whether to join has to be
+            able to read them before they have an account to read them with. */}
+        <Route path="/privacy" element={<LegalPage doc="privacy" />} />
+        <Route path="/terms" element={<LegalPage doc="terms" />} />
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
         {/* Protected on purpose: a friend with no account is bounced to

@@ -9,7 +9,7 @@ import InstallPrompt from "./InstallPrompt.jsx";
 import PushPrompt from "./PushPrompt.jsx";
 import Onboarding from "./Onboarding.jsx";
 
-const AUTH_PATHS = ["/signin", "/signup", "/forgot-password", "/reset-password"];
+const AUTH_PATHS = ["/signin", "/signup", "/forgot-password", "/reset-password", "/privacy", "/terms"];
 
 export default function Layout({ children }) {
   const { user } = useAuth();

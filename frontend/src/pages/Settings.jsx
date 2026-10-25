@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
@@ -120,6 +120,12 @@ export default function Settings() {
       <div className="settings-section">
         <LeaveLeagueRow />
         <EndActionsRow onLogout={handleLogout} />
+      </div>
+
+      <div className="settings-legal">
+        <Link to="/privacy">{t("מדיניות פרטיות")}</Link>
+        <span aria-hidden="true">·</span>
+        <Link to="/terms">{t("תנאי שימוש")}</Link>
       </div>
 
       <div className="settings-footer">{t("SAVED AUTOMATICALLY")}</div>
