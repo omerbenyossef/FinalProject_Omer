@@ -319,10 +319,12 @@ export default function AdminDirectory() {
           ) : tab === "leagues" ? (
             <div className="adm-rows">
               {leagues.map((l) => (
-                <Link to={`/leagues/${l.id}`} className="adm-row" key={l.id}>
+                <Link to={`/leagues/${l.id}`} className="adm-row adm-row--lg" key={l.id}>
                   <div className="adm-row-body">
                     <div className="adm-row-title">
-                      <span dir="auto" style={{ unicodeBidi: "isolate" }}>{l.name}</span>
+                      <span className="adm-lg-name" dir="auto" style={{ unicodeBidi: "isolate" }}>
+                        {l.name}
+                      </span>
                       <span className={`adm-badge${l.is_open ? " open" : ""}`}>
                         {l.is_open ? t("ציבורית") : t("פרטית")}
                       </span>
@@ -333,14 +335,37 @@ export default function AdminDirectory() {
                         name: l.creator_name || "—",
                       })}
                     </div>
-                    <div className="adm-row-meta" dir="ltr">
-                      {l.member_count}
-                      {l.capacity != null ? `/${l.capacity}` : ""} {t("שחקנים")} ·{" "}
-                      {l.matches_played}/{l.matches_total} {t("שוחקו")}
-                      {l.level_min != null && l.level_max != null
-                        ? ` · NTRP ${l.level_min.toFixed(1)}–${l.level_max.toFixed(1)}`
-                        : ""}
-                      {l.created_at ? ` · ${formatDayMonth(new Date(l.created_at))}` : ""}
+                    {/* No dir="ltr" here: the line is half Hebrew, and forcing
+                        LTR on it scrambles the order. Each part is isolated
+                        instead, so the parts stay in the order written and
+                        each one reads the right way round inside itself. */}
+                    <div className="adm-row-meta">
+                      <span className="adm-lg-stat" dir="auto">
+                        {t("{n} שחקנים", { n: l.member_count })}
+                      </span>
+                      {" · "}
+                      <span className="adm-lg-stat" dir="auto">
+                        {t("{played}/{total} שוחקו", {
+                          played: l.matches_played,
+                          total: l.matches_total,
+                        })}
+                      </span>
+                      {l.level_min != null && l.level_max != null ? (
+                        <>
+                          {" · "}
+                          <span className="adm-lg-stat" dir="ltr">
+                            {`NTRP ${l.level_min.toFixed(1)}–${l.level_max.toFixed(1)}`}
+                          </span>
+                        </>
+                      ) : null}
+                      {l.created_at ? (
+                        <>
+                          {" · "}
+                          <span className="adm-lg-stat" dir="ltr">
+                            {formatDayMonth(new Date(l.created_at))}
+                          </span>
+                        </>
+                      ) : null}
                     </div>
                   </div>
                   <ChevronIcon className="adm-row-chev chevron-icon" aria-hidden="true" />

@@ -7998,7 +7998,46 @@ button:active { transform: translateY(1px); }
   margin-top: 3px; font: 500 11.5px "IBM Plex Mono", monospace; color: #6f7787;
   font-variant-numeric: tabular-nums;
 }
-.adm-row-chev { flex: none; color: #4b5261; }
+.adm-row-chev { flex: none; width: 16px; height: 16px; stroke-width: 2; color: #5b6375; }
+
+/* 186a — the leagues list.
+   The chevron is an <svg> with a viewBox and no width/height, so it has no
+   intrinsic size: `flex: none` resolved its basis from content and it laid
+   out at the SVG default, eating the row and squeezing the text column into
+   one word per line. The width/height above is the whole fix. */
+.adm-row--lg {
+  gap: 14px; padding: 16px 0;
+  border-bottom: 0; border-top: 1px solid rgba(148, 163, 184, .14);
+}
+.adm-row--lg:last-of-type { border-bottom: 1px solid rgba(148, 163, 184, .14); }
+.adm-row--lg .adm-row-body { display: flex; flex-direction: column; gap: 6px; }
+.adm-row--lg .adm-row-title { gap: 8px; font-size: 16px; }
+.adm-lg-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.adm-row--lg .adm-row-sub {
+  margin-top: 0; font: 400 13px "IBM Plex Sans", var(--sans); color: #a3abbb;
+}
+.adm-row--lg .adm-row-meta {
+  /* The spec says `align-self: flex-end` "so it sits on the right in RTL",
+     but in a column flex box the cross axis follows the writing direction:
+     flex-end is the LEFT in RTL. flex-start is what hugs the reading-start
+     edge — the right in Hebrew, the left in English — which is the intent. */
+  margin-top: 0; align-self: flex-start; max-width: 100%;
+  /* .04em, not the spec's .06em: at .06em the English line is 7px too wide
+     for a 390px phone and wraps on every row. */
+  font: 500 11px/1.5 "IBM Plex Mono", monospace; letter-spacing: .04em; color: #8b93a6;
+}
+/* The line is one line wherever it fits. On a narrow phone in English it does
+   not, and a second line is better than an ellipsis that eats the date — but
+   it may only break between the parts, never inside one. */
+.adm-lg-stat { unicode-bidi: isolate; white-space: nowrap; }
+.adm-row--lg .adm-badge {
+  padding: 3px 7px; border: 1px solid transparent; border-radius: 5px;
+  background: #1f242d; color: #a3abbb;
+  font: 600 10px "IBM Plex Mono", monospace; letter-spacing: .1em;
+}
+.adm-row--lg .adm-badge.open {
+  background: transparent; border-color: rgba(198, 242, 78, .35); color: #c6f24e;
+}
 
 .adm-badge {
   flex: none; padding: 1px 6px; border-radius: 5px; background: #262c36; color: #a3abbb;
