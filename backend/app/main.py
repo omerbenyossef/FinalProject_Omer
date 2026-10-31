@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 
 from fastapi import FastAPI
@@ -308,11 +309,56 @@ def backfill_rating_samples() -> None:
 
 backfill_rating_samples()
 
+
+def normalize_emails() -> None:
+    """Addresses used to be stored however they were typed, which let the same
+    person hold two accounts and let a capital letter impersonate the admin.
+    They are lowered on the way in now; these are the rows that predate that.
+    A pair that would collide is left alone — merging two accounts is not
+    something a boot-time sweep should decide."""
+    db = SessionLocal()
+    try:
+        users = db.query(models.User).all()
+        taken = {u.email.strip().lower() for u in users}
+        for user in users:
+            lowered = user.email.strip().lower()
+            if lowered == user.email:
+                continue
+            if sum(1 for u in users if u.email.strip().lower() == lowered) > 1:
+                print(f"[startup] two accounts share {lowered}; left as they are")
+                continue
+            user.email = lowered
+        db.commit()
+    finally:
+        db.close()
+
+
+normalize_emails()
+
 app = FastAPI(title="Amateur Sports League API")
+
+# A browser will send a request from any page to any origin; what it will not
+# do is let that page READ the answer unless the answer says it may. "*" said
+# every page may, which is only harmless for as long as every endpoint is
+# either public or guarded by a header the attacking page cannot set. That is
+# a promise about the whole API, kept by hand, forever — cheaper to name the
+# two origins that are actually ours.
+DEFAULT_ORIGINS = [
+    "https://final-project-omer-chi.vercel.app",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get("ALLOWED_ORIGINS", ",".join(DEFAULT_ORIGINS)).split(",")
+    if origin.strip()
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
+    # Vercel gives every deploy its own preview URL; they are all ours.
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_methods=["*"],
     allow_headers=["*"],
 )

@@ -4,16 +4,23 @@ import os
 import secrets
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from .. import models, schemas
-from ..auth import create_access_token, hash_password, verify_password, get_current_user
+from ..auth import (
+    create_access_token,
+    get_current_user,
+    hash_password,
+    normalize_email,
+    verify_password,
+)
 from ..database import get_db
 from ..google_auth import fetch_profile_photo, verify_google_id_token
 from ..email_utils import email_configured, send_reset_email
 from ..match_cleanup import purge_match_references
+from ..rate_limit import client_ip, forget, hit, limiter
 from ..rating_utils import match_winner_id
 from .matches import _auto_confirm_overdue
 
@@ -21,24 +28,29 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 RESET_TOKEN_EXPIRE_HOURS = 1
 
-# There is no working way to send mail yet, so the address on a reset request
-# is identification and not verification: if it names an account, the token
-# comes straight back in the reply and the client goes on to set a new
-# password. Anyone who knows a registered address can therefore reset that
-# account, and the reply says whether an address is registered. Set
-# PASSWORD_RESET_WITHOUT_EMAIL=0 once mail works to restore the emailed link.
-RESET_WITHOUT_EMAIL = os.environ.get("PASSWORD_RESET_WITHOUT_EMAIL", "1") != "0"
+# Handing the reset token back in the reply makes the address identification
+# rather than verification: anyone who knows a registered address can take the
+# account over, and the reply says which addresses are registered. That is only
+# ever acceptable on a developer's machine, so it is off unless switched on,
+# and it is never switched on by the mere absence of mail credentials — if mail
+# is not configured the reset simply cannot be done, which is the lesser harm.
+RESET_WITHOUT_EMAIL = os.environ.get("PASSWORD_RESET_WITHOUT_EMAIL", "0") == "1"
 
 
-@router.post("/register", response_model=schemas.Token)
+@router.post(
+    "/register",
+    response_model=schemas.Token,
+    dependencies=[Depends(limiter("register", 10, 3600))],
+)
 def register(user_in: schemas.UserCreate, db: Session = Depends(get_db)):
-    existing = db.query(models.User).filter(models.User.email == user_in.email).first()
+    email = normalize_email(user_in.email)
+    existing = db.query(models.User).filter(func.lower(models.User.email) == email).first()
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
 
     user = models.User(
         name=user_in.name,
-        email=user_in.email,
+        email=email,
         hashed_password=hash_password(user_in.password),
         area=user_in.area,
         travel_radius_km=user_in.travel_radius_km,
@@ -52,16 +64,32 @@ def register(user_in: schemas.UserCreate, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=schemas.Token)
-def login(credentials: schemas.UserLogin, db: Session = Depends(get_db)):
-    user = db.query(models.User).filter(models.User.email == credentials.email).first()
+def login(request: Request, credentials: schemas.UserLogin, db: Session = Depends(get_db)):
+    # Two buckets: one stops a single machine working through many accounts,
+    # the other stops many machines working through one account. Both are
+    # generous enough that a person who has forgotten which password they used
+    # will never meet them.
+    email = normalize_email(credentials.email)
+    by_caller = f"login-ip:{client_ip(request)}"
+    by_account = f"login-email:{email}"
+    hit(by_caller, 20, 900)
+    hit(by_account, 10, 900)
+
+    user = db.query(models.User).filter(func.lower(models.User.email) == email).first()
     if not user or not verify_password(credentials.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
+    forget(by_caller)
+    forget(by_account)
     token = create_access_token({"sub": str(user.id)})
     return schemas.Token(access_token=token, user=user)
 
 
-@router.post("/google", response_model=schemas.Token)
+@router.post(
+    "/google",
+    response_model=schemas.Token,
+    dependencies=[Depends(limiter("google", 30, 3600))],
+)
 def google_sign_in(payload: schemas.GoogleSignIn, db: Session = Depends(get_db)):
     """One door for both signing up and signing in. Which of the two it is
     depends on whether we have seen this person before, and the answer is worth
@@ -72,7 +100,7 @@ def google_sign_in(payload: schemas.GoogleSignIn, db: Session = Depends(get_db))
     email — which is how an account that was opened with a password gets
     adopted by the same person's Google sign-in rather than duplicated."""
     claims = verify_google_id_token(payload.credential)
-    email = claims["email"].strip()
+    email = normalize_email(claims["email"])
 
     # Google sends the player's own photo along with their name. Taking it
     # means everyone who signs in this way arrives with a face rather than two
@@ -82,7 +110,7 @@ def google_sign_in(payload: schemas.GoogleSignIn, db: Session = Depends(get_db))
     if not user:
         user = (
             db.query(models.User)
-            .filter(func.lower(models.User.email) == email.lower())
+            .filter(func.lower(models.User.email) == email)
             .first()
         )
         if user:
@@ -271,11 +299,12 @@ def change_email(
     if not verify_password(payload.current_password, current_user.hashed_password):
         raise HTTPException(status_code=400, detail="הסיסמה הנוכחית שגויה")
 
-    existing = db.query(models.User).filter(models.User.email == payload.new_email).first()
+    new_email = normalize_email(payload.new_email)
+    existing = db.query(models.User).filter(func.lower(models.User.email) == new_email).first()
     if existing and existing.id != current_user.id:
         raise HTTPException(status_code=400, detail="האימייל הזה כבר בשימוש")
 
-    current_user.email = payload.new_email
+    current_user.email = new_email
     db.commit()
     db.refresh(current_user)
     return current_user
@@ -420,33 +449,42 @@ def delete_my_photo(
     return current_user
 
 
-@router.post("/forgot-password", response_model=schemas.ForgotPasswordOut)
+@router.post(
+    "/forgot-password",
+    response_model=schemas.ForgotPasswordOut,
+    dependencies=[Depends(limiter("forgot", 5, 3600))],
+)
 def forgot_password(payload: schemas.ForgotPasswordRequest, db: Session = Depends(get_db)):
     # Also on when mail simply isn't configured, so the flow can't dead-end
     # into a link that was never sent.
-    hand_back_token = RESET_WITHOUT_EMAIL or not email_configured()
-    user = db.query(models.User).filter(models.User.email == payload.email).first()
+    user = (
+        db.query(models.User)
+        .filter(func.lower(models.User.email) == normalize_email(payload.email))
+        .first()
+    )
     if user:
         user.reset_token = secrets.token_urlsafe(32)
         user.reset_token_expires = datetime.utcnow() + timedelta(hours=RESET_TOKEN_EXPIRE_HOURS)
         db.commit()
-        if hand_back_token:
+        if RESET_WITHOUT_EMAIL:
             return schemas.ForgotPasswordOut(
                 message="אפשר להגדיר סיסמה חדשה", reset_token=user.reset_token
             )
-        send_reset_email(user.email, user.reset_token)
-    elif hand_back_token:
-        # The reply already tells a registered address from an unknown one (a
-        # registered one comes back with a token), so the careful wording has
-        # nothing left to protect — say it plainly instead.
-        return schemas.ForgotPasswordOut(message="אין חשבון עם האימייל הזה")
+        if email_configured():
+            send_reset_email(user.email, user.reset_token)
 
+    # The same sentence either way, whether or not the address is registered:
+    # the difference is exactly what an attacker would be fishing for.
     return schemas.ForgotPasswordOut(
         message="אם קיים חשבון עם האימייל הזה, נשלח אליו מייל עם קישור לאיפוס הסיסמה"
     )
 
 
-@router.post("/reset-password", response_model=schemas.MessageOut)
+@router.post(
+    "/reset-password",
+    response_model=schemas.MessageOut,
+    dependencies=[Depends(limiter("reset", 20, 3600))],
+)
 def reset_password(payload: schemas.ResetPasswordRequest, db: Session = Depends(get_db)):
     user = (
         db.query(models.User)

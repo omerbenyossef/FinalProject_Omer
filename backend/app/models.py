@@ -13,9 +13,10 @@ from sqlalchemy import (
     UniqueConstraint,
     Float,
     Boolean,
+    func,
     Text,
 )
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import object_session, relationship
 
 from .database import Base
 
@@ -103,8 +104,25 @@ class User(Base):
 
     @property
     def is_admin(self) -> bool:
-        admin_email = os.environ.get("ADMIN_EMAIL", "")
-        return bool(admin_email) and self.email.lower() == admin_email.lower()
+        admin_email = os.environ.get("ADMIN_EMAIL", "").strip().lower()
+        if not admin_email or self.email.strip().lower() != admin_email:
+            return False
+        # Addresses are stored lowered and are unique now, so at most one
+        # account can hold this one. A duplicate made before that rule existed
+        # would still match the line above, though, and that duplicate is
+        # someone who registered the admin's address with a capital letter in
+        # order to be handed the admin screen. Between two claimants the one
+        # that registered first is the real one.
+        session = object_session(self)
+        if session is None:
+            return True
+        first = (
+            session.query(User.id)
+            .filter(func.lower(User.email) == admin_email)
+            .order_by(User.id)
+            .first()
+        )
+        return first is None or first[0] == self.id
 
 
 class Sport(Base):
