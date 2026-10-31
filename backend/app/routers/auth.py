@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from .. import models, schemas
 from ..auth import create_access_token, hash_password, verify_password, get_current_user
 from ..database import get_db
-from ..google_auth import verify_google_id_token
+from ..google_auth import fetch_profile_photo, verify_google_id_token
 from ..email_utils import email_configured, send_reset_email
 from ..match_cleanup import purge_match_references
 from ..rating_utils import match_winner_id
@@ -74,6 +74,10 @@ def google_sign_in(payload: schemas.GoogleSignIn, db: Session = Depends(get_db))
     claims = verify_google_id_token(payload.credential)
     email = claims["email"].strip()
 
+    # Google sends the player's own photo along with their name. Taking it
+    # means everyone who signs in this way arrives with a face rather than two
+    # letters in a circle — which matters in an app whose whole point is that
+    # you are about to go and meet this person.
     user = db.query(models.User).filter(models.User.google_sub == claims["sub"]).first()
     if not user:
         user = (
@@ -99,6 +103,14 @@ def google_sign_in(payload: schemas.GoogleSignIn, db: Session = Depends(get_db))
             hashed_password=hash_password(secrets.token_urlsafe(32)),
         )
         db.add(user)
+
+    # Never over a photo they chose themselves: the one they picked is the one
+    # they meant. Only the gap gets filled, and only the first time.
+    if user.photo is None:
+        photo = fetch_profile_photo(claims.get("picture"))
+        if photo:
+            user.photo = photo
+            user.photo_updated_at = datetime.utcnow()
 
     db.commit()
     db.refresh(user)

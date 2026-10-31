@@ -7,6 +7,7 @@ trusting an email address the client claims, would let anyone sign in as
 anyone by typing the right address.
 """
 
+import base64
 import json
 import os
 import time
@@ -89,3 +90,40 @@ def verify_google_id_token(credential: str) -> dict:
     if not claims.get("email") or not claims.get("email_verified"):
         raise HTTPException(status_code=401, detail="חשבון הגוגל הזה בלי אימייל מאומת")
     return claims
+
+
+# Google hands back a URL, not an image, and the size is a suffix on it. The
+# app stores square photos of 320px, so ask for one that size rather than the
+# 96px thumbnail the token defaults to.
+PHOTO_SIZE = 320
+# A JPEG that size is tens of kilobytes; much past this is not the photo we
+# asked for, and it would ride along in every read of that player's row.
+MAX_PHOTO_BYTES = 300 * 1024
+PHOTO_TYPES = ("image/jpeg", "image/png", "image/webp")
+
+
+def fetch_profile_photo(url: str | None) -> str | None:
+    """The signed-in player's Google photo, as a data URL ready to store — or
+    None, for any reason at all.
+
+    Fetched once and kept, rather than pointed at: a link to
+    googleusercontent.com would tell Google every time anyone in the app looked
+    at this player, and those URLs expire on Google's schedule, not ours.
+
+    Nothing here may stop a sign-in. A photo is a nicety; being unable to get
+    one is not a reason to refuse someone entry."""
+    if not url:
+        return None
+    try:
+        sized = url.split("=")[0] + f"=s{PHOTO_SIZE}-c" if "=" in url else url
+        request = urllib.request.Request(sized, headers={"User-Agent": "Rally"})
+        with urllib.request.urlopen(request, timeout=10) as response:
+            media_type = (response.headers.get("Content-Type") or "").split(";")[0].strip()
+            if media_type not in PHOTO_TYPES:
+                return None
+            raw = response.read(MAX_PHOTO_BYTES + 1)
+        if not raw or len(raw) > MAX_PHOTO_BYTES:
+            return None
+        return f"data:{media_type};base64," + base64.b64encode(raw).decode()
+    except Exception:
+        return None

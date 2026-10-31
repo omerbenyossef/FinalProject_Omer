@@ -38,7 +38,7 @@ export const privacy = {
           "הודעות הצ'אט שאתה כותב לשחקן שמולך.",
           "העדפות התראות ושעות שקט.",
           "מזהה טכני של הדפדפן שלך, אם אישרת לקבל התראות.",
-          "אם בחרת להתחבר עם Google: השם וכתובת האימייל מחשבון הגוגל שלך, ומזהה פנימי של גוגל. סיסמת הגוגל שלך לעולם אינה עוברת דרכנו.",
+          "אם בחרת להתחבר עם Google: השם, כתובת האימייל ותמונת הפרופיל מחשבון הגוגל שלך, ומזהה פנימי של גוגל. התמונה נשמרת אצלנו פעם אחת בהרשמה, משמשת כתמונת הפרופיל שלך באפליקציה, ואפשר להחליף או להסיר אותה בכל רגע במסך ההגדרות. סיסמת הגוגל שלך לעולם אינה עוברת דרכנו.",
         ],
       },
       {
@@ -135,7 +135,7 @@ export const privacy = {
           "The chat messages you write to your opponent.",
           "Notification preferences and quiet hours.",
           "A technical identifier for your browser, if you allowed notifications.",
-          "If you sign in with Google: the name and email address on your Google account, and a Google identifier. Your Google password never passes through us.",
+          "If you sign in with Google: the name, email address and profile photo on your Google account, and a Google identifier. The photo is copied once when you sign up, becomes your profile photo in the app, and can be replaced or removed at any time in the settings screen. Your Google password never passes through us.",
         ],
       },
       {
