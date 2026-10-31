@@ -239,6 +239,8 @@ export const api = {
 
   adminDirectory: () => request("/ops/directory"),
   adminDeleteUser: (userId) => request(`/ops/users/${userId}`, { method: "DELETE" }),
+  buildDemoLeague: (sportId) => request(`/ops/demo?sport_id=${sportId}`, { method: "POST" }),
+  clearDemoLeague: () => request("/ops/demo", { method: "DELETE" }),
 
   getVapidKey: () => request("/push/vapid-public-key", { auth: false }),
   subscribePush: (subscription) => request("/push/subscribe", { method: "POST", body: subscription }),

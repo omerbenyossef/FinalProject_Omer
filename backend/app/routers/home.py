@@ -110,7 +110,17 @@ def _players_near_level(db: Session, leagues, user_id: int, level: float | None)
         .all()
     )
     near = {r.user_id for r in ratings if abs(round_to_half(r.level) - level) <= 0.5}
-    return len(near)
+    if not near:
+        return 0
+    # "7 players near 3.5" has to mean seven people who could actually be
+    # invited, so the demo league's inhabitants don't count towards it.
+    real = {
+        u.id
+        for u in db.query(models.User.id, models.User.is_demo)
+        .filter(models.User.id.in_(near), models.User.is_demo.isnot(True))
+        .all()
+    }
+    return len(real)
 
 
 def _last_match(db: Session, user_id: int, sport_id: int | None) -> schemas.HomeWeekLastMatchOut | None:

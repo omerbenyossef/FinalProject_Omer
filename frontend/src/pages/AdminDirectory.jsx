@@ -37,13 +37,14 @@ export default function AdminDirectory() {
   // Two taps to close an account, and the second one lives on the row itself:
   // a native confirm is a thumb-width away from "OK" on a phone, and this is
   // not undoable.
-  const { sports } = useSport();
+  const { sports, selectedSportId } = useSport();
   const [venues, setVenues] = useState([]);
   // The venue being added or edited: null when the form is closed, an object
   // with an id when editing, an object without one when adding.
   const [venueDraft, setVenueDraft] = useState(null);
   const [confirmingId, setConfirmingId] = useState(null);
   const imageInputRef = useRef(null);
+  const [demoNote, setDemoNote] = useState("");
   const [busyId, setBusyId] = useState(null);
   const [notice, setNotice] = useState("");
 
@@ -103,6 +104,24 @@ export default function AdminDirectory() {
       await api.deleteVenueImage(venueDraft.id);
       setVenueDraft({ ...venueDraft, image_url: null });
       loadVenues();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  // The demo league, for showing the app to a club without an empty table.
+  // Its players are flagged and never meet a real one; see routers/ops.py.
+  async function runDemo(build) {
+    setBusyId("demo");
+    setError("");
+    setDemoNote("");
+    try {
+      const res = build
+        ? await api.buildDemoLeague(selectedSportId)
+        : await api.clearDemoLeague();
+      setDemoNote(res.message || "");
     } catch (err) {
       setError(err.message);
     } finally {
@@ -494,6 +513,32 @@ export default function AdminDirectory() {
               )}
             </div>
           )}
+
+          <div className="adm-demo">
+            <div className="adm-demo-head">{t("ליגת הדגמה")}</div>
+            <p className="adm-demo-sub">
+              {t("ליגה מלאה עם טבלה, תוצאות ומשחק קרוב — להראות את האפליקציה כשהיא עוד ריקה. השחקנים בה מוסתרים משאר המשתמשים.")}
+            </p>
+            <div className="adm-demo-actions">
+              <button
+                type="button"
+                className="mc-go"
+                disabled={busyId === "demo" || !selectedSportId}
+                onClick={() => runDemo(true)}
+              >
+                {busyId === "demo" ? t("עובד...") : t("בנה ליגת הדגמה")}
+              </button>
+              <button
+                type="button"
+                className="mc-cancel"
+                disabled={busyId === "demo"}
+                onClick={() => runDemo(false)}
+              >
+                {t("הסר אותה")}
+              </button>
+            </div>
+            {demoNote && <p className="adm-demo-note">{demoNote}</p>}
+          </div>
         </>
       )}
     </div>

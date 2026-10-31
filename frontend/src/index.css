@@ -8602,3 +8602,20 @@ button:active { transform: translateY(1px); }
   font: 400 12.5px/1.6 "IBM Plex Sans Hebrew", var(--sans); color: #6F7787;
 }
 .signscreen-consent a { color: #8B93A6; }
+
+/* The demo league, at the foot of the admin screen. */
+.adm-demo {
+  margin-top: 26px; padding: 16px; border-radius: 16px;
+  border: 1px dashed rgba(148, 163, 184, .26); background: rgba(148, 163, 184, .04);
+}
+.adm-demo-head {
+  font: 600 10.5px "IBM Plex Mono", monospace; letter-spacing: .13em;
+  text-transform: uppercase; color: #8b93a6;
+}
+.adm-demo-sub {
+  margin: 8px 0 0; font: 400 13px/1.5 "IBM Plex Sans", var(--sans); color: #8b93a6;
+}
+.adm-demo-actions { margin-top: 12px; display: flex; align-items: center; gap: 10px; }
+.adm-demo-note {
+  margin: 10px 0 0; font: 500 13px "IBM Plex Sans", var(--sans); color: #c6f24e;
+}

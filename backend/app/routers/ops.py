@@ -1,3 +1,4 @@
+import secrets
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -9,6 +10,10 @@ from ..auth import get_current_user
 from ..database import get_db
 from .auth import _delete_user_account
 from .leagues import _week_end_saturday
+from .matches import _round_robin_rounds
+from ..auth import hash_password
+from ..match_cleanup import purge_match_references
+from ..rating_utils import update_ratings_for_match
 
 router = APIRouter(prefix="/ops", tags=["ops"])
 
@@ -341,3 +346,242 @@ def admin_delete_user(
     name = user.name
     _delete_user_account(db, user)
     return schemas.MessageOut(message=f"החשבון של {name} נמחק")
+
+
+# ---------------------------------------------------------------------------
+# The demo league.
+#
+# Walking into a tennis club and opening an app with three users and no
+# matches sells nothing. This builds one league that looks like a league that
+# has been running for a few weeks — a full table, two rounds played with real
+# results, ratings that moved because of them, and the operator's own next
+# match already arranged.
+#
+# Its players carry is_demo, which keeps them out of the friendly search and
+# out of the "players near your level" count, so no real player ever meets
+# one. The league itself is private, so it never appears in the public list.
+# Both the building and the clearing away are one button each.
+# ---------------------------------------------------------------------------
+
+DEMO_LEAGUE_NAME = "ליגת הדגמה"
+DEMO_EMAIL_DOMAIN = "demo.rally.local"
+# Seven invented players plus the operator makes eight — four matches a round,
+# a table that fills a screen.
+DEMO_PLAYERS = [
+    ("יונתן אבידן", 3.5),
+    ("דנה כהן", 4.0),
+    ("רועי שלו", 3.0),
+    ("מאיה ברק", 3.5),
+    ("איתי גלבוע", 4.5),
+    ("נועה פרידמן", 3.0),
+    ("עמית רוזן", 4.0),
+]
+# Scores drawn in order, so the same button always builds the same league.
+DEMO_SETS = [
+    [{"player1_games": 6, "player2_games": 4}, {"player1_games": 6, "player2_games": 2}],
+    [{"player1_games": 3, "player2_games": 6}, {"player1_games": 4, "player2_games": 6}],
+    [{"player1_games": 7, "player2_games": 5}, {"player1_games": 4, "player2_games": 6},
+     {"player1_games": 6, "player2_games": 3}],
+    [{"player1_games": 6, "player2_games": 1}, {"player1_games": 6, "player2_games": 4}],
+    [{"player1_games": 5, "player2_games": 7}, {"player1_games": 6, "player2_games": 3},
+     {"player1_games": 2, "player2_games": 6}],
+    [{"player1_games": 6, "player2_games": 3}, {"player1_games": 7, "player2_games": 6}],
+]
+
+
+def _demo_league(db: Session) -> models.League | None:
+    return db.query(models.League).filter(models.League.name == DEMO_LEAGUE_NAME).first()
+
+
+def _clear_demo(db: Session) -> None:
+    """Everything the builder made, in an order the foreign keys allow."""
+    league = _demo_league(db)
+    demo_users = db.query(models.User).filter(models.User.is_demo.is_(True)).all()
+    demo_ids = [u.id for u in demo_users]
+
+    match_ids = []
+    if league:
+        match_ids = [m.id for m in db.query(models.Match.id).filter(models.Match.league_id == league.id)]
+        match_ids = [m[0] if isinstance(m, tuple) else m for m in match_ids]
+    if demo_ids:
+        extra = db.query(models.Match.id).filter(
+            or_(models.Match.player1_id.in_(demo_ids), models.Match.player2_id.in_(demo_ids))
+        ).all()
+        match_ids += [m[0] for m in extra]
+    match_ids = list(set(match_ids))
+
+    if match_ids:
+        purge_match_references(db, match_ids)
+        db.query(models.Match).filter(models.Match.id.in_(match_ids)).delete(synchronize_session=False)
+    if league:
+        db.query(models.LeagueMembership).filter(
+            models.LeagueMembership.league_id == league.id
+        ).delete(synchronize_session=False)
+        db.query(models.Notification).filter(
+            models.Notification.league_id == league.id
+        ).delete(synchronize_session=False)
+    if demo_ids:
+        for model in (models.RatingSample, models.PlayerRating, models.PushSubscription):
+            db.query(model).filter(model.user_id.in_(demo_ids)).delete(synchronize_session=False)
+        db.query(models.LeagueMembership).filter(
+            models.LeagueMembership.user_id.in_(demo_ids)
+        ).delete(synchronize_session=False)
+        db.query(models.Notification).filter(
+            models.Notification.user_id.in_(demo_ids)
+        ).delete(synchronize_session=False)
+    db.commit()
+    if league:
+        db.delete(league)
+    for user in demo_users:
+        db.delete(user)
+    db.commit()
+
+
+@router.delete("/demo", response_model=schemas.MessageOut)
+def clear_demo_league(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    _require_admin(current_user)
+    _clear_demo(db)
+    return schemas.MessageOut(message="ליגת ההדגמה הוסרה")
+
+
+@router.post("/demo", response_model=schemas.MessageOut)
+def build_demo_league(
+    sport_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Build it from scratch, clearing any previous one first so the button is
+    safe to press twice."""
+    _require_admin(current_user)
+    sport = db.query(models.Sport).filter(models.Sport.id == sport_id).first()
+    if not sport:
+        raise HTTPException(status_code=404, detail="הענף לא נמצא")
+    _clear_demo(db)
+
+    now = datetime.utcnow()
+    # Three weeks in: rounds one and two are behind them, round three is live.
+    started = now - timedelta(days=17)
+
+    league = models.League(
+        name=DEMO_LEAGUE_NAME,
+        description="ליגה לדוגמה, להדגמה בלבד",
+        sport_id=sport_id,
+        created_by=current_user.id,
+        schedule_started_at=started,
+        starts_at=started,
+        round_length_days=7,
+        best_of=3,
+        # Private on purpose: a demo must never turn up in the public list.
+        is_open=False,
+        planned_rounds=7,
+        level_min=2.5,
+        level_max=5.0,
+        location_name="תל אביב",
+    )
+    db.add(league)
+    db.commit()
+    db.refresh(league)
+
+    players = [current_user]
+    for index, (name, level) in enumerate(DEMO_PLAYERS):
+        user = models.User(
+            name=name,
+            email=f"demo{index + 1}@{DEMO_EMAIL_DOMAIN}",
+            hashed_password=hash_password(secrets.token_urlsafe(32)),
+            language="he",
+            intro_seen_at=now,
+            is_demo=True,
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        db.add(models.PlayerRating(
+            user_id=user.id, sport_id=sport_id, level=level,
+            provisional=False, matches_played=6, created_at=started,
+        ))
+        players.append(user)
+    db.commit()
+
+    for user in players:
+        db.add(models.LeagueMembership(league_id=league.id, user_id=user.id, joined_at=started))
+    db.commit()
+
+    # The operator needs a rating in this sport or the table has a hole where
+    # they stand.
+    mine = db.query(models.PlayerRating).filter_by(user_id=current_user.id, sport_id=sport_id).first()
+    if not mine:
+        db.add(models.PlayerRating(
+            user_id=current_user.id, sport_id=sport_id, level=3.5,
+            provisional=False, matches_played=0, created_at=started,
+        ))
+        db.commit()
+
+    ids = [u.id for u in players]
+    rounds = _round_robin_rounds(ids)
+
+    played = 0
+    for round_index, pairs in enumerate(rounds[:3], start=1):
+        round_start = started + timedelta(days=7 * (round_index - 1))
+        for p1, p2 in pairs:
+            match = models.Match(
+                league_id=league.id, sport_id=sport_id, kind=models.MatchKind.league,
+                player1_id=p1, player2_id=p2, round_number=round_index,
+                created_at=round_start,
+            )
+            if round_index < 3:
+                # Behind them: played, reported, agreed, and counted.
+                sets = DEMO_SETS[played % len(DEMO_SETS)]
+                played += 1
+                when = round_start + timedelta(days=2, hours=18)
+                match.scheduled_at = when
+                match.scheduled_by = p1
+                match.schedule_confirmed = True
+                match.played_at = when
+                match.confirmed_at = when
+                match.status = models.MatchStatus.completed
+                match.sets = sets
+                match.player1_score = sum(1 for s in sets if s["player1_games"] > s["player2_games"])
+                match.player2_score = sum(1 for s in sets if s["player2_games"] > s["player1_games"])
+                match.reported_by = p1
+            db.add(match)
+    db.commit()
+
+    # Ratings move because of the results, not instead of them.
+    for match in db.query(models.Match).filter(
+        models.Match.league_id == league.id,
+        models.Match.status == models.MatchStatus.completed,
+    ).order_by(models.Match.round_number, models.Match.id).all():
+        update_ratings_for_match(db, match)
+
+    # Round three, where the app has something to do. The operator's own match
+    # is arranged, so their home screen opens on a real fixture.
+    venue = db.query(models.Venue).filter(
+        or_(models.Venue.sport_id == sport_id, models.Venue.sport_id.is_(None))
+    ).order_by(models.Venue.id).first()
+    live = db.query(models.Match).filter(
+        models.Match.league_id == league.id, models.Match.round_number == 3
+    ).order_by(models.Match.id).all()
+    for index, match in enumerate(live):
+        mine_here = current_user.id in (match.player1_id, match.player2_id)
+        if mine_here or index == 0:
+            match.scheduled_at = now + timedelta(days=2, hours=9)
+            match.scheduled_by = current_user.id if mine_here else match.player1_id
+            match.schedule_confirmed = True
+            match.duration_minutes = 90
+            if venue:
+                match.venue_id = venue.id
+        elif index == 1:
+            # One waiting on an answer, so the pending screen has something.
+            match.scheduled_at = now + timedelta(days=4, hours=19)
+            match.scheduled_by = match.player1_id
+            match.schedule_confirmed = False
+            match.schedule_proposed_at = now - timedelta(hours=6)
+            match.duration_minutes = 60
+    db.commit()
+
+    return schemas.MessageOut(
+        message=f"ליגת ההדגמה נבנתה — {len(players)} שחקנים, {len(live)} משחקים במחזור 3"
+    )

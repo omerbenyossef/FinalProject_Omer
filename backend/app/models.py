@@ -59,6 +59,10 @@ class User(Base):
     reset_token = Column(String, unique=True, index=True, nullable=True)
     reset_token_expires = Column(DateTime, nullable=True)
     deleted_at = Column(DateTime, nullable=True)
+    # A player invented by the demo league, so it can be shown to a club
+    # without an empty table. They are kept out of every place real players
+    # discover each other; null means a real person. See routers/ops.py.
+    is_demo = Column(Boolean, nullable=True)
     area = Column(String, nullable=True)
     travel_radius_km = Column(Float, nullable=True)
     # "he" (the default) or "en" — set from the app when the reader switches.

@@ -83,6 +83,9 @@ def search_players(
                 # A closed account is anonymised rather than removed, so it
                 # would otherwise sit here as "Deleted user", invitable.
                 models.User.deleted_at.is_(None),
+                # Demo players exist for one screenshot and must never be
+                # invitable by a real one.
+                models.User.is_demo.isnot(True),
                 models.User.name.ilike(f"%{query}%"),
             )
             .order_by(models.User.name)
@@ -110,7 +113,13 @@ def search_players(
             return []
         candidates = (
             db.query(models.User)
-            .filter(models.User.id.in_(opponent_ids), models.User.deleted_at.is_(None))
+            .filter(
+                models.User.id.in_(opponent_ids),
+                models.User.deleted_at.is_(None),
+                # Playing a demo league leaves demo players in your history;
+                # they must not come back as people to invite.
+                models.User.is_demo.isnot(True),
+            )
             .all()
         )
 
