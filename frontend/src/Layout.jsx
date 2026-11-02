@@ -2,6 +2,7 @@ import { Link, NavLink, useLocation } from "react-router-dom";
 import { mediaUrl } from "./api";
 import { useAuth } from "./AuthContext.jsx";
 import { useSport } from "./SportContext.jsx";
+import { usePairs } from "./PairContext.jsx";
 import { useLanguage } from "./LanguageContext.jsx";
 import { useOpenAction } from "./OpenActionContext.jsx";
 import { ChevronIcon, HomeIcon, RanksIcon, TrophyIcon } from "./Icons.jsx";
@@ -14,6 +15,13 @@ const AUTH_PATHS = ["/signin", "/signup", "/privacy", "/terms"];
 export default function Layout({ children }) {
   const { user } = useAuth();
   const { sports, selectedSportId, setSelectedSportId } = useSport();
+  const { activePairs, selectedPair, setSelectedPairId, pairsAwaitingMe } = usePairs();
+  const selectedSportPlaysInPairs = Boolean(
+    sports.find((sport) => sport.id === selectedSportId)?.plays_in_pairs
+  );
+  // First name only in the header: there is no room for two full names beside
+  // the wordmark, and the full name is one tap away on the pairs screen.
+  const partnerShort = (selectedPair?.partner?.name || "").trim().split(" ")[0];
   const { t } = useLanguage();
   const location = useLocation();
   const { openAction, hasOtherLeagueActivity, triggerOpenAction } = useOpenAction();
@@ -67,6 +75,46 @@ export default function Layout({ children }) {
                       </option>
                     ))}
                   </select>
+                </span>
+              )}
+              {/* In a pairs sport the player is always looking at the game
+                  through one of their pairs, so which one sits next to the
+                  sport. Nothing is shown until there is a choice to make. */}
+              {selectedSportPlaysInPairs && activePairs.length === 0 && (
+                <span className="wordmark-pair-wrap">
+                  <span className="wordmark-pair-sep" aria-hidden="true">
+                    ·
+                  </span>
+                  <Link to="/partners" className="wordmark-pair wordmark-pair--cta">
+                    {pairsAwaitingMe.length > 0 ? t("הזמנה לצמד") : t("מצא שותף")}
+                  </Link>
+                </span>
+              )}
+              {activePairs.length > 0 && selectedPair && (
+                <span className="wordmark-pair-wrap">
+                  <span className="wordmark-pair-sep" aria-hidden="true">
+                    ·
+                  </span>
+                  <Link to="/partners" className="wordmark-pair">
+                    {t("עם {name}", { name: partnerShort })}
+                    {pairsAwaitingMe.length > 0 && (
+                      <span className="wordmark-pair-badge" aria-hidden="true" />
+                    )}
+                  </Link>
+                  {activePairs.length > 1 && (
+                    <select
+                      className="wordmark-sport-select"
+                      aria-label={t("בחר צמד")}
+                      value={selectedPair.id}
+                      onChange={(e) => setSelectedPairId(Number(e.target.value))}
+                    >
+                      {activePairs.map((pair) => (
+                        <option key={pair.id} value={pair.id}>
+                          {pair.partner.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </span>
               )}
             </div>

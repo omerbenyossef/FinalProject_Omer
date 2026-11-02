@@ -30,6 +30,7 @@ import HeadToHead from "./pages/HeadToHead.jsx";
 import PlayerProfile from "./pages/PlayerProfile.jsx";
 import ProposeSchedule from "./pages/ProposeSchedule.jsx";
 import NewMatch from "./pages/NewMatch.jsx";
+import Partners from "./pages/Partners.jsx";
 import LegalPage from "./pages/LegalPage.jsx";
 import MatchSchedule from "./pages/MatchSchedule.jsx";
 import MatchChat from "./pages/MatchChat.jsx";
@@ -237,6 +238,14 @@ export default function App() {
         />
         {/* Admin only, on the server as well as here: /ops/directory answers
             403 to anyone else, so hiding the route is the lesser half of it. */}
+        <Route
+          path="/partners"
+          element={
+            <ProtectedRoute>
+              <Partners />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/admin"
           element={

@@ -9,4 +9,11 @@ router = APIRouter(prefix="/sports", tags=["sports"])
 
 @router.get("/", response_model=list[schemas.SportOut])
 def list_sports(db: Session = Depends(get_db)):
-    return db.query(models.Sport).order_by(models.Sport.name).all()
+    from .leagues import DOUBLES_BY_DEFAULT
+
+    return [
+        schemas.SportOut(
+            id=sport.id, name=sport.name, plays_in_pairs=sport.name in DOUBLES_BY_DEFAULT
+        )
+        for sport in db.query(models.Sport).order_by(models.Sport.name).all()
+    ]

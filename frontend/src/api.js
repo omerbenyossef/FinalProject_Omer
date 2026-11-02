@@ -72,6 +72,17 @@ export const api = {
   deleteAccount: (confirmation) =>
     request("/auth/me", { method: "DELETE", body: { confirmation } }),
 
+  // Pairs — the thing that plays padel. Everything here is scoped to a sport,
+  // because being somebody's padel partner says nothing about tennis.
+  myPairs: (sportId) => request(`/pairs?sport_id=${sportId}`),
+  pairCandidates: (sportId, q = "") =>
+    request(`/pairs/candidates?sport_id=${sportId}${q ? `&q=${encodeURIComponent(q)}` : ""}`),
+  proposePair: (sportId, partnerId) =>
+    request("/pairs", { method: "POST", body: { sport_id: sportId, partner_id: partnerId } }),
+  acceptPair: (pairId) => request(`/pairs/${pairId}/accept`, { method: "POST" }),
+  declinePair: (pairId) => request(`/pairs/${pairId}/decline`, { method: "POST" }),
+  dissolvePair: (pairId) => request(`/pairs/${pairId}`, { method: "DELETE" }),
+
   listSports: () => request("/sports/", { auth: false }),
 
   listLeagues: () => request("/leagues/", { auth: false }),
@@ -81,7 +92,12 @@ export const api = {
   opsOverview: (range) => request(`/ops/overview?range=${range}`),
   createLeague: (data) => request("/leagues/", { method: "POST", body: data }),
   getLeague: (id) => request(`/leagues/${id}`, { auth: false }),
-  joinLeague: (id, code) => request(`/leagues/${id}/join`, { method: "POST", body: { code } }),
+  // pairId is required by a doubles league and refused by a singles one.
+  joinLeague: (id, code, pairId = null) =>
+    request(`/leagues/${id}/join`, {
+      method: "POST",
+      body: pairId ? { code, pair_id: pairId } : { code },
+    }),
   leaveLeague: (id) => request(`/leagues/${id}/leave`, { method: "POST" }),
   getInviteCode: (id) => request(`/leagues/${id}/invite-code`),
   deleteLeague: (id) => request(`/leagues/${id}`, { method: "DELETE" }),

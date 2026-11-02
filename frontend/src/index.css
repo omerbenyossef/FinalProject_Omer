@@ -570,6 +570,38 @@ a { color: var(--court); text-decoration: none; }
   cursor: pointer;
 }
 
+/* Which pair the player is looking through, beside the sport. Quieter than
+   the sport, because the sport is the bigger choice of the two. */
+.wordmark-pair-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.wordmark-pair-sep { color: #4b5261; font-size: 11px; }
+
+.wordmark-pair--cta { color: var(--court); }
+
+/* A pair invitation is waiting. A dot, not a number: there is never a queue
+   of these, and the screen it leads to says who. */
+.wordmark-pair-badge {
+  display: inline-block; width: 6px; height: 6px; margin-inline-start: 5px;
+  border-radius: 50%; background: var(--court); vertical-align: middle;
+}
+
+.wordmark-pair {
+  text-decoration: none;
+  font-family: "IBM Plex Sans", var(--sans);
+  font-weight: 500;
+  font-size: 12px;
+  color: #6f7787;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .brand {
   display: flex;
   align-items: center;
@@ -8692,4 +8724,78 @@ button:active { transform: translateY(1px); }
 .adm-demo-actions { margin-top: 12px; display: flex; align-items: center; gap: 10px; }
 .adm-demo-note {
   margin: 10px 0 0; font: 500 13px "IBM Plex Sans", var(--sans); color: #c6f24e;
+}
+
+
+/* ---- Partners: the pairs screen (padel stage 3) ---- */
+.prt { padding-bottom: 36px; }
+
+.prt-back {
+  width: 34px; height: 34px; display: grid; place-items: center;
+  border: 0; background: transparent; color: var(--muted); cursor: pointer; padding: 0;
+}
+.prt-back svg { width: 22px; height: 22px; }
+[dir="rtl"] .prt-back svg { transform: scaleX(-1); }
+
+.prt-head { padding: 6px 0 18px; }
+.prt-title {
+  margin: 0; font: 700 25px/1.15 "IBM Plex Sans", var(--sans);
+  letter-spacing: -.02em; color: var(--ink);
+}
+.prt-sub {
+  margin: 10px 0 0; max-width: 34em;
+  font: 400 13.5px/1.55 "IBM Plex Sans", var(--sans); color: #a3abbb;
+}
+.prt-error { margin: 0 0 14px; }
+
+.prt-section { margin-top: 22px; }
+.prt-section-label {
+  font: 500 11px "IBM Plex Mono", var(--mono); letter-spacing: .1em;
+  color: #6f7787; margin-bottom: 10px;
+}
+
+.prt-row {
+  display: flex; align-items: center; gap: 12px; padding: 12px 0;
+  border-top: 1px solid rgba(148, 163, 184, .14);
+}
+.prt-row:last-child { border-bottom: 1px solid rgba(148, 163, 184, .14); }
+.prt-row--invite { background: rgba(198, 242, 78, .04); }
+
+.prt-row-body { flex: 1; min-width: 0; }
+.prt-row-name {
+  font: 700 15px "IBM Plex Sans", var(--sans); color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.prt-row-meta {
+  margin-top: 3px; font: 500 11.5px "IBM Plex Mono", var(--mono);
+  letter-spacing: .04em; color: #8b93a6;
+}
+
+.prt-row-actions { display: flex; gap: 8px; flex: none; }
+
+.prt-accept, .prt-ask {
+  flex: none; padding: 7px 14px; border: 0; border-radius: 999px;
+  background: var(--court); color: #0e1116;
+  font: 700 12.5px "IBM Plex Sans", var(--sans); cursor: pointer;
+}
+.prt-accept:disabled, .prt-ask:disabled { opacity: .5; cursor: default; }
+
+.prt-decline {
+  flex: none; padding: 7px 13px; border: 1px solid rgba(148, 163, 184, .22);
+  border-radius: 999px; background: transparent; color: #a3abbb;
+  font: 600 12.5px "IBM Plex Sans", var(--sans); cursor: pointer;
+}
+.prt-decline:disabled { opacity: .5; cursor: default; }
+
+.prt-search { margin-bottom: 4px; }
+.prt-search input {
+  width: 100%; padding: 11px 14px; border: 1px solid rgba(148, 163, 184, .18);
+  border-radius: 12px; background: #141821; color: var(--ink);
+  font: 500 14px "IBM Plex Sans", var(--sans);
+}
+.prt-search input:focus { outline: none; border-color: rgba(198, 242, 78, .35); }
+
+.prt-empty {
+  margin: 0; padding: 14px 0;
+  font: 400 13.5px/1.5 "IBM Plex Sans", var(--sans); color: #6f7787;
 }

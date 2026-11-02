@@ -7,6 +7,7 @@ import { AuthProvider } from "./AuthContext.jsx";
 import { SportProvider } from "./SportContext.jsx";
 import { LanguageProvider } from "./LanguageContext.jsx";
 import { OpenActionProvider } from "./OpenActionContext.jsx";
+import { PairProvider } from "./PairContext.jsx";
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
@@ -20,9 +21,11 @@ createRoot(document.getElementById("root")).render(
       <AuthProvider>
         <LanguageProvider>
           <SportProvider>
-            <OpenActionProvider>
-              <App />
-            </OpenActionProvider>
+            <PairProvider>
+              <OpenActionProvider>
+                <App />
+              </OpenActionProvider>
+            </PairProvider>
           </SportProvider>
         </LanguageProvider>
       </AuthProvider>

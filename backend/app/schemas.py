@@ -141,6 +141,10 @@ class Token(BaseModel):
 class SportOut(BaseModel):
     id: int
     name: str
+    # Whether this sport is normally played in pairs, which is what tells the
+    # screens to ask for a partner before anything else. A single league can
+    # still say otherwise; this is the sport's habit, not a league's rule.
+    plays_in_pairs: bool = False
 
     class Config:
         from_attributes = True
