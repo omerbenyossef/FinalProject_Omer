@@ -3,7 +3,7 @@ from typing import Annotated, Optional
 
 from pydantic import BaseModel, EmailStr, Field, PlainSerializer, field_validator
 
-from .models import MatchStatus, MatchKind, FriendlyInviteStatus
+from .models import MatchStatus, MatchKind, FriendlyInviteStatus, PairStatus
 
 
 def _utc_iso(value: datetime) -> str:
@@ -470,6 +470,49 @@ class FriendlyPlayerOut(BaseModel):
     level: Optional[float] = None
     provisional: bool = False
     area: Optional[str] = None
+
+
+class PairPlayerOut(BaseModel):
+    """A partner, or somebody who could be one. Deliberately not UserOut:
+    that carries the person's email address, and nothing on these screens
+    needs it."""
+
+    id: int
+    name: str
+    photo_url: Optional[str] = None
+    area: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class PairOut(BaseModel):
+    id: int
+    sport_id: int
+    status: PairStatus
+    # None until the pair is accepted, and for a pair whose members had no
+    # level to seed it from.
+    level: Optional[float] = None
+    provisional: bool = True
+    matches_played: int = 0
+    partner: PairPlayerOut
+    # Which way a pending invitation points: waiting on them, or on me.
+    proposed_by_me: bool
+    created_at: Optional[UtcDatetime] = None
+    accepted_at: Optional[UtcDatetime] = None
+
+
+class PairCandidateOut(BaseModel):
+    user: PairPlayerOut
+    level: float
+    provisional: bool = False
+    same_area: bool = False
+    level_gap: float = 0.0
+
+
+class PairCreate(BaseModel):
+    sport_id: int
+    partner_id: int
 
 
 class FriendlyInviteLinkCreate(BaseModel):

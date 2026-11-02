@@ -17,6 +17,7 @@ from .routers import (
     notifications,
     open_matches,
     ops,
+    pairs,
     players,
     push,
     ratings,
@@ -377,6 +378,7 @@ app.include_router(matches.router)
 app.include_router(players.router)
 app.include_router(push.router)
 app.include_router(ratings.router)
+app.include_router(pairs.router)
 app.include_router(friendly.router)
 app.include_router(home.router)
 app.include_router(open_matches.router)

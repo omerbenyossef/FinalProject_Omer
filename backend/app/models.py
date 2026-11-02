@@ -44,6 +44,13 @@ RATING_MAX = 7.0
 PROVISIONAL_MATCHES = 3
 
 
+class PairStatus(str, enum.Enum):
+    pending = "pending"
+    active = "active"
+    declined = "declined"
+    dissolved = "dissolved"
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -156,6 +163,11 @@ class League(Base):
     lat = Column(Float, nullable=True)
     lng = Column(Float, nullable=True)
     planned_rounds = Column(Integer, nullable=True)
+    # Whether this league is played in pairs. Set from the sport when a league
+    # is created rather than derived from it on every read: padel singles and
+    # tennis doubles both exist, and a league should not change shape because
+    # someone later decides what its sport usually means.
+    is_doubles = Column(Boolean, nullable=True)
 
     sport = relationship("Sport", back_populates="leagues")
     memberships = relationship("LeagueMembership", back_populates="league", order_by="LeagueMembership.id")
@@ -169,6 +181,11 @@ class LeagueMembership(Base):
     id = Column(Integer, primary_key=True, index=True)
     league_id = Column(Integer, ForeignKey("leagues.id"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    # In a doubles league both members of the pair get a membership row, each
+    # naming the pair. The table still answers "is this person in this
+    # league", which is what most of the app asks, while the standings read
+    # the pair.
+    pair_id = Column(Integer, ForeignKey("pairs.id"), nullable=True, index=True)
     joined_at = Column(DateTime, default=datetime.utcnow)
 
     league = relationship("League", back_populates="memberships")
@@ -193,6 +210,50 @@ class PlayerRating(Base):
     sport = relationship("Sport")
 
 
+class Pair(Base):
+    """Two players who play together. In padel this is the thing that
+    actually plays: it joins leagues, it has a rating, it has a history, and
+    one person can belong to several of them at once with different partners.
+
+    The players are stored with the lower id first so that the same two people
+    are always the same row whichever of them asked; `proposed_by` remembers
+    which one that was. There is deliberately no unique constraint over
+    (sport, a, b): a pair that has been dissolved may be formed again, which a
+    plain constraint would forbid, so "you already have a pair with this
+    player" is enforced in the router instead."""
+
+    __tablename__ = "pairs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    sport_id = Column(Integer, ForeignKey("sports.id"), nullable=False, index=True)
+    player_a_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    player_b_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    proposed_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    status = Column(Enum(PairStatus), default=PairStatus.pending, nullable=False)
+
+    # The pair's own rating, which is not the average of its members': it
+    # starts there and then moves on this pair's results alone. The gap
+    # between the two is what the players would call chemistry.
+    level = Column(Float, nullable=True)
+    provisional = Column(Boolean, default=True, nullable=False)
+    matches_played = Column(Integer, default=0, nullable=False)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    accepted_at = Column(DateTime, nullable=True)
+    dissolved_at = Column(DateTime, nullable=True)
+
+    sport = relationship("Sport")
+    player_a = relationship("User", foreign_keys=[player_a_id])
+    player_b = relationship("User", foreign_keys=[player_b_id])
+
+    def other_player_id(self, user_id: int) -> int:
+        return self.player_b_id if user_id == self.player_a_id else self.player_a_id
+
+    @property
+    def member_ids(self) -> tuple[int, int]:
+        return (self.player_a_id, self.player_b_id)
+
+
 class Match(Base):
     __tablename__ = "matches"
 
@@ -210,6 +271,12 @@ class Match(Base):
     duration_minutes = Column(Integer, nullable=True)
     player1_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     player2_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    # Set on a doubles match, where the side is a pair rather than a person.
+    # player1_id/player2_id still name one player from each side, so that
+    # everything written for singles keeps working while the doubles screens
+    # are built on top.
+    pair1_id = Column(Integer, ForeignKey("pairs.id"), nullable=True, index=True)
+    pair2_id = Column(Integer, ForeignKey("pairs.id"), nullable=True, index=True)
     player1_score = Column(Integer, nullable=True)
     player2_score = Column(Integer, nullable=True)
     sets = Column(JSON, nullable=True)

@@ -132,6 +132,88 @@ def _apply_result(
     )
 
 
+def side_level(levels: list[float]) -> float:
+    """How strong a side is: the mean of its players' own levels. A singles
+    side is a list of one, so this is the same function either way."""
+    return sum(levels) / len(levels)
+
+
+def get_pair(db: Session, pair_id: int) -> models.Pair | None:
+    return db.query(models.Pair).filter(models.Pair.id == pair_id).first()
+
+
+def seed_pair_level(db: Session, pair: models.Pair) -> None:
+    """A new pair starts at the mean of its members' own levels rather than at
+    the bottom: two strong players who have just teamed up should not have to
+    climb out of a hole they never dug. From here the pair's number moves on
+    its own results, and drifts away from that mean exactly as far as the
+    combination turns out to be better or worse than its parts."""
+    levels = [
+        r.level
+        for r in (
+            get_rating(db, pair.player_a_id, pair.sport_id),
+            get_rating(db, pair.player_b_id, pair.sport_id),
+        )
+        if r is not None
+    ]
+    pair.level = side_level(levels) if levels else None
+
+
+def _apply_pair_result(pair: models.Pair, opponent_level: float, won: bool) -> None:
+    """The pair's own rating, moved by the same ELO step as a player's."""
+    if pair.level is None:
+        return
+    expected = _expected_score(pair.level, opponent_level)
+    k = RATING_K_PROVISIONAL if pair.provisional else RATING_K_STABLE
+    pair.level = clamp_rating(pair.level + k * ((1.0 if won else 0.0) - expected))
+    pair.matches_played += 1
+    if pair.provisional and pair.matches_played >= models.PROVISIONAL_MATCHES:
+        pair.provisional = False
+
+
+def update_ratings_for_doubles_match(db: Session, match: models.Match) -> None:
+    """Four players and two pairs, all moved by the formula singles already
+    uses. The only new idea is what goes in as "the opponent": the mean of the
+    two players on the other side.
+
+    Each player is measured against their OWN expectation, not the pair's, and
+    that is what keeps a weaker player from being carried up the table. A 3.0
+    alongside a 5.0 who beat a 4.0 side was not expected to win, so they gain
+    a lot; their 5.0 partner was expected to, so they gain little. Lose, and it
+    reverses. No special case for the gap is needed — measuring each player
+    where they actually stand does it by itself."""
+    if match.player1_score is None or match.player2_score is None:
+        return
+    winner_id = match_winner_id(match)
+    if winner_id is None:
+        return
+
+    pair1, pair2 = get_pair(db, match.pair1_id), get_pair(db, match.pair2_id)
+    if not pair1 or not pair2:
+        return
+
+    sport_id = match.league.sport_id if match.league_id else match.sport_id
+    side1 = [get_rating(db, uid, sport_id) for uid in pair1.member_ids]
+    side2 = [get_rating(db, uid, sport_id) for uid in pair2.member_ids]
+    if not all(side1) or not all(side2):
+        return
+
+    # Read every level before anything moves, so that the second player on a
+    # side is not measured against a number the first one just changed.
+    side1_level = side_level([r.level for r in side1])
+    side2_level = side_level([r.level for r in side2])
+    side1_won = winner_id == match.player1_id
+
+    for rating in side1:
+        _apply_result(db, match, rating, side2_level, side1_won)
+    for rating in side2:
+        _apply_result(db, match, rating, side1_level, not side1_won)
+
+    _apply_pair_result(pair1, pair2.level if pair2.level is not None else side2_level, side1_won)
+    _apply_pair_result(pair2, pair1.level if pair1.level is not None else side1_level, not side1_won)
+    db.commit()
+
+
 def match_winner_id(match: models.Match) -> int | None:
     """Who actually won this match — decoupled from the raw set score
     because courts here are booked by the hour, so a "best of 5" match very
