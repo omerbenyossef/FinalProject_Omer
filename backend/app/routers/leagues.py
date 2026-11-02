@@ -703,7 +703,7 @@ def create_league(
         is_doubles=(
             league_in.is_doubles
             if league_in.is_doubles is not None
-            else sport.name in DOUBLES_BY_DEFAULT
+            else sport.plays_in_pairs
         ),
     )
     db.add(league)
@@ -912,12 +912,6 @@ def preview_league(
     )
 
 
-# Which sports are played in pairs unless a league says otherwise. Padel
-# singles exists and tennis doubles exists, so this is only the default a new
-# league starts from, never what a league means afterwards.
-DOUBLES_BY_DEFAULT = {"פאדל"}
-
-
 def pair_display_name(pair: models.Pair) -> str:
     """How a pair is printed in a table: surnames if we can tell them apart,
     first names if we cannot. "Ben Yossef/Cohen"."""
@@ -1005,7 +999,10 @@ def _join_league_core(
     if not rating:
         raise HTTPException(status_code=400, detail="צריך למלא שאלון דירוג לענף הזה לפני ההצטרפות")
     if pair and pair.level is None:
-        raise HTTPException(status_code=400, detail="לצמד אין עדיין דירוג")
+        raise HTTPException(
+            status_code=400,
+            detail="שני השחקנים בצמד צריכים למלא את שאלון הרמה לפני ההצטרפות לליגה",
+        )
     # A private league is joined by a personal invite (link or code), not by
     # matching a level range — that range only means anything for a public
     # league listing itself for strangers to browse and pick a fit from.

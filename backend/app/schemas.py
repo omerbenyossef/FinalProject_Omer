@@ -530,10 +530,32 @@ class PairOut(BaseModel):
 
 class PairCandidateOut(BaseModel):
     user: PairPlayerOut
-    level: float
+    # None for somebody who has not answered this sport's questionnaire — they
+    # are still invitable, and `rated` is what the screen reads to say so.
+    level: Optional[float] = None
+    rated: bool = True
     provisional: bool = False
     same_area: bool = False
-    level_gap: float = 0.0
+    level_gap: Optional[float] = None
+
+
+class PairInviteLinkCreate(BaseModel):
+    sport_id: int
+
+
+class PairInviteLinkOut(BaseModel):
+    token: str
+
+
+class PairInviteLinkInfoOut(BaseModel):
+    inviter_id: int
+    inviter_name: str
+    inviter_photo_url: Optional[str] = None
+    sport_id: int
+    sport_name: str
+    used: bool = False
+    is_mine: bool = False
+    pair_id: Optional[int] = None
 
 
 class PairCreate(BaseModel):

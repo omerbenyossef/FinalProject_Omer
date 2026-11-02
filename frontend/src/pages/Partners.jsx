@@ -27,6 +27,7 @@ export default function Partners() {
   const [candidates, setCandidates] = useState(null);
   const [query, setQuery] = useState("");
   const [busyId, setBusyId] = useState(null);
+  const [sharing, setSharing] = useState(false);
   const [error, setError] = useState("");
 
   const sportName = sports.find((s) => s.id === selectedSportId)?.name;
@@ -57,6 +58,32 @@ export default function Partners() {
       setError(err.message);
     } finally {
       setBusyId(null);
+    }
+  }
+
+  async function shareInvite() {
+    setSharing(true);
+    setError("");
+    try {
+      const { token } = await api.createPairInviteLink(selectedSportId);
+      const url = `${window.location.origin}/pairs/invite/${token}`;
+      const message = t("רוצה להיות הצמד שלי ב-Rally? {url}", { url });
+      // The native sheet where there is one — it offers WhatsApp alongside
+      // everything else the phone can send to — and wa.me where there is not.
+      if (navigator.share) {
+        try {
+          await navigator.share({ text: message });
+          return;
+        } catch {
+          // Cancelled, or refused: fall through to WhatsApp rather than
+          // leaving the tap with nothing to show for it.
+        }
+      }
+      window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSharing(false);
     }
   }
 
@@ -174,6 +201,21 @@ export default function Partners() {
 
       <section className="prt-section">
         <div className="prt-section-label" dir="ltr">
+          {t("INVITE SOMEONE")}
+        </div>
+        <p className="prt-invite-note">
+          {t("השותף שלך עוד לא באפליקציה? שלח לו קישור — הוא ייכנס וכבר תהיו צמד.")}
+        </p>
+        <button type="button" className="prt-wa" disabled={sharing} onClick={shareInvite}>
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38a9.87 9.87 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2zm5.8 14.17c-.25.69-1.45 1.33-2 1.37-.51.04-1.16.06-1.87-.12-.43-.11-.98-.33-1.7-.64-2.98-1.29-4.93-4.3-5.08-4.5-.15-.2-1.22-1.62-1.22-3.09 0-1.47.77-2.19 1.04-2.49.27-.3.59-.37.79-.37.2 0 .39 0 .57.01.18.01.43-.07.67.51.25.6.84 2.07.91 2.22.07.15.12.32.02.52-.1.2-.15.32-.3.5-.15.17-.31.39-.44.52-.15.15-.3.31-.13.61.17.3.76 1.25 1.63 2.03 1.12 1 2.06 1.31 2.36 1.46.3.15.47.12.65-.07.17-.2.75-.87.95-1.17.2-.3.4-.25.67-.15.27.1 1.73.82 2.03.97.3.15.5.22.57.35.07.12.07.72-.18 1.41z" />
+          </svg>
+          {sharing ? t("מכין קישור...") : t("הזמנה בוואטסאפ")}
+        </button>
+      </section>
+
+      <section className="prt-section">
+        <div className="prt-section-label" dir="ltr">
           {t("PLAYERS NEAR YOU")}
         </div>
         <div className="prt-search">
@@ -197,10 +239,14 @@ export default function Partners() {
               <Avatar name={c.user.name} photoUrl={c.user.photo_url} size={44} />
               <div className="prt-row-body">
                 <div className="prt-row-name">{c.user.name}</div>
-                <div className="prt-row-meta" dir="ltr">
-                  {[levelLabel(c.level, c.provisional, t), c.user.area]
-                    .filter(Boolean)
-                    .join(" · ")}
+                <div className="prt-row-meta" dir={c.rated ? "ltr" : "auto"}>
+                  {c.rated
+                    ? [levelLabel(c.level, c.provisional, t), c.user.area]
+                        .filter(Boolean)
+                        .join(" · ")
+                    : [t("עוד לא דירג/ה {sport}", { sport: t(sportName || "פאדל") }), c.user.area]
+                        .filter(Boolean)
+                        .join(" · ")}
                 </div>
               </div>
               <button

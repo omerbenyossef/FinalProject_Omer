@@ -148,15 +148,18 @@ def seed_pair_level(db: Session, pair: models.Pair) -> None:
     climb out of a hole they never dug. From here the pair's number moves on
     its own results, and drifts away from that mean exactly as far as the
     combination turns out to be better or worse than its parts."""
-    levels = [
-        r.level
-        for r in (
-            get_rating(db, pair.player_a_id, pair.sport_id),
-            get_rating(db, pair.player_b_id, pair.sport_id),
-        )
-        if r is not None
-    ]
-    pair.level = side_level(levels) if levels else None
+    ratings = (
+        get_rating(db, pair.player_a_id, pair.sport_id),
+        get_rating(db, pair.player_b_id, pair.sport_id),
+    )
+    # Both, or neither. Averaging the one level we happen to have would hand a
+    # pair the rating of its rated half — so a 4.0 who partners somebody who
+    # has never touched a padel court would enter a 4.0 league as a 4.0 team,
+    # and the league would have no idea what it had just admitted.
+    if any(r is None for r in ratings):
+        pair.level = None
+        return
+    pair.level = side_level([r.level for r in ratings])
 
 
 def _apply_pair_result(pair: models.Pair, opponent_level: float, won: bool) -> None:

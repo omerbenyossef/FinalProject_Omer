@@ -82,6 +82,12 @@ export const api = {
   acceptPair: (pairId) => request(`/pairs/${pairId}/accept`, { method: "POST" }),
   declinePair: (pairId) => request(`/pairs/${pairId}/decline`, { method: "POST" }),
   dissolvePair: (pairId) => request(`/pairs/${pairId}`, { method: "DELETE" }),
+  // A one-time link for somebody who is not in the app yet.
+  createPairInviteLink: (sportId) =>
+    request("/pairs/invite-links", { method: "POST", body: { sport_id: sportId } }),
+  getPairInviteLink: (token) => request(`/pairs/invite-links/${token}`),
+  redeemPairInviteLink: (token) =>
+    request(`/pairs/invite-links/${token}/redeem`, { method: "POST" }),
 
   listSports: () => request("/sports/", { auth: false }),
 

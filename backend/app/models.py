@@ -132,11 +132,24 @@ class User(Base):
         return first is None or first[0] == self.id
 
 
+# Which sports are normally played in pairs. A league still records its own
+# answer — padel singles and tennis doubles both exist — and this is only the
+# default a new one starts from.
+DOUBLES_BY_DEFAULT = {"פאדל"}
+
+
 class Sport(Base):
     __tablename__ = "sports"
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, nullable=False)
+
+    @property
+    def plays_in_pairs(self) -> bool:
+        """On the model rather than in the router, so that SportOut answers the
+        same thing wherever it is nested. It was False inside LeagueOut and
+        True from /sports, because only the latter filled it in by hand."""
+        return self.name in DOUBLES_BY_DEFAULT
 
     leagues = relationship("League", back_populates="sport")
 
@@ -486,6 +499,29 @@ class FriendlyInviteLink(Base):
     token = Column(String, unique=True, index=True, nullable=False)
     used = Column(Boolean, default=False, nullable=False)
     match_id = Column(Integer, ForeignKey("matches.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    inviter = relationship("User")
+    sport = relationship("Sport")
+
+
+class PairInviteLink(Base):
+    """A one-time link asking somebody to be your partner.
+
+    The point of it is the person who is not here yet: the candidate list can
+    only offer people who already have an account, and most of anybody's padel
+    partners do not. They open this, sign in, and come out of it already
+    paired — rather than signing up, finding nothing, and having to be found.
+    """
+
+    __tablename__ = "pair_invite_links"
+
+    id = Column(Integer, primary_key=True, index=True)
+    inviter_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    sport_id = Column(Integer, ForeignKey("sports.id"), nullable=False)
+    token = Column(String, unique=True, index=True, nullable=False)
+    used = Column(Boolean, default=False, nullable=False)
+    pair_id = Column(Integer, ForeignKey("pairs.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     inviter = relationship("User")

@@ -6,6 +6,7 @@ what joins leagues, carries a rating and keeps a history; one person can be in
 several pairs at once, each with a different partner and each its own world.
 """
 
+import secrets
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -15,6 +16,7 @@ from sqlalchemy.orm import Session, joinedload
 from .. import models, schemas
 from ..auth import get_current_user
 from ..database import get_db
+from ..push_utils import notify_user
 from ..rating_utils import get_rating, round_to_half, seed_pair_level
 
 router = APIRouter(prefix="/pairs", tags=["pairs"])
@@ -25,6 +27,11 @@ router = APIRouter(prefix="/pairs", tags=["pairs"])
 # enjoying it.
 PARTNER_LEVEL_WINDOW = 1.0
 CANDIDATE_LIMIT = 30
+# Of that limit, how many places are held for players who have not rated this
+# sport. Without a reserve the rated-first sort buries them: the moment there
+# are thirty padel players, the tennis friend this player actually wants to ask
+# falls off the end of the list and can only be found by typing their name.
+UNRATED_RESERVE = 10
 
 LIVE_STATUSES = (models.PairStatus.pending, models.PairStatus.active)
 
@@ -146,9 +153,24 @@ def candidates(
         if person.id in taken:
             continue
         rating = ratings.get(person.id)
-        # Someone who has not answered the questionnaire for this sport has no
-        # level to compare, and pairing with them would leave the pair unrated.
+        # Somebody who plays tennis here but has never answered the padel
+        # questionnaire is still a real person this player may well want as a
+        # partner — more likely, in fact, than a stranger. They come through
+        # with no level, marked, and the pair simply cannot enter a league
+        # until they answer it.
         if rating is None:
+            out.append(
+                schemas.PairCandidateOut(
+                    user=schemas.PairPlayerOut.model_validate(person),
+                    level=None,
+                    provisional=False,
+                    same_area=bool(
+                        person.area and current_user.area and person.area == current_user.area
+                    ),
+                    level_gap=None,
+                    rated=False,
+                )
+            )
             continue
         gap = (
             abs(round_to_half(rating.level) - round_to_half(my_rating.level))
@@ -166,13 +188,32 @@ def candidates(
                     person.area and current_user.area and person.area == current_user.area
                 ),
                 level_gap=round(gap, 2),
+                rated=True,
             )
         )
 
-    # Closest in level first, and within that the people nearby — the two
-    # things that decide whether playing together is any fun.
-    out.sort(key=lambda c: (c.level_gap, not c.same_area, c.user.name or ""))
-    return out[:CANDIDATE_LIMIT]
+    # Rated players first, closest in level, nearby ones ahead of far ones —
+    # the things that decide whether playing together is any fun. The unrated
+    # go last rather than nowhere: they are a longer road, not a worse player.
+    def order(c):
+        return (
+            c.level_gap if c.level_gap is not None else 99,
+            not c.same_area,
+            c.user.name or "",
+        )
+
+    rated = sorted([c for c in out if c.rated], key=order)
+    unrated = sorted([c for c in out if not c.rated], key=order)
+
+    # A name search is answering a question about one person, so it returns
+    # whoever matches in whatever proportion they come; browsing is a list to
+    # pick from, and both kinds belong in it.
+    if text:
+        return (rated + unrated)[:CANDIDATE_LIMIT]
+
+    keep_unrated = unrated[:UNRATED_RESERVE]
+    keep_rated = rated[: CANDIDATE_LIMIT - len(keep_unrated)]
+    return keep_rated + keep_unrated
 
 
 @router.post("", response_model=schemas.PairOut, status_code=201)
@@ -277,3 +318,130 @@ def dissolve_pair(
     pair.dissolved_at = datetime.utcnow()
     db.commit()
     return schemas.MessageOut(message="הצמד פורק")
+
+
+# --- Inviting somebody who is not here yet --------------------------------
+#
+# The candidate list can only offer people who already have an account, and
+# most of anybody's padel partners do not. These three endpoints mirror the
+# friendly-match invite link exactly, because the problem is the same one: a
+# link is a question, and the person answering it may need to make an account
+# before they can answer.
+
+
+@router.post("/invite-links", response_model=schemas.PairInviteLinkOut)
+def create_pair_invite_link(
+    payload: schemas.PairInviteLinkCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    sport = db.query(models.Sport).filter(models.Sport.id == payload.sport_id).first()
+    if not sport:
+        raise HTTPException(status_code=404, detail="Sport not found")
+
+    token = secrets.token_urlsafe(16)
+    db.add(
+        models.PairInviteLink(
+            inviter_id=current_user.id, sport_id=payload.sport_id, token=token
+        )
+    )
+    db.commit()
+    return schemas.PairInviteLinkOut(token=token)
+
+
+@router.get("/invite-links/{token}", response_model=schemas.PairInviteLinkInfoOut)
+def describe_pair_invite_link(
+    token: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Read a link without spending it, so the screen can say which of four
+    things it is looking at: a real invitation, your own link, one already
+    used, or a dead token."""
+    link = (
+        db.query(models.PairInviteLink).filter(models.PairInviteLink.token == token).first()
+    )
+    if not link:
+        raise HTTPException(status_code=404, detail="קישור ההזמנה לא תקין")
+    return schemas.PairInviteLinkInfoOut(
+        inviter_id=link.inviter_id,
+        inviter_name=link.inviter.name if link.inviter else "",
+        inviter_photo_url=link.inviter.photo_url if link.inviter else None,
+        sport_id=link.sport_id,
+        sport_name=link.sport.name if link.sport else "",
+        used=bool(link.used),
+        is_mine=link.inviter_id == current_user.id,
+        pair_id=link.pair_id,
+    )
+
+
+@router.post("/invite-links/{token}/redeem", response_model=schemas.PairOut)
+def redeem_pair_invite_link(
+    token: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    # Lock the row before checking `used`, so two redemptions racing on the
+    # same one-time token cannot both pass the check before either commits.
+    link = (
+        db.query(models.PairInviteLink)
+        .filter(models.PairInviteLink.token == token)
+        .with_for_update()
+        .first()
+    )
+    if not link or link.used:
+        raise HTTPException(status_code=404, detail="קישור ההזמנה לא תקין או שכבר נוצל")
+    if link.inviter_id == current_user.id:
+        raise HTTPException(status_code=400, detail="זה קישור ההזמנה שלך — שלח אותו למישהו אחר")
+
+    a, b = _ordered(link.inviter_id, current_user.id)
+    existing = (
+        db.query(models.Pair)
+        .filter(
+            models.Pair.sport_id == link.sport_id,
+            models.Pair.player_a_id == a,
+            models.Pair.player_b_id == b,
+            models.Pair.status.in_(LIVE_STATUSES),
+        )
+        .first()
+    )
+    if existing and existing.status == models.PairStatus.active:
+        raise HTTPException(status_code=400, detail="אתם כבר צמד")
+
+    if existing:
+        # They already had an invitation open between them; opening the link
+        # is an answer to it rather than a second one.
+        pair = existing
+    else:
+        pair = models.Pair(
+            sport_id=link.sport_id,
+            player_a_id=a,
+            player_b_id=b,
+            proposed_by=link.inviter_id,
+        )
+        db.add(pair)
+
+    # Active straight away: one of them consented by sending the link and the
+    # other by opening it, which is the same two answers the in-app flow asks
+    # for in two steps.
+    pair.status = models.PairStatus.active
+    pair.accepted_at = datetime.utcnow()
+    link.used = True
+    db.commit()
+    db.refresh(pair)
+
+    seed_pair_level(db, pair)
+    link.pair_id = pair.id
+    db.commit()
+    db.refresh(pair)
+
+    notify_user(
+        db,
+        link.inviter_id,
+        "יש לך שותף",
+        f"{current_user.name} אישר/ה את ההזמנה — אתם צמד",
+        "/partners",
+        title_en="You have a partner",
+        body_en=f"{current_user.name} accepted — you are a pair",
+    )
+    return _out(pair, current_user.id, db)
