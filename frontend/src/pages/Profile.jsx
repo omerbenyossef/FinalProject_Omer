@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import { useSport } from "../SportContext.jsx";
+import { usePairs } from "../PairContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import { useOpenAction } from "../OpenActionContext.jsx";
 import SetScoreForm from "../SetScoreForm.jsx";
@@ -316,6 +317,30 @@ function NoLeagueBlock({ t, navigate, openCount, showLevelRow, onSetLevel }) {
   );
 }
 
+/* A padel player with a level but nobody to play with. Everything the usual
+   screen offers — a public league, a league of their own, a friendly — needs a
+   pair first, so there is exactly one thing to do here and it is not a choice
+   among three. */
+function NeedsPartnerBlock({ t, navigate, sportName }) {
+  return (
+    <div className="nl">
+      <h1 className="nl-q">{t("קודם כול — שותף")}</h1>
+      <p className="nl-lead">
+        {t("ב{sport} משחקים בזוגות, אז בלי שותף אין עם מה להתחיל. ברגע שיש לכם צמד אפשר להצטרף לליגה או לקבוע משחק.", {
+          sport: t(sportName || "פאדל"),
+        })}
+      </p>
+
+      <div className="nl-opts">
+        <button type="button" className="nl-opt" onClick={() => navigate("/partners")}>
+          <span className="nl-opt-label">{t("מצא שותף")}</span>
+          <ChevronIcon className="nl-opt-chev" aria-hidden="true" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // 109b — exactly one league, its schedule hasn't been generated yet ("round
 // not opened"). Replaces the usual to-play/my-leagues body with a single
 // hero for that one league. See firstdayandemptystates109.md section 2.
@@ -384,6 +409,7 @@ function SoloLeagueHero({ league, members, standings, t }) {
 export default function Profile() {
   const { user } = useAuth();
   const { selectedSportId, sports } = useSport();
+  const { activePairs, loading: pairsLoading } = usePairs();
   const { t } = useLanguage();
   const navigate = useNavigate();
   const { nextMatches, matchesLoading, reload: loadNextMatches, openAction, itemCount } =
@@ -400,6 +426,9 @@ export default function Profile() {
   const [busy, setBusy] = useState(false);
   const [reportingMatchId, setReportingMatchId] = useState(null);
   const [myRatings, setMyRatings] = useState([]);
+  // Distinct from "the list is empty": until the request lands we must not
+  // conclude this player has no level and throw a questionnaire at them.
+  const [ratingsLoaded, setRatingsLoaded] = useState(false);
   const [friendlyRequireConfirm, setFriendlyRequireConfirm] = useState(true);
   const [activeToPlay, setActiveToPlay] = useState(0);
   const [standingsByLeague, setStandingsByLeague] = useState({});
@@ -408,6 +437,7 @@ export default function Profile() {
   const [allLeagues, setAllLeagues] = useState([]);
   const [soloMembers, setSoloMembers] = useState([]);
   const [settingLevel, setSettingLevel] = useState(false);
+  const askedLevelRef = useRef(false);
   const carouselRef = useRef(null);
   const requestedLeagueStandingsRef = useRef(new Set());
   const requestedH2hRef = useRef(new Set());
@@ -421,7 +451,8 @@ export default function Profile() {
     api
       .myRatings()
       .then(setMyRatings)
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setRatingsLoaded(true));
     api
       .listLeagues()
       .then(setAllLeagues)
@@ -675,6 +706,24 @@ export default function Profile() {
   const winRate =
     stats && stats.matches_played > 0 ? Math.round((stats.wins / stats.matches_played) * 100) : null;
   const myRating = myRatings.find((r) => r.sport_id === selectedSportId) || null;
+
+  // In a pairs sport there is an order to things: the questionnaire, then a
+  // partner, and only then a league. Offering "join a league" to a padel
+  // player who has neither is offering three dead ends, since every one of
+  // them needs a pair to go through.
+  const playsInPairs = Boolean(sports.find((sport) => sport.id === selectedSportId)?.plays_in_pairs);
+  const needsLevelFirst = playsInPairs && ratingsLoaded && !myRating;
+  const needsPartnerFirst =
+    playsInPairs && ratingsLoaded && myRating && !pairsLoading && activePairs.length === 0;
+
+  useEffect(() => {
+    // Opened once, not every render: a player who closes it without finishing
+    // is not trapped in it.
+    if (needsLevelFirst && !askedLevelRef.current) {
+      askedLevelRef.current = true;
+      setSettingLevel(true);
+    }
+  }, [needsLevelFirst]);
   const sportName = sports.find((s) => s.id === selectedSportId)?.name;
 
   // homeformandratingchart125a.md section 3 — the last 5 completed matches
@@ -807,7 +856,9 @@ export default function Profile() {
       {error && <p className="error">{t(error)}</p>}
 
       <div className="home-sheet">
-      {isNoLeague ? (
+      {needsPartnerFirst ? (
+        <NeedsPartnerBlock t={t} navigate={navigate} sportName={sportName} />
+      ) : isNoLeague ? (
         <NoLeagueBlock
           t={t}
           navigate={navigate}

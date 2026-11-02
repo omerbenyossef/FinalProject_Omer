@@ -214,7 +214,19 @@ class LeagueOut(BaseModel):
     # Whether this league is played in pairs. The screens need it to know
     # whether joining asks for a partner and whether the table prints one name
     # or two.
+    #
+    # The column is nullable, because add_missing_columns can only add a
+    # nullable one — so every league that existed before pairs did reads NULL
+    # here, and a plain `bool` rejects it. Validating before the field is
+    # parsed is what keeps those leagues loading at all; without it
+    # /leagues/ answers 500 for everybody, which the browser then reports as a
+    # CORS error and sends you looking in the wrong place entirely.
     is_doubles: bool = False
+
+    @field_validator("is_doubles", mode="before")
+    @classmethod
+    def _null_is_singles(cls, value):
+        return False if value is None else value
     my_rank: Optional[int] = None
     my_members_total: Optional[int] = None
     my_wins: Optional[int] = None
