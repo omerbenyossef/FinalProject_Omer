@@ -612,25 +612,56 @@ def generate_schedule(
     # the circle method below pairs players by position, so the same id twice
     # in this list is the same id on both sides of a match — a player drawn
     # against themselves. Too cheap a guard to leave to a constraint.
-    seen: set[int] = set()
-    member_ids = []
-    for m in (
+    rows = (
         db.query(models.LeagueMembership)
         .filter(models.LeagueMembership.league_id == league_id)
         .order_by(models.LeagueMembership.id)
         .all()
-    ):
-        if m.user_id not in seen:
-            seen.add(m.user_id)
-            member_ids.append(m.user_id)
-    if len(member_ids) < 2:
-        raise HTTPException(status_code=400, detail="צריך לפחות 2 שחקנים כדי ליצור לוח משחקים")
+    )
+
+    # The circle method below draws entrants against each other by position,
+    # so the same entrant twice in this list is one drawn against itself.
+    # Deduplicated here rather than left to uq_league_user, which is too cheap
+    # a guard to skip, and in a doubles league both members hold a row naming
+    # the same pair so the duplicate is expected rather than a fault.
+    seen: set[int] = set()
+    entrants: list[int] = []
+    for m in rows:
+        key = m.pair_id if league.is_doubles else m.user_id
+        if key is None or key in seen:
+            continue
+        seen.add(key)
+        entrants.append(key)
+
+    if len(entrants) < 2:
+        detail = (
+            "צריך לפחות 2 צמדים כדי ליצור לוח משחקים"
+            if league.is_doubles
+            else "צריך לפחות 2 שחקנים כדי ליצור לוח משחקים"
+        )
+        raise HTTPException(status_code=400, detail=detail)
+
+    # A doubles match names one player from each side in player1_id/player2_id
+    # as well as the pairs, because the result, the chat, the scheduling and
+    # the reminders are all written against those two columns. Which member it
+    # is does not matter to any of them; it matters that they are never null.
+    captain_of: dict[int, int] = {}
+    if league.is_doubles:
+        pairs = db.query(models.Pair).filter(models.Pair.id.in_(entrants)).all()
+        captain_of = {p.id: p.player_a_id for p in pairs}
+        if len(captain_of) != len(entrants):
+            raise HTTPException(status_code=400, detail="אחד הצמדים בליגה כבר לא קיים")
 
     existing_matches = db.query(models.Match).filter(models.Match.league_id == league_id).all()
-    existing_pairs = {frozenset((m.player1_id, m.player2_id)) for m in existing_matches}
+    existing_pairs = {
+        frozenset(
+            (m.pair1_id, m.pair2_id) if league.is_doubles else (m.player1_id, m.player2_id)
+        )
+        for m in existing_matches
+    }
     max_existing_round = max((m.round_number or 0 for m in existing_matches), default=0)
 
-    ideal_rounds = _round_robin_rounds(member_ids)
+    ideal_rounds = _round_robin_rounds(entrants)
 
     created = []
     next_round_number = max_existing_round + 1
@@ -641,9 +672,22 @@ def generate_schedule(
         for p1, p2 in new_pairs:
             if p1 == p2:
                 continue
-            match = models.Match(
-                league_id=league_id, player1_id=p1, player2_id=p2, round_number=next_round_number
-            )
+            if league.is_doubles:
+                match = models.Match(
+                    league_id=league_id,
+                    pair1_id=p1,
+                    pair2_id=p2,
+                    player1_id=captain_of[p1],
+                    player2_id=captain_of[p2],
+                    round_number=next_round_number,
+                )
+            else:
+                match = models.Match(
+                    league_id=league_id,
+                    player1_id=p1,
+                    player2_id=p2,
+                    round_number=next_round_number,
+                )
             db.add(match)
             created.append(match)
         next_round_number += 1
@@ -665,12 +709,31 @@ def generate_schedule(
         # was created".
         opponent_by_member: dict[int, str] = {}
         round_by_member: dict[int, int] = {}
-        for match in created:
-            for player, other in ((match.player1, match.player2), (match.player2, match.player1)):
-                if player and other:
-                    opponent_by_member[player.id] = other.name
-                    round_by_member[player.id] = match.round_number
-        for member_id in member_ids:
+        if league.is_doubles:
+            # All four hear it, and what each of them hears is the other PAIR
+            # — "Mizrahi/Peretz", not whichever of the two happens to be named
+            # in player2_id.
+            from .leagues import pair_display_name
+
+            pair_rows = {p.id: p for p in db.query(models.Pair).filter(models.Pair.id.in_(entrants)).all()}
+            for match in created:
+                sides = ((match.pair1_id, match.pair2_id), (match.pair2_id, match.pair1_id))
+                for mine, theirs in sides:
+                    my_pair, their_pair = pair_rows.get(mine), pair_rows.get(theirs)
+                    if not my_pair or not their_pair:
+                        continue
+                    for uid in my_pair.member_ids:
+                        opponent_by_member[uid] = pair_display_name(their_pair)
+                        round_by_member[uid] = match.round_number
+        else:
+            for match in created:
+                for player, other in ((match.player1, match.player2), (match.player2, match.player1)):
+                    if player and other:
+                        opponent_by_member[player.id] = other.name
+                        round_by_member[player.id] = match.round_number
+
+        # Every person in the league, which in a doubles one is two per entrant.
+        for member_id in dict.fromkeys(r.user_id for r in rows):
             if member_id == current_user.id:
                 continue
             opponent_name = opponent_by_member.get(member_id)

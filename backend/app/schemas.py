@@ -161,6 +161,9 @@ class LeagueCreate(BaseModel):
     lat: Optional[float] = None
     lng: Optional[float] = None
     planned_rounds: Optional[int] = None
+    # Left unset, this follows the sport: padel is played in pairs, everything
+    # else one against one.
+    is_doubles: Optional[bool] = None
 
 
 class LeagueRulesUpdate(BaseModel):
@@ -204,6 +207,10 @@ class LeagueOut(BaseModel):
     lat: Optional[float] = None
     lng: Optional[float] = None
     planned_rounds: Optional[int] = None
+    # Whether this league is played in pairs. The screens need it to know
+    # whether joining asks for a partner and whether the table prints one name
+    # or two.
+    is_doubles: bool = False
     my_rank: Optional[int] = None
     my_members_total: Optional[int] = None
     my_wins: Optional[int] = None
@@ -292,6 +299,9 @@ class MemberOut(BaseModel):
 
 class JoinLeagueRequest(BaseModel):
     code: Optional[str] = None
+    # Required by a doubles league and refused by a singles one: in padel it
+    # is the pair that enters, not the person.
+    pair_id: Optional[int] = None
 
 
 class InviteCodeOut(BaseModel):
@@ -538,8 +548,19 @@ class FriendlyInviteLinkInfoOut(BaseModel):
     match_id: Optional[int] = None
 
 
+class StandingSideOut(BaseModel):
+    """Who a standings row is about. A singles row is one player; a doubles
+    row is a pair, and `name` is how the table prints it — "Ben Yossef/Cohen"."""
+
+    pair_id: Optional[int] = None
+    name: str
+    players: list[PairPlayerOut] = []
+
+
 class StandingRow(BaseModel):
-    user: MemberOut
+    # None on a doubles row, where the side is a pair rather than a person.
+    user: Optional[MemberOut] = None
+    side: Optional[StandingSideOut] = None
     played: int
     wins: int
     losses: int

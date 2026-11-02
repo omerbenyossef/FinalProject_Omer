@@ -240,6 +240,11 @@ def update_ratings_for_match(db: Session, match: models.Match) -> None:
     player with no rating yet (shouldn't happen once join-gating is in place,
     but matches created before this feature shipped may lack one), or for a
     match match_winner_id can't decide."""
+    # One door for both games, so that every caller that finalises a match —
+    # the confirm, the auto-confirm, the correction — needs to know nothing
+    # about how many people were on the court.
+    if match.pair1_id and match.pair2_id:
+        return update_ratings_for_doubles_match(db, match)
     if match.player1_score is None or match.player2_score is None:
         return
     winner_id = match_winner_id(match)

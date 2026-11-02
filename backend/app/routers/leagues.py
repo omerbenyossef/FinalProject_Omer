@@ -152,7 +152,14 @@ def _to_league_out(
     current_user_id: int | None = None,
 ) -> schemas.LeagueOut:
     out = schemas.LeagueOut.model_validate(league)
-    out.member_count = len(league.memberships)
+    out.is_doubles = bool(league.is_doubles)
+    # A doubles league is a league of pairs, so "8 players" would be a lie
+    # about its size — it has four teams. Both members hold a membership row.
+    out.member_count = (
+        len({m.pair_id for m in league.memberships if m.pair_id})
+        if league.is_doubles
+        else len(league.memberships)
+    )
     out.is_open = bool(league.is_open)
     out.best_of = league.best_of or 3
     out.round_length_days = league.round_length_days or 7
@@ -693,6 +700,11 @@ def create_league(
         lat=league_in.lat,
         lng=league_in.lng,
         planned_rounds=league_in.planned_rounds,
+        is_doubles=(
+            league_in.is_doubles
+            if league_in.is_doubles is not None
+            else sport.name in DOUBLES_BY_DEFAULT
+        ),
     )
     db.add(league)
     db.commit()
@@ -702,7 +714,9 @@ def create_league(
     # too, so they join it like anyone else would. An open league is the
     # admin curating something for other people to join and play — not a
     # personal signup, so it starts empty instead of auto-seating them.
-    if not league_in.is_open:
+    # A doubles league cannot seat its creator on its own: they have to say
+    # which of their pairs is entering, which is what joining it does.
+    if not league_in.is_open and not league.is_doubles:
         membership = models.LeagueMembership(league_id=league.id, user_id=current_user.id)
         db.add(membership)
         db.commit()
@@ -898,9 +912,55 @@ def preview_league(
     )
 
 
+# Which sports are played in pairs unless a league says otherwise. Padel
+# singles exists and tennis doubles exists, so this is only the default a new
+# league starts from, never what a league means afterwards.
+DOUBLES_BY_DEFAULT = {"פאדל"}
+
+
+def pair_display_name(pair: models.Pair) -> str:
+    """How a pair is printed in a table: surnames if we can tell them apart,
+    first names if we cannot. "Ben Yossef/Cohen"."""
+
+    def short(user) -> str:
+        name = (user.name or "").strip()
+        parts = name.split()
+        return parts[-1] if len(parts) > 1 else name
+
+    a, b = short(pair.player_a), short(pair.player_b)
+    return f"{a}/{b}" if a != b else f"{pair.player_a.name}/{pair.player_b.name}"
+
+
+def _load_active_pair(db: Session, pair_id: int, user_id: int, sport_id: int) -> models.Pair:
+    pair = (
+        db.query(models.Pair)
+        .options(joinedload(models.Pair.player_a), joinedload(models.Pair.player_b))
+        .filter(models.Pair.id == pair_id)
+        .first()
+    )
+    if not pair or user_id not in pair.member_ids:
+        raise HTTPException(status_code=404, detail="הצמד לא נמצא")
+    if pair.status != models.PairStatus.active:
+        raise HTTPException(status_code=400, detail="הצמד עוד לא אושר על ידי שני השחקנים")
+    if pair.sport_id != sport_id:
+        raise HTTPException(status_code=400, detail="הצמד הזה שייך לענף אחר")
+    return pair
+
+
 def _join_league_core(
-    db: Session, league: models.League, current_user: models.User, code: str | None = None
+    db: Session,
+    league: models.League,
+    current_user: models.User,
+    code: str | None = None,
+    pair_id: int | None = None,
 ) -> schemas.LeagueOut:
+    if league.is_doubles and pair_id is None:
+        raise HTTPException(status_code=400, detail="צריך לבחור צמד כדי להצטרף לליגת זוגות")
+    if not league.is_doubles and pair_id is not None:
+        raise HTTPException(status_code=400, detail="הליגה הזו היא ליגת יחידים")
+
+    pair = _load_active_pair(db, pair_id, current_user.id, league.sport_id) if pair_id else None
+
     existing = (
         db.query(models.LeagueMembership)
         .filter(
@@ -910,6 +970,13 @@ def _join_league_core(
         .first()
     )
     if existing:
+        # Already in with this very pair: nothing to do. Already in with a
+        # different one: say so, rather than silently leaving them where they
+        # are and looking like it worked.
+        if pair and existing.pair_id != pair.id:
+            raise HTTPException(
+                status_code=400, detail="אתה כבר בליגה הזו עם צמד אחר"
+            )
         return _to_league_out(league)
 
     # Only a private league is gated by its code. A public one has a code too
@@ -926,26 +993,45 @@ def _join_league_core(
     # on Postgres). Count fresh from the membership table rather than
     # league.memberships, which may be a stale cached collection.
     db.query(models.League).filter(models.League.id == league.id).with_for_update().first()
-    member_count = (
-        db.query(models.LeagueMembership).filter(models.LeagueMembership.league_id == league.id).count()
+    rows = (
+        db.query(models.LeagueMembership).filter(models.LeagueMembership.league_id == league.id).all()
     )
+    # Capacity counts entrants, and in a doubles league an entrant is a pair.
+    member_count = len({r.pair_id for r in rows if r.pair_id}) if league.is_doubles else len(rows)
     if league.capacity is not None and member_count >= league.capacity:
         raise HTTPException(status_code=403, detail="הליגה מלאה")
 
     rating = get_rating(db, current_user.id, league.sport_id)
     if not rating:
         raise HTTPException(status_code=400, detail="צריך למלא שאלון דירוג לענף הזה לפני ההצטרפות")
+    if pair and pair.level is None:
+        raise HTTPException(status_code=400, detail="לצמד אין עדיין דירוג")
     # A private league is joined by a personal invite (link or code), not by
     # matching a level range — that range only means anything for a public
     # league listing itself for strangers to browse and pick a fit from.
     if league.is_open:
         level_min = league.level_min if league.level_min is not None else models.RATING_MIN
         level_max = league.level_max if league.level_max is not None else models.RATING_MAX
-        if not (level_min <= round_to_half(rating.level) <= level_max):
-            raise HTTPException(status_code=403, detail="הדירוג שלך מחוץ לטווח הרמות של הליגה הזו")
+        # In a doubles league the entrant is the pair, so it is the pair's
+        # rating that has to fit the range — a 3.0 may play in a 4.0 league
+        # alongside a 5.0, because together they are a 4.0 team.
+        level = round_to_half(pair.level if pair else rating.level)
+        if not (level_min <= level <= level_max):
+            detail = (
+                "הדירוג של הצמד מחוץ לטווח הרמות של הליגה הזו"
+                if pair
+                else "הדירוג שלך מחוץ לטווח הרמות של הליגה הזו"
+            )
+            raise HTTPException(status_code=403, detail=detail)
 
-    membership = models.LeagueMembership(league_id=league.id, user_id=current_user.id)
-    db.add(membership)
+    if pair:
+        # Both members get a row, each naming the pair: the table still
+        # answers "is this person in this league", which is what most of the
+        # app asks, while the standings group by the pair.
+        for uid in pair.member_ids:
+            db.add(models.LeagueMembership(league_id=league.id, user_id=uid, pair_id=pair.id))
+    else:
+        db.add(models.LeagueMembership(league_id=league.id, user_id=current_user.id))
     db.commit()
 
     db.refresh(league)
@@ -975,7 +1061,7 @@ def join_league(
     current_user: models.User = Depends(get_current_user),
 ):
     league = _get_league_or_404(db, league_id)
-    return _join_league_core(db, league, current_user, join_in.code)
+    return _join_league_core(db, league, current_user, join_in.code, join_in.pair_id)
 
 
 @router.post("/{league_id}/leave", status_code=204)
@@ -1108,6 +1194,108 @@ def _accumulate_stats(stats, matches):
             p1["losses"] += 1
 
 
+def _pairs_in_league(db: Session, league: models.League) -> dict[int, models.Pair]:
+    ids = {m.pair_id for m in league.memberships if m.pair_id}
+    if not ids:
+        return {}
+    return {
+        p.id: p
+        for p in db.query(models.Pair)
+        .options(joinedload(models.Pair.player_a), joinedload(models.Pair.player_b))
+        .filter(models.Pair.id.in_(ids))
+        .all()
+    }
+
+
+def _empty_pair_stats(pairs: dict[int, models.Pair]):
+    return {
+        pid: {"pair": pair, "played": 0, "wins": 0, "losses": 0, "points": 0}
+        for pid, pair in pairs.items()
+    }
+
+
+def _accumulate_pair_stats(db: Session, stats, matches):
+    """The doubles table, grouped by pair rather than by person. A finished
+    match stays in the standings even after a pair dissolves, the same way a
+    singles one survives a player leaving."""
+    for match in matches:
+        if not match.pair1_id or not match.pair2_id:
+            continue
+        for pid in (match.pair1_id, match.pair2_id):
+            if pid not in stats:
+                pair = (
+                    db.query(models.Pair)
+                    .options(joinedload(models.Pair.player_a), joinedload(models.Pair.player_b))
+                    .filter(models.Pair.id == pid)
+                    .first()
+                )
+                if not pair:
+                    continue
+                stats[pid] = {"pair": pair, "played": 0, "wins": 0, "losses": 0, "points": 0}
+        if match.pair1_id not in stats or match.pair2_id not in stats:
+            continue
+        s1, s2 = stats[match.pair1_id], stats[match.pair2_id]
+        s1["played"] += 1
+        s2["played"] += 1
+        winner_id = match_winner_id(match)
+        if winner_id is None:
+            continue
+        # match_winner_id answers with a player id, and on a doubles match
+        # that is the member named in player1_id/player2_id — so it says which
+        # SIDE won, which is what the table needs.
+        if winner_id == match.player1_id:
+            s1["wins"] += 1
+            s1["points"] += 3
+            s2["losses"] += 1
+        else:
+            s2["wins"] += 1
+            s2["points"] += 3
+            s1["losses"] += 1
+
+
+def _pair_standings(db: Session, league: models.League, completed, latest_round):
+    pairs = _pairs_in_league(db, league)
+    stats = _empty_pair_stats(pairs)
+    _accumulate_pair_stats(db, stats, completed)
+    rows = sorted(stats.values(), key=lambda r: (-r["points"], -r["wins"]))
+
+    rank_delta: dict[int, int] = {}
+    if latest_round is not None and latest_round >= 2:
+        prev = [m for m in completed if m.round_number is None or m.round_number < latest_round]
+        prev_stats = _empty_pair_stats(pairs)
+        _accumulate_pair_stats(db, prev_stats, prev)
+        prev_rows = sorted(prev_stats.values(), key=lambda r: (-r["points"], -r["wins"]))
+        prev_rank = {r["pair"].id: i + 1 for i, r in enumerate(prev_rows)}
+        now_rank = {r["pair"].id: i + 1 for i, r in enumerate(rows)}
+        for pid, was in prev_rank.items():
+            if pid in now_rank:
+                rank_delta[pid] = was - now_rank[pid]
+
+    out = []
+    for row in rows:
+        pair = row["pair"]
+        out.append(
+            schemas.StandingRow(
+                side=schemas.StandingSideOut(
+                    pair_id=pair.id,
+                    name=pair_display_name(pair),
+                    players=[
+                        schemas.PairPlayerOut.model_validate(pair.player_a),
+                        schemas.PairPlayerOut.model_validate(pair.player_b),
+                    ],
+                ),
+                played=row["played"],
+                wins=row["wins"],
+                losses=row["losses"],
+                points=row["points"],
+                rank_delta=rank_delta.get(pair.id),
+                level=round_to_half(pair.level) if pair.level is not None else None,
+                provisional=pair.provisional,
+            )
+        )
+    return out
+
+
 @router.get("/{league_id}/standings", response_model=list[schemas.StandingRow])
 def get_standings(league_id: int, db: Session = Depends(get_db)):
     _auto_confirm_overdue(db)
@@ -1117,6 +1305,9 @@ def get_standings(league_id: int, db: Session = Depends(get_db)):
     existing_rounds = sorted({m.round_number for m in all_matches if m.round_number})
     latest_round = existing_rounds[-1] if existing_rounds else None
     completed_matches = [m for m in all_matches if m.status == models.MatchStatus.completed]
+
+    if league.is_doubles:
+        return _pair_standings(db, league, completed_matches, latest_round)
 
     stats = _empty_stats(league)
     _accumulate_stats(stats, completed_matches)
