@@ -1,61 +1,30 @@
 import { useState } from "react";
-import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
-import { api } from "../api";
+import { Navigate, useSearchParams } from "react-router-dom";
 import GoogleSignInButton from "../GoogleSignInButton.jsx";
 import { useAuth } from "../AuthContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import { useSplashDone } from "../SplashContext.jsx";
 
+/* The only door. There are no passwords in Rally: signing in and signing up
+   are the same tap, and which of the two it was is the server's business, not
+   a choice to put in front of someone who just wants to play tennis. */
 export default function SignIn() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState({});
-  const [submitting, setSubmitting] = useState(false);
-  const [slow, setSlow] = useState(false);
-  const { user, loading, loginWithToken } = useAuth();
+  const [error, setError] = useState("");
+  const { user, loading } = useAuth();
   const { t } = useLanguage();
   const splashDone = useSplashDone();
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // Whoever is already signed in is done here. The email form navigated by
-  // itself once it had a token, but the Google button only hands one to the
-  // auth context — without this, signing in with Google left the player
-  // logged in and still looking at the sign-in screen.
+  // Whoever is already signed in is done here. The Google button only hands a
+  // token to the auth context, so without this the player stays logged in and
+  // looking at the sign-in screen.
   if (!loading && user) {
+    // Old-style invite links (/signup?friendly=TOKEN) are still in people's
+    // chats and now land here. The invitation screen says what became of one
+    // either way, so hand it over rather than redeeming blind.
+    const friendly = searchParams.get("friendly");
+    if (friendly) return <Navigate to={`/friendly/invite/${friendly}`} replace />;
     return <Navigate to={searchParams.get("redirect") || "/profile"} replace />;
-  }
-
-  const redirectSuffix = searchParams.get("redirect")
-    ? `?redirect=${encodeURIComponent(searchParams.get("redirect"))}`
-    : "";
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    const errors = {};
-    if (!email.trim()) errors.email = t("נא להזין אימייל");
-    if (!password) errors.password = t("נא להזין סיסמה");
-    if (Object.keys(errors).length) {
-      setFieldErrors(errors);
-      return;
-    }
-    setFieldErrors({});
-    setSubmitting(true);
-    setSlow(false);
-    const slowTimer = setTimeout(() => setSlow(true), 4000);
-    try {
-      const data = await api.login({ email, password });
-      loginWithToken(data.access_token, data.user);
-      const redirect = searchParams.get("redirect");
-      navigate(redirect || "/profile");
-    } catch (err) {
-      setFieldErrors({ password: t(err.message) });
-    } finally {
-      clearTimeout(slowTimer);
-      setSubmitting(false);
-      setSlow(false);
-    }
   }
 
   return (
@@ -90,83 +59,17 @@ export default function SignIn() {
         </p>
       </div>
 
-      {/* The form only exists once the splash is off screen: iOS offers to
-          fill a saved password as soon as a login form is in the DOM, and
-          under the splash that sheet comes up over a full-screen logo with
-          nothing behind it to fill. */}
+      {/* Only once the splash is off screen, so Google's script isn't asked to
+          draw into a box that is still hidden. */}
       {splashDone && (
-        <>
-          {/* Above the form, because it is the shorter way in and the one most
-              people will take. Inside the splash guard with it, so Google's
-              script isn't asked to draw into a box that is still hidden. */}
-          <GoogleSignInButton onError={(msg) => setFieldErrors({ password: msg })} />
-      <form className="signscreen-form" onSubmit={handleSubmit} noValidate>
-        <div className="signfield">
-          <label className="signfield-label" htmlFor="signin-email" dir="ltr">
-            {t("EMAIL")}
-          </label>
-          <input
-            id="signin-email"
-            className="signfield-input signfield-input-email"
-            type="email"
-            autoComplete="username"
-            dir="ltr"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          {fieldErrors.email && <p className="signfield-error">{fieldErrors.email}</p>}
+        <div className="signscreen-door">
+          <GoogleSignInButton onError={setError} />
+          {error && <p className="signfield-error signscreen-door-error">{t(error)}</p>}
+          <p className="signscreen-door-note">
+            {t("ההתחברות הראשונה פותחת לך חשבון. אין סיסמה לזכור.")}
+          </p>
         </div>
-
-        <div className="signfield">
-          <div className="signfield-label-row" dir="ltr">
-            <label className="signfield-label" htmlFor="signin-password">
-              {t("PASSWORD")}
-            </label>
-            {/* Carry the address over: someone who already typed it here
-                shouldn't have to identify themselves twice. */}
-            <Link
-              className="signscreen-inline-link"
-              to={`/forgot-password${email.trim() ? `?email=${encodeURIComponent(email.trim())}` : ""}`}
-            >
-              {t("FORGOT")}
-            </Link>
-          </div>
-          <div className="signfield-password-wrap">
-            <input
-              id="signin-password"
-              className="signfield-input signfield-input-password"
-              type={showPassword ? "text" : "password"}
-              autoComplete="current-password"
-              dir="ltr"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-            <button
-              type="button"
-              className="signfield-show"
-              onClick={() => setShowPassword((s) => !s)}
-              dir="ltr"
-            >
-              {showPassword ? t("HIDE") : t("SHOW")}
-            </button>
-          </div>
-          {fieldErrors.password && <p className="signfield-error">{fieldErrors.password}</p>}
-        </div>
-
-        <button type="submit" className="btn-bright" disabled={submitting}>
-          {submitting ? t("מתחבר...") : t("התחברות")}
-        </button>
-        {slow && <p className="muted signscreen-slow">{t("השרת מתעורר, זה עשוי לקחת עד דקה בפעם הראשונה...")}</p>}
-      </form>
-        </>
       )}
-
-      <p className="signscreen-footer">
-        <span className="signscreen-footer-label" dir="ltr">
-          {t("NEW HERE?")}
-        </span>{" "}
-        <Link to={`/signup${redirectSuffix}`}>{t("יצירת חשבון")}</Link>
-      </p>
     </div>
   );
 }

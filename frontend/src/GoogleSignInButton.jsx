@@ -157,11 +157,6 @@ export default function GoogleSignInButton({ onError }) {
       {/* Ad blockers and locked-down networks block Google's script outright,
           and an empty gap where a button should be explains nothing. */}
       {failed && <p className="gsi-failed">{t("לא הצלחנו לטעון את ההתחברות עם גוגל")}</p>}
-      <div className="gsi-or">
-        <span />
-        <span className="gsi-or-word">{t("או")}</span>
-        <span />
-      </div>
     </div>
   );
 }

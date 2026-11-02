@@ -5,6 +5,11 @@ smtplib cannot reach Gmail from the deployed service however correct the
 credentials are — it fails at the socket, not at the login. Anything sent from
 production therefore goes over HTTPS through Resend; SMTP stays for a local
 machine, where it works and needs no third party.
+
+Nothing calls this at the moment: signing in goes through Google, so there are
+no passwords and nothing to reset. It is kept because working out that SMTP is
+blocked, and reaching for an HTTP sender instead, is the whole cost here — the
+sending itself is twenty lines.
 """
 
 import json
@@ -17,8 +22,6 @@ from email.mime.text import MIMEText
 
 GMAIL_ADDRESS = os.environ.get("GMAIL_ADDRESS")
 GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD")
-FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173")
-
 RESEND_API_KEY = os.environ.get("RESEND_API_KEY")
 # Resend will send from its own test address without any setup, but only to the
 # address that owns the Resend account. Reaching anybody else needs a domain
@@ -106,19 +109,3 @@ def send_email(to_email: str, subject: str, html: str) -> bool:
     if not email_configured():
         print(f"[dev] no mail configured; nothing sent to {to_email}")
     return False
-
-
-def send_reset_email(to_email: str, token: str) -> bool:
-    reset_link = f"{FRONTEND_URL}/reset-password?token={token}"
-
-    if not email_configured():
-        print(f"[dev] Password reset link for {to_email}: {reset_link}")
-        return False
-
-    html = (
-        "<p>שלום,</p>"
-        "<p>לחצו על הקישור הבא כדי לאפס את הסיסמה שלכם ב-Rally:</p>"
-        f'<p><a href="{reset_link}">{reset_link}</a></p>'
-        "<p>הקישור תקף לשעה אחת. אם לא ביקשתם איפוס סיסמה, אפשר להתעלם מהמייל הזה.</p>"
-    )
-    return send_email(to_email, "איפוס סיסמה - Rally", html)

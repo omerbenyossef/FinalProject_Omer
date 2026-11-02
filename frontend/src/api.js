@@ -57,21 +57,11 @@ async function request(path, { method = "GET", body, auth = true } = {}) {
 }
 
 export const api = {
-  register: (data) => request("/auth/register", { method: "POST", body: data, auth: false }),
-  login: (data) => request("/auth/login", { method: "POST", body: data, auth: false }),
   // The JWT Google's button handed the browser. The server checks its
   // signature before it means anything.
   googleSignIn: (credential) =>
     request("/auth/google", { method: "POST", body: { credential }, auth: false }),
   me: () => request("/auth/me"),
-  forgotPassword: (email) =>
-    request("/auth/forgot-password", { method: "POST", body: { email }, auth: false }),
-  resetPassword: (token, newPassword) =>
-    request("/auth/reset-password", {
-      method: "POST",
-      body: { token, new_password: newPassword },
-      auth: false,
-    }),
   myStats: (sportId) => request(`/auth/me/stats${sportId ? `?sport_id=${sportId}` : ""}`),
   updateProfile: (fields) => request("/auth/me", { method: "PATCH", body: fields }),
   testPush: () => request("/push/test", { method: "POST" }),
@@ -79,18 +69,8 @@ export const api = {
   deleteMyPhoto: () => request("/auth/me/photo", { method: "DELETE" }),
   updateNotificationPreferences: (fields) =>
     request("/auth/me/notifications", { method: "PATCH", body: fields }),
-  changePassword: (currentPassword, newPassword) =>
-    request("/auth/change-password", {
-      method: "POST",
-      body: { current_password: currentPassword, new_password: newPassword },
-    }),
-  changeEmail: (currentPassword, newEmail) =>
-    request("/auth/change-email", {
-      method: "POST",
-      body: { current_password: currentPassword, new_email: newEmail },
-    }),
-  deleteAccount: (password) =>
-    request("/auth/me", { method: "DELETE", body: { password } }),
+  deleteAccount: (confirmation) =>
+    request("/auth/me", { method: "DELETE", body: { confirmation } }),
 
   listSports: () => request("/sports/", { auth: false }),
 

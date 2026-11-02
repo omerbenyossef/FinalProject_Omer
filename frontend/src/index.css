@@ -970,6 +970,15 @@ a { color: var(--court); text-decoration: none; }
   font-weight: 500;
 }
 
+/* Says where the address came from, in place of the edit button that used to
+   sit here. Quiet: it is an explanation, not an action. */
+.settings-detail-note {
+  flex: none;
+  font: 500 11px "IBM Plex Mono", var(--mono);
+  letter-spacing: .04em;
+  color: #6f7787;
+}
+
 .settings-detail-action {
   flex: none;
   background: none;
@@ -3490,6 +3499,21 @@ button:active { transform: translateY(1px); }
   flex-direction: column;
   gap: 26px;
   padding-bottom: 40px;
+  /* One button is all that is left here, so the screen is mostly air. Centre
+     what there is rather than hanging it from the top with a third of the
+     phone empty underneath. The brand keeps its own padding on a short
+     screen, where there is nothing spare to centre with. */
+  /* 64px is main.content's own 24 top + 40 bottom. Measured, not guessed: at
+     a plain 100dvh the screen scrolls by exactly that much. */
+  min-height: calc(100dvh - 64px);
+  justify-content: center;
+}
+
+.signscreen .signscreen-brand { padding-top: 0; }
+
+@media (max-height: 680px) {
+  .signscreen { min-height: 0; justify-content: flex-start; }
+  .signscreen .signscreen-brand { padding-top: 56px; }
 }
 
 /* signin-logo-174a — the tile the user tapped on their home screen a second
@@ -3575,6 +3599,25 @@ button:active { transform: translateY(1px); }
   display: flex;
   flex-direction: column;
   gap: 24px;
+}
+
+/* The whole of the sign-in screen below the brand, now that the one button is
+   all of it. Centred on its own rather than sitting at the top of a form. */
+.signscreen-door {
+  margin-top: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
+}
+
+.signscreen-door-error { text-align: center; }
+
+.signscreen-door-note {
+  margin: 0;
+  text-align: center;
+  font: 400 13px/1.5 "IBM Plex Sans", var(--sans);
+  color: var(--muted);
 }
 
 .signfield {
@@ -8420,14 +8463,6 @@ button:active { transform: translateY(1px); }
 .gsi-failed {
   margin: 8px 0 0; text-align: center;
   font: 500 12.5px "IBM Plex Sans", var(--sans); color: #8b93a6;
-}
-.gsi-or { margin-top: 22px; display: flex; align-items: center; gap: 12px; }
-.gsi-or span:first-child, .gsi-or span:last-child {
-  flex: 1; height: 1px; background: rgba(148, 163, 184, .18);
-}
-.gsi-or-word {
-  flex: none; font: 500 10.5px "IBM Plex Mono", "IBM Plex Sans", var(--mono);
-  letter-spacing: .16em; color: #6F7787; text-transform: uppercase;
 }
 
 /* home-week-empty-183c — the week with nothing in it. */

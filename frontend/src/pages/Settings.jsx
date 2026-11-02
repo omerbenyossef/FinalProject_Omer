@@ -51,7 +51,7 @@ export default function Settings() {
           <PageHelp
             pageKey="settings"
             title="עמוד ההגדרות"
-            text="כאן תוכלו לערוך את הפרופיל שלכם, לשנות סיסמה או אימייל, להפעיל התראות, ולשנות שפה או מראה."
+            text="כאן תוכלו לערוך את הפרופיל שלכם, להפעיל התראות, ולשנות שפה או מראה."
           />
         </div>
         <div className="settings-chips">
@@ -80,8 +80,7 @@ export default function Settings() {
           placeholder={t("לא הוגדר")}
           onSave={async (v) => updateUser(await api.updateProfile({ travel_radius_km: v === null ? null : Number(v) }))}
         />
-        <ChangeEmailRow user={user} updateUser={updateUser} />
-        <ChangePasswordRow />
+        <AccountRow user={user} />
       </div>
 
       <div className="settings-section">
@@ -222,172 +221,21 @@ function IdentityRow({ label, value, placeholder, unit, type = "text", required,
   );
 }
 
-function ChangeEmailRow({ user, updateUser }) {
-  const [editing, setEditing] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newEmail, setNewEmail] = useState("");
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+/* The address is Google's, not ours — it arrives with the sign-in and there is
+   nothing here to edit. Shown because knowing which account you are in is
+   worth a line, and because a player with two Google addresses will want to
+   check which one Rally knows them by. */
+function AccountRow({ user }) {
   const { t } = useLanguage();
-
-  function openEditor() {
-    setCurrentPassword("");
-    setNewEmail(user?.email || "");
-    setMessage("");
-    setError("");
-    setEditing(true);
-  }
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setError("");
-    setMessage("");
-    setSubmitting(true);
-    try {
-      const updated = await api.changeEmail(currentPassword, newEmail);
-      updateUser(updated);
-      setMessage("האימייל עודכן בהצלחה");
-      setEditing(false);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
   return (
-    <div className="settings-detail-row" style={{ flexDirection: "column", alignItems: "stretch" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-        <div>
-          <div className="settings-detail-title">{t("אימייל")}</div>
-          <div className="settings-detail-value mono" dir="ltr">
-            {user?.email}
-          </div>
+    <div className="settings-detail-row">
+      <div>
+        <div className="settings-detail-title">{t("אימייל")}</div>
+        <div className="settings-detail-value mono" dir="ltr">
+          {user?.email}
         </div>
-        {!editing && (
-          <button type="button" className="settings-detail-action" onClick={openEditor}>
-            {t("שנה אימייל")}
-          </button>
-        )}
       </div>
-
-      {editing && (
-        <form onSubmit={handleSubmit} style={{ marginTop: 14 }}>
-          <label>
-            {t("אימייל חדש")}
-            <input
-              type="email"
-              value={newEmail}
-              onChange={(e) => setNewEmail(e.target.value)}
-              required
-            />
-          </label>
-          <label>
-            {t("סיסמה נוכחית")}
-            <input
-              type="password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              required
-            />
-          </label>
-          {error && <p className="error">{t(error)}</p>}
-          <div className="inline-form">
-            <button type="submit" className="btn-primary" disabled={submitting}>
-              {submitting ? t("מעדכן...") : t("עדכן אימייל")}
-            </button>
-            <button type="button" className="link-btn" onClick={() => setEditing(false)}>
-              {t("ביטול")}
-            </button>
-          </div>
-        </form>
-      )}
-      {!editing && message && <p className="muted">{t(message)}</p>}
-    </div>
-  );
-}
-
-function ChangePasswordRow() {
-  const [editing, setEditing] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const { t } = useLanguage();
-
-  function openEditor() {
-    setCurrentPassword("");
-    setNewPassword("");
-    setMessage("");
-    setError("");
-    setEditing(true);
-  }
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setError("");
-    setMessage("");
-    setSubmitting(true);
-    try {
-      const data = await api.changePassword(currentPassword, newPassword);
-      setMessage(data.message);
-      setEditing(false);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  return (
-    <div className="settings-detail-row" style={{ flexDirection: "column", alignItems: "stretch" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-        <div>
-          <div className="settings-detail-title">{t("סיסמה")}</div>
-          <div className="settings-detail-value mono">••••••••</div>
-        </div>
-        {!editing && (
-          <button type="button" className="settings-detail-action" onClick={openEditor}>
-            {t("שנה")}
-          </button>
-        )}
-      </div>
-
-      {editing && (
-        <form onSubmit={handleSubmit} style={{ marginTop: 14 }}>
-          <label>
-            {t("סיסמה נוכחית")}
-            <input
-              type="password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              required
-            />
-          </label>
-          <label>
-            {t("סיסמה חדשה")}
-            <input
-              type="password"
-              minLength={6}
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              required
-            />
-          </label>
-          {error && <p className="error">{t(error)}</p>}
-          <div className="inline-form">
-            <button type="submit" className="btn-primary" disabled={submitting}>
-              {submitting ? t("מעדכן...") : t("עדכן סיסמה")}
-            </button>
-            <button type="button" className="link-btn" onClick={() => setEditing(false)}>
-              {t("ביטול")}
-            </button>
-          </div>
-        </form>
-      )}
-      {!editing && message && <p className="muted">{t(message)}</p>}
+      <div className="settings-detail-note">{t("מחשבון Google")}</div>
     </div>
   );
 }
@@ -674,15 +522,15 @@ function LeaveLeagueRow() {
 // line, no danger button or dedicated "danger zone".
 function EndActionsRow({ onLogout }) {
   const { t } = useLanguage();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [deleting, setDeleting] = useState(false);
-  const [password, setPassword] = useState("");
+  const [confirmation, setConfirmation] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   function openDelete() {
-    setPassword("");
+    setConfirmation("");
     setError("");
     setDeleting(true);
   }
@@ -692,7 +540,7 @@ function EndActionsRow({ onLogout }) {
     setError("");
     setSubmitting(true);
     try {
-      await api.deleteAccount(password);
+      await api.deleteAccount(confirmation);
       logout();
       navigate("/signin");
     } catch (err) {
@@ -720,12 +568,16 @@ function EndActionsRow({ onLogout }) {
               "הפעולה בלתי הפיכה. החשבון שלך יימחק, ולא תוכל/י להתחבר אליו שוב. משחקים שכבר הושלמו יישארו בהיסטוריה של היריבים שלך, בלי הפרטים האישיים שלך."
             )}
           </p>
+          {/* No password to ask for. Typing the address out is what makes
+              this a decision rather than a mis-tap. */}
           <label>
-            {t("סיסמה")}
+            {t("הקלידו {email} כדי לאשר", { email: user?.email || "" })}
             <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              type="email"
+              autoComplete="off"
+              dir="ltr"
+              value={confirmation}
+              onChange={(e) => setConfirmation(e.target.value)}
               required
             />
           </label>

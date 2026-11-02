@@ -9,7 +9,7 @@ import InstallPrompt from "./InstallPrompt.jsx";
 import PushPrompt from "./PushPrompt.jsx";
 import Onboarding from "./Onboarding.jsx";
 
-const AUTH_PATHS = ["/signin", "/signup", "/forgot-password", "/reset-password", "/privacy", "/terms"];
+const AUTH_PATHS = ["/signin", "/signup", "/privacy", "/terms"];
 
 export default function Layout({ children }) {
   const { user } = useAuth();
@@ -78,7 +78,6 @@ export default function Layout({ children }) {
             </Link>
             <nav>
               <Link to="/signin">{t("כניסה")}</Link>
-              <Link to="/signup">{t("הרשמה")}</Link>
             </nav>
           </>
         )}

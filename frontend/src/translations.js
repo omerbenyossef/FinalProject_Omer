@@ -1,6 +1,12 @@
 // Each pair is [Hebrew, English]. translate() looks up in whichever direction
 // is needed and falls back to the original text if there's no match.
 const PAIRS = [
+  // Signing in. There are no passwords, so there is nothing here about one.
+  ["ההתחברות הראשונה פותחת לך חשבון. אין סיסמה לזכור.", "Your first sign-in opens your account. No password to remember."],
+  ["מחשבון Google", "From your Google account"],
+  ["הקלידו {email} כדי לאשר", "Type {email} to confirm"],
+  ["הכתובת לא תואמת לכתובת של החשבון", "That address does not match the account's"],
+
   // Weekdays and months. Every label in the app follows the chosen language,
   // these included; the Hebrew faces are registered under the same family
   // names as the Latin ones, so they render in the mono/display slots too.

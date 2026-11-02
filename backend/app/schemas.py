@@ -19,28 +19,6 @@ def _utc_iso(value: datetime) -> str:
 UtcDatetime = Annotated[datetime, PlainSerializer(_utc_iso, return_type=str, when_used="json")]
 
 
-class UserCreate(BaseModel):
-    name: str = Field(min_length=1)
-    email: EmailStr
-    password: str = Field(min_length=8)
-    area: Optional[str] = None
-    travel_radius_km: Optional[float] = None
-
-
-class UserLogin(BaseModel):
-    email: EmailStr
-    password: str
-
-
-class ForgotPasswordRequest(BaseModel):
-    email: EmailStr
-
-
-class ResetPasswordRequest(BaseModel):
-    token: str
-    new_password: str
-
-
 class MessageOut(BaseModel):
     message: str
 
@@ -50,23 +28,10 @@ class PhotoUploadRequest(BaseModel):
     data_url: str
 
 
-class ForgotPasswordOut(MessageOut):
-    # Only set while no mail is configured — see forgot_password.
-    reset_token: Optional[str] = None
-
-
-class ChangePasswordRequest(BaseModel):
-    current_password: str
-    new_password: str
-
-
-class ChangeEmailRequest(BaseModel):
-    current_password: str
-    new_email: EmailStr
-
-
 class DeleteAccountRequest(BaseModel):
-    password: str
+    """The account's own address, typed out. See delete_account."""
+
+    confirmation: str
 
 
 class UpdateProfileRequest(BaseModel):
