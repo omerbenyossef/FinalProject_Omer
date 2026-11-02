@@ -18,7 +18,7 @@ from ..auth import (
 )
 from ..database import get_db
 from ..google_auth import fetch_profile_photo, verify_google_id_token
-from ..email_utils import email_configured, send_reset_email
+from ..email_utils import send_reset_email
 from ..match_cleanup import purge_match_references
 from ..rate_limit import client_ip, forget, hit, limiter
 from ..rating_utils import match_winner_id
@@ -455,8 +455,6 @@ def delete_my_photo(
     dependencies=[Depends(limiter("forgot", 5, 3600))],
 )
 def forgot_password(payload: schemas.ForgotPasswordRequest, db: Session = Depends(get_db)):
-    # Also on when mail simply isn't configured, so the flow can't dead-end
-    # into a link that was never sent.
     user = (
         db.query(models.User)
         .filter(func.lower(models.User.email) == normalize_email(payload.email))
@@ -470,8 +468,10 @@ def forgot_password(payload: schemas.ForgotPasswordRequest, db: Session = Depend
             return schemas.ForgotPasswordOut(
                 message="אפשר להגדיר סיסמה חדשה", reset_token=user.reset_token
             )
-        if email_configured():
-            send_reset_email(user.email, user.reset_token)
+        # Whether it actually went is deliberately not reflected in the reply:
+        # a failure here is ours, and the difference would tell a stranger
+        # which addresses are registered. The log says what happened.
+        send_reset_email(user.email, user.reset_token)
 
     # The same sentence either way, whether or not the address is registered:
     # the difference is exactly what an attacker would be fishing for.
