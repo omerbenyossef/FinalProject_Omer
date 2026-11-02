@@ -324,8 +324,11 @@ def normalize_emails() -> None:
             lowered = user.email.strip().lower()
             if lowered == user.email:
                 continue
-            if sum(1 for u in users if u.email.strip().lower() == lowered) > 1:
-                print(f"[startup] two accounts share {lowered}; left as they are")
+            sharing = [u.id for u in users if u.email.strip().lower() == lowered]
+            if len(sharing) > 1:
+                # The ids, not the address: the log says enough to go and look
+                # without becoming a list of who uses the app.
+                print(f"[startup] accounts {sharing} share an address; left as they are")
                 continue
             user.email = lowered
         db.commit()

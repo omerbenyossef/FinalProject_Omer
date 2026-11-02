@@ -8,6 +8,16 @@ from sqlalchemy.orm import Session
 
 from . import models
 
+
+def _endpoint_host(endpoint: str) -> str:
+    """Just the host of a push endpoint. That is what tells Firebase from
+    Apple's push service, which is the whole diagnostic value of the URL; the
+    rest of it is this particular browser's private address for push, and it
+    does not belong in a log that is kept."""
+    from urllib.parse import urlsplit
+
+    return urlsplit(endpoint).netloc or "unknown"
+
 VAPID_PUBLIC_KEY = os.environ.get("VAPID_PUBLIC_KEY")
 VAPID_PRIVATE_KEY = os.environ.get("VAPID_PRIVATE_KEY")
 VAPID_SUBJECT = os.environ.get("VAPID_SUBJECT", "mailto:admin@example.com")
@@ -38,7 +48,7 @@ def _within_quiet_hours(user: models.User) -> bool:
 def _send_to_subscription(subscription: models.PushSubscription, title: str, body: str, url: str) -> bool:
     """Returns False if the subscription is gone and should be deleted, True otherwise."""
     if not VAPID_PRIVATE_KEY:
-        print(f"[dev] push to {subscription.endpoint[:60]}: {title} - {body}")
+        print(f"[dev] push to subscription {subscription.id}: {title} - {body}")
         return True
 
     try:
@@ -54,7 +64,7 @@ def _send_to_subscription(subscription: models.PushSubscription, title: str, bod
         return True
     except WebPushException as e:
         status = e.response.status_code if e.response is not None else None
-        print(f"[webpush] failed for {subscription.endpoint[:60]}: {e}")
+        print(f"[webpush] failed for subscription {subscription.id} ({_endpoint_host(subscription.endpoint)}): {e}")
         return status not in (404, 410)
 
 

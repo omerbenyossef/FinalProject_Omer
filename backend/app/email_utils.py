@@ -33,6 +33,21 @@ SMTP_TIMEOUT = 10
 HTTP_TIMEOUT = 10
 
 
+def for_log(email: str) -> str:
+    """An address with the mailbox masked, for the log.
+
+    Render keeps logs, anyone with access to the account can read them, and
+    nobody thinks of them as a store of personal data — until they are one. The
+    domain survives because that is what a diagnosis actually needs ("every
+    gmail address bounced"); which person it was does not belong in a log line.
+    """
+    local, _, domain = email.partition("@")
+    if not domain:
+        return "***"
+    head = local[:1] if local else ""
+    return f"{head}***@{domain}"
+
+
 def email_configured() -> bool:
     """Whether there is any way at all to send mail. Callers that have to reach
     the user some other way when there isn't ask this rather than reading the
@@ -56,9 +71,9 @@ def _send_via_resend(to_email: str, subject: str, html: str) -> bool:
     try:
         with urllib.request.urlopen(request, timeout=HTTP_TIMEOUT) as response:
             if 200 <= response.status < 300:
-                print(f"[resend] sent to {to_email}")
+                print(f"[resend] sent to {for_log(to_email)}")
                 return True
-            print(f"[resend] unexpected status {response.status} for {to_email}")
+            print(f"[resend] unexpected status {response.status} for {for_log(to_email)}")
             return False
     except urllib.error.HTTPError as e:
         # Worth reading in the log rather than guessing: 403 here is almost
@@ -69,10 +84,10 @@ def _send_via_resend(to_email: str, subject: str, html: str) -> bool:
             body = e.read().decode("utf-8", "replace")[:300]
         except Exception:
             pass
-        print(f"[resend] refused for {to_email}: {e.code} {body}")
+        print(f"[resend] refused for {for_log(to_email)}: {e.code} {body}")
         return False
     except (urllib.error.URLError, OSError, ValueError) as e:
-        print(f"[resend] could not reach the API for {to_email}: {e}")
+        print(f"[resend] could not reach the API for {for_log(to_email)}: {e}")
         return False
 
 
@@ -86,14 +101,14 @@ def _send_via_gmail(to_email: str, subject: str, html: str) -> bool:
         with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=SMTP_TIMEOUT) as server:
             server.login(GMAIL_ADDRESS, GMAIL_APP_PASSWORD)
             server.sendmail(GMAIL_ADDRESS, [to_email], message.as_string())
-        print(f"[gmail] sent to {to_email}")
+        print(f"[gmail] sent to {for_log(to_email)}")
         return True
     except smtplib.SMTPException as e:
-        print(f"[gmail] refused to send to {to_email}: {e}")
+        print(f"[gmail] refused to send to {for_log(to_email)}: {e}")
         return False
     except OSError as e:
         # This is what a host that blocks outbound SMTP looks like.
-        print(f"[gmail] could not reach Gmail SMTP for {to_email}: {e}")
+        print(f"[gmail] could not reach Gmail SMTP for {for_log(to_email)}: {e}")
         return False
 
 
@@ -107,5 +122,5 @@ def send_email(to_email: str, subject: str, html: str) -> bool:
     if GMAIL_ADDRESS and GMAIL_APP_PASSWORD and _send_via_gmail(to_email, subject, html):
         return True
     if not email_configured():
-        print(f"[dev] no mail configured; nothing sent to {to_email}")
+        print(f"[dev] no mail configured; nothing sent to {for_log(to_email)}")
     return False
