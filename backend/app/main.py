@@ -347,6 +347,10 @@ app = FastAPI(title="Amateur Sports League API")
 # a promise about the whole API, kept by hand, forever — cheaper to name the
 # two origins that are actually ours.
 DEFAULT_ORIGINS = [
+    "https://rallyou.com",
+    "https://www.rallyou.com",
+    # Still ours, and still served: the move to the real domain does not break
+    # a link somebody already has.
     "https://final-project-omer-chi.vercel.app",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
