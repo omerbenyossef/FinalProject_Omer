@@ -15,6 +15,61 @@ function metaLine(league, t) {
   return parts.join(" · ");
 }
 
+/* One row, used by both lists. A full league is a div rather than a Link —
+   there is nothing to go and read — while one that is merely out of this
+   player's range still opens, because reading it is the point. */
+function OpenRow({ league, t }) {
+  const body = (
+    <>
+      <div className="ol-row-head">
+        <span className="ol-row-name" dir="rtl">
+          <span dir="auto" style={{ unicodeBidi: "isolate" }}>
+            {league.name}
+          </span>
+        </span>
+        {/* No OUT OF RANGE tag: the section heading above says it once, and
+            repeating it on every row crowds out FULL and the distance, which
+            it does not say. */}
+        {league.is_full ? (
+          <span className="ol-tag ol-tag-full">{t("FULL")}</span>
+        ) : league.best_fit ? (
+          <span className="ol-tag ol-tag-best">{t("BEST FIT")}</span>
+        ) : league.distance_km != null ? (
+          <span className="ol-tag ol-tag-distance">{league.distance_km} KM</span>
+        ) : null}
+      </div>
+      <div className="ol-row-meta" dir="ltr">
+        {metaLine(league, t)}
+      </div>
+      {league.capacity != null && (
+        <div className="ol-row-capacity">
+          <div className="ol-capacity-track">
+            <div
+              className="ol-capacity-fill"
+              style={{ width: `${Math.min(100, (league.joined / league.capacity) * 100)}%` }}
+            />
+          </div>
+          <span className="ol-capacity-label" dir="ltr">
+            {league.joined}/{league.capacity}
+          </span>
+        </div>
+      )}
+    </>
+  );
+
+  if (league.is_full) {
+    return <div className="ol-row is-full">{body}</div>;
+  }
+  return (
+    <Link
+      to={`/leagues/${league.id}/preview`}
+      className={`ol-row${league.out_of_level ? " is-out-of-level" : ""}`}
+    >
+      {body}
+    </Link>
+  );
+}
+
 export default function OpenLeagues() {
   const { selectedSportId } = useSport();
   const { t } = useLanguage();
@@ -85,6 +140,9 @@ export default function OpenLeagues() {
       ? `${t("NEAR YOU")} · NTRP ${ntrpMin.toFixed(1)}–${ntrpMax.toFixed(1)}`
       : t("ALL LEVELS");
 
+  const forMe = leagues?.filter((l) => !l.out_of_level) ?? null;
+  const outOfRange = leagues?.filter((l) => l.out_of_level) ?? [];
+
   return (
     <div className="sched-page">
       <div className="sched-nav">
@@ -115,67 +173,29 @@ export default function OpenLeagues() {
 
         {leagues?.length === 0 && <p className="muted">{t("אין כרגע ליגות פתוחות.")}</p>}
 
-        {leagues?.map((league) => {
-          const row = (
-            <>
-              <div className="ol-row-head">
-                <span className="ol-row-name" dir="rtl">
-                  <span dir="auto" style={{ unicodeBidi: "isolate" }}>
-                    {league.name}
-                  </span>
-                </span>
-                {league.is_full ? (
-                  <span className="ol-tag ol-tag-full">{t("FULL")}</span>
-                ) : league.out_of_level ? (
-                  <span className="ol-tag ol-tag-level">{t("OUT OF RANGE")}</span>
-                ) : league.best_fit ? (
-                  <span className="ol-tag ol-tag-best">{t("BEST FIT")}</span>
-                ) : league.distance_km != null ? (
-                  <span className="ol-tag ol-tag-distance">{league.distance_km} KM</span>
-                ) : null}
-              </div>
-              <div className="ol-row-meta" dir="ltr">
-                {metaLine(league, t)}
-              </div>
-              {league.out_of_level && !league.is_full && (
-                <div className="ol-row-why">
-                  {t("הרמה שלך ({mine}) מחוץ לטווח של הליגה", { mine: league.my_level?.toFixed(1) })}
-                </div>
-              )}
-              {league.capacity != null && (
-                <div className="ol-row-capacity">
-                  <div className="ol-capacity-track">
-                    <div
-                      className="ol-capacity-fill"
-                      style={{ width: `${Math.min(100, (league.joined / league.capacity) * 100)}%` }}
-                    />
-                  </div>
-                  <span className="ol-capacity-label" dir="ltr">
-                    {league.joined}/{league.capacity}
-                  </span>
-                </div>
-              )}
-            </>
-          );
+        {forMe?.length === 0 && outOfRange.length > 0 && (
+          <p className="muted">{t("אין כרגע ליגה פתוחה בטווח הרמה שלך — אבל יש אחרות, למטה.")}</p>
+        )}
 
-          return league.is_full ? (
-            <div className="ol-row is-full" key={league.id}>
-              {row}
-            </div>
-          ) : league.out_of_level ? (
-            <Link
-              to={`/leagues/${league.id}/preview`}
-              className="ol-row is-out-of-level"
-              key={league.id}
-            >
-              {row}
-            </Link>
-          ) : (
-            <Link to={`/leagues/${league.id}/preview`} className="ol-row" key={league.id}>
-              {row}
-            </Link>
-          );
-        })}
+        {leagues !== null && forMe.length > 0 && outOfRange.length > 0 && (
+          <div className="ol-group-head">{t("פתוחות להצטרפות · ברמה שלי")}</div>
+        )}
+
+        {forMe?.map((league) => (
+          <OpenRow key={league.id} league={league} t={t} />
+        ))}
+
+        {outOfRange.length > 0 && (
+          <>
+            <div className="ol-group-head">{t("פתוחות להצטרפות · מחוץ לטווח שלי")}</div>
+            <p className="ol-group-note">
+              {t("אפשר להיכנס ולראות הכול, אבל לא להצטרף — הרמה שלך מחוץ לטווח של הליגות האלה.")}
+            </p>
+            {outOfRange.map((league) => (
+              <OpenRow key={league.id} league={league} t={t} />
+            ))}
+          </>
+        )}
       </div>
 
       <button type="button" className="ol-have-code" onClick={() => navigate("/leagues/join-by-code")}>
