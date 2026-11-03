@@ -641,35 +641,6 @@ def list_open_leagues(
     ]
 
 
-@router.get("/resolve-code/{code}", response_model=schemas.LeagueCodeLookupOut)
-def resolve_join_code(
-    code: str,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
-):
-    """Looks a join code up without joining, so the frontend can route to
-    the league's own page (and its rating-questionnaire gate) instead of
-    calling /join-by-code blind and hitting the rating requirement as a
-    dead-end error."""
-    league = db.query(models.League).filter(models.League.join_code == code.strip().upper()).first()
-    if not league:
-        raise HTTPException(status_code=404, detail="קוד הזמנה לא נמצא")
-    return schemas.LeagueCodeLookupOut(id=league.id)
-
-
-@router.post("/join-by-code", response_model=schemas.LeagueOut)
-def join_league_by_code(
-    payload: schemas.JoinByCodeRequest,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
-):
-    code = (payload.code or "").strip().upper()
-    league = db.query(models.League).filter(models.League.join_code == code).first()
-    if not league:
-        raise HTTPException(status_code=404, detail="קוד הזמנה לא נמצא")
-    return _join_league_core(db, league, current_user, code)
-
-
 @router.post("/", response_model=schemas.LeagueOut)
 def create_league(
     league_in: schemas.LeagueCreate,
@@ -1122,6 +1093,10 @@ def leave_league(
     db.commit()
 
 
+# Nothing shows this code to anybody and nothing takes one typed in. It is
+# what authorises joining a private league, and it reaches the invited player
+# inside the share link — /leagues/{id}?code=... — which is the only thing
+# that still asks for it.
 @router.get("/{league_id}/invite-code", response_model=schemas.InviteCodeOut)
 def get_invite_code(
     league_id: int,

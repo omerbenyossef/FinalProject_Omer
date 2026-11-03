@@ -9,7 +9,6 @@ import SignIn from "./pages/SignIn.jsx";
 import Leagues from "./pages/Leagues.jsx";
 import OpenLeagues from "./pages/OpenLeagues.jsx";
 import LeaguePreview from "./pages/LeaguePreview.jsx";
-import JoinByCode from "./pages/JoinByCode.jsx";
 import FriendlyNew from "./pages/FriendlyNew.jsx";
 import FriendlyInvite from "./pages/FriendlyInvite.jsx";
 import LeagueDetail from "./pages/LeagueDetail.jsx";
@@ -144,14 +143,6 @@ export default function App() {
           element={
             <ProtectedRoute>
               <OpenLeagues />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/leagues/join-by-code"
-          element={
-            <ProtectedRoute>
-              <JoinByCode />
             </ProtectedRoute>
           }
         />

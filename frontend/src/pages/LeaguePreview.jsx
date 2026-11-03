@@ -17,7 +17,6 @@ export default function LeaguePreview() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [joinedNow, setJoinedNow] = useState(false);
-  const [inviteCode, setInviteCode] = useState(null);
   const [showRatingGate, setShowRatingGate] = useState(false);
   const { activePairs, selectedPair } = usePairs();
 
@@ -72,11 +71,6 @@ export default function LeaguePreview() {
 
   async function finishJoin() {
     await api.joinLeague(leagueId, undefined, joiningPair?.id ?? null);
-    // Only a private league has a code to pass on.
-    if (!preview?.is_open) {
-      const code = await api.getInviteCode(leagueId);
-      setInviteCode(code.code);
-    }
     setJoinedNow(true);
   }
 
@@ -84,15 +78,7 @@ export default function LeaguePreview() {
   // this only needs to pick up where handleJoin left off.
   async function handleRatingJoined() {
     setShowRatingGate(false);
-    try {
-      if (!preview?.is_open) {
-        const code = await api.getInviteCode(leagueId);
-        setInviteCode(code.code);
-      }
-      setJoinedNow(true);
-    } catch (err) {
-      setError(err.message);
-    }
+    setJoinedNow(true);
   }
 
   if (error && !preview) return <p className="error">{t(error)}</p>;
@@ -148,16 +134,6 @@ export default function LeaguePreview() {
             <span>{t("תקבלו התראה כשיש לכם משחק לתאם")}</span>
           </div>
         </div>
-
-        {inviteCode && (
-        <div className="lp-code">
-          <div className="lp-code-label">{t("PRIVATE LEAGUE · INVITE CODE")}</div>
-          <div className="lp-code-value" dir="ltr">
-            {inviteCode}
-          </div>
-          <p className="lp-code-sub">{t("שתפו את הקוד הזה עם מי שתרצו להזמין ישירות לליגה.")}</p>
-        </div>
-        )}
 
         <button type="button" className="lp-join-btn" onClick={() => navigate(`/leagues/${leagueId}`)}>
           {t("לעמוד הליגה")}

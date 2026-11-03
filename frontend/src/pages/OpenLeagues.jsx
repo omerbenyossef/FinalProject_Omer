@@ -198,10 +198,6 @@ export default function OpenLeagues() {
         )}
       </div>
 
-      <button type="button" className="ol-have-code" onClick={() => navigate("/leagues/join-by-code")}>
-        {t("יש לי קוד הזמנה")}
-        <ChevronIcon aria-hidden="true" />
-      </button>
 
       {sheetOpen && (
         <div className="sheet-backdrop" onClick={() => setSheetOpen(false)}>

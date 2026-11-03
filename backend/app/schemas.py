@@ -310,14 +310,6 @@ class LeaguePreviewOut(BaseModel):
     my_level: Optional[float] = None
 
 
-class JoinByCodeRequest(BaseModel):
-    code: str
-
-
-class LeagueCodeLookupOut(BaseModel):
-    id: int
-
-
 class MemberOut(BaseModel):
     id: int
     name: str
