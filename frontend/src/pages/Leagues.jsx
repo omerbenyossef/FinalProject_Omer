@@ -85,6 +85,39 @@ function SectionHead({ title, end }) {
   );
 }
 
+function OpenLeagueRow({ league, outOfLevel, t }) {
+  const ruleLabels = leagueRuleLabels(league, t);
+  return (
+    <Link
+      to={`/leagues/${league.id}/preview`}
+      className={`lg-row lg-row--open${outOfLevel ? " is-out-of-level" : ""}`}
+    >
+      <span className="lg-row-body">
+        <span className="lg-row-name-row">
+          <span className="lg-row-name">
+            <span dir="auto" style={{ unicodeBidi: "isolate" }}>
+              {league.name}
+            </span>
+          </span>
+        </span>
+        <span className="lg-row-meta">
+          {league.is_doubles
+            ? t("{n} צמדים", { n: league.member_count })
+            : t("{n} שחקנים", { n: league.member_count })}{" "}
+          · {ruleLabels.frequencyLabel} ·{" "}
+          <span dir="ltr" style={{ unicodeBidi: "isolate" }}>
+            NTRP {(league.level_min ?? 1.5).toFixed(1)}–
+            {(league.level_max ?? 7).toFixed(1)}
+          </span>
+        </span>
+      </span>
+      <span className={`lg-row-join${outOfLevel ? " is-quiet" : ""}`}>
+        {outOfLevel ? t("הצצה") : t("הצטרף")}
+      </span>
+    </Link>
+  );
+}
+
 function RowSkeletons({ rows = 2 }) {
   return (
     <div className="lg-list">
@@ -300,10 +333,11 @@ export default function Leagues() {
   const takesMe = (l) =>
     myLevel == null ||
     ((l.level_min ?? 1.5) <= myLevel && myLevel <= (l.level_max ?? 7.0));
-  const openLeagues = leagues
-    .filter((l) => l.is_open && bySelectedSport(l) && !myLeagueIds.has(l.id))
-    // The ones they can join first; the rest keep their order below.
-    .sort((a, b) => Number(takesMe(b)) - Number(takesMe(a)));
+  const openLeagues = leagues.filter(
+    (l) => l.is_open && bySelectedSport(l) && !myLeagueIds.has(l.id)
+  );
+  const openForMe = openLeagues.filter(takesMe);
+  const openOutOfRange = openLeagues.filter((l) => !takesMe(l));
   const myLeaguesForSport = myLeagues.filter(bySelectedSport);
   const selectedSport = sports.find((s) => s.id === selectedSportId);
 
@@ -380,60 +414,46 @@ export default function Leagues() {
       )}
 
       <SectionHead
-        title={t("ליגות פתוחות")}
+        title={t("פתוחות להצטרפות · ברמה שלי")}
         end={
           myLevel != null && (
-            <span className="lg-sec-range">
-              {t("הרמה שלי")}{" "}
-              <span dir="ltr">{myLevel.toFixed(1)}</span>
+            <span className="lg-sec-range" dir="ltr">
+              NTRP {myLevel.toFixed(1)}
             </span>
           )
         }
       />
       {loading ? (
         <RowSkeletons />
-      ) : openLeagues.length === 0 ? (
+      ) : openForMe.length === 0 ? (
         <EmptyState icon={<TrophyIcon aria-hidden="true" />}>
-          {t("אין כרגע ליגות פתוחות.")}
+          {openOutOfRange.length > 0
+            ? t("אין כרגע ליגה פתוחה בטווח הרמה שלך — אבל יש אחרות, למטה.")
+            : t("אין כרגע ליגות פתוחות.")}
         </EmptyState>
       ) : (
         <div className="lg-list">
-          {openLeagues.map((league) => {
-            const ruleLabels = leagueRuleLabels(league, t);
-            const outOfLevel = !takesMe(league);
-            return (
-              <Link
-                to={`/leagues/${league.id}/preview`}
-                key={league.id}
-                className={`lg-row lg-row--open${outOfLevel ? " is-out-of-level" : ""}`}
-              >
-                <span className="lg-row-body">
-                  <span className="lg-row-name-row">
-                    <span className="lg-row-name">
-                      <span dir="auto" style={{ unicodeBidi: "isolate" }}>{league.name}</span>
-                    </span>
-                    {outOfLevel && (
-                      <span className="lg-row-tag lg-row-tag--level">{t("מחוץ לטווח הרמות")}</span>
-                    )}
-                  </span>
-                  <span className="lg-row-meta">
-                    {league.is_doubles
-                      ? t("{n} צמדים", { n: league.member_count })
-                      : t("{n} שחקנים", { n: league.member_count })}{" "}
-                    · {ruleLabels.frequencyLabel} ·{" "}
-                    <span dir="ltr" style={{ unicodeBidi: "isolate" }}>
-                      NTRP {(league.level_min ?? 1.5).toFixed(1)}–
-                      {(league.level_max ?? 7).toFixed(1)}
-                    </span>
-                  </span>
-                </span>
-                <span className={`lg-row-join${outOfLevel ? " is-quiet" : ""}`}>
-                  {outOfLevel ? t("הצצה") : t("הצטרף")}
-                </span>
-              </Link>
-            );
-          })}
+          {openForMe.map((league) => (
+            <OpenLeagueRow key={league.id} league={league} outOfLevel={false} t={t} />
+          ))}
         </div>
+      )}
+
+      {/* Its own section, with its own heading, rather than dimmed rows inside
+          the list above: a reader should not have to work out why some of them
+          look faded. */}
+      {!loading && openOutOfRange.length > 0 && (
+        <>
+          <SectionHead title={t("פתוחות להצטרפות · מחוץ לטווח שלי")} />
+          <p className="lg-sec-note">
+            {t("אפשר להיכנס ולראות הכול, אבל לא להצטרף — הרמה שלך מחוץ לטווח של הליגות האלה.")}
+          </p>
+          <div className="lg-list">
+            {openOutOfRange.map((league) => (
+              <OpenLeagueRow key={league.id} league={league} outOfLevel t={t} />
+            ))}
+          </div>
+        </>
       )}
 
       {/* ranks-entry-173: the secondary way into the rankings, for whoever is

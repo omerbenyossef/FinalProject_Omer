@@ -4818,6 +4818,12 @@ button:active { transform: translateY(1px); }
 }
 .lg-row-name-row .lg-row-name { flex: 1; min-width: 0; }
 
+/* Why the rows under the second heading cannot be joined. */
+.lg-sec-note {
+  margin: 6px 0 12px; padding: 0 22px;
+  font: 400 12.5px/1.5 "IBM Plex Sans", var(--sans); color: #8b93a6;
+}
+
 .lg-row-tag--level { color: #8b93a6; }
 
 /* The row still opens, but it is not an invitation to join. */
