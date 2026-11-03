@@ -291,27 +291,22 @@ export default function Leagues() {
 
   const bySelectedSport = (l) => l.sport.id === selectedSportId;
   const myLeagueIds = new Set(myLeagues.map((l) => l.id));
-  // Only leagues that would actually take this player. The server refuses a
-  // join from outside a league's level range, so listing one here was offering
-  // something that could only come back refused.
+  // Whether this league's range would admit this player. It used to decide
+  // whether to list the league at all, on the grounds that offering a join
+  // that could only come back refused was worse than silence. The preview says
+  // why instead of refusing now, so the league is listed and marked: somebody
+  // looking for a league wants to know what there is, including what they are
+  // not ready for yet.
   const takesMe = (l) =>
     myLevel == null ||
     ((l.level_min ?? 1.5) <= myLevel && myLevel <= (l.level_max ?? 7.0));
-  const openLeagues = leagues.filter(
-    (l) => l.is_open && bySelectedSport(l) && !myLeagueIds.has(l.id) && takesMe(l)
-  );
+  const openLeagues = leagues
+    .filter((l) => l.is_open && bySelectedSport(l) && !myLeagueIds.has(l.id))
+    // The ones they can join first; the rest keep their order below.
+    .sort((a, b) => Number(takesMe(b)) - Number(takesMe(a)));
   const myLeaguesForSport = myLeagues.filter(bySelectedSport);
   const selectedSport = sports.find((s) => s.id === selectedSportId);
 
-  // The range a league would have to cover to take me — the same half-level
-  // window the rest of the app uses for "near my level".
-  const myRange =
-    myLevel == null
-      ? null
-      : [
-          Math.max(NTRP_STEPS[0], myLevel - 0.5),
-          Math.min(NTRP_STEPS[NTRP_STEPS.length - 1], myLevel + 0.5),
-        ];
 
   return (
     <div className="lgp">
@@ -387,12 +382,10 @@ export default function Leagues() {
       <SectionHead
         title={t("ליגות פתוחות")}
         end={
-          myRange && (
+          myLevel != null && (
             <span className="lg-sec-range">
-              {t("ברמה שלי")}{" "}
-              <span dir="ltr">
-                {myRange[0].toFixed(1)}–{myRange[1].toFixed(1)}
-              </span>
+              {t("הרמה שלי")}{" "}
+              <span dir="ltr">{myLevel.toFixed(1)}</span>
             </span>
           )
         }
@@ -401,31 +394,42 @@ export default function Leagues() {
         <RowSkeletons />
       ) : openLeagues.length === 0 ? (
         <EmptyState icon={<TrophyIcon aria-hidden="true" />}>
-          {/* There may well be open leagues — just none that would take this
-              player, which is a different thing to say. */}
-          {leagues.some((l) => l.is_open && bySelectedSport(l) && !myLeagueIds.has(l.id))
-            ? t("אין כרגע ליגה פתוחה בטווח הרמה שלך.")
-            : t("אין כרגע ליגות פתוחות.")}
+          {t("אין כרגע ליגות פתוחות.")}
         </EmptyState>
       ) : (
         <div className="lg-list">
           {openLeagues.map((league) => {
             const ruleLabels = leagueRuleLabels(league, t);
+            const outOfLevel = !takesMe(league);
             return (
-              <Link to={`/leagues/${league.id}/preview`} key={league.id} className="lg-row lg-row--open">
+              <Link
+                to={`/leagues/${league.id}/preview`}
+                key={league.id}
+                className={`lg-row lg-row--open${outOfLevel ? " is-out-of-level" : ""}`}
+              >
                 <span className="lg-row-body">
-                  <span className="lg-row-name">
-                    <span dir="auto" style={{ unicodeBidi: "isolate" }}>{league.name}</span>
+                  <span className="lg-row-name-row">
+                    <span className="lg-row-name">
+                      <span dir="auto" style={{ unicodeBidi: "isolate" }}>{league.name}</span>
+                    </span>
+                    {outOfLevel && (
+                      <span className="lg-row-tag lg-row-tag--level">{t("מחוץ לטווח הרמות")}</span>
+                    )}
                   </span>
                   <span className="lg-row-meta">
-                    {t("{n} שחקנים", { n: league.member_count })} · {ruleLabels.frequencyLabel} ·{" "}
+                    {league.is_doubles
+                      ? t("{n} צמדים", { n: league.member_count })
+                      : t("{n} שחקנים", { n: league.member_count })}{" "}
+                    · {ruleLabels.frequencyLabel} ·{" "}
                     <span dir="ltr" style={{ unicodeBidi: "isolate" }}>
                       NTRP {(league.level_min ?? 1.5).toFixed(1)}–
                       {(league.level_max ?? 7).toFixed(1)}
                     </span>
                   </span>
                 </span>
-                <span className="lg-row-join">{t("הצטרף")}</span>
+                <span className={`lg-row-join${outOfLevel ? " is-quiet" : ""}`}>
+                  {outOfLevel ? t("הצצה") : t("הצטרף")}
+                </span>
               </Link>
             );
           })}

@@ -4811,6 +4811,22 @@ button:active { transform: translateY(1px); }
   color: var(--court);
   text-transform: uppercase;
 }
+/* The court colour on .lg-row-tag means "something here is yours to act on";
+   this one means the opposite, so it is grey. */
+.lg-row-name-row {
+  display: flex; align-items: baseline; gap: 8px; min-width: 0;
+}
+.lg-row-name-row .lg-row-name { flex: 1; min-width: 0; }
+
+.lg-row-tag--level { color: #8b93a6; }
+
+/* The row still opens, but it is not an invitation to join. */
+.lg-row-join.is-quiet { color: #6f7787; }
+
+/* Listed but not joinable. Dimmed, never disabled: the row still opens, and
+   the preview is where the reason is spelled out. */
+.lg-row--open.is-out-of-level { opacity: .68; }
+
 .lg-row-chev { flex: none; width: 14px; height: 14px; color: #6e7176; }
 .lg-row.is-over .lg-row-name { color: #c9cbcd; }
 .lg-row.is-over .lg-row-meta { color: #6e7176; }
