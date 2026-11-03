@@ -20,6 +20,7 @@ from sqlalchemy.orm import Session, joinedload
 from .. import models, schemas
 from ..auth import get_current_user
 from ..database import get_db
+from ..match_sides import is_participant, opponent_label, opponents, others
 from ..push_utils import notify_user
 
 router = APIRouter(prefix="/matches", tags=["chat"])
@@ -41,7 +42,10 @@ def _chat_match(db: Session, match_id: int, user: models.User) -> models.Match:
     )
     if not match:
         raise HTTPException(status_code=404, detail="המשחק לא נמצא")
-    if user.id not in (match.player1_id, match.player2_id):
+    # Four people share a doubles match, and player1_id/player2_id only name
+    # one of each pair — so this used to shut the other two out of their own
+    # match's chat entirely.
+    if not is_participant(db, match, user.id):
         raise HTTPException(status_code=403, detail="אין לך משחק כזה")
     # A friendly nobody has accepted isn't a match yet, and one that was
     # declined or called off isn't one any more.
@@ -60,8 +64,11 @@ def _is_open(match: models.Match) -> bool:
     return match.status != models.MatchStatus.completed
 
 
-def _opponent(match: models.Match, user_id: int) -> models.User | None:
-    return match.player2 if match.player1_id == user_id else match.player1
+def _opponent(db: Session, match: models.Match, user_id: int) -> models.User | None:
+    """The one name a singles chat header shows. In doubles there are two, and
+    the header reads the label instead — see opponent_label below."""
+    facing = opponents(db, match, user_id)
+    return facing[0] if len(facing) == 1 else None
 
 
 def _to_out(message: models.MatchMessage, user_id: int) -> schemas.MatchMessageOut:
@@ -131,7 +138,9 @@ def get_chat(
     _mark_read(db, match_id, current_user.id)
     return schemas.MatchChatOut(
         match_id=match.id,
-        opponent=_opponent(match, current_user.id),
+        opponent=_opponent(db, match, current_user.id),
+        opponent_label=opponent_label(db, match, current_user.id),
+        opponents=[schemas.PairPlayerOut.model_validate(u) for u in opponents(db, match, current_user.id)],
         can_send=_is_open(match),
         messages=[_to_out(m, current_user.id) for m in messages],
     )
@@ -160,22 +169,26 @@ def send_message(
     # their own message.
     _mark_read(db, match.id, current_user.id)
 
-    opponent_id = match.player2_id if current_user.id == match.player1_id else match.player1_id
-    recent = (
-        db.query(models.Notification)
-        .filter(
-            models.Notification.user_id == opponent_id,
-            models.Notification.match_id == match.id,
-            models.Notification.type == "chat_message",
-            models.Notification.created_at > datetime.utcnow() - CHAT_NOTIFY_COOLDOWN,
+    preview = body if len(body) <= PREVIEW_CHARS else body[: PREVIEW_CHARS - 1] + "…"
+    # Three other people in a doubles match, and the cooldown is per person:
+    # one of them having been told recently is no reason to leave the other
+    # two in the dark.
+    for listener_id in others(db, match, current_user.id):
+        recent = (
+            db.query(models.Notification)
+            .filter(
+                models.Notification.user_id == listener_id,
+                models.Notification.match_id == match.id,
+                models.Notification.type == "chat_message",
+                models.Notification.created_at > datetime.utcnow() - CHAT_NOTIFY_COOLDOWN,
+            )
+            .first()
         )
-        .first()
-    )
-    if not recent:
-        preview = body if len(body) <= PREVIEW_CHARS else body[: PREVIEW_CHARS - 1] + "…"
+        if recent:
+            continue
         notify_user(
             db,
-            opponent_id,
+            listener_id,
             "הודעה חדשה",
             f"{current_user.name}: {preview}",
             f"/matches/{match.id}/chat",

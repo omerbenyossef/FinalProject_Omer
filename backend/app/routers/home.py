@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session, joinedload
 from .. import models, schemas
 from ..auth import get_current_user
 from ..database import get_db
+from ..match_sides import mine as match_mine, my_side_is_first, opponent_label, opponents
 from ..rating_utils import get_rating, match_winner_id, round_to_half
 from .leagues import _compute_my_standing, _current_round_number, _round_ends_at
 from .matches import _auto_confirm_overdue
@@ -124,7 +125,7 @@ def _players_near_level(db: Session, leagues, user_id: int, level: float | None)
 
 
 def _last_match(db: Session, user_id: int, sport_id: int | None) -> schemas.HomeWeekLastMatchOut | None:
-    mine = or_(models.Match.player1_id == user_id, models.Match.player2_id == user_id)
+    mine = match_mine(user_id)
     query = (
         db.query(models.Match)
         .options(
@@ -156,8 +157,11 @@ def _last_match(db: Session, user_id: int, sport_id: int | None) -> schemas.Home
         reverse=True,
     )
     match = matches[0]
-    i_am_player1 = match.player1_id == user_id
-    opponent = match.player2 if i_am_player1 else match.player1
+    # Which half of the stored score is this viewer's. Not player1_id == me:
+    # in doubles that is false for the second member of a pair, and their own
+    # result would come back the wrong way round.
+    i_am_player1 = my_side_is_first(db, match, user_id)
+    opponent_name = opponent_label(db, match, user_id)
     sets = match.sets or []
     if not i_am_player1:
         sets = [{"player1_games": s["player2_games"], "player2_games": s["player1_games"]} for s in sets]
@@ -173,7 +177,7 @@ def _last_match(db: Session, user_id: int, sport_id: int | None) -> schemas.Home
         if delta == 0:
             delta = None
     return schemas.HomeWeekLastMatchOut(
-        opponent_name=opponent.name if opponent else "",
+        opponent_name=opponent_name,
         my_sets=sets,
         won=match_winner_id(match) == user_id,
         round=match.round_number,
@@ -202,10 +206,7 @@ def home_week(
     if sport_id is not None:
         my_leagues = [l for l in my_leagues if l.sport_id == sport_id]
 
-    mine = or_(
-        models.Match.player1_id == current_user.id,
-        models.Match.player2_id == current_user.id,
-    )
+    mine = match_mine(current_user.id)
 
     matches: list[schemas.HomeWeekMatchOut] = []
     round_info: schemas.HomeWeekRoundOut | None = None
@@ -248,12 +249,14 @@ def home_week(
                 continue
             if match.round_number is not None and current_round is None:
                 continue
-            opponent = match.player2 if match.player1_id == current_user.id else match.player1
+            facing = opponents(db, match, current_user.id)
             matches.append(
                 schemas.HomeWeekMatchOut(
                     id=match.id,
-                    opponent_name=opponent.name if opponent else "",
-                    opponent_photo_url=opponent.photo_url if opponent else None,
+                    opponent_name=opponent_label(db, match, current_user.id),
+                    # One face in singles; in doubles the card would have to
+                    # show two, so it shows none and leans on the names.
+                    opponent_photo_url=facing[0].photo_url if len(facing) == 1 else None,
                     league_name=league.name,
                     round=match.round_number,
                     scheduled_at=match.scheduled_at,
@@ -285,7 +288,7 @@ def home_week(
     for match in friendlies:
         if sport_id is not None and match.sport_id != sport_id:
             continue
-        opponent = match.player2 if match.player1_id == current_user.id else match.player1
+        facing = opponents(db, match, current_user.id)
         if match.invite_status == models.FriendlyInviteStatus.pending:
             # An invitation I sent isn't mine to answer, so it isn't an invite
             # row — but it is still something of mine happening this week, at a
@@ -299,8 +302,8 @@ def home_week(
                 sent_invites.append(
                     schemas.HomeWeekMatchOut(
                         id=match.id,
-                        opponent_name=opponent.name if opponent else "",
-                        opponent_photo_url=opponent.photo_url if opponent else None,
+                        opponent_name=opponent_label(db, match, current_user.id),
+                        opponent_photo_url=facing[0].photo_url if len(facing) == 1 else None,
                         league_name=None,
                         round=None,
                         scheduled_at=match.scheduled_at,
@@ -328,8 +331,8 @@ def home_week(
         matches.append(
             schemas.HomeWeekMatchOut(
                 id=match.id,
-                opponent_name=opponent.name if opponent else "",
-                opponent_photo_url=opponent.photo_url if opponent else None,
+                opponent_name=opponent_label(db, match, current_user.id),
+                opponent_photo_url=facing[0].photo_url if len(facing) == 1 else None,
                 league_name=None,
                 round=None,
                 scheduled_at=match.scheduled_at,

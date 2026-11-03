@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from .. import models, schemas
 from ..auth import create_access_token, get_current_user, hash_password, normalize_email
 from ..database import get_db
+from ..match_sides import mine as match_mine
 from ..google_auth import fetch_profile_photo, verify_google_id_token
 from ..match_cleanup import purge_match_references
 from ..rate_limit import limiter
@@ -227,7 +228,7 @@ def _delete_user_account(db: Session, user: models.User) -> None:
     those rows to stay intact. Mirrors leave_league's own cleanup (drop
     pending matches + membership, keep completed ones) applied across every
     league at once, plus removing anything that's exclusively theirs."""
-    mine = or_(models.Match.player1_id == user.id, models.Match.player2_id == user.id)
+    mine = match_mine(user.id)
 
     membership_league_ids = [
         m.league_id

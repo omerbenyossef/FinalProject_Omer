@@ -849,7 +849,11 @@ class MatchChatOut(BaseModel):
     """The conversation plus who it is with, so the screen needs one call."""
 
     match_id: int
-    opponent: MemberOut
+    # None in doubles, where there are two of them: the header reads
+    # opponent_label there, and `opponents` carries both for the avatars.
+    opponent: Optional[MemberOut] = None
+    opponent_label: str = ""
+    opponents: list[PairPlayerOut] = []
     can_send: bool = True
     messages: list[MatchMessageOut] = []
 

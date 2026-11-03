@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session, joinedload
 from .. import models, schemas
 from ..auth import get_current_user
 from ..database import get_db
+from ..match_sides import mine as match_mine
 from ..match_cleanup import purge_match_references
 from ..push_utils import notify_user
 from ..rating_utils import get_rating, match_winner_id, round_to_half
@@ -121,7 +122,7 @@ def _compute_my_standing(league: models.League, user_id: int, matches: list[mode
 
 
 def _compute_my_next_match(db: Session, league: models.League, user_id: int):
-    my_match_filter = or_(models.Match.player1_id == user_id, models.Match.player2_id == user_id)
+    my_match_filter = match_mine(user_id)
     match = (
         db.query(models.Match)
         .options(joinedload(models.Match.player1), joinedload(models.Match.player2))
