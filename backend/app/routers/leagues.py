@@ -582,6 +582,7 @@ def list_open_leagues(
             else None
         )
         level_fit = abs(my_level - (level_min + level_max) / 2) if my_level is not None else None
+        out_of_level = my_level is not None and not (level_min <= my_level <= level_max)
         spots_remaining = (league.capacity - joined) if league.capacity is not None else 10_000
 
         rows.append(
@@ -593,13 +594,17 @@ def list_open_leagues(
                 "is_full": is_full,
                 "distance_km": distance_km,
                 "level_fit": level_fit,
+                "out_of_level": out_of_level,
                 "spots_remaining": spots_remaining,
             }
         )
 
     def sort_key(row):
+        # Leagues this player could actually join come first, then the ones
+        # out of their range, then the full ones. Still all there.
         return (
             row["is_full"],
+            row["out_of_level"],
             row["level_fit"] if row["level_fit"] is not None else 999,
             row["distance_km"] if row["distance_km"] is not None else 999_999,
             -row["spots_remaining"],
@@ -609,7 +614,8 @@ def list_open_leagues(
 
     best_fit_id = None
     if my_level is not None:
-        eligible = [r for r in rows if not r["is_full"]]
+        # Never recommend one they cannot join.
+        eligible = [r for r in rows if not r["is_full"] and not r["out_of_level"]]
         if eligible:
             best_fit_id = eligible[0]["league"].id
 
@@ -628,6 +634,8 @@ def list_open_leagues(
             starts_at=row["league"].starts_at,
             is_full=row["is_full"],
             best_fit=row["league"].id == best_fit_id,
+            out_of_level=row["out_of_level"],
+            my_level=my_level,
         )
         for row in rows
     ]
@@ -870,6 +878,9 @@ def preview_league(
         else None
     )
 
+    my_rating = get_rating(db, current_user.id, league.sport_id)
+    my_level = round_to_half(my_rating.level) if my_rating else None
+
     ratings_by_user = {
         r.user_id: r
         for r in db.query(models.PlayerRating).filter(
@@ -916,6 +927,14 @@ def preview_league(
         level_buckets=_level_buckets(level_min, level_max, [p.level for p in players]),
         is_member=is_member,
         is_doubles=bool(league.is_doubles),
+        # Only a public league gates on the level range at all; a private one
+        # is joined by invitation and the range is just a description.
+        out_of_level=bool(
+            league.is_open
+            and my_level is not None
+            and not (level_min <= my_level <= level_max)
+        ),
+        my_level=my_level,
     )
 
 

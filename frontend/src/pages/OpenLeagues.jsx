@@ -36,11 +36,13 @@ export default function OpenLeagues() {
       .myRatings()
       .then((ratings) => {
         const mine = ratings.find((r) => r.sport_id === selectedSportId);
-        if (mine) {
-          setMyLevel(mine.level);
-          setNtrpMin(Math.max(1.5, mine.level - 0.5));
-          setNtrpMax(Math.min(7.0, mine.level + 0.5));
-        }
+        // The level is remembered for the filter sheet, which opens centred on
+        // it, but it no longer narrows the list by itself. It used to: the
+        // screen loaded already filtered to half a level either side, so every
+        // other league in the sport was simply absent, with nothing saying so.
+        // Seeing what exists is worth more than a list with nothing in it you
+        // cannot have — the rows that are out of reach say which and why.
+        if (mine) setMyLevel(mine.level);
       })
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -61,8 +63,8 @@ export default function OpenLeagues() {
   }, [selectedSportId, position, ntrpMin, ntrpMax]);
 
   function openSheet() {
-    setDraftMin(ntrpMin ?? 1.5);
-    setDraftMax(ntrpMax ?? 7.0);
+    setDraftMin(ntrpMin ?? (myLevel != null ? Math.max(1.5, myLevel - 0.5) : 1.5));
+    setDraftMax(ntrpMax ?? (myLevel != null ? Math.min(7.0, myLevel + 0.5) : 7.0));
     setSheetOpen(true);
   }
 
@@ -81,7 +83,7 @@ export default function OpenLeagues() {
   const filterLabel =
     ntrpMin != null && ntrpMax != null
       ? `${t("NEAR YOU")} · NTRP ${ntrpMin.toFixed(1)}–${ntrpMax.toFixed(1)}`
-      : t("NEAR YOU");
+      : t("ALL LEVELS");
 
   return (
     <div className="sched-page">
@@ -124,6 +126,8 @@ export default function OpenLeagues() {
                 </span>
                 {league.is_full ? (
                   <span className="ol-tag ol-tag-full">{t("FULL")}</span>
+                ) : league.out_of_level ? (
+                  <span className="ol-tag ol-tag-level">{t("OUT OF RANGE")}</span>
                 ) : league.best_fit ? (
                   <span className="ol-tag ol-tag-best">{t("BEST FIT")}</span>
                 ) : league.distance_km != null ? (
@@ -133,6 +137,11 @@ export default function OpenLeagues() {
               <div className="ol-row-meta" dir="ltr">
                 {metaLine(league, t)}
               </div>
+              {league.out_of_level && !league.is_full && (
+                <div className="ol-row-why">
+                  {t("הרמה שלך ({mine}) מחוץ לטווח של הליגה", { mine: league.my_level?.toFixed(1) })}
+                </div>
+              )}
               {league.capacity != null && (
                 <div className="ol-row-capacity">
                   <div className="ol-capacity-track">
@@ -153,6 +162,14 @@ export default function OpenLeagues() {
             <div className="ol-row is-full" key={league.id}>
               {row}
             </div>
+          ) : league.out_of_level ? (
+            <Link
+              to={`/leagues/${league.id}/preview`}
+              className="ol-row is-out-of-level"
+              key={league.id}
+            >
+              {row}
+            </Link>
           ) : (
             <Link to={`/leagues/${league.id}/preview`} className="ol-row" key={league.id}>
               {row}

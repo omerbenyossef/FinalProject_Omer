@@ -25,6 +25,10 @@ export default function LeaguePreview() {
   // but they can still read the whole screen, which is the point. The button
   // says what is missing instead of failing when pressed.
   const needsPartner = Boolean(preview?.is_doubles) && activePairs.length === 0;
+  // Out of the league's level range. Reading the screen is still the point;
+  // only joining is refused, and saying so here beats a 403 on the tap.
+  const outOfLevel = Boolean(preview?.out_of_level);
+  const blocked = needsPartner || outOfLevel;
   // Which pair goes in: the one the header has selected, or the only one.
   const joiningPair = preview?.is_doubles
     ? activePairs.find((p) => p.id === selectedPair?.id) ?? activePairs[0] ?? null
@@ -45,6 +49,7 @@ export default function LeaguePreview() {
   }, [leagueId]);
 
   async function handleJoin() {
+    if (outOfLevel) return;
     if (needsPartner) {
       navigate("/partners");
       return;
@@ -273,12 +278,21 @@ export default function LeaguePreview() {
         </div>
       )}
 
-      {needsPartner && (
+      {outOfLevel && (
+        <p className="lpv-needs-partner">
+          {t("הרמה שלך היא {mine}, והליגה הזו פתוחה לרמות {min}–{max}. אפשר לראות הכול כאן, אבל אי אפשר להצטרף.", {
+            mine: preview.my_level?.toFixed(1),
+            min: preview.level_min.toFixed(1),
+            max: preview.level_max.toFixed(1),
+          })}
+        </p>
+      )}
+      {!outOfLevel && needsPartner && (
         <p className="lpv-needs-partner">
           {t("זאת ליגת זוגות — כדי להצטרף צריך שותף. אפשר לראות הכול כאן, ולחזור אחרי שתמצא אחד.")}
         </p>
       )}
-      {!needsPartner && preview.is_doubles && joiningPair && (
+      {!blocked && preview.is_doubles && joiningPair && (
         <p className="lpv-needs-partner lpv-needs-partner--ok">
           {t("תצטרפו כצמד עם {name}", { name: joiningPair.partner.name })}
         </p>
@@ -290,17 +304,19 @@ export default function LeaguePreview() {
         <span className="lpv-foot-text">{footText}</span>
         <button
           type="button"
-          className={`lpv-join${isFull && !needsPartner ? " is-full" : ""}`}
+          className={`lpv-join${(isFull && !blocked) || outOfLevel ? " is-full" : ""}`}
           onClick={handleJoin}
-          disabled={busy || (isFull && !needsPartner)}
+          disabled={busy || outOfLevel || (isFull && !blocked)}
         >
-          {needsPartner
-            ? t("צריך שותף")
-            : isFull
-              ? t("מלאה")
-              : busy
-                ? t("מצטרף...")
-                : t("הצטרף")}
+          {outOfLevel
+            ? t("מחוץ לטווח")
+            : needsPartner
+              ? t("צריך שותף")
+              : isFull
+                ? t("מלאה")
+                : busy
+                  ? t("מצטרף...")
+                  : t("הצטרף")}
         </button>
       </div>
 

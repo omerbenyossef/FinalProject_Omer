@@ -253,6 +253,13 @@ class OpenLeagueOut(BaseModel):
     starts_at: Optional[UtcDatetime] = None
     is_full: bool = False
     best_fit: bool = False
+    # This player's own level is outside the league's range, so joining would
+    # be refused. The row is still listed — seeing what exists is worth more
+    # than a tidy list — and says so instead of finding out on the tap.
+    out_of_level: bool = False
+    # None when the viewer has no level for this sport at all, which is a
+    # different thing from being outside the range.
+    my_level: Optional[float] = None
 
 
 class LeaguePreviewPlayerOut(BaseModel):
@@ -297,6 +304,10 @@ class LeaguePreviewOut(BaseModel):
     # else. The roster below stays a list of people: who is already in is the
     # question somebody has at this point, whichever way they are grouped.
     is_doubles: bool = False
+    # Same two as OpenLeagueOut: why this player cannot join, said before they
+    # press the button rather than after.
+    out_of_level: bool = False
+    my_level: Optional[float] = None
 
 
 class JoinByCodeRequest(BaseModel):

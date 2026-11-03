@@ -8839,3 +8839,15 @@ button:active { transform: translateY(1px); }
   font: 400 13px/1.55 "IBM Plex Sans", var(--sans); color: #8b93a6;
 }
 .lpv-needs-partner--ok { color: #6f7787; }
+
+
+/* A league this player cannot join for being outside its level range. Dimmed
+   but not disabled: the row still opens, because reading it is the point. */
+.ol-row.is-out-of-level { opacity: .72; }
+
+.ol-tag-level { color: #8b93a6; }
+
+.ol-row-why {
+  margin-top: 6px;
+  font: 400 12px/1.45 "IBM Plex Sans", var(--sans); color: #8b93a6;
+}
