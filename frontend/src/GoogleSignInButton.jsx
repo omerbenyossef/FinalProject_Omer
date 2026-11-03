@@ -21,6 +21,27 @@ const CLIENT_ID =
   "803410034957-02cud2sjitn1ln67rdt2tup1j90jb8vk.apps.googleusercontent.com";
 const SCRIPT_SRC = "https://accounts.google.com/gsi/client";
 
+/* Where our own button cannot work, and Google's own has to be shown instead.
+
+   Clicking Google's hidden button from our handler is a synthetic click, and
+   WebKit will not open a popup for one — it only trusts a gesture it saw
+   itself. On iOS every browser is WebKit, Chrome included, so the whole
+   platform is out. The symptom was worse than a dead button: the hidden
+   button IS found, so the code went on to "connecting" and stayed there, and
+   the only thing that clears that state is the window regaining focus, which
+   never happens when no window ever opened. One player's sister could not
+   sign in at all. */
+function cannotProxyClick() {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent || "";
+  const iOS =
+    /iPad|iPhone|iPod/.test(ua) ||
+    // iPadOS reports itself as a Mac, and is told apart by the touchscreen.
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const safari = /^((?!chrome|chromium|android|crios|fxios|edgios).)*safari/i.test(ua);
+  return iOS || safari;
+}
+
 function loadScript() {
   if (window.google?.accounts?.id) return Promise.resolve();
   const existing = document.querySelector(`script[src="${SCRIPT_SRC}"]`);
@@ -65,15 +86,16 @@ function GoogleG() {
 }
 
 export default function GoogleSignInButton({ onError }) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { loginWithToken } = useAuth();
   const hiddenRef = useRef(null);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
   const [connecting, setConnecting] = useState(false);
-  // Shown only if the hidden button can't be found — Google's own, plate and
-  // all, is still better than a dead button.
-  const [showReal, setShowReal] = useState(false);
+  // Google's own button, plate and all, is better than one that cannot sign
+  // anybody in. Shown from the start where the proxy click cannot work, and
+  // fallen back to anywhere else the click turns out to go nowhere.
+  const [showReal, setShowReal] = useState(cannotProxyClick);
   const handlers = useRef({ loginWithToken, onError });
   handlers.current = { loginWithToken, onError };
 
@@ -99,6 +121,10 @@ export default function GoogleSignInButton({ onError }) {
           type: "standard",
           size: "large",
           width: 320,
+          // It used to be invisible, so its language never mattered. On iOS it
+          // is the button, and "Sign in with Google" on a Hebrew screen is the
+          // only English on it.
+          locale: language === "en" ? "en" : "he",
         });
         setReady(true);
       })
@@ -106,7 +132,7 @@ export default function GoogleSignInButton({ onError }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [language]);
 
   // Closing Google's popup fires no callback, so "connecting" would sit there
   // for good. Focus coming back to the window is the only signal there is.
@@ -131,6 +157,17 @@ export default function GoogleSignInButton({ onError }) {
     }
     setConnecting(true);
     real.click();
+
+    // A swallowed click looks exactly like one still being answered, and the
+    // only thing that clears "connecting" is focus coming back — which never
+    // happens if nothing ever opened. So release it on a timer as well.
+    //
+    // This only clears the state; it does not swap in Google's button. On
+    // Chrome the sign-in is sometimes an overlay in this very page rather than
+    // a popup, so focus never leaves, and treating that as a failure would
+    // break the browser where all of this already works. cannotProxyClick is
+    // what decides who gets Google's button, before anybody clicks anything.
+    window.setTimeout(() => setConnecting(false), 30000);
   }
 
   if (!CLIENT_ID) return null;
