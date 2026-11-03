@@ -8,7 +8,8 @@ from sqlalchemy.orm import Session, joinedload
 from .. import models, schemas
 from ..auth import get_current_user
 from ..database import get_db
-from ..push_utils import notify_user, resolve_match_notifications
+from ..match_sides import is_participant, mine as match_mine, my_side_is_first, opponent_label, opponents, others, teammate
+from ..push_utils import notify_match_others, notify_user, resolve_match_notifications
 from ..rating_utils import match_winner_id, round_to_half, update_ratings_for_match
 from .friendly import MAX_SETS as FRIENDLY_MAX_SETS
 from .leagues import _accumulate_stats, _empty_stats
@@ -32,7 +33,9 @@ def _get_match_for_participant(db: Session, match_id: int, user_id: int) -> mode
     )
     if not match:
         raise HTTPException(status_code=404, detail="Match not found")
-    if user_id not in (match.player1_id, match.player2_id):
+    # All four of a doubles match, not the two named in player1_id/player2_id:
+    # a partner has as much business proposing a time as their captain.
+    if not is_participant(db, match, user_id):
         raise HTTPException(status_code=403, detail="Not a participant in this match")
     return match
 
@@ -173,7 +176,11 @@ def get_match_detail(
 ):
     _auto_confirm_overdue(db)
     match = _get_match_for_participant(db, match_id, current_user.id)
-    opponent = match.player2 if match.player1_id == current_user.id else match.player1
+    facing = opponents(db, match, current_user.id)
+    # The screen's single `opponent` is still one person, because a singles
+    # match has one; a doubles match carries all four instead, and the label.
+    opponent = facing[0] if facing else None
+    mate = teammate(db, match, current_user.id)
 
     sport_id = match.league.sport_id if match.league_id else match.sport_id
     my_ntrp = opp_ntrp = None
@@ -203,7 +210,7 @@ def get_match_detail(
     h2h_wins = h2h_losses = 0
     last_match_sets = None
     for i, m in enumerate(h2h_matches):
-        i_am_player1 = m.player1_id == current_user.id
+        i_am_player1 = my_side_is_first(db, m, current_user.id)
         winner_id = match_winner_id(m)
         if winner_id == current_user.id:
             h2h_wins += 1
@@ -224,7 +231,7 @@ def get_match_detail(
     # orientation; the confirm screen always shows the viewer's column first
     # (resultconfirmdispute108.md section 3), so flip them when the viewer is
     # player2 — same convention as last_match_sets above.
-    i_am_player1 = match.player1_id == current_user.id
+    i_am_player1 = my_side_is_first(db, match, current_user.id)
 
     def _mine_first(sets):
         if not sets or i_am_player1:
@@ -251,6 +258,10 @@ def get_match_detail(
         duration_minutes=_match_duration_minutes(match),
         max_sets=(match.league.best_of or FRIENDLY_MAX_SETS) if match.league_id else FRIENDLY_MAX_SETS,
         i_am_player1=i_am_player1,
+        is_doubles=bool(match.pair1_id and match.pair2_id),
+        opponent_label=opponent_label(db, match, current_user.id),
+        opponents=[schemas.PairPlayerOut.model_validate(u) for u in facing],
+        teammate=schemas.PairPlayerOut.model_validate(mate) if mate else None,
         my_ntrp=my_ntrp,
         opponent_ntrp=opp_ntrp,
         h2h_wins=h2h_wins,
@@ -343,7 +354,7 @@ def _other_confirmed_matches(db: Session, user_id: int, exclude_match_id: int) -
             models.Match.status == models.MatchStatus.pending,
             models.Match.schedule_confirmed.is_(True),
             models.Match.scheduled_at.isnot(None),
-            or_(models.Match.player1_id == user_id, models.Match.player2_id == user_id),
+            match_mine(user_id),
         )
         .all()
     )
@@ -412,7 +423,7 @@ def _auto_decline_conflicting_proposals(db: Session, match: models.Match, start:
                 models.Match.status == models.MatchStatus.pending,
                 models.Match.schedule_confirmed.is_(False),
                 models.Match.scheduled_at.isnot(None),
-                or_(models.Match.player1_id == user_id, models.Match.player2_id == user_id),
+                match_mine(user_id),
             )
             .all()
         )
@@ -605,9 +616,10 @@ def propose_match_schedule(
             if len(starts) == 1
             else f"{current_user.name} proposed {len(starts)} times for your match — pick one"
         )
-    notify_user(
+    notify_match_others(
         db,
-        opponent_id,
+        match,
+        current_user.id,
         title,
         body,
         f"/matches/{match.id}",
@@ -735,9 +747,10 @@ def decline_match_schedule(
     db.commit()
     db.refresh(match)
 
-    notify_user(
+    notify_match_others(
         db,
-        other_id,
+        match,
+        current_user.id,
         "הצעת הזמן בוטלה",
         f"{current_user.name} ביטל/ה את הצעת הזמן למשחק שלכם",
         f"/matches/{match.id}/schedule",
@@ -804,9 +817,10 @@ def cancel_match(
     if match.kind == models.MatchKind.league:
         body += ". המשחק חוזר לרשימת המשחקים שצריך לקבוע להם זמן"
         body_en += ". It goes back to the matches that still need a time"
-    notify_user(
+    notify_match_others(
         db,
-        opponent_id,
+        match,
+        current_user.id,
         "המשחק בוטל",
         body,
         f"/matches/{match.id}" if match.kind == models.MatchKind.league else "/leagues",
@@ -861,9 +875,10 @@ def report_match_not_played(
     db.refresh(match)
 
     opponent_id = match.player2_id if current_user.id == match.player1_id else match.player1_id
-    notify_user(
+    notify_match_others(
         db,
-        opponent_id,
+        match,
+        current_user.id,
         "דיווח שהמשחק לא בוצע",
         f"{current_user.name} מדווח/ת שהמשחק שלכם לא התקיים, וממתין/ה לתשובה שלך",
         f"/matches/{match.id}/confirm",
@@ -942,10 +957,7 @@ def _reschedule_options(db: Session, match: models.Match, user_id: int):
             models.Match.status.in_(
                 [models.MatchStatus.pending, models.MatchStatus.pending_confirmation]
             ),
-            or_(
-                models.Match.player1_id == user_id,
-                models.Match.player2_id == user_id,
-            ),
+            match_mine(user_id),
         )
         .all()
     )
@@ -1038,9 +1050,10 @@ def reschedule_to_round(
 
     opponent_id = match.player2_id if current_user.id == match.player1_id else match.player1_id
     opponent = match.player2 if current_user.id == match.player1_id else match.player1
-    notify_user(
+    notify_match_others(
         db,
-        opponent_id,
+        match,
+        current_user.id,
         "המשחק עבר למחזור אחר",
         f"{current_user.name} תיאם/ה את המשחק שלכם למחזור {match.round_number}. עכשיו צריך לקבוע שעה",
         f"/matches/{match.id}/schedule",
@@ -1110,9 +1123,10 @@ def confirm_result(
 
         other_id = match.player2_id if current_user.id == match.player1_id else match.player1_id
         other = match.player2 if current_user.id == match.player1_id else match.player1
-        notify_user(
+        notify_match_others(
             db,
-            other_id,
+            match,
+            current_user.id,
             "אושר שהמשחק לא בוצע",
             f"{current_user.name} אישר/ה שהמשחק שלכם לא התקיים — הוא בוטל ולא ייספר בתוצאות",
             f"/matches/{match.id}",
@@ -1145,36 +1159,47 @@ def confirm_result(
     other = match.player2 if current_user.id == match.player1_id else match.player1
     # 155a's update line: what changed for the player is their rating, so say
     # it. update_ratings_for_match just wrote the sample this reads.
-    level_note = ""
-    sample = (
-        db.query(models.RatingSample)
-        .filter(models.RatingSample.user_id == other_id, models.RatingSample.match_id == match.id)
-        .order_by(models.RatingSample.id.desc())
-        .first()
-    )
-    level_note_en = ""
-    if sample:
-        direction = "עלה" if sample.level_after > sample.level_before else "ירד"
-        direction_en = "went up" if sample.level_after > sample.level_before else "went down"
+    # "Your rating went up to 4.1" is the one line in all of these that is
+    # about the recipient rather than the match, so it cannot be written once
+    # and sent to three people — each of them moved by their own amount.
+    def _level_note(user_id: int) -> tuple[str, str]:
+        sample = (
+            db.query(models.RatingSample)
+            .filter(
+                models.RatingSample.user_id == user_id,
+                models.RatingSample.match_id == match.id,
+            )
+            .order_by(models.RatingSample.id.desc())
+            .first()
+        )
+        if not sample:
+            return "", ""
         if abs(sample.level_after - sample.level_before) < 0.005:
-            level_note = f". הדירוג שלך נשאר {sample.level_after:.1f}"
-            level_note_en = f". Your rating stays {sample.level_after:.1f}"
-        else:
-            level_note = f". הדירוג שלך {direction} ל־{sample.level_after:.1f}"
-            level_note_en = f". Your rating {direction_en} to {sample.level_after:.1f}"
-    notify_user(
-        db,
-        other_id,
-        "התוצאה אושרה",
-        f"התוצאה מול {current_user.name} אושרה{level_note}",
-        f"/matches/{match.id}",
-        type="result_confirmed",
-        actor_name=current_user.name,
-        league_id=match.league_id,
-        match_id=match.id,
-        title_en="Result confirmed",
-        body_en=f"The result against {current_user.name} is confirmed{level_note_en}",
-    )
+            return (
+                f". הדירוג שלך נשאר {sample.level_after:.1f}",
+                f". Your rating stays {sample.level_after:.1f}",
+            )
+        up = sample.level_after > sample.level_before
+        return (
+            f". הדירוג שלך {'עלה' if up else 'ירד'} ל־{sample.level_after:.1f}",
+            f". Your rating {'went up' if up else 'went down'} to {sample.level_after:.1f}",
+        )
+
+    for listener_id in others(db, match, current_user.id):
+        note, note_en = _level_note(listener_id)
+        notify_user(
+            db,
+            listener_id,
+            "התוצאה אושרה",
+            f"התוצאה מול {current_user.name} אושרה{note}",
+            f"/matches/{match.id}",
+            type="result_confirmed",
+            actor_name=current_user.name,
+            league_id=match.league_id,
+            match_id=match.id,
+            title_en="Result confirmed",
+            body_en=f"The result against {current_user.name} is confirmed{note_en}",
+        )
     resolve_match_notifications(
         db,
         current_user.id,
@@ -1215,7 +1240,7 @@ def dispute_result(
     # via _mine_first), so flip back to the match's own player1/player2
     # orientation before storing — same convention as report_score expects,
     # except that endpoint's caller is always oriented to the DB already.
-    i_am_player1 = current_user.id == match.player1_id
+    i_am_player1 = my_side_is_first(db, match, current_user.id)
     match.corrected_by = current_user.id
     match.corrected_sets = (
         [s.model_dump() for s in correction.sets]

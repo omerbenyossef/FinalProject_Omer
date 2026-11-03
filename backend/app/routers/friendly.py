@@ -8,7 +8,8 @@ from sqlalchemy.orm import Session
 from .. import models, schemas
 from ..auth import get_current_user
 from ..database import get_db
-from ..push_utils import notify_user, resolve_match_notifications
+from ..match_sides import mine as match_mine
+from ..push_utils import notify_match_others, notify_user, resolve_match_notifications
 from ..rating_utils import get_rating, match_winner_id, update_ratings_for_match
 from .matches import CONFIRMATION_WINDOW, REMIND_COOLDOWN, _auto_confirm_overdue, _to_naive_utc
 
@@ -97,10 +98,7 @@ def search_players(
             db.query(models.Match)
             .filter(
                 models.Match.status == models.MatchStatus.completed,
-                or_(
-                    models.Match.player1_id == current_user.id,
-                    models.Match.player2_id == current_user.id,
-                ),
+                match_mine(current_user.id),
             )
             .all()
         )
@@ -327,7 +325,7 @@ def remind_friendly(
             "A match reminder",
             f"{current_user.name} is reminding you to play your friendly and report it",
         )
-    notify_user(db, opponent_id, title, body, "/profile", title_en=title_en, body_en=body_en)
+    notify_match_others(db, match, current_user.id, title, body, "/profile", title_en=title_en, body_en=body_en)
     match.last_reminded_at = datetime.utcnow()
     db.commit()
 
@@ -372,9 +370,10 @@ def report_friendly_score(
         match.auto_confirm_at = datetime.utcnow() + CONFIRMATION_WINDOW
         db.commit()
         db.refresh(match)
-        notify_user(
+        notify_match_others(
             db,
-            opponent_id,
+            match,
+            current_user.id,
             "יש תוצאה לאישור",
             f"{current_user.name} דיווח תוצאה למשחק הידידותי שלכם, ומחכה לאישור שלך",
             "/profile",

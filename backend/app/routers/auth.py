@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from .. import models, schemas
 from ..auth import create_access_token, get_current_user, hash_password, normalize_email
 from ..database import get_db
-from ..match_sides import mine as match_mine
+from ..match_sides import mine as match_mine, my_side_is_first
 from ..google_auth import fetch_profile_photo, verify_google_id_token
 from ..match_cleanup import purge_match_references
 from ..rate_limit import limiter
@@ -159,10 +159,7 @@ def my_stats(
     leagues_count = membership_query.count()
 
     matches_query = db.query(models.Match).filter(
-        or_(
-            models.Match.player1_id == current_user.id,
-            models.Match.player2_id == current_user.id,
-        ),
+        match_mine(current_user.id),
         models.Match.status == models.MatchStatus.completed,
     )
     if sport_id is not None:
@@ -190,7 +187,7 @@ def my_stats(
 
     recent_matches = []
     for match in matches[:8]:
-        i_am_player1 = match.player1_id == current_user.id
+        i_am_player1 = my_side_is_first(db, match, current_user.id)
         opponent = match.player2 if i_am_player1 else match.player1
         won = match_winner_id(match) == current_user.id
         my_sets = [

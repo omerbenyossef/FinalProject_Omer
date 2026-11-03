@@ -8,7 +8,8 @@ from .. import models, schemas
 from ..auth import get_current_user
 from ..database import get_db
 from ..match_cleanup import purge_match_references
-from ..push_utils import notify_user, resolve_match_notifications
+from ..match_sides import is_participant, mine as match_mine, others
+from ..push_utils import notify_match_others, notify_user, resolve_match_notifications
 from ..rating_utils import update_ratings_for_match
 
 router = APIRouter(prefix="/leagues/{league_id}/matches", tags=["matches"])
@@ -572,10 +573,7 @@ def list_matches(
         .options(joinedload(models.Match.player1), joinedload(models.Match.player2))
         .filter(
             models.Match.league_id == league_id,
-            or_(
-                models.Match.player1_id == current_user.id,
-                models.Match.player2_id == current_user.id,
-            ),
+            match_mine(current_user.id),
         )
         .order_by(models.Match.created_at.desc())
         .all()
@@ -800,7 +798,7 @@ def report_score(
     )
     if not match:
         raise HTTPException(status_code=404, detail="Match not found")
-    if current_user.id not in (match.player1_id, match.player2_id):
+    if not is_participant(db, match, current_user.id):
         raise HTTPException(status_code=403, detail="Not a participant in this match")
     # match-pending-confirm-159a: whoever filed the report can still change it
     # while the opponent hasn't answered — editing replaces the report and
@@ -842,9 +840,10 @@ def report_score(
 
     opponent_id = match.player2_id if current_user.id == match.player1_id else match.player1_id
     opponent = match.player2 if current_user.id == match.player1_id else match.player1
-    notify_user(
+    notify_match_others(
         db,
-        opponent_id,
+        match,
+        current_user.id,
         "יש תוצאה לאישור",
         f"{current_user.name} דיווח תוצאה למשחק שלכם, ומחכה לאישור שלך",
         f"/leagues/{league_id}",
@@ -882,7 +881,7 @@ def remind_score(
     )
     if not match:
         raise HTTPException(status_code=404, detail="Match not found")
-    if current_user.id not in (match.player1_id, match.player2_id):
+    if not is_participant(db, match, current_user.id):
         raise HTTPException(status_code=403, detail="Not a participant in this match")
     if match.status not in (models.MatchStatus.pending, models.MatchStatus.pending_confirmation):
         raise HTTPException(status_code=400, detail="אין מה להזכיר במשחק הזה")
@@ -894,7 +893,7 @@ def remind_score(
         title, body = "תזכורת: יש תוצאה לאישור", f"{current_user.name} מזכיר/ה לך לאשר את התוצאה שדווחה"
     else:
         title, body = "תזכורת למשחק", f"{current_user.name} מזכיר/ה לך לשחק ולדווח את המשחק שלכם"
-    notify_user(db, opponent_id, title, body, f"/leagues/{league_id}")
+    notify_match_others(db, match, current_user.id, title, body, f"/leagues/{league_id}")
     match.last_reminded_at = datetime.utcnow()
     db.commit()
 
@@ -915,7 +914,7 @@ def cancel_match(
     )
     if not match:
         raise HTTPException(status_code=404, detail="Match not found")
-    if current_user.id not in (match.player1_id, match.player2_id):
+    if not is_participant(db, match, current_user.id):
         raise HTTPException(status_code=403, detail="Not a participant in this match")
     if match.status != models.MatchStatus.pending:
         raise HTTPException(status_code=400, detail="אי אפשר לבטל משחק שכבר דווח")

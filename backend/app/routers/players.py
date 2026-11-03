@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session, joinedload
 from .. import models, schemas
 from ..auth import get_current_user
 from ..database import get_db
+from ..match_sides import my_side_is_first
 from .matches import _auto_confirm_overdue
 from .leagues import get_standings
 from ..rating_utils import match_winner_id, round_to_half
@@ -178,7 +179,7 @@ def head_to_head(
     losses = 0
     match_list = []
     for m in matches:
-        i_am_player1 = m.player1_id == current_user.id
+        i_am_player1 = my_side_is_first(db, m, current_user.id)
         my_score = m.player1_score if i_am_player1 else m.player2_score
         opponent_score = m.player2_score if i_am_player1 else m.player1_score
 

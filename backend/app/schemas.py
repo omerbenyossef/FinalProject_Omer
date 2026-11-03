@@ -871,7 +871,14 @@ class FriendlyDraftOut(BaseModel):
 class MatchDetailOut(BaseModel):
     id: int
     kind: MatchKind
-    opponent: MemberOut
+    # One person, because a singles match has one. A doubles match sets
+    # is_doubles and fills opponents/teammate/opponent_label instead; the
+    # screen reads those and leaves this alone.
+    opponent: Optional[MemberOut] = None
+    is_doubles: bool = False
+    opponent_label: str = ""
+    opponents: list[PairPlayerOut] = []
+    teammate: Optional[PairPlayerOut] = None
     league_id: Optional[int] = None
     league_name: Optional[str] = None
     round_number: Optional[int] = None

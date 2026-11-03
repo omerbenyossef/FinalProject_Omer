@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session, joinedload
 from .. import models, schemas
 from ..auth import get_current_user
 from ..database import get_db
+from ..match_sides import mine as match_mine
 from .matches import _auto_confirm_overdue
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
@@ -179,10 +180,7 @@ def list_notifications(
 ):
     _auto_confirm_overdue(db)
 
-    mine = or_(
-        models.Match.player1_id == current_user.id,
-        models.Match.player2_id == current_user.id,
-    )
+    mine = match_mine(current_user.id)
     matches = (
         db.query(models.Match)
         .options(

@@ -229,10 +229,7 @@ def my_next_matches(
 
     entries = []
     for league in my_leagues:
-        my_match_filter = or_(
-            models.Match.player1_id == current_user.id,
-            models.Match.player2_id == current_user.id,
-        )
+        my_match_filter = match_mine(current_user.id)
         # A match whose round has closed shouldn't hold the league's slot on
         # the home screen — it would hide a live one behind it. It is still
         # returned when there is nothing live, because this feed also carries
@@ -300,10 +297,7 @@ def my_next_matches(
             models.Match.kind == models.MatchKind.friendly,
             models.Match.invite_status != models.FriendlyInviteStatus.declined,
             models.Match.status != models.MatchStatus.completed,
-            or_(
-                models.Match.player1_id == current_user.id,
-                models.Match.player2_id == current_user.id,
-            ),
+            match_mine(current_user.id),
         )
         .order_by(models.Match.created_at.desc())
         .all()
@@ -424,10 +418,7 @@ def my_open_items(
 
     items = []
     for league in my_leagues:
-        my_match_filter = or_(
-            models.Match.player1_id == current_user.id,
-            models.Match.player2_id == current_user.id,
-        )
+        my_match_filter = match_mine(current_user.id)
         matches = (
             db.query(models.Match)
             .options(joinedload(models.Match.player1), joinedload(models.Match.player2))
@@ -473,10 +464,7 @@ def my_open_items(
         .filter(
             models.Match.kind == models.MatchKind.friendly,
             models.Match.status.in_([models.MatchStatus.pending, models.MatchStatus.pending_confirmation]),
-            or_(
-                models.Match.player1_id == current_user.id,
-                models.Match.player2_id == current_user.id,
-            ),
+            match_mine(current_user.id),
         )
         .all()
     )
@@ -508,10 +496,7 @@ def my_open_items(
 
     items.sort(key=sort_key)
 
-    my_match_filter = or_(
-        models.Match.player1_id == current_user.id,
-        models.Match.player2_id == current_user.id,
-    )
+    my_match_filter = match_mine(current_user.id)
     scheduled_count = (
         db.query(models.Match)
         .filter(
@@ -1075,10 +1060,7 @@ def leave_league(
     db.query(models.Match).filter(
         models.Match.league_id == league_id,
         models.Match.status == models.MatchStatus.pending,
-        or_(
-            models.Match.player1_id == current_user.id,
-            models.Match.player2_id == current_user.id,
-        ),
+        match_mine(current_user.id),
     ).delete()
 
     db.delete(membership)

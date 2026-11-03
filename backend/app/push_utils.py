@@ -185,3 +185,17 @@ def notify_user(
         if not _send_to_subscription(subscription, title, body, url):
             db.delete(subscription)
     db.commit()
+
+
+def notify_match_others(db, match, actor_id: int, *args, **kwargs) -> None:
+    """Tell everybody else on the court, which in doubles is three people.
+
+    Every notice about a match used to go to "the opponent", worked out as
+    whichever of player1_id/player2_id was not the actor — one person, and on a
+    doubles match the wrong count: a time proposal, a score report or a
+    cancellation reached one of the three who needed it.
+    """
+    from .match_sides import others
+
+    for listener_id in others(db, match, actor_id):
+        notify_user(db, listener_id, *args, **kwargs)

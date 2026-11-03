@@ -18,7 +18,8 @@ from sqlalchemy.orm import Session, joinedload
 from .. import models, schemas
 from ..auth import get_current_user
 from ..database import get_db
-from ..push_utils import notify_user
+from ..match_sides import mine as match_mine, my_side_is_first, opponent_label, opponents
+from ..push_utils import notify_match_others, notify_user
 from .leagues import _round_ends_at
 from .matches import _auto_confirm_overdue
 
@@ -66,19 +67,21 @@ def _is_open(match: models.Match) -> bool:
     return ends_at is not None and ends_at < now
 
 
-def _item(match: models.Match, user_id: int) -> tuple[str, schemas.OpenMatchItemOut] | None:
+def _item(db: Session, match: models.Match, user_id: int) -> tuple[str, schemas.OpenMatchItemOut] | None:
     """(bucket, item) or None when the match isn't open business for this
     viewer. bucket is "you" or "them"."""
-    i_am_player1 = match.player1_id == user_id
-    opponent = match.player2 if i_am_player1 else match.player1
-    name = opponent.name if opponent else ""
+    i_am_player1 = my_side_is_first(db, match, user_id)
+    # In doubles the row names the side it is against, not one of its two.
+    name = opponent_label(db, match, user_id)
+    facing = opponents(db, match, user_id)
     mine_first = _sets_label(match.sets, not i_am_player1)
     corrected_first = _sets_label(match.corrected_sets, not i_am_player1)
 
     common = dict(
         match_id=match.id,
         opponent_name=name,
-        opponent_photo_url=opponent.photo_url if opponent else None,
+        # One face in singles; two would not fit the row, so doubles shows none.
+        opponent_photo_url=facing[0].photo_url if len(facing) == 1 else None,
         league_id=match.league_id,
         league_name=match.league.name if match.league_id else None,
         round=match.round_number,
@@ -231,10 +234,7 @@ def list_open_matches(
     current_user: models.User = Depends(get_current_user),
 ):
     _auto_confirm_overdue(db)
-    mine = or_(
-        models.Match.player1_id == current_user.id,
-        models.Match.player2_id == current_user.id,
-    )
+    mine = match_mine(current_user.id)
     matches = (
         db.query(models.Match)
         .options(
@@ -262,7 +262,7 @@ def list_open_matches(
             continue
         if not _is_open(match):
             continue
-        result = _item(match, current_user.id)
+        result = _item(db, match, current_user.id)
         if not result:
             continue
         bucket, item = result
@@ -298,7 +298,7 @@ def remind_opponent(
     if match.manual_reminded_at and datetime.utcnow() - match.manual_reminded_at < REMIND_COOLDOWN:
         raise HTTPException(status_code=429, detail="אפשר לשלוח תזכורת אחת ביום")
 
-    result = _item(match, current_user.id)
+    result = _item(db, match, current_user.id)
     if not result or result[0] != "them":
         raise HTTPException(status_code=400, detail="אין על מה להזכיר במשחק הזה")
 
@@ -307,9 +307,10 @@ def remind_opponent(
     db.refresh(match)
 
     opponent_id = match.player2_id if current_user.id == match.player1_id else match.player1_id
-    notify_user(
+    notify_match_others(
         db,
-        opponent_id,
+        match,
+        current_user.id,
         "תזכורת מהיריב",
         f"{current_user.name} מחכה לתשובה שלך על המשחק שלכם",
         f"/matches/{match.id}",
@@ -321,4 +322,4 @@ def remind_opponent(
         body_en=f"{current_user.name} is waiting for your answer on your match",
     )
 
-    return _item(match, current_user.id)[1]
+    return _item(db, match, current_user.id)[1]
