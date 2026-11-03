@@ -92,7 +92,6 @@ export default function RatingQuestionnaire({
   league,
   sportName,
   existingResult,
-  joinCode,
   onClose,
   onJoined,
   retake,
@@ -141,7 +140,7 @@ export default function RatingQuestionnaire({
     setJoining(true);
     setError("");
     try {
-      await api.joinLeague(league.id, joinCode);
+      await api.joinLeague(league.id);
       onJoined();
     } catch (err) {
       setError(err.message);

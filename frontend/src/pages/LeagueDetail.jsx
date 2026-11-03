@@ -48,7 +48,6 @@ export default function LeagueDetail() {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const codeFromLink = (searchParams.get("code") || "").trim();
   const { nextMatches, reload: reloadOpenAction } = useOpenAction();
 
   const [league, setLeague] = useState(null);
@@ -58,16 +57,15 @@ export default function LeagueDetail() {
   const [standings, setStandings] = useState([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [inviteCode, setInviteCode] = useState(null);
+  const [inviteToken, setInviteToken] = useState(null);
   const [inviteError, setInviteError] = useState("");
   const [inviteLoading, setInviteLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("standings");
   const [showAddRoundConfirm, setShowAddRoundConfirm] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [selectedRound, setSelectedRound] = useState(null);
-  const [ratingFlow, setRatingFlow] = useState(null); // { existingResult, joinCode } | null
+  const [ratingFlow, setRatingFlow] = useState(null); // { existingResult } | null
   const [myRatings, setMyRatings] = useState([]);
-  const autoJoinAttempted = useRef(false);
   const initialTabSet = useRef(false);
 
   const isMember = members.some((m) => m.id === user?.id);
@@ -132,13 +130,12 @@ export default function LeagueDetail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leagueId, user]);
 
-  async function startJoinFlow(codeOverride) {
-    const joinCode = codeOverride ?? codeFromLink;
+  async function startJoinFlow() {
     setBusy(true);
     setError("");
     try {
       const check = await api.checkRating(leagueId);
-      setRatingFlow({ existingResult: check.has_rating ? check.result : null, joinCode });
+      setRatingFlow({ existingResult: check.has_rating ? check.result : null });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -151,28 +148,23 @@ export default function LeagueDetail() {
     await loadAll();
   }
 
-  useEffect(() => {
-    if (!user || !league || isMember || !codeFromLink || autoJoinAttempted.current) return;
-    autoJoinAttempted.current = true;
-    startJoinFlow(codeFromLink);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, league, isMember, codeFromLink]);
 
   async function handleShareWhatsApp() {
     setInviteError("");
     setInviteLoading(true);
     try {
-      // A public league needs no code — the link is enough, and whoever opens
-      // it joins from the league's own page if their level fits.
+      // A public league needs no token — the link is enough, and whoever opens
+      // it joins from the league's own page if their level fits. A private one
+      // is entered only through its invite link.
       let url = `${window.location.origin}/leagues/${leagueId}`;
       if (!league.is_open) {
-        let code = inviteCode;
-        if (!code) {
-          const data = await api.getInviteCode(leagueId);
-          code = data.code;
-          setInviteCode(code);
+        let token = inviteToken;
+        if (!token) {
+          const data = await api.createLeagueInviteLink(leagueId);
+          token = data.token;
+          setInviteToken(token);
         }
-        url = `${url}?code=${code}`;
+        url = `${window.location.origin}/leagues/invite/${token}`;
       }
       const message = t('בוא/י תצטרף/י לליגה "{name}" ב-Rally!\n{url}', { name: league.name, url });
       window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
@@ -553,7 +545,7 @@ export default function LeagueDetail() {
       <div className="league-detail-actions">
         {/* A public league only takes players inside its level range, so say
             so here rather than offering a button that comes back refused. */}
-        {!isMember && user && (league.is_open || codeFromLink) && (
+        {!isMember && user && league.is_open && (
           outOfRange ? (
             <p className="muted">
               {t("הרמה שלך ({level}) מחוץ לטווח של הליגה הזו ({min}–{max}).", {
@@ -568,7 +560,7 @@ export default function LeagueDetail() {
             </button>
           )
         )}
-        {!isMember && user && !league.is_open && !codeFromLink && (
+        {!isMember && user && !league.is_open && (
           <p className="muted">
             {t("הליגה סגורה. כדי להצטרף צריך קישור הזמנה מאחד מחברי הליגה.")}
           </p>
@@ -979,7 +971,6 @@ export default function LeagueDetail() {
           league={league}
           sportName={league.sport.name}
           existingResult={ratingFlow.existingResult}
-          joinCode={ratingFlow.joinCode}
           onClose={() => setRatingFlow(null)}
           onJoined={handleRatingJoined}
         />

@@ -1,6 +1,7 @@
 import math
 import random
 import string
+import secrets
 from datetime import datetime, timedelta
 from types import SimpleNamespace
 
@@ -85,14 +86,6 @@ def _validate_level_range(level_min: float | None, level_max: float | None) -> N
             raise HTTPException(status_code=400, detail="טווח הדירוג חייב להיות בין 1.5 ל-7.0 בקפיצות של חצי")
     if level_min is not None and level_max is not None and level_min > level_max:
         raise HTTPException(status_code=400, detail="הרמה המינימלית לא יכולה להיות גבוהה מהמקסימלית")
-
-
-def _generate_join_code(db: Session) -> str:
-    while True:
-        code = "".join(random.choices(string.ascii_uppercase + string.digits, k=6))
-        exists = db.query(models.League).filter(models.League.join_code == code).first()
-        if not exists:
-            return code
 
 
 def _compute_my_standing(league: models.League, user_id: int, matches: list[models.Match]):
@@ -667,7 +660,6 @@ def create_league(
         description=league_in.description,
         sport_id=league_in.sport_id,
         created_by=current_user.id,
-        join_code=None if league_in.is_open else _generate_join_code(db),
         is_open=league_in.is_open,
         best_of=league_in.best_of or 3,
         round_length_days=league_in.round_length_days or 7,
@@ -942,8 +934,8 @@ def _join_league_core(
     db: Session,
     league: models.League,
     current_user: models.User,
-    code: str | None = None,
     pair_id: int | None = None,
+    invited: bool = False,
 ) -> schemas.LeagueOut:
     if league.is_doubles and pair_id is None:
         raise HTTPException(status_code=400, detail="צריך לבחור צמד כדי להצטרף לליגת זוגות")
@@ -970,13 +962,12 @@ def _join_league_core(
             )
         return _to_league_out(league)
 
-    # Only a private league is gated by its code. A public one has a code too
-    # the moment anyone taps "invite a friend" on it — get_invite_code creates
-    # one on demand — and this check used to key off the code existing rather
-    # than the league being private, so sharing a public league turned it into
-    # a league nobody could join from the open list without the code.
-    if not league.is_open and league.join_code and league.join_code != (code or "").strip().upper():
-        raise HTTPException(status_code=403, detail="קוד הזמנה שגוי")
+    # A private league is entered through its invite link, which is a separate
+    # endpoint: by the time anything reaches here the token has been checked,
+    # and `invited` says so. Joining a private league any other way — guessing
+    # the id and posting to /join — is what this refuses.
+    if not league.is_open and not invited:
+        raise HTTPException(status_code=403, detail="לליגה הזו נכנסים דרך קישור הזמנה")
 
     # Lock the league row for the capacity check + insert so two joins
     # racing for the last open spot can't both pass the check before either
@@ -1055,7 +1046,7 @@ def join_league(
     current_user: models.User = Depends(get_current_user),
 ):
     league = _get_league_or_404(db, league_id)
-    return _join_league_core(db, league, current_user, join_in.code, join_in.pair_id)
+    return _join_league_core(db, league, current_user, join_in.pair_id)
 
 
 @router.post("/{league_id}/leave", status_code=204)
@@ -1091,38 +1082,6 @@ def leave_league(
 
     db.delete(membership)
     db.commit()
-
-
-# Nothing shows this code to anybody and nothing takes one typed in. It is
-# what authorises joining a private league, and it reaches the invited player
-# inside the share link — /leagues/{id}?code=... — which is the only thing
-# that still asks for it.
-@router.get("/{league_id}/invite-code", response_model=schemas.InviteCodeOut)
-def get_invite_code(
-    league_id: int,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
-):
-    league = _get_league_or_404(db, league_id)
-    is_member = any(m.user_id == current_user.id for m in league.memberships)
-    # The creator manages invites regardless of whether they're also a
-    # player — otherwise leaving their own league (allowed since they keep
-    # ownership) would lock them out of its own invite code.
-    if not is_member and league.created_by != current_user.id:
-        raise HTTPException(status_code=403, detail="רק חברי הליגה יכולים לראות את קוד ההזמנה")
-
-    # A code is how you get into a league that isn't listed. A public league is
-    # listed: anyone at its level joins from the open list, so it has no code to
-    # show — and generating one here is what used to make it demand one.
-    if league.is_open:
-        raise HTTPException(status_code=400, detail="ליגה ציבורית לא צריכה קוד הזמנה")
-
-    if not league.join_code:
-        league.join_code = _generate_join_code(db)
-        db.commit()
-        db.refresh(league)
-
-    return schemas.InviteCodeOut(code=league.join_code)
 
 
 @router.delete("/{league_id}", status_code=204)
@@ -1342,3 +1301,111 @@ def get_standings(league_id: int, db: Session = Depends(get_db)):
             row["provisional"] = rating.provisional
 
     return rows
+
+
+# --- The way into a private league ---------------------------------------
+#
+# Replaces the six-character join code. Same shape as the pair invite links:
+# a token nobody reads, inside a link that lands on a screen asking the
+# question, so that the person opening it can sign in first if they have to.
+
+
+def _live_invite_link(db: Session, league_id: int) -> models.LeagueInviteLink | None:
+    return (
+        db.query(models.LeagueInviteLink)
+        .filter(
+            models.LeagueInviteLink.league_id == league_id,
+            models.LeagueInviteLink.revoked_at.is_(None),
+        )
+        .order_by(models.LeagueInviteLink.id.desc())
+        .first()
+    )
+
+
+@router.post("/{league_id}/invite-links", response_model=schemas.LeagueInviteLinkOut)
+def create_league_invite_link(
+    league_id: int,
+    rotate: bool = False,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """The league's live token, minting one if there is none. `rotate` retires
+    the current one first, which is how a link that went to the wrong person
+    is taken back."""
+    league = _get_league_or_404(db, league_id)
+    is_member = any(m.user_id == current_user.id for m in league.memberships)
+    if league.created_by != current_user.id and not is_member and not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="רק חברי הליגה יכולים להזמין אליה")
+
+    existing = _live_invite_link(db, league_id)
+    if existing and not rotate:
+        return schemas.LeagueInviteLinkOut(token=existing.token)
+    if existing:
+        existing.revoked_at = datetime.utcnow()
+
+    link = models.LeagueInviteLink(
+        league_id=league_id, created_by=current_user.id, token=secrets.token_urlsafe(16)
+    )
+    db.add(link)
+    db.commit()
+    return schemas.LeagueInviteLinkOut(token=link.token)
+
+
+def _load_invite_link(db: Session, token: str) -> models.LeagueInviteLink:
+    link = (
+        db.query(models.LeagueInviteLink)
+        .options(joinedload(models.LeagueInviteLink.league))
+        .filter(models.LeagueInviteLink.token == token)
+        .first()
+    )
+    if not link or not link.league:
+        raise HTTPException(status_code=404, detail="קישור ההזמנה לא תקין")
+    return link
+
+
+@router.get("/invite-links/{token}", response_model=schemas.LeagueInviteLinkInfoOut)
+def describe_league_invite_link(
+    token: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Read the link without spending it, so the screen can say what it is
+    looking at before anybody joins anything."""
+    link = _load_invite_link(db, token)
+    league = link.league
+    joined = (
+        len({m.pair_id for m in league.memberships if m.pair_id})
+        if league.is_doubles
+        else len(league.memberships)
+    )
+    inviter = db.query(models.User).filter(models.User.id == link.created_by).first()
+    return schemas.LeagueInviteLinkInfoOut(
+        league_id=league.id,
+        league_name=league.name,
+        sport_id=league.sport_id,
+        sport_name=league.sport.name if league.sport else "",
+        is_doubles=bool(league.is_doubles),
+        joined=joined,
+        capacity=league.capacity,
+        level_min=league.level_min if league.level_min is not None else models.RATING_MIN,
+        level_max=league.level_max if league.level_max is not None else models.RATING_MAX,
+        inviter_name=inviter.name if inviter else "",
+        is_member=any(m.user_id == current_user.id for m in league.memberships),
+        is_full=league.capacity is not None and joined >= league.capacity,
+        revoked=link.revoked_at is not None,
+    )
+
+
+@router.post("/invite-links/{token}/redeem", response_model=schemas.LeagueOut)
+def redeem_league_invite_link(
+    token: str,
+    payload: schemas.JoinLeagueRequest = schemas.JoinLeagueRequest(),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    link = _load_invite_link(db, token)
+    if link.revoked_at is not None:
+        raise HTTPException(status_code=403, detail="קישור ההזמנה כבר לא בתוקף")
+    # Holding the token is the invitation; everything else — capacity, the
+    # level range, needing a pair — is still checked where it always was.
+    return _join_league_core(db, link.league, current_user, payload.pair_id, invited=True)

@@ -322,14 +322,9 @@ class MemberOut(BaseModel):
 
 
 class JoinLeagueRequest(BaseModel):
-    code: Optional[str] = None
     # Required by a doubles league and refused by a singles one: in padel it
     # is the pair that enters, not the person.
     pair_id: Optional[int] = None
-
-
-class InviteCodeOut(BaseModel):
-    code: str
 
 
 class MatchCreate(BaseModel):
@@ -545,6 +540,27 @@ class PairCandidateOut(BaseModel):
     provisional: bool = False
     same_area: bool = False
     level_gap: Optional[float] = None
+
+
+class LeagueInviteLinkOut(BaseModel):
+    token: str
+
+
+class LeagueInviteLinkInfoOut(BaseModel):
+    league_id: int
+    league_name: str
+    sport_id: int
+    sport_name: str
+    is_doubles: bool = False
+    joined: int = 0
+    capacity: Optional[int] = None
+    level_min: float
+    level_max: float
+    inviter_name: str = ""
+    # Why this player cannot take it up, if they cannot.
+    is_member: bool = False
+    is_full: bool = False
+    revoked: bool = False
 
 
 class PairInviteLinkCreate(BaseModel):

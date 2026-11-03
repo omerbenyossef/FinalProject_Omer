@@ -105,7 +105,15 @@ export const api = {
       body: pairId ? { code, pair_id: pairId } : { code },
     }),
   leaveLeague: (id) => request(`/leagues/${id}/leave`, { method: "POST" }),
-  getInviteCode: (id) => request(`/leagues/${id}/invite-code`),
+  // The way into a private league: a token nobody reads, inside a share link.
+  createLeagueInviteLink: (id, rotate = false) =>
+    request(`/leagues/${id}/invite-links${rotate ? "?rotate=true" : ""}`, { method: "POST" }),
+  getLeagueInviteLink: (token) => request(`/leagues/invite-links/${token}`),
+  redeemLeagueInviteLink: (token, pairId = null) =>
+    request(`/leagues/invite-links/${token}/redeem`, {
+      method: "POST",
+      body: pairId ? { pair_id: pairId } : {},
+    }),
   deleteLeague: (id) => request(`/leagues/${id}`, { method: "DELETE" }),
   updateLeagueRules: (id, data) => request(`/leagues/${id}/rules`, { method: "PATCH", body: data }),
   getOpenLeagues: (sportId, { lat, lng, ntrpMin, ntrpMax } = {}) =>

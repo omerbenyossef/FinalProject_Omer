@@ -8879,3 +8879,10 @@ button:active { transform: translateY(1px); }
   font: 400 12.5px/1.5 "IBM Plex Sans", var(--sans); color: #8b93a6;
 }
 
+
+
+/* The three facts on a league invitation, in one quiet line. */
+.prt-invite-facts {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;
+  font: 500 11.5px "IBM Plex Mono", var(--mono); letter-spacing: .04em; color: #8b93a6;
+}

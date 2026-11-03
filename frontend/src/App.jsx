@@ -30,6 +30,7 @@ import PlayerProfile from "./pages/PlayerProfile.jsx";
 import ProposeSchedule from "./pages/ProposeSchedule.jsx";
 import NewMatch from "./pages/NewMatch.jsx";
 import Partners from "./pages/Partners.jsx";
+import LeagueInvite from "./pages/LeagueInvite.jsx";
 import PairInvite from "./pages/PairInvite.jsx";
 import LegalPage from "./pages/LegalPage.jsx";
 import MatchSchedule from "./pages/MatchSchedule.jsx";
@@ -233,6 +234,16 @@ export default function App() {
         {/* Protected on purpose, exactly like a friendly invite: somebody
             with no account is bounced to /signin?redirect=... and lands back
             on the question once they have one. */}
+        {/* The way into a private league. Protected like the pair invite, so
+            somebody with no account signs in and lands back on the question. */}
+        <Route
+          path="/leagues/invite/:token"
+          element={
+            <ProtectedRoute>
+              <LeagueInvite />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/pairs/invite/:token"
           element={

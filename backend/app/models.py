@@ -164,6 +164,9 @@ class League(Base):
     created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     schedule_started_at = Column(DateTime, nullable=True)
+    # Dead: replaced by LeagueInviteLink. The column stays because dropping one
+    # is not something add_missing_columns can do, and an old row's value is
+    # harmless now that nothing reads it.
     join_code = Column(String, nullable=True)
     is_open = Column(Boolean, nullable=True)
     best_of = Column(Integer, nullable=True, default=3)
@@ -503,6 +506,32 @@ class FriendlyInviteLink(Base):
 
     inviter = relationship("User")
     sport = relationship("Sport")
+
+
+class LeagueInviteLink(Base):
+    """The way into a private league.
+
+    It replaces the six-character join code, which the invited player had to be
+    told and then type. This is never shown and never typed: it lives inside a
+    share link, /leagues/invite/<token>, and the league id is no longer part of
+    what authorises anything — which matters, because league ids run in
+    sequence and were never a secret.
+
+    Reusable rather than one-time, because "join my league" is said to several
+    people at once, and revocable by minting a new one: a league has at most
+    one live token, and creating another retires the one before it.
+    """
+
+    __tablename__ = "league_invite_links"
+
+    id = Column(Integer, primary_key=True, index=True)
+    league_id = Column(Integer, ForeignKey("leagues.id"), nullable=False, index=True)
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    token = Column(String, unique=True, index=True, nullable=False)
+    revoked_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    league = relationship("League")
 
 
 class PairInviteLink(Base):

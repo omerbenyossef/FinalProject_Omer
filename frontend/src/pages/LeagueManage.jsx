@@ -21,7 +21,7 @@ export default function LeagueManage() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [expanded, setExpanded] = useState(null);
-  const [inviteCode, setInviteCode] = useState(null);
+  const [inviteToken, setInviteToken] = useState(null);
   const [inviteLoading, setInviteLoading] = useState(false);
 
   async function loadAll() {
@@ -81,17 +81,18 @@ export default function LeagueManage() {
   async function handleShareWhatsApp() {
     setInviteLoading(true);
     try {
-      // A public league needs no code — the link is enough, and whoever opens
-      // it joins from the league's own page if their level fits.
+      // A public league needs no token — the link is enough, and whoever opens
+      // it joins from the league's own page if their level fits. A private one
+      // is entered only through its invite link.
       let url = `${window.location.origin}/leagues/${leagueId}`;
       if (!league.is_open) {
-        let code = inviteCode;
-        if (!code) {
-          const data = await api.getInviteCode(leagueId);
-          code = data.code;
-          setInviteCode(code);
+        let token = inviteToken;
+        if (!token) {
+          const data = await api.createLeagueInviteLink(leagueId);
+          token = data.token;
+          setInviteToken(token);
         }
-        url = `${url}?code=${code}`;
+        url = `${window.location.origin}/leagues/invite/${token}`;
       }
       const message = t('בוא/י תצטרף/י לליגה "{name}" ב-Rally!\n{url}', { name: league.name, url });
       window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
