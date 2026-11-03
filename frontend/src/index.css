@@ -8831,3 +8831,11 @@ button:active { transform: translateY(1px); }
 .prt-invite-card .prt-title { margin: 4px 0 0; }
 .prt-invite-card .prt-sub { margin: 0; }
 .prt-accept--big { padding: 13px 26px; font-size: 14.5px; margin-top: 6px; }
+
+
+/* Why the join button on a pairs league says "need a partner". */
+.lpv-needs-partner {
+  margin: 16px 20px 0;
+  font: 400 13px/1.55 "IBM Plex Sans", var(--sans); color: #8b93a6;
+}
+.lpv-needs-partner--ok { color: #6f7787; }

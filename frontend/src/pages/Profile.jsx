@@ -321,7 +321,7 @@ function NoLeagueBlock({ t, navigate, openCount, showLevelRow, onSetLevel }) {
    screen offers — a public league, a league of their own, a friendly — needs a
    pair first, so there is exactly one thing to do here and it is not a choice
    among three. */
-function NeedsPartnerBlock({ t, navigate, sportName }) {
+function NeedsPartnerBlock({ t, navigate, sportName, openCount }) {
   return (
     <div className="nl">
       <h1 className="nl-q">{t("קודם כול — שותף")}</h1>
@@ -335,6 +335,21 @@ function NeedsPartnerBlock({ t, navigate, sportName }) {
         <button type="button" className="nl-opt" onClick={() => navigate("/partners")}>
           <span className="nl-opt-label">{t("מצא שותף")}</span>
           <ChevronIcon className="nl-opt-chev" aria-hidden="true" />
+        </button>
+
+        {/* Reachable without a partner on purpose: somebody deciding whether
+            this is worth finding one for needs to see what is on offer, and a
+            screen with a single button on it tells them nothing. Joining still
+            asks for a pair — the preview says so rather than failing. */}
+        <button type="button" className="nl-opt" onClick={() => navigate("/leagues/open")}>
+          <span className="nl-opt-label nl-opt-label--quiet">{t("עיין בליגות הפתוחות")}</span>
+          {openCount > 0 ? (
+            <span className="nl-opt-count" dir="ltr">
+              {openCount} OPEN
+            </span>
+          ) : (
+            <ChevronIcon className="nl-opt-chev" aria-hidden="true" />
+          )}
         </button>
       </div>
     </div>
@@ -857,7 +872,12 @@ export default function Profile() {
 
       <div className="home-sheet">
       {needsPartnerFirst ? (
-        <NeedsPartnerBlock t={t} navigate={navigate} sportName={sportName} />
+        <NeedsPartnerBlock
+          t={t}
+          navigate={navigate}
+          sportName={sportName}
+          openCount={openLeagueCount}
+        />
       ) : isNoLeague ? (
         <NoLeagueBlock
           t={t}

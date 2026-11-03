@@ -855,7 +855,13 @@ def preview_league(
     league = _get_league_or_404(db, league_id)
     level_min = league.level_min if league.level_min is not None else models.RATING_MIN
     level_max = league.level_max if league.level_max is not None else models.RATING_MAX
-    joined = len(league.memberships)
+    # Entrants, not people: a doubles league of four pairs is four, the same
+    # count its own screens and its capacity check use.
+    joined = (
+        len({m.pair_id for m in league.memberships if m.pair_id})
+        if league.is_doubles
+        else len(league.memberships)
+    )
     is_member = any(m.user_id == current_user.id for m in league.memberships)
 
     distance_km = (
@@ -909,6 +915,7 @@ def preview_league(
         players=players,
         level_buckets=_level_buckets(level_min, level_max, [p.level for p in players]),
         is_member=is_member,
+        is_doubles=bool(league.is_doubles),
     )
 
 

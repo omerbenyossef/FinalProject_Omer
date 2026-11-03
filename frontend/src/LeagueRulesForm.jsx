@@ -110,7 +110,7 @@ export default function LeagueRulesForm({ league, onUpdate, onCancel }) {
         </>
       )}
       <label>
-        {t("קיבולת (אופציונלי)")}
+        {league.is_doubles ? t("קיבולת בצמדים (אופציונלי)") : t("קיבולת (אופציונלי)")}
         <input
           type="number"
           min="2"

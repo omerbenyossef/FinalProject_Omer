@@ -6,6 +6,7 @@ import { ChevronIcon } from "../Icons.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
 import { formatDayMonth, weekdayShort } from "../matchUtils.js";
 import RatingQuestionnaire from "../RatingQuestionnaire.jsx";
+import { usePairs } from "../PairContext.jsx";
 
 export default function LeaguePreview() {
   const { leagueId } = useParams();
@@ -18,6 +19,16 @@ export default function LeaguePreview() {
   const [joinedNow, setJoinedNow] = useState(false);
   const [inviteCode, setInviteCode] = useState(null);
   const [showRatingGate, setShowRatingGate] = useState(false);
+  const { activePairs, selectedPair } = usePairs();
+
+  // A pairs league is entered by a pair, so somebody with none cannot join —
+  // but they can still read the whole screen, which is the point. The button
+  // says what is missing instead of failing when pressed.
+  const needsPartner = Boolean(preview?.is_doubles) && activePairs.length === 0;
+  // Which pair goes in: the one the header has selected, or the only one.
+  const joiningPair = preview?.is_doubles
+    ? activePairs.find((p) => p.id === selectedPair?.id) ?? activePairs[0] ?? null
+    : null;
 
   useEffect(() => {
     api
@@ -34,6 +45,10 @@ export default function LeaguePreview() {
   }, [leagueId]);
 
   async function handleJoin() {
+    if (needsPartner) {
+      navigate("/partners");
+      return;
+    }
     setBusy(true);
     setError("");
     try {
@@ -51,7 +66,7 @@ export default function LeaguePreview() {
   }
 
   async function finishJoin() {
-    await api.joinLeague(leagueId);
+    await api.joinLeague(leagueId, undefined, joiningPair?.id ?? null);
     // Only a private league has a code to pass on.
     if (!preview?.is_open) {
       const code = await api.getInviteCode(leagueId);
@@ -154,8 +169,13 @@ export default function LeaguePreview() {
   const isFull = capacity != null && preview.joined >= capacity;
   const levelSpan = `${preview.level_min.toFixed(1)}\u2013${preview.level_max.toFixed(1)}`;
 
-  const rosterTitle =
-    count === 0
+  const rosterTitle = preview.is_doubles
+    ? preview.joined === 0
+      ? t("עוד אין צמדים בליגה")
+      : preview.joined === 1
+        ? t("צמד אחד כבר בליגה")
+        : t("{count} צמדים כבר בליגה", { count: preview.joined })
+    : count === 0
       ? t("עוד אין שחקנים בליגה")
       : count === 1
         ? t("שחקן אחד כבר בליגה")
@@ -253,17 +273,34 @@ export default function LeaguePreview() {
         </div>
       )}
 
+      {needsPartner && (
+        <p className="lpv-needs-partner">
+          {t("זאת ליגת זוגות — כדי להצטרף צריך שותף. אפשר לראות הכול כאן, ולחזור אחרי שתמצא אחד.")}
+        </p>
+      )}
+      {!needsPartner && preview.is_doubles && joiningPair && (
+        <p className="lpv-needs-partner lpv-needs-partner--ok">
+          {t("תצטרפו כצמד עם {name}", { name: joiningPair.partner.name })}
+        </p>
+      )}
+
       {error && <p className="lpv-error error">{t(error)}</p>}
 
       <div className="lpv-foot">
         <span className="lpv-foot-text">{footText}</span>
         <button
           type="button"
-          className={`lpv-join${isFull ? " is-full" : ""}`}
+          className={`lpv-join${isFull && !needsPartner ? " is-full" : ""}`}
           onClick={handleJoin}
-          disabled={busy || isFull}
+          disabled={busy || (isFull && !needsPartner)}
         >
-          {isFull ? t("מלאה") : busy ? t("מצטרף...") : t("הצטרף")}
+          {needsPartner
+            ? t("צריך שותף")
+            : isFull
+              ? t("מלאה")
+              : busy
+                ? t("מצטרף...")
+                : t("הצטרף")}
         </button>
       </div>
 

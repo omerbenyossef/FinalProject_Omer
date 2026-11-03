@@ -292,6 +292,11 @@ class LeaguePreviewOut(BaseModel):
     # A public league is joined from the open list; a private one by its code.
     # The screen shows the code only for the second kind.
     is_open: bool = False
+    # A pairs league counts and admits pairs, so the screen says "4 pairs"
+    # rather than "8 players" and asks for a partner before it asks anything
+    # else. The roster below stays a list of people: who is already in is the
+    # question somebody has at this point, whichever way they are grouped.
+    is_doubles: bool = False
 
 
 class JoinByCodeRequest(BaseModel):
