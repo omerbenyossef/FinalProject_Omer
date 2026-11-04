@@ -548,6 +548,65 @@ class PairOut(BaseModel):
     accepted_at: Optional[UtcDatetime] = None
 
 
+class PairMemberOut(BaseModel):
+    """One half of a pair, with their OWN level — the number that is not the
+    pair's. A padel player has both, and they move together: winning as a pair
+    lifts the personal rating too."""
+
+    id: int
+    name: str
+    photo_url: Optional[str] = None
+    level: Optional[float] = None
+    provisional: bool = True
+
+
+class PairLeagueOut(BaseModel):
+    id: int
+    name: str
+    rank: Optional[int] = None
+    teams: int = 0
+    wins: int = 0
+    losses: int = 0
+
+
+class PairMatchOut(BaseModel):
+    id: int
+    status: MatchStatus
+    played_at: Optional[UtcDatetime] = None
+    scheduled_at: Optional[UtcDatetime] = None
+    league_name: Optional[str] = None
+    round_number: Optional[int] = None
+    opponent_label: str = ""
+    # The score written from this pair's side, whichever side it played on.
+    sets: Optional[list[SetScore]] = None
+    won: Optional[bool] = None
+
+
+class PairDetailOut(BaseModel):
+    """A pair's own world: its rating, its record, its leagues and its matches.
+
+    The same page for both members — it is the pair's record, not either
+    player's — with both personal levels on it so the two numbers can be read
+    against each other.
+    """
+
+    id: int
+    sport_id: int
+    sport_name: str = ""
+    status: PairStatus
+    label: str = ""
+    level: Optional[float] = None
+    provisional: bool = True
+    matches_played: int = 0
+    created_at: Optional[UtcDatetime] = None
+    accepted_at: Optional[UtcDatetime] = None
+    members: list[PairMemberOut] = []
+    wins: int = 0
+    losses: int = 0
+    leagues: list[PairLeagueOut] = []
+    matches: list[PairMatchOut] = []
+
+
 class PairCandidateOut(BaseModel):
     user: PairPlayerOut
     # None for somebody who has not answered this sport's questionnaire — they

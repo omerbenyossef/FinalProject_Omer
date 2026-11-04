@@ -36,6 +36,24 @@ UNRATED_RESERVE = 10
 LIVE_STATUSES = (models.PairStatus.pending, models.PairStatus.active)
 
 
+def _pair_of(db: Session, pair_id: int | None) -> models.Pair | None:
+    if not pair_id:
+        return None
+    return (
+        db.query(models.Pair)
+        .options(joinedload(models.Pair.player_a), joinedload(models.Pair.player_b))
+        .filter(models.Pair.id == pair_id)
+        .first()
+    )
+
+
+def _pair_label(pair: models.Pair | None) -> str:
+    """"Dayan/Bar" — the same label the standings and the match screens use."""
+    if not pair:
+        return ""
+    return models.side_label([pair.player_a, pair.player_b])
+
+
 def _ordered(a: int, b: int) -> tuple[int, int]:
     """The same two people are always the same row, whichever of them asked."""
     return (a, b) if a < b else (b, a)
@@ -445,3 +463,148 @@ def redeem_pair_invite_link(
         body_en=f"{current_user.name} accepted — you are a pair",
     )
     return _out(pair, current_user.id, db)
+
+
+# Last on purpose: FastAPI matches routes in order, so "/{pair_id}" placed
+# above would swallow "/candidates" and "/invite-links/...".
+@router.get("/{pair_id}", response_model=schemas.PairDetailOut)
+def pair_detail(
+    pair_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """The pair's own world.
+
+    One page, the same for both of its members, because what is on it belongs
+    to the pair and not to either of them: its rating, its record, its leagues
+    and its matches. Both personal levels sit on it too — a padel player has a
+    level of their own as well as the pair's, and winning together moves both,
+    so the two numbers are worth reading against each other.
+    """
+    pair = (
+        db.query(models.Pair)
+        .options(joinedload(models.Pair.player_a), joinedload(models.Pair.player_b))
+        .filter(models.Pair.id == pair_id)
+        .first()
+    )
+    if not pair:
+        raise HTTPException(status_code=404, detail="הצמד לא נמצא")
+    if current_user.id not in pair.member_ids:
+        # A pair's record is its members' business. Another player sees them
+        # through the standings and the match screens, not here.
+        raise HTTPException(status_code=403, detail="הצמד הזה לא שלך")
+
+    members = []
+    for user in (pair.player_a, pair.player_b):
+        rating = get_rating(db, user.id, pair.sport_id)
+        members.append(
+            schemas.PairMemberOut(
+                id=user.id,
+                name=user.name,
+                photo_url=user.photo_url,
+                level=round_to_half(rating.level) if rating else None,
+                provisional=rating.provisional if rating else True,
+            )
+        )
+
+    matches = (
+        db.query(models.Match)
+        .options(joinedload(models.Match.league))
+        .filter(or_(models.Match.pair1_id == pair.id, models.Match.pair2_id == pair.id))
+        .order_by(models.Match.scheduled_at.desc().nullslast(), models.Match.id.desc())
+        .all()
+    )
+
+    wins = losses = 0
+    out_matches = []
+    for match in matches:
+        first = match.pair1_id == pair.id
+        my_score = match.player1_score if first else match.player2_score
+        their_score = match.player2_score if first else match.player1_score
+        won = None
+        if match.status == models.MatchStatus.completed and my_score is not None:
+            won = my_score > their_score
+            if won:
+                wins += 1
+            else:
+                losses += 1
+        sets = match.sets
+        if sets and not first:
+            sets = [
+                {"player1_games": s["player2_games"], "player2_games": s["player1_games"]}
+                for s in sets
+            ]
+        other_pair = _pair_of(db, match.pair2_id if first else match.pair1_id)
+        out_matches.append(
+            schemas.PairMatchOut(
+                id=match.id,
+                status=match.status,
+                played_at=match.played_at,
+                scheduled_at=match.scheduled_at,
+                league_name=match.league.name if match.league else None,
+                round_number=match.round_number,
+                opponent_label=_pair_label(other_pair),
+                sets=sets,
+                won=won,
+            )
+        )
+
+    leagues = []
+    seen = set()
+    for membership in (
+        db.query(models.LeagueMembership)
+        .options(joinedload(models.LeagueMembership.league))
+        .filter(models.LeagueMembership.pair_id == pair.id)
+        .all()
+    ):
+        league = membership.league
+        if not league or league.id in seen:
+            continue
+        seen.add(league.id)
+        rank = teams = lg_wins = lg_losses = None
+        try:
+            from .leagues import get_standings
+
+            rows = get_standings(league.id, db)
+            teams = len(rows)
+            for i, row in enumerate(rows):
+                side = getattr(row, "side", None) if not isinstance(row, dict) else row.get("side")
+                side_pair_id = (side.pair_id if side and not isinstance(side, dict) else (side or {}).get("pair_id")) if side else None
+                if side_pair_id == pair.id:
+                    rank = i + 1
+                    lg_wins = row.wins if not isinstance(row, dict) else row.get("wins")
+                    lg_losses = row.losses if not isinstance(row, dict) else row.get("losses")
+                    break
+        except Exception:
+            # A standings table that cannot be built must not take the page
+            # with it; the league still belongs on the list.
+            rank = None
+        leagues.append(
+            schemas.PairLeagueOut(
+                id=league.id,
+                name=league.name,
+                rank=rank,
+                teams=teams or 0,
+                wins=lg_wins or 0,
+                losses=lg_losses or 0,
+            )
+        )
+
+    sport = db.query(models.Sport).filter(models.Sport.id == pair.sport_id).first()
+    return schemas.PairDetailOut(
+        id=pair.id,
+        sport_id=pair.sport_id,
+        sport_name=sport.name if sport else "",
+        status=pair.status,
+        label=_pair_label(pair),
+        level=round_to_half(pair.level) if pair.level is not None else None,
+        provisional=pair.provisional,
+        matches_played=pair.matches_played,
+        created_at=pair.created_at,
+        accepted_at=pair.accepted_at,
+        members=members,
+        wins=wins,
+        losses=losses,
+        leagues=leagues,
+        matches=out_matches[:12],
+    )

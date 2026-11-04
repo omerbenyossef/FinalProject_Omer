@@ -1117,6 +1117,24 @@ const PAIRS = [
 
   // 194a — the open-games screen.
   ["איפה משחקים", "Where"],
+
+  // The pair page.
+  ["{n} משחקים יחד", "{n} matches together"],
+  ["משחק אחד יחד", "1 match together"],
+  ["הצמד", "The pair"],
+  ["הרמה של הצמד היא שלכם יחד. הרמה האישית ממשיכה לזוז גם ממשחקים כצמד.",
+   "The pair's level is the two of you together. Your own level keeps moving from pair matches too."],
+  ["צמדים נוספים שלך", "Your other pairs"],
+  ["הליגות של הצמד", "The pair's leagues"],
+  ["המשחקים של הצמד", "The pair's matches"],
+  ["עוד לא שיחקתם יחד.", "You have not played together yet."],
+  ["עוד לא שוחק", "Not played yet"],
+  ["פירוק הצמד", "Break up the pair"],
+  ["לפרק את הצמד?", "Break up the pair?"],
+  ["ההיסטוריה של הצמד נשמרת, אבל לא תוכלו להצטרף יחד לליגות חדשות.",
+   "The pair's history is kept, but you will not be able to join new leagues together."],
+  ["הצמד הזה לא שלך", "That pair is not yours"],
+  ["הצמד לא נמצא", "Pair not found"],
   ["שחקנים ברמה שלך שמחפשים יריב", "Players at your level looking for a game"],
   ["{name} מחפש/ת יריב", "{name} is looking for a game"],
   ["{names} מחפשים זוג", "{names} are looking for a pair"],

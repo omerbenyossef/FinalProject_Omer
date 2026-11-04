@@ -75,6 +75,9 @@ export const api = {
   // Pairs — the thing that plays padel. Everything here is scoped to a sport,
   // because being somebody's padel partner says nothing about tennis.
   myPairs: (sportId) => request(`/pairs?sport_id=${sportId}`),
+  // A pair's own world: its rating, record, leagues and matches, plus both
+  // members' personal levels.
+  pairDetail: (pairId) => request(`/pairs/${pairId}`),
   pairCandidates: (sportId, q = "") =>
     request(`/pairs/candidates?sport_id=${sportId}${q ? `&q=${encodeURIComponent(q)}` : ""}`),
   proposePair: (sportId, partnerId) =>

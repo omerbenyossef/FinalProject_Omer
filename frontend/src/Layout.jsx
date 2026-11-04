@@ -77,7 +77,9 @@ export default function Layout({ children }) {
                   <span className="wordmark-pair-sep" aria-hidden="true">
                     ·
                   </span>
-                  <Link to="/partners" className="wordmark-pair">
+                  {/* The pair you are looking through, and tapping it opens
+                      that pair's own page rather than the list of all of them. */}
+                  <Link to={`/pairs/${selectedPair.id}`} className="wordmark-pair">
                     {t("עם {name}", { name: partnerShort })}
                     {pairsAwaitingMe.length > 0 && (
                       <span className="wordmark-pair-badge" aria-hidden="true" />

@@ -5193,6 +5193,131 @@ button:active { transform: translateY(1px); }
 }
 .olc-join:disabled { opacity: 0.65; cursor: default; }
 
+/* A pair's own page: its rating, its record, its leagues, its matches — the
+   same page for both of its members. */
+.pr { padding-bottom: 28px; }
+.pr-head { padding: 4px 18px 14px; }
+.pr-faces { display: flex; }
+.pr-faces > :last-child { margin-inline-start: -12px; }
+.pr-title {
+  margin: 12px 0 0;
+  font: 700 32px/1 "IBM Plex Sans Hebrew", "IBM Plex Sans", var(--sans);
+  letter-spacing: -0.02em;
+}
+.pr-sub { margin: 8px 0 0; font-size: 13.5px; color: #a3abbb; }
+
+/* The three numbers side by side — the pair's, then each player's own. This
+   is the whole point of the page: nowhere else are they together. */
+.pr-levels { display: flex; gap: 8px; padding: 0 18px; }
+.pr-level {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 14px 8px;
+  border-radius: 18px;
+  background: rgba(148, 163, 184, 0.06);
+}
+.pr-level--pair {
+  background: rgba(var(--court-rgb), 0.1);
+  box-shadow: inset 0 0 0 1px rgba(var(--court-rgb), 0.3);
+}
+.pr-level-num { font: 400 28px/1 "Anton", var(--display); }
+.pr-level--pair .pr-level-num { color: var(--court); }
+.pr-level-label {
+  font-size: 11.5px;
+  color: var(--muted);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pr-level-note {
+  font: 500 9.5px "IBM Plex Mono", monospace;
+  letter-spacing: 0.1em;
+  color: #6f7787;
+}
+.pr-levels-note {
+  margin: 10px 18px 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+.pr-switch { padding: 18px 18px 0; }
+.pr-switch-label {
+  font: 600 10.5px "IBM Plex Mono", monospace;
+  letter-spacing: 0.14em;
+  color: #6f7787;
+}
+.pr-switch-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.pr-chip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 17px;
+  background: rgba(148, 163, 184, 0.08);
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+.pr-chip-level { font: 500 11px "IBM Plex Mono", monospace; color: var(--muted); }
+
+.pr-section { padding: 22px 18px 0; }
+.pr-section-title { margin: 0 0 4px; font-weight: 700; font-size: 15px; }
+.pr-empty { margin: 10px 0 0; font-size: 13px; color: var(--muted); }
+.pr-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+  color: var(--ink);
+}
+.pr-row-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.pr-row-name {
+  font-weight: 700;
+  font-size: 15px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pr-row-meta { font-size: 11.5px; color: var(--muted); }
+.pr-result {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  font-weight: 700;
+  font-size: 12.5px;
+  color: var(--loss);
+}
+.pr-result.is-win { color: var(--court); }
+.pr-score { font: 500 11px "IBM Plex Mono", monospace; color: var(--muted); }
+.pr-pending { flex: none; font-size: 11.5px; color: var(--muted); }
+
+.pr-foot { padding: 26px 18px 0; }
+.pr-dissolve {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* A pair row that opens the pair's page. */
+.prt-row--link { text-decoration: none; color: inherit; }
+
 /* 190b — the leagues page, one level down from the games hub. */
 .lgp-top {
   display: flex;

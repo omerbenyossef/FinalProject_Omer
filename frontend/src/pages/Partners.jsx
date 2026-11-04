@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api";
 import Avatar from "../Avatar.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import { useSport } from "../SportContext.jsx";
 import { usePairs } from "../PairContext.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
+import { ChevronIcon } from "../Icons.jsx";
 
 /* Padel is played four to a court, so before a padel player can do anything
    at all they need somebody to play with. This is that screen: the pairs they
@@ -153,8 +154,9 @@ export default function Partners() {
         ) : activePairs.length === 0 ? (
           <p className="prt-empty">{t("עוד אין לך צמד. בחר שותף מהרשימה למטה כדי להתחיל.")}</p>
         ) : (
+          /* A pair is a world of its own, so its row opens it. */
           activePairs.map((pair) => (
-            <div className="prt-row" key={pair.id}>
+            <Link to={`/pairs/${pair.id}`} className="prt-row prt-row--link" key={pair.id}>
               <Avatar name={pair.partner.name} photoUrl={pair.partner.photo_url} size={44} />
               <div className="prt-row-body">
                 <div className="prt-row-name">{pair.partner.name}</div>
@@ -169,7 +171,8 @@ export default function Partners() {
                     .join(" · ")}
                 </div>
               </div>
-            </div>
+              <ChevronIcon className="lg-row-chev" aria-hidden="true" />
+            </Link>
           ))
         )}
       </section>
