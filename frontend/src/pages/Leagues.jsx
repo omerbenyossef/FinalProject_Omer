@@ -17,6 +17,8 @@ import {
   weekdayFull,
 } from "../matchUtils.js";
 import { SportIcon } from "../SportSwitcher.jsx";
+import OpenLeagueCard from "../OpenLeagueCard.jsx";
+import { usePairs } from "../PairContext.jsx";
 import RatingQuestionnaire from "../RatingQuestionnaire.jsx";
 
 // "3RD" reads as a placing in English. Hebrew has no ordinal suffix, so it
@@ -273,6 +275,9 @@ export default function Leagues() {
   const { sports, selectedSportId } = useSport();
   const { t, language } = useLanguage();
   const { nextMatches } = useOpenAction();
+  const { activePairs } = usePairs();
+  const [joiningId, setJoiningId] = useState(null);
+  const [joinedIds, setJoinedIds] = useState([]);
   const [searchParams, setSearchParams] = useSearchParams();
   const autoOpenedRef = useRef(false);
 
@@ -398,6 +403,37 @@ export default function Leagues() {
     }
   }
 
+  /* 193a — joining straight from the card. The gates are the preview
+     screen's, because they are the league's: a doubles league needs a pair
+     first, and a player with no rating has to answer the questionnaire. That
+     questionnaire is a screen of its own, so the card hands over to the
+     preview rather than trying to host it in a list. */
+  async function joinFromCard(league) {
+    if (league.is_doubles && activePairs.length === 0) {
+      navigate("/partners");
+      return;
+    }
+    setJoiningId(league.id);
+    setError("");
+    try {
+      const check = await api.checkRating(league.id);
+      if (!check.has_rating) {
+        navigate(`/leagues/${league.id}/preview`);
+        return;
+      }
+      await api.joinLeague(league.id, undefined, league.is_doubles ? activePairs[0].id : null);
+      // Optimistic: the card says "joined" at once, and the reload moves it to
+      // the שלי tab where it now belongs.
+      setJoinedIds((prev) => [...prev, league.id]);
+      await loadData();
+      setActiveTab("mine");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setJoiningId(null);
+    }
+  }
+
   const bySelectedSport = (l) => l.sport.id === selectedSportId;
   const myLeagueIds = new Set(myLeagues.map((l) => l.id));
   // Whether this league's range would admit this player. It used to decide
@@ -412,8 +448,18 @@ export default function Leagues() {
   const openLeagues = leagues.filter(
     (l) => l.is_open && bySelectedSport(l) && !myLeagueIds.has(l.id)
   );
-  const openForMe = openLeagues.filter(takesMe);
-  const openOutOfRange = openLeagues.filter((l) => !takesMe(l));
+  // A league with no room left is not an offer (193a). One that was never
+  // given a size has no "full" to be.
+  const hasRoom = (l) => l.capacity == null || (l.member_count ?? 0) < l.capacity;
+  // Soonest first, and a league with no start date after the ones that have
+  // one — "when does it begin" is the question the list is sorted by.
+  const bySoonest = (a, b) => {
+    const ta = a.starts_at ? new Date(a.starts_at).getTime() : Infinity;
+    const tb = b.starts_at ? new Date(b.starts_at).getTime() : Infinity;
+    return ta - tb;
+  };
+  const openForMe = openLeagues.filter((l) => takesMe(l) && hasRoom(l)).sort(bySoonest);
+  const openOutOfRange = openLeagues.filter((l) => !takesMe(l) && hasRoom(l)).sort(bySoonest);
   const myLeaguesForSport = myLeagues.filter(bySelectedSport);
 
 
@@ -567,13 +613,28 @@ export default function Leagues() {
             ) : (
               <>
                 {openForMe.length === 0 ? (
-                  <EmptyState icon={<TrophyIcon aria-hidden="true" />}>
+                  <EmptyState
+                    icon={<TrophyIcon aria-hidden="true" />}
+                    action={
+                      <button type="button" className="btn-secondary btn-small" onClick={requestCreate}>
+                        {t("פתח ליגה משלך")}
+                      </button>
+                    }
+                  >
                     {t("אין כרגע ליגות פתוחות ברמה שלך")}
                   </EmptyState>
                 ) : (
-                  <div className="lg-list">
+                  <div className="olc-list">
                     {openForMe.map((league) => (
-                      <OpenLeagueRow key={league.id} league={league} outOfLevel={false} t={t} />
+                      <OpenLeagueCard
+                        key={league.id}
+                        league={league}
+                        myLevel={myLevel}
+                        busy={joiningId === league.id}
+                        joined={joinedIds.includes(league.id)}
+                        onJoin={() => joinFromCard(league)}
+                        onOpen={() => navigate(`/leagues/${league.id}/preview`)}
+                      />
                     ))}
                   </div>
                 )}

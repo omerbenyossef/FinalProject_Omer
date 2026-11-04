@@ -159,6 +159,9 @@ def _to_league_out(
     out.round_length_days = league.round_length_days or 7
     out.level_min = league.level_min if league.level_min is not None else models.RATING_MIN
     out.level_max = league.level_max if league.level_max is not None else models.RATING_MAX
+    # Who opened it. A closed account is anonymised rather than deleted, so
+    # this can legitimately be empty and the card leaves the clause out.
+    out.creator_name = (league.creator.name if league.creator else "") or ""
 
     if db is not None and current_user_id is not None:
         matches = (
@@ -190,7 +193,11 @@ def list_leagues(db: Session = Depends(get_db)):
     _auto_confirm_overdue(db)
     leagues = (
         db.query(models.League)
-        .options(joinedload(models.League.sport), joinedload(models.League.memberships))
+        .options(
+            joinedload(models.League.sport),
+            joinedload(models.League.memberships),
+            joinedload(models.League.creator),
+        )
         .order_by(models.League.created_at.desc())
         .all()
     )
@@ -206,7 +213,11 @@ def list_my_leagues(
     leagues = (
         db.query(models.League)
         .join(models.LeagueMembership)
-        .options(joinedload(models.League.sport), joinedload(models.League.memberships))
+        .options(
+            joinedload(models.League.sport),
+            joinedload(models.League.memberships),
+            joinedload(models.League.creator),
+        )
         .filter(models.LeagueMembership.user_id == current_user.id)
         .order_by(models.League.created_at.desc())
         .all()

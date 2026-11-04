@@ -4998,6 +4998,111 @@ button:active { transform: translateY(1px); }
   color: var(--muted);
 }
 
+/* 193a — an open league, as a card with a lit top edge and a corner glow.
+   The accent is the sport's, so the whole card re-themes with it. */
+.olc-list { display: flex; flex-direction: column; gap: 12px; padding: 0 18px; }
+.olc {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 22px;
+  background: linear-gradient(
+    160deg,
+    rgba(var(--court-rgb), 0.2) 0%,
+    rgba(var(--court-rgb), 0.06) 45%,
+    rgba(148, 163, 184, 0.05) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(var(--court-rgb), 0.45),
+    inset 0 0 0 1px rgba(var(--court-rgb), 0.18);
+  cursor: pointer;
+}
+.olc-glow {
+  position: absolute;
+  top: -60px;
+  inset-inline-start: -40px;
+  width: 180px;
+  height: 180px;
+  background: radial-gradient(circle, rgba(var(--court-rgb), 0.28), rgba(var(--court-rgb), 0) 70%);
+  pointer-events: none;
+}
+/* Everything sits above the glow. */
+.olc > :not(.olc-glow) { position: relative; }
+
+.olc-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.olc-head-text { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.olc-name { font-weight: 700; font-size: 19px; color: #eef1f7; }
+.olc-by { font-weight: 500; font-size: 11.5px; color: #a3abbb; }
+.olc-ntrp { font-family: "IBM Plex Mono", monospace; }
+.olc-tag {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 11px;
+  background: rgba(var(--court-rgb), 0.12);
+  color: var(--court);
+  font-weight: 600;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.olc-tag svg { width: 11px; height: 11px; }
+
+.olc-meta { display: flex; flex-direction: column; gap: 6px; }
+.olc-meta-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  font-size: 12.5px;
+  color: #eef1f7;
+  min-width: 0;
+}
+.olc-meta-line svg { flex: none; width: 14px; height: 14px; color: var(--court); }
+.olc-meta-line > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.olc-spots { display: flex; flex-direction: column; gap: 6px; }
+.olc-bar { display: flex; gap: 3px; }
+.olc-seg { flex: 1; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.12); }
+.olc-seg.is-on { background: var(--court); }
+.olc-spots-text { font-weight: 600; font-size: 11.5px; color: var(--ink-dim); }
+.olc-spots-text [dir="ltr"] { font-family: "IBM Plex Mono", monospace; }
+
+.olc-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.olc-urgent {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 13px;
+  background: rgba(255, 181, 71, 0.16);
+  color: #ffb547;
+  font-weight: 700;
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+.olc-urgent-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.olc-join {
+  flex: none;
+  height: 38px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: 19px;
+  background: var(--court);
+  color: var(--court-contrast);
+  font-weight: 700;
+  font-size: 14px;
+  box-shadow: 0 6px 18px -6px rgba(var(--court-rgb), 0.7);
+  cursor: pointer;
+}
+.olc-join:disabled { opacity: 0.65; cursor: default; }
+
 /* 190b — the leagues page, one level down from the games hub. */
 .lgp-top {
   display: flex;

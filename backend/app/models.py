@@ -186,6 +186,8 @@ class League(Base):
     is_doubles = Column(Boolean, nullable=True)
 
     sport = relationship("Sport", back_populates="leagues")
+    # Who opened it, so a list of leagues can say so without a query each.
+    creator = relationship("User", foreign_keys=[created_by])
     memberships = relationship("LeagueMembership", back_populates="league", order_by="LeagueMembership.id")
     matches = relationship("Match", back_populates="league")
 

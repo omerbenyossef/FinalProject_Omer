@@ -198,6 +198,9 @@ class LeagueOut(BaseModel):
     sport: SportOut
     member_count: int = 0
     created_by: int
+    # 193a prints who opened the league on the card. The id alone could not say
+    # it, and a second round trip per league to find out would be absurd.
+    creator_name: str = ""
     created_at: Optional[UtcDatetime] = None
     schedule_started_at: Optional[UtcDatetime] = None
     is_open: bool = False

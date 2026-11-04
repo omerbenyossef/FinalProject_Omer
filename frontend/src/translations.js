@@ -1108,6 +1108,17 @@ const PAIRS = [
   ["אין כרגע ליגות פתוחות ברמה שלך", "No leagues open at your level right now"],
   ["מחוץ לטווח שלי", "Outside my range"],
   ["עוד לא סיימת עונה בענף הזה.", "You have not finished a season in this sport yet."],
+
+  // 193a — the open-league card.
+  ["נפתחה ע״י {name}", "Opened by {name}"],
+  ["מתחילה {day} {date}", "Starts {day} {date}"],
+  ["נרשמו", "joined"],
+  ["נשאר מקום אחד", "1 spot left"],
+  ["נשארו {n} מקומות", "{n} spots left"],
+  ["מתחילה מחר", "Starts tomorrow"],
+  ["מתחילה בעוד {n} ימים", "Starts in {n} days"],
+  ["מצטרף…", "Joining…"],
+  ["הצטרפת", "Joined"],
   ["יש תוצאה לאישור ב{league}", "A result to confirm in {league}"],
   ["צריך לאשר שעה ב{league}", "A time to confirm in {league}"],
   ["צריך לדווח תוצאה ב{league}", "A result to report in {league}"],

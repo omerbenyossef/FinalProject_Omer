@@ -233,6 +233,16 @@ export function ChevronDownIcon(props) {
   );
 }
 
+/* 193a — where a league plays. */
+export function PinIcon(props) {
+  return (
+    <svg {...common} {...props}>
+      <path d="M12 21s6.5-5.4 6.5-10a6.5 6.5 0 0 0-13 0c0 4.6 6.5 10 6.5 10z" />
+      <circle cx="12" cy="11" r="2.4" />
+    </svg>
+  );
+}
+
 export function CheckIcon(props) {
   return (
     <svg {...common} {...props}>
