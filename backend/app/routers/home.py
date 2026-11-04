@@ -15,11 +15,21 @@ from sqlalchemy.orm import Session, joinedload
 from .. import models, schemas
 from ..auth import get_current_user
 from ..database import get_db
-from ..match_sides import mine as match_mine, my_side_is_first, opponent_label, opponents
+from ..match_sides import mine as match_mine, my_side_is_first, opponent_label, opponents, teammate
 from ..rating_utils import get_rating, match_winner_id, round_to_half
 from .leagues import _compute_my_standing, _current_round_number, _round_ends_at
 from .matches import _auto_confirm_overdue
 from .schedule import _not_played_void
+
+class _Nobody:
+    """So "the partner, if there is one" stays one expression at each of the
+    three places a week card is built."""
+
+    name = None
+
+
+_NOBODY = _Nobody()
+
 
 router = APIRouter(prefix="/home", tags=["home"])
 
@@ -257,6 +267,7 @@ def home_week(
                     # One face in singles; in doubles the card would have to
                     # show two, so it shows none and leans on the names.
                     opponent_photo_url=facing[0].photo_url if len(facing) == 1 else None,
+                    partner_name=(teammate(db, match, current_user.id) or _NOBODY).name,
                     league_name=league.name,
                     round=match.round_number,
                     scheduled_at=match.scheduled_at,
@@ -304,6 +315,7 @@ def home_week(
                         id=match.id,
                         opponent_name=opponent_label(db, match, current_user.id),
                         opponent_photo_url=facing[0].photo_url if len(facing) == 1 else None,
+                        partner_name=(teammate(db, match, current_user.id) or _NOBODY).name,
                         league_name=None,
                         round=None,
                         scheduled_at=match.scheduled_at,
@@ -333,6 +345,7 @@ def home_week(
                 id=match.id,
                 opponent_name=opponent_label(db, match, current_user.id),
                 opponent_photo_url=facing[0].photo_url if len(facing) == 1 else None,
+                partner_name=(teammate(db, match, current_user.id) or _NOBODY).name,
                 league_name=None,
                 round=None,
                 scheduled_at=match.scheduled_at,

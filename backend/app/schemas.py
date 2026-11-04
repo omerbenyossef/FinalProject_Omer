@@ -1058,6 +1058,10 @@ class HomeWeekMatchOut(BaseModel):
     id: int
     opponent_name: str
     opponent_photo_url: Optional[str] = None
+    # Which of my pairs this match is: the partner's name, in a sport played
+    # in pairs. A player with two partners sees both pairs' matches in one
+    # list, so the row has to say which world it belongs to.
+    partner_name: Optional[str] = None
     league_name: Optional[str] = None
     round: Optional[int] = None
     # Null when no time is agreed — the card shows its "no date" column.

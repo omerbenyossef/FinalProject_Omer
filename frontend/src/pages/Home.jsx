@@ -275,6 +275,19 @@ export default function Home() {
             <span className={`hw-opponent${dim ? " dim" : ""}`}>{match.opponent_name}</span>
           </span>
           <span className="hw-sub">
+            {/* Which of my pairs this is. A padel player with two partners
+                sees both pairs' matches in one diary, so the row says which
+                world it belongs to rather than leaving it to be guessed. */}
+            {match.partner_name && (
+              <>
+                {/* Sans and not uppercased, like the venue below: a partner is
+                    a name, not a label. */}
+                <span className="hw-sub-name" dir="auto" style={{ unicodeBidi: "isolate" }}>
+                  {t("עם {name}", { name: match.partner_name })}
+                </span>
+                {" · "}
+              </>
+            )}
             {match.league_name ? (
               <span dir="auto" style={{ unicodeBidi: "isolate" }}>
                 {match.league_name}

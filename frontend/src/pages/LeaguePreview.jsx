@@ -19,6 +19,11 @@ export default function LeaguePreview() {
   const [joinedNow, setJoinedNow] = useState(false);
   const [showRatingGate, setShowRatingGate] = useState(false);
   const { activePairs, selectedPair } = usePairs();
+  // Which pair goes in. It used to be whatever the header had selected, and
+  // the header no longer selects anything — so a player with more than one
+  // partner is asked here, where it is a real choice and the only place the
+  // answer matters.
+  const [chosenPairId, setChosenPairId] = useState(null);
 
   // A pairs league is entered by a pair, so somebody with none cannot join —
   // but they can still read the whole screen, which is the point. The button
@@ -28,9 +33,11 @@ export default function LeaguePreview() {
   // only joining is refused, and saying so here beats a 403 on the tap.
   const outOfLevel = Boolean(preview?.out_of_level);
   const blocked = needsPartner || outOfLevel;
-  // Which pair goes in: the one the header has selected, or the only one.
   const joiningPair = preview?.is_doubles
-    ? activePairs.find((p) => p.id === selectedPair?.id) ?? activePairs[0] ?? null
+    ? activePairs.find((p) => p.id === chosenPairId) ??
+      activePairs.find((p) => p.id === selectedPair?.id) ??
+      activePairs[0] ??
+      null
     : null;
 
   useEffect(() => {
@@ -269,9 +276,36 @@ export default function LeaguePreview() {
         </p>
       )}
       {!blocked && preview.is_doubles && joiningPair && (
-        <p className="lpv-needs-partner lpv-needs-partner--ok">
-          {t("תצטרפו כצמד עם {name}", { name: joiningPair.partner.name })}
-        </p>
+        activePairs.length === 1 ? (
+          <p className="lpv-needs-partner lpv-needs-partner--ok">
+            {t("תצטרפו כצמד עם {name}", { name: joiningPair.partner.name })}
+          </p>
+        ) : (
+          /* Two partners, two possible entries — so the screen asks rather
+             than picking one quietly. */
+          <div className="lpv-pairpick">
+            <span className="lpv-pairpick-label">{t("עם מי אתם נכנסים?")}</span>
+            <div className="lpv-pairpick-chips">
+              {activePairs.map((p) => (
+                <button
+                  type="button"
+                  key={p.id}
+                  className={`pr-chip${p.id === joiningPair.id ? " is-on" : ""}`}
+                  onClick={() => setChosenPairId(p.id)}
+                >
+                  <span dir="auto" style={{ unicodeBidi: "isolate" }}>
+                    {p.partner.name}
+                  </span>
+                  {p.level != null && (
+                    <span className="pr-chip-level" dir="ltr">
+                      {p.level.toFixed(1)}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        )
       )}
 
       {error && <p className="lpv-error error">{t(error)}</p>}

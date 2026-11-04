@@ -48,9 +48,10 @@ export default function PairPage() {
 
   useEffect(load, [load]);
 
-  // Opening a pair's world makes it the one the app speaks for, so the pair
-  // named in the header is the pair on the screen. This is the same switch the
-  // header's own picker makes.
+  // Opening a pair's world remembers it. Nothing is filtered by it — every
+  // match row names its own pair — but it is the sensible default for the one
+  // question that still needs an answer: which pair goes into a league. The
+  // join screen asks anyway when there is more than one.
   useEffect(() => {
     const id = Number(pairId);
     if (!Number.isNaN(id) && activePairs.some((p) => p.id === id) && selectedPair?.id !== id) {

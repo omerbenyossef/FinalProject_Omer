@@ -16,7 +16,7 @@ const AUTH_PATHS = ["/signin", "/signup", "/privacy", "/terms"];
 export default function Layout({ children }) {
   const { user } = useAuth();
   const { sports, selectedSportId } = useSport();
-  const { activePairs, selectedPair, setSelectedPairId, pairsAwaitingMe } = usePairs();
+  const { activePairs, selectedPair, pairsAwaitingMe } = usePairs();
   const selectedSportPlaysInPairs = Boolean(
     sports.find((sport) => sport.id === selectedSportId)?.plays_in_pairs
   );
@@ -77,28 +77,28 @@ export default function Layout({ children }) {
                   <span className="wordmark-pair-sep" aria-hidden="true">
                     ·
                   </span>
-                  {/* The pair you are looking through, and tapping it opens
-                      that pair's own page rather than the list of all of them. */}
-                  <Link to={`/pairs/${selectedPair.id}`} className="wordmark-pair">
-                    {t("עם {name}", { name: partnerShort })}
+                  {/* The way into your pairs. It used to be a switcher too —
+                      an invisible <select> over the label — but the selected
+                      pair never filtered anything except which pair joins a
+                      league, so the switch changed almost nothing while hiding
+                      that it existed at all. Every match row names its own
+                      pair now, and the choice is asked where it is a choice.
+
+                      With one partner the label names them, which is true.
+                      With two it says "my pairs" instead: naming one of them
+                      beside a diary that holds both would read as a filter
+                      that is not there. */}
+                  <Link
+                    to={activePairs.length === 1 ? `/pairs/${selectedPair.id}` : "/partners"}
+                    className="wordmark-pair"
+                  >
+                    {activePairs.length === 1
+                      ? t("עם {name}", { name: partnerShort })
+                      : t("הצמדים שלי")}
                     {pairsAwaitingMe.length > 0 && (
                       <span className="wordmark-pair-badge" aria-hidden="true" />
                     )}
                   </Link>
-                  {activePairs.length > 1 && (
-                    <select
-                      className="wordmark-pair-select"
-                      aria-label={t("בחר צמד")}
-                      value={selectedPair.id}
-                      onChange={(e) => setSelectedPairId(Number(e.target.value))}
-                    >
-                      {activePairs.map((pair) => (
-                        <option key={pair.id} value={pair.id}>
-                          {pair.partner.name}
-                        </option>
-                      ))}
-                    </select>
-                  )}
                 </span>
               )}
             </div>

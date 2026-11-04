@@ -1134,7 +1134,6 @@ const PAIRS = [
   ["ההיסטוריה של הצמד נשמרת, אבל לא תוכלו להצטרף יחד לליגות חדשות.",
    "The pair's history is kept, but you will not be able to join new leagues together."],
   ["הצמד הזה לא שלך", "That pair is not yours"],
-  ["הצמד לא נמצא", "Pair not found"],
   ["שחקנים ברמה שלך שמחפשים יריב", "Players at your level looking for a game"],
   ["{name} מחפש/ת יריב", "{name} is looking for a game"],
   ["{names} מחפשים זוג", "{names} are looking for a pair"],
@@ -1171,6 +1170,8 @@ const PAIRS = [
    "This match counts toward your personal rating and your W-L record. It is not part of any league."],
   ["לא נמצאו שחקנים", "No players found"],
   ["עדיין לא שיחקת נגד אף אחד בענף הזה.", "You haven't played against anyone in this sport yet."],
+  ["עם מי אתם נכנסים?", "Which pair is going in?"],
+  ["הצמדים שלי", "My pairs"],
 
   // Match scheduling
   ["קבע שעה", "Schedule"],

@@ -701,18 +701,6 @@ a { color: var(--court); text-decoration: none; }
 
 .wordmark-pair-sep { color: #4b5261; font-size: 11px; }
 
-/* The invisible native select that picks the pair, laid over its label. The
-   sport used to be chosen the same way; 187c gave the sport a real button, and
-   this stayed because a pair switcher of two or three names is not the same
-   discovery problem. */
-.wordmark-pair-select {
-  position: absolute;
-  inset: -8px;
-  opacity: 0;
-  width: calc(100% + 16px);
-  height: calc(100% + 16px);
-  cursor: pointer;
-}
 
 .wordmark-pair--cta { color: var(--court); }
 
@@ -5269,6 +5257,18 @@ button:active { transform: translateY(1px); }
   cursor: pointer;
 }
 .pr-chip-level { font: 500 11px "IBM Plex Mono", monospace; color: var(--muted); }
+/* The chosen one, where a chip is a choice rather than a shortcut. */
+.pr-chip.is-on {
+  background: rgba(var(--court-rgb), 0.14);
+  box-shadow: inset 0 0 0 1.5px rgba(var(--court-rgb), 0.5);
+  color: var(--court);
+}
+.pr-chip.is-on .pr-chip-level { color: inherit; opacity: 0.75; }
+
+/* "Which pair is going in?", asked on the join screens. */
+.lpv-pairpick { margin: 14px 18px 0; display: flex; flex-direction: column; gap: 8px; }
+.lpv-pairpick-label { font-weight: 600; font-size: 13px; color: var(--ink-dim); }
+.lpv-pairpick-chips { display: flex; flex-wrap: wrap; gap: 8px; }
 
 .pr-section { padding: 22px 18px 0; }
 .pr-section-title { margin: 0 0 4px; font-weight: 700; font-size: 15px; }
@@ -7833,6 +7833,14 @@ button:active { transform: translateY(1px); }
 .hw-opponent.dim { color: #C9CBCD; }
 .hw-sub { font: 500 11.5px "IBM Plex Mono", "IBM Plex Sans", monospace; color: #84878C;   text-transform: uppercase;
 }
+/* Which pair the match is, inside the mono line — a person's name, so it
+   keeps its own case and face for the same reason the venue below does. */
+.hw-sub-name {
+  font: 500 12px "IBM Plex Sans", var(--sans);
+  text-transform: none;
+  color: #C9CBCD;
+}
+
 /* Where it is being played. Sans, not the mono of the line above it, because
    it is a name rather than a label. */
 .hw-place { margin-top: 2px; font: 500 13px "IBM Plex Sans", var(--sans); color: #C9CBCD; }
