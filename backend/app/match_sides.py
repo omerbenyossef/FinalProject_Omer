@@ -75,23 +75,12 @@ def others(db: Session, match: models.Match, user_id: int) -> list[int]:
     return [uid for uid in participant_ids(db, match) if uid != user_id]
 
 
-def short_name(user: models.User | None) -> str:
-    if not user:
-        return ""
-    name = (user.name or "").strip()
-    parts = name.split()
-    return parts[-1] if len(parts) > 1 else name
-
-
-def side_label(players: list[models.User]) -> str:
-    """How a side is named on a card: one name in singles, "Cohen/Levi" in
-    doubles — surnames where there are two, so it fits a row."""
-    live = [u for u in players if u]
-    if not live:
-        return ""
-    if len(live) == 1:
-        return live[0].name or ""
-    return "/".join(short_name(u) for u in live)
+# These two live on the models module, because Match's own side1_label/
+# side2_label properties need them and models cannot import this one back.
+# Re-exported here so the callers that already ask this module for them
+# keep working.
+short_name = models.short_name
+side_label = models.side_label
 
 
 def opponent_label(db: Session, match: models.Match, user_id: int) -> str:

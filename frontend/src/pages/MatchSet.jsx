@@ -5,7 +5,7 @@ import BookCourtLink from "../BookCourtLink.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import Avatar from "../Avatar.jsx";
 import { ChevronIcon, CloseIcon } from "../Icons.jsx";
-import { durationLabel, weekdayFull } from "../matchUtils.js";
+import { detailOpponent, durationLabel, weekdayFull } from "../matchUtils.js";
 import { downloadCalendarFile, matchCalendarFile } from "../calendar.js";
 
 /* match-set-180a — the screen for a match whose time both players have agreed
@@ -57,7 +57,10 @@ export default function MatchSet({ detail, matchId, me, onChanged }) {
   // answer to "how long do I block the calendar for" — shown, never saved.
   const minutes = detail.duration_minutes || 90;
   const end = new Date(start.getTime() + minutes * 60000);
-  const opponentName = detail.opponent.name;
+  // Two people across the net in doubles, and `detail.opponent` is null
+  // there — so the name comes from the label and the faces from the list.
+  const facing = detailOpponent(detail);
+  const opponentName = facing.label;
 
   function handleCalendar() {
     const title =
@@ -136,19 +139,53 @@ export default function MatchSet({ detail, matchId, me, onChanged }) {
         <div className="ms-when-rel">{whenLabel(start, t)}</div>
       </div>
 
-      <button type="button" className="ms-opp" onClick={() => navigate(`/players/${detail.opponent.id}`)}>
-        <Avatar name={opponentName} photoUrl={detail.opponent.photo_url} size={46} />
-        <span className="ms-opp-body">
-          <span className="ms-opp-name" dir="auto" style={{ unicodeBidi: "isolate" }}>
-            {opponentName}
+      {facing.one ? (
+        <button type="button" className="ms-opp" onClick={() => navigate(`/players/${facing.one.id}`)}>
+          <Avatar name={opponentName} photoUrl={facing.one.photo_url} size={46} />
+          <span className="ms-opp-body">
+            <span className="ms-opp-name" dir="auto" style={{ unicodeBidi: "isolate" }}>
+              {opponentName}
+            </span>
+            <span className="ms-opp-meta" dir="ltr">
+              {detail.opponent_ntrp != null ? `NTRP ${detail.opponent_ntrp.toFixed(1)}` : "NTRP —"}
+              {detail.my_ntrp != null ? ` · RATING ${detail.my_ntrp.toFixed(1)}` : ""}
+            </span>
           </span>
-          <span className="ms-opp-meta" dir="ltr">
-            {detail.opponent_ntrp != null ? `NTRP ${detail.opponent_ntrp.toFixed(1)}` : "NTRP —"}
-            {detail.my_ntrp != null ? ` · RATING ${detail.my_ntrp.toFixed(1)}` : ""}
+          <ChevronIcon className="ms-opp-chev chevron-icon" aria-hidden="true" />
+        </button>
+      ) : (
+        /* Doubles: two faces, and one of them is not a link to a single
+           profile. The teammate goes on the same card — the one thing a
+           padel player cannot read anywhere else. */
+        <div className="ms-opp ms-opp--pair">
+          <span className="ms-opp-faces">
+            {facing.people.map((p) => (
+              <Avatar key={p.id} name={p.name} photoUrl={p.photo_url} size={38} />
+            ))}
           </span>
-        </span>
-        <ChevronIcon className="ms-opp-chev chevron-icon" aria-hidden="true" />
-      </button>
+          <span className="ms-opp-body">
+            <span className="ms-opp-name" dir="auto" style={{ unicodeBidi: "isolate" }}>
+              {opponentName}
+            </span>
+            <span className="ms-opp-meta" dir="ltr">
+              {detail.opponent_ntrp != null ? `NTRP ${detail.opponent_ntrp.toFixed(1)}` : "NTRP —"}
+              {detail.my_ntrp != null ? ` · RATING ${detail.my_ntrp.toFixed(1)}` : ""}
+            </span>
+          </span>
+        </div>
+      )}
+
+      {detail.teammate && (
+        <div className="ms-mate">
+          <Avatar name={detail.teammate.name} photoUrl={detail.teammate.photo_url} size={26} />
+          <span className="ms-mate-text">
+            {t("איתך")}{" "}
+            <span dir="auto" style={{ unicodeBidi: "isolate" }}>
+              {detail.teammate.name}
+            </span>
+          </span>
+        </div>
+      )}
 
       <div className="ms-rows">
         <div className="ms-row">

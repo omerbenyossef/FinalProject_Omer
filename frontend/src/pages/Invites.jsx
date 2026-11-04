@@ -22,6 +22,10 @@ export default function Invites() {
     (entry) =>
       entry.kind === "friendly" &&
       entry.match.invite_status === "pending" &&
+      // Invitations sent TO me rather than BY me: whoever opened the friendly
+      // is its player1. Safe to read the column directly — a friendly is
+      // always between two people, so it never has the pairs that make
+      // player1/player2 only half the story.
       entry.match.player1.id !== user?.id
   );
 

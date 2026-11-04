@@ -4,7 +4,7 @@ import { api } from "../api";
 import { useLanguage } from "../LanguageContext.jsx";
 import { ChevronIcon } from "../Icons.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
-import { formatWeekdayTime, hasHebrewChars } from "../matchUtils.js";
+import { detailOpponent, formatWeekdayTime, hasHebrewChars, reporterName } from "../matchUtils.js";
 
 function rankLabel(n) {
   return n != null ? `#${n}` : "—";
@@ -88,7 +88,7 @@ export default function ConfirmResult() {
           </button>
           <span className="sched-nav-label">{t("CONFIRM RESULT")}</span>
         </div>
-        <h1 className="sched-title">{t("מול {name}", { name: detail.opponent.name })}</h1>
+        <h1 className="sched-title">{t("מול {name}", { name: detailOpponent(detail).label })}</h1>
         <p className="sched-waiting">
           {detail.result_status === "disputed"
             ? detail.void_reason === "not_played"
@@ -112,7 +112,7 @@ export default function ConfirmResult() {
           <span className="sched-nav-label">{t("CONFIRM RESULT")}</span>
         </div>
 
-        <h1 className="sched-title">{t("{name} מדווח/ת שהמשחק לא בוצע", { name: detail.opponent.name })}</h1>
+        <h1 className="sched-title">{t("{name} מדווח/ת שהמשחק לא בוצע", { name: reporterName(detail) })}</h1>
         <p className="sched-sub" dir="ltr">
           {detail.scheduled_at && formatWeekdayTime(new Date(detail.scheduled_at), t)}
         </p>
@@ -140,7 +140,7 @@ export default function ConfirmResult() {
         <span className="sched-nav-label">{t("CONFIRM RESULT")}</span>
       </div>
 
-      <h1 className="sched-title">{t("{name} דיווח", { name: detail.opponent.name })}</h1>
+      <h1 className="sched-title">{t("{name} דיווח", { name: reporterName(detail) })}</h1>
       <p className="sched-sub" dir="ltr">
         {detail.round_number ? (
           <>
@@ -174,7 +174,7 @@ export default function ConfirmResult() {
         </div>
         <div className="res-score-row">
           <span className="res-score-name" dir="auto" style={{ unicodeBidi: "isolate" }}>
-            {detail.opponent.name}
+            {detailOpponent(detail).label}
           </span>
           <div className="res-score-sets" dir="ltr">
             {oppSets.map((g, i) => (

@@ -7,7 +7,7 @@ import { useOpenAction } from "../OpenActionContext.jsx";
 import { ChevronIcon } from "../Icons.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
 import SetScoreForm from "../SetScoreForm.jsx";
-import { formatSets, hasHebrewChars, weekdayShort } from "../matchUtils.js";
+import { detailOpponent, formatSets, hasHebrewChars, weekdayShort } from "../matchUtils.js";
 
 function dayMonth(date) {
   return `${String(date.getDate()).padStart(2, "0")}.${String(date.getMonth() + 1).padStart(2, "0")}`;
@@ -89,7 +89,7 @@ export default function PendingConfirm() {
   const isCorrection = detail.corrected_sets != null && (iCorrected || !isDispute);
   const mySets = isCorrection ? detail.corrected_sets : detail.reported_sets;
   const reportedAt = detail.reported_at ? new Date(detail.reported_at) : null;
-  const name = detail.opponent.name;
+  const name = detailOpponent(detail).label;
 
   async function handleRemind() {
     setBusy(true);

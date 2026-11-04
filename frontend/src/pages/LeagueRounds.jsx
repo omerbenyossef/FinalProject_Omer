@@ -4,7 +4,7 @@ import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import { ChevronIcon } from "../Icons.jsx";
-import { formatSets, roundDueDateObj } from "../matchUtils.js";
+import { formatSets, matchSides, roundDueDateObj } from "../matchUtils.js";
 import { SkeletonPageHeader } from "../Skeleton.jsx";
 
 function groupMatchesByRound(matches) {
@@ -59,7 +59,7 @@ export default function LeagueRounds() {
 
   const myCompleted = myMatches.filter((m) => m.status === "completed");
   const myWins = myCompleted.filter((m) => {
-    const iAmPlayer1 = m.player1.id === user?.id;
+    const iAmPlayer1 = matchSides(m, user?.id).iAmSide1;
     return iAmPlayer1 ? m.player1_score > m.player2_score : m.player2_score > m.player1_score;
   }).length;
   const myRecord = myCompleted.length > 0 ? `${myWins}W-${myCompleted.length - myWins}L` : null;
@@ -95,12 +95,8 @@ export default function LeagueRounds() {
           const roundMatches = grouped.get(r);
           const played = roundMatches.filter((m) => m.status !== "pending").length;
           const myMatch = myMatches.find((m) => m.round_number === r);
-          const opponent = myMatch
-            ? myMatch.player1.id === user?.id
-              ? myMatch.player2
-              : myMatch.player1
-            : null;
-          const iAmPlayer1 = myMatch && myMatch.player1.id === user?.id;
+          const mySides = myMatch ? matchSides(myMatch, user?.id) : null;
+          const iAmPlayer1 = !!mySides?.iAmSide1;
           const isCompleted = myMatch && myMatch.status === "completed";
           const iWon =
             isCompleted &&
@@ -125,7 +121,7 @@ export default function LeagueRounds() {
                 {r}
               </span>
               <div className="round-row-body">
-                <div className="round-row-name">{opponent ? opponent.name : "—"}</div>
+                <div className="round-row-name">{mySides ? mySides.opponentLabel : "—"}</div>
                 <div className="round-row-sub" dir="ltr">
                   {played}/{roundMatches.length} {t("שוחקו")}
                   {isActive && closesIn != null && ` · ${t("{n}d left", { n: closesIn })}`}

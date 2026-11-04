@@ -321,6 +321,20 @@ class MemberOut(BaseModel):
         from_attributes = True
 
 
+class PairPlayerOut(BaseModel):
+    """A partner, or somebody who could be one. Deliberately not UserOut:
+    that carries the person's email address, and nothing on these screens
+    needs it."""
+
+    id: int
+    name: str
+    photo_url: Optional[str] = None
+    area: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
 class JoinLeagueRequest(BaseModel):
     # Required by a doubles league and refused by a singles one: in padel it
     # is the pair that enters, not the person.
@@ -409,6 +423,20 @@ class MatchOut(BaseModel):
     duration_minutes: Optional[int] = None
     player1: MemberOut
     player2: MemberOut
+    # The whole court, read straight off the match's own side1/side2
+    # properties. player1/player2 above name ONE player from
+    # each side, which is all a singles match has but only half of a doubles
+    # one — a screen that asked them which match was the viewer's found none
+    # of a partner's own matches. These are deliberately viewer-independent:
+    # side one is always the player1 side, so it lines up with how sets and
+    # scores are stored, and the client picks its own side by looking for
+    # itself in side1.
+    is_doubles: bool = False
+    side1: list[PairPlayerOut] = []
+    side2: list[PairPlayerOut] = []
+    # "Cohen/Levi" in doubles, the one full name in singles.
+    side1_label: str = ""
+    side2_label: str = ""
     player1_score: Optional[int]
     player2_score: Optional[int]
     sets: Optional[list[SetScore]] = None
@@ -499,20 +527,6 @@ class FriendlyPlayerOut(BaseModel):
     level: Optional[float] = None
     provisional: bool = False
     area: Optional[str] = None
-
-
-class PairPlayerOut(BaseModel):
-    """A partner, or somebody who could be one. Deliberately not UserOut:
-    that carries the person's email address, and nothing on these screens
-    needs it."""
-
-    id: int
-    name: str
-    photo_url: Optional[str] = None
-    area: Optional[str] = None
-
-    class Config:
-        from_attributes = True
 
 
 class PairOut(BaseModel):

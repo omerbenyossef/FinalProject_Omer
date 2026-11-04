@@ -18,6 +18,8 @@ import {
   daysUntil,
   weekdayShort,
   formatWeekdayDateTime,
+  matchSides,
+  standingSide,
 } from "../matchUtils.js";
 import { SkeletonMatchRow } from "../Skeleton.jsx";
 import PageHelp from "../PageHelp.jsx";
@@ -43,6 +45,8 @@ function toPlayCardKind(entry, userId) {
   const m = entry.match;
   const pendingInvite = entry.kind === "friendly" && m.invite_status === "pending";
   if (pendingInvite) {
+    // A friendly is always two people, so its player1 really is whoever
+    // opened it — no pair can hide the other half here.
     return m.player1.id === userId
       ? { kind: "remind-them", dependsOnMe: false }
       : { kind: "accept-invite", dependsOnMe: true };
@@ -113,9 +117,12 @@ function ToPlayCard({
 }) {
   const m = entry.match;
   const isFriendly = entry.kind === "friendly";
-  const opponent = m.player1.id === userId ? m.player2 : m.player1;
+  const sides = matchSides(m, userId);
+  // One person in singles, two in padel — `one` is null there, so the card
+  // shows both faces and links to neither.
+  const opponent = sides.opponent;
   const pendingInvite = isFriendly && m.invite_status === "pending";
-  const isInviter = isFriendly && m.player1.id === userId;
+  const isInviter = isFriendly && m.player1.id === userId; // friendlies are singles
   const needsMyConfirm = m.status === "pending_confirmation" && m.reported_by !== userId;
   const awaitingOpponentConfirm = m.status === "pending_confirmation" && m.reported_by === userId;
   const scheduleState =
@@ -177,8 +184,8 @@ function ToPlayCard({
     return (
       <div className={`tp-card${single ? " single" : ""}`}>
         <SetScoreForm
-          player1Name={m.player1.name}
-          player2Name={m.player2.name}
+          player1Name={sides.side1Label}
+          player2Name={sides.side2Label}
           busy={busy}
           maxSets={isFriendly ? 3 : entry.best_of}
           onSubmit={onSubmitScore}
@@ -186,7 +193,7 @@ function ToPlayCard({
           friendlyConfirm={
             isFriendly
               ? {
-                  opponentName: opponent.name,
+                  opponentName: sides.opponentLabel,
                   checked: friendlyRequireConfirm,
                   onChange: setFriendlyRequireConfirm,
                 }
@@ -200,22 +207,31 @@ function ToPlayCard({
   return (
     <div className={`tp-card${single ? " single" : ""}`}>
       <div className="tp-card-top">
-        <Avatar
-          name={opponent.name}
-          photoUrl={opponent.photo_url}
-          size={52}
-          dim={pendingInvite}
-          background="#232a35"
-          color="#c9cfdb"
-          fontFamily="'IBM Plex Mono', monospace"
-          fontSize={17}
-        />
+        {sides.opponents.map((p) => (
+          <Avatar
+            key={p.id}
+            name={p.name}
+            photoUrl={p.photo_url}
+            size={opponent ? 52 : 40}
+            dim={pendingInvite}
+            background="#232a35"
+            color="#c9cfdb"
+            fontFamily="'IBM Plex Mono', monospace"
+            fontSize={17}
+          />
+        ))}
         <div className="tp-id">
-          <Link to={`/players/${opponent.id}`} className="tp-name">
-            <span dir="auto" style={{ unicodeBidi: "isolate" }}>
-              {opponent.name}
+          {opponent ? (
+            <Link to={`/players/${opponent.id}`} className="tp-name">
+              <span dir="auto" style={{ unicodeBidi: "isolate" }}>
+                {sides.opponentLabel}
+              </span>
+            </Link>
+          ) : (
+            <span className="tp-name" dir="auto" style={{ unicodeBidi: "isolate" }}>
+              {sides.opponentLabel}
             </span>
-          </Link>
+          )}
           <div className="tp-league-line" dir="ltr">
             {leagueLine}
           </div>
@@ -363,7 +379,11 @@ function SoloLeagueHero({ league, members, standings, t }) {
   const daysLeft = daysUntil(league.starts_at ? new Date(league.starts_at) : null);
   const joined = league.member_count ?? members.length;
   const capacity = league.capacity ?? null;
-  const levelByUser = new Map((standings || []).map((r) => [r.user.id, r.level]));
+  // Keyed by every player on the row, so a pair's level is found from either
+  // of its two members.
+  const levelByUser = new Map(
+    (standings || []).flatMap((r) => standingSide(r).players.map((p) => [p.id, r.level]))
+  );
 
   const openLine = [
     league.starts_at ? `R1 OPENS ${weekdayShort(new Date(league.starts_at), t)}` : null,
@@ -640,7 +660,7 @@ export default function Profile() {
   const isUnansweredInvite = (entry) =>
     entry.kind === "friendly" &&
     entry.match.invite_status === "pending" &&
-    entry.match.player1.id !== user?.id;
+    entry.match.player1.id !== user?.id; // friendlies are singles
   const friendlyMatchesForSport = sportEntries.filter(
     (entry) =>
       entry.kind === "friendly" &&
@@ -675,8 +695,11 @@ export default function Profile() {
     return best;
   })();
 
+  // The single opponent whose head-to-head and rating the card looks up.
+  // Null in doubles, where "the opponent" is two people — the lookups below
+  // skip it rather than asking about one of them.
   function opponentIdFor(entry) {
-    return entry.match.player1.id === user.id ? entry.match.player2.id : entry.match.player1.id;
+    return matchSides(entry.match, user.id).opponent?.id ?? null;
   }
 
   useEffect(() => {
@@ -691,7 +714,7 @@ export default function Profile() {
         .catch(() => {});
     });
 
-    const opponentIds = [...new Set(sortedToPlay.map(opponentIdFor))];
+    const opponentIds = [...new Set(sortedToPlay.map(opponentIdFor))].filter((id) => id != null);
     opponentIds.forEach((id) => {
       if (requestedH2hRef.current.has(id)) return;
       requestedH2hRef.current.add(id);
@@ -766,11 +789,13 @@ export default function Profile() {
   const extraHomeLeagues = sortedHomeLeagues.length - shownHomeLeagues.length;
 
   function oppNtrpFor(entry) {
+    const oppId = opponentIdFor(entry);
+    if (oppId == null) return null;
     if (entry.kind === "friendly") {
-      return friendlyNtrpByOpponent[`${opponentIdFor(entry)}:${selectedSportId}`] ?? null;
+      return friendlyNtrpByOpponent[`${oppId}:${selectedSportId}`] ?? null;
     }
     const rows = standingsByLeague[entry.league_id];
-    const row = rows?.find((r) => r.user.id === opponentIdFor(entry));
+    const row = rows?.find((r) => standingSide(r).players.some((p) => p.id === oppId));
     return row?.level ?? null;
   }
 
@@ -898,8 +923,9 @@ export default function Profile() {
       {confirmationEntries.length > 0 &&
         confirmationEntries.map((entry) => {
           const m = entry.match;
-          const iAmPlayer1 = m.player1.id === user.id;
-          const reporter = m.reported_by === m.player1.id ? m.player1 : m.player2;
+          const sides = matchSides(m, user.id);
+          const iAmPlayer1 = sides.iAmSide1;
+          const reporter = [...sides.mine, ...sides.opponents].find((p) => p?.id === m.reported_by);
           const mySets = iAmPlayer1
             ? m.sets
             : m.sets?.map((s) => ({ player1_games: s.player2_games, player2_games: s.player1_games }));
@@ -913,7 +939,7 @@ export default function Profile() {
               <span className="home-confirm-dot" aria-hidden="true" />
               <span className="home-confirm-body">
                 <span className="home-confirm-title">
-                  {t("{name} דיווח", { name: reporter.name })}{" "}
+                  {t("{name} דיווח", { name: reporter?.name || sides.opponentLabel })}{" "}
                   <span className="num" dir="ltr">
                     {formatMySets(mySets)}
                   </span>

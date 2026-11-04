@@ -8,14 +8,7 @@ import { useAuth } from "../AuthContext.jsx";
 import { ChevronIcon } from "../Icons.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
 import SetScoreForm from "../SetScoreForm.jsx";
-import {
-  formatSets,
-  formatWeekdayDateTime,
-  hasHebrewChars,
-  roundDueDateObj,
-  timeAgoLabel,
-  daysWord,
-} from "../matchUtils.js";
+import { daysWord, detailOpponent, formatSets, formatWeekdayDateTime, hasHebrewChars, roundDueDateObj, timeAgoLabel } from "../matchUtils.js";
 
 function MatchNav({ label, matchId, unread, t, navigate }) {
   return (
@@ -186,7 +179,7 @@ export default function MatchSchedule() {
     if (start <= Date.now()) return t("עבר");
     const hit = busyWindows.find((w) => start < w.end && w.start < end);
     if (!hit) return null;
-    return hit.whose === "opponent" ? t("{name} תפוס", { name: detail.opponent.name }) : t("יש לך משחק");
+    return hit.whose === "opponent" ? t("{name} תפוס", { name: detailOpponent(detail).label }) : t("יש לך משחק");
   }
   const activeOption = multi
     ? (pickedOption ?? options.find((o) => !optionBlocked(o))?.id ?? null)
@@ -216,7 +209,7 @@ export default function MatchSchedule() {
             ? t("קבעו זמן לשחק")
             : iInvited
             ? t("ההזמנה נשלחה")
-            : t("{name} מזמין/ה אותך לשחק", { name: detail.opponent.name })}
+            : t("{name} מזמין/ה אותך לשחק", { name: detailOpponent(detail).label })}
         </h1>
         <p className="sched-sub" dir="ltr">
           {detail.round_number ? (
@@ -234,7 +227,7 @@ export default function MatchSchedule() {
             </>
           ) : (
             <span dir="auto">
-              {t("ידידותי")} · <span style={{ unicodeBidi: "isolate" }}>{detail.opponent.name}</span>
+              {t("ידידותי")} · <span style={{ unicodeBidi: "isolate" }}>{detailOpponent(detail).label}</span>
             </span>
           )}
         </p>
@@ -245,7 +238,7 @@ export default function MatchSchedule() {
         {invitePending ? (
           iInvited ? (
             <p className="notime-hint">
-              {t("ברגע ש{name} יאשר/תאשר, תוכלו לתאם ביניכם", { name: detail.opponent.name })}
+              {t("ברגע ש{name} יאשר/תאשר, תוכלו לתאם ביניכם", { name: detailOpponent(detail).label })}
             </p>
           ) : (
             <div className="notime-actions">
@@ -325,8 +318,8 @@ export default function MatchSchedule() {
 
         <h1 className="sched-title">
           {multi
-            ? t("{name} הציע {count} זמנים", { name: detail.opponent.name, count: options.length })
-            : t("{name} קבע/ה", { name: detail.opponent.name })}
+            ? t("{name} הציע {count} זמנים", { name: detailOpponent(detail).label, count: options.length })
+            : t("{name} קבע/ה", { name: detailOpponent(detail).label })}
         </h1>
         <p className="sched-sub" dir="ltr">
           {detail.round_number ? (
@@ -468,7 +461,7 @@ export default function MatchSchedule() {
     return (
       <div className="sched-page">
         <MatchNav matchId={matchId} unread={detail.unread_messages} t={t} navigate={navigate} />
-        <h1 className="sched-title">{t("מול {name}", { name: detail.opponent.name })}</h1>
+        <h1 className="sched-title">{t("מול {name}", { name: detailOpponent(detail).label })}</h1>
         {multi ? (
           <div className="sched-options">
             {options.map((option) => (
@@ -489,7 +482,7 @@ export default function MatchSchedule() {
         )}
         {error && <p className="error">{t(error)}</p>}
         <p className="sched-waiting">
-          {t("ממתין לאישור של {name}", { name: detail.opponent.name })} ·{" "}
+          {t("ממתין לאישור של {name}", { name: detailOpponent(detail).label })} ·{" "}
           <button type="button" className="sched-cancel-link" disabled={busy} onClick={() => handleDecline(false)}>
             {t("CANCEL")}
           </button>
@@ -521,7 +514,7 @@ export default function MatchSchedule() {
         t={t}
         navigate={navigate}
       />
-      <h1 className="sched-title">{t("מול {name}", { name: detail.opponent.name })}</h1>
+      <h1 className="sched-title">{t("מול {name}", { name: detailOpponent(detail).label })}</h1>
       <p className="sched-sub" dir="ltr">
         {detail.round_number ? (
           <>
@@ -570,8 +563,8 @@ export default function MatchSchedule() {
         <SetScoreForm
           // Columns follow the match's own player1/player2 order, so the sets
           // come back out of the form already in the orientation the API wants.
-          player1Name={detail.i_am_player1 ? user?.name : detail.opponent.name}
-          player2Name={detail.i_am_player1 ? detail.opponent.name : user?.name}
+          player1Name={detail.i_am_player1 ? user?.name : detailOpponent(detail).label}
+          player2Name={detail.i_am_player1 ? detailOpponent(detail).label : user?.name}
           busy={busy}
           maxSets={detail.max_sets}
           onSubmit={handleReport}
@@ -579,7 +572,7 @@ export default function MatchSchedule() {
           friendlyConfirm={
             detail.kind === "friendly"
               ? {
-                  opponentName: detail.opponent.name,
+                  opponentName: detailOpponent(detail).label,
                   checked: requireConfirm,
                   onChange: setRequireConfirm,
                 }

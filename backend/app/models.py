@@ -270,6 +270,27 @@ class Pair(Base):
         return (self.player_a_id, self.player_b_id)
 
 
+def short_name(user) -> str:
+    """A player's surname where they have one, for a label with no room for
+    two full names."""
+    if not user:
+        return ""
+    name = (user.name or "").strip()
+    parts = name.split()
+    return parts[-1] if len(parts) > 1 else name
+
+
+def side_label(players) -> str:
+    """How a side is named on a card: one name in singles, "Cohen/Levi" in
+    doubles — surnames where there are two, so it fits a row."""
+    live = [u for u in players if u]
+    if not live:
+        return ""
+    if len(live) == 1:
+        return live[0].name or ""
+    return "/".join(short_name(u) for u in live)
+
+
 class Match(Base):
     __tablename__ = "matches"
 
@@ -327,11 +348,44 @@ class Match(Base):
     manual_reminded_at = Column(DateTime, nullable=True)
     void_reason = Column(String, nullable=True)
 
+    @property
+    def is_doubles(self) -> bool:
+        return bool(self.pair1_id and self.pair2_id)
+
+    @property
+    def side1(self) -> list["User"]:
+        """Side one's players: one in singles, two in doubles. Side one is
+        always the player1 side, so this order matches how sets and scores are
+        stored — see match_sides.sides, which answers the same question when a
+        database session is at hand."""
+        if self.pair1 and self.pair2:
+            return [p for p in (self.pair1.player_a, self.pair1.player_b) if p]
+        return [self.player1] if self.player1 else []
+
+    @property
+    def side2(self) -> list["User"]:
+        if self.pair1 and self.pair2:
+            return [p for p in (self.pair2.player_a, self.pair2.player_b) if p]
+        return [self.player2] if self.player2 else []
+
+    @property
+    def side1_label(self) -> str:
+        return side_label(self.side1)
+
+    @property
+    def side2_label(self) -> str:
+        return side_label(self.side2)
+
     league = relationship("League", back_populates="matches")
     sport = relationship("Sport")
     venue = relationship("Venue")
     player1 = relationship("User", foreign_keys=[player1_id])
     player2 = relationship("User", foreign_keys=[player2_id])
+    # Read-only on purpose: a match is given its pairs when it is created and
+    # never reassigned. They exist so that serialising a match can walk to all
+    # four players without the schema needing a database session.
+    pair1 = relationship("Pair", foreign_keys=[pair1_id])
+    pair2 = relationship("Pair", foreign_keys=[pair2_id])
     # Which venue, when it is one the app knows. `court` stays alongside it
     # for anywhere that isn't on the list.
     # (Databases created before this also carry booked_by/court_cost/

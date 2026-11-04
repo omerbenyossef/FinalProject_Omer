@@ -1030,6 +1030,9 @@ const PAIRS = [
   ["{n} ליגות משותפות", "{n} leagues together"],
   ["הזמן", "Invite"],
   ["לא ב-Rally", "Not on Rally"],
+
+  // Padel: who you are playing WITH, on a match that has four people in it.
+  ["איתך", "With you"],
   ["הזמנה בקישור", "Invite by link"],
   ["וואטסאפ, או העתקת הקישור", "WhatsApp, or copy the link"],
   ["אושר", "accepted"],

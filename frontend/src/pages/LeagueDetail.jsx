@@ -22,6 +22,10 @@ import {
   daysUntilOpen,
   getActionCandidates,
   buildOpenAction,
+  isMyMatch,
+  matchSides,
+  standingIsMine,
+  standingSide,
 } from "../matchUtils.js";
 import { SkeletonPageHeader, SkeletonHeroStat, SkeletonStandingsTable } from "../Skeleton.jsx";
 import PageHelp from "../PageHelp.jsx";
@@ -287,10 +291,10 @@ export default function LeagueDetail() {
   }
 
   const isCreator = league.created_by === user?.id;
-  const myStanding = standings.find((row) => row.user.id === user?.id);
+  const myStanding = standings.find((row) => standingIsMine(row, user?.id));
   const myWinRate =
     myStanding && myStanding.played > 0 ? Math.round((myStanding.wins / myStanding.played) * 100) : null;
-  const myRankIndex = standings.findIndex((row) => row.user.id === user?.id);
+  const myRankIndex = standings.findIndex((row) => standingIsMine(row, user?.id));
   const myRank = myRankIndex >= 0 ? myRankIndex + 1 : null;
   const roundsClosed = existingRoundNumbers.length;
   // 109c: standings rows exist (zeroed) for every member before anyone has
@@ -299,12 +303,12 @@ export default function LeagueDetail() {
   const myPlayedNone = !myStanding || myStanding.played === 0;
   const noResultsYet = standings.length > 0 && standings.every((row) => row.played === 0);
   const myRoundRows = allMatches
-    .filter((m) => m.player1.id === user?.id || m.player2.id === user?.id)
+    .filter((m) => isMyMatch(m, user?.id))
     .filter((m) => m.round_number)
     .sort((a, b) => a.round_number - b.round_number)
     .map((m) => {
-      const iAmPlayer1 = m.player1.id === user?.id;
-      const opponent = iAmPlayer1 ? m.player2 : m.player1;
+      const sides = matchSides(m, user?.id);
+      const iAmPlayer1 = sides.iAmSide1;
       const mySets = iAmPlayer1
         ? m.sets
         : m.sets?.map((s) => ({ player1_games: s.player2_games, player2_games: s.player1_games }));
@@ -312,7 +316,7 @@ export default function LeagueDetail() {
       const theirScore = iAmPlayer1 ? m.player2_score : m.player1_score;
       return {
         round: m.round_number,
-        opponentName: opponent.name,
+        opponentName: sides.opponentLabel,
         status: m.status,
         mySets,
         won: m.status === "completed" && myScore > theirScore,
@@ -341,7 +345,7 @@ export default function LeagueDetail() {
   // My match leads the tab as its own block (149a); the list below is
   // everyone else's, which is also why FixtureRow gets no handlers there.
   const myShownMatch =
-    shownRoundMatches.find((m) => m.player1.id === user?.id || m.player2.id === user?.id) ?? null;
+    shownRoundMatches.find((m) => isMyMatch(m, user?.id)) ?? null;
   const otherMatches = shownRoundMatches.filter((m) => m !== myShownMatch);
   const shownRoundCloses = shownRound
     ? roundDueDate(league.schedule_started_at, shownRound, league.round_length_days)
@@ -399,7 +403,7 @@ export default function LeagueDetail() {
   // next. Fall back to the soonest match still ahead of me.
   const myNextMatch =
     allMatches
-      .filter((m) => (m.player1.id === user?.id || m.player2.id === user?.id) && m.status === "pending")
+      .filter((m) => isMyMatch(m, user?.id) && m.status === "pending")
       .sort((a, b) => {
         if (a.scheduled_at && b.scheduled_at) return new Date(a.scheduled_at) - new Date(b.scheduled_at);
         if (a.scheduled_at) return -1;
@@ -407,13 +411,13 @@ export default function LeagueDetail() {
         return (a.round_number ?? 0) - (b.round_number ?? 0);
       })[0] ?? null;
   let leagueActionMatch = null;
-  let leagueActionOpponent = null;
+  let leagueActionOpponentName = "";
   let leagueActionSub = "";
   let leagueActionBtnLabel = "";
   if (leagueOpenAction) {
     const actionMatch = leagueOpenAction.match;
     leagueActionMatch = actionMatch;
-    leagueActionOpponent = actionMatch.player1.id === user?.id ? actionMatch.player2 : actionMatch.player1;
+    leagueActionOpponentName = matchSides(actionMatch, user?.id).opponentLabel;
     if (leagueOpenAction.kind === "confirm") {
       leagueActionSub = t("יש לך תוצאה לאישור");
       leagueActionBtnLabel = t("לאישור");
@@ -436,8 +440,7 @@ export default function LeagueDetail() {
     }
   } else if (myNextMatch) {
     leagueActionMatch = myNextMatch;
-    leagueActionOpponent =
-      myNextMatch.player1.id === user?.id ? myNextMatch.player2 : myNextMatch.player1;
+    leagueActionOpponentName = matchSides(myNextMatch, user?.id).opponentLabel;
     if (myNextMatch.scheduled_at) {
       // Already set and still ahead — nothing to press, just say when.
       leagueActionSub = [formatWeekdayDateTime(new Date(myNextMatch.scheduled_at), t), myNextMatch.court]
@@ -580,7 +583,7 @@ export default function LeagueDetail() {
                       <>{t("מחזור {n}", { n: leagueActionMatch.round_number })} · </>
                     )}
                     <span dir="auto" style={{ unicodeBidi: "isolate" }}>
-                      {leagueActionOpponent?.name}
+                      {leagueActionOpponentName}
                     </span>
                   </div>
                   <div className="ms-open-sub">{leagueActionSub}</div>
@@ -693,7 +696,9 @@ export default function LeagueDetail() {
 
                 {standings.map((row, index) => {
                   const rank = index + 1;
-                  const isMe = row.user.id === user?.id;
+                  // A pair row is "mine" for both of its members.
+                  const side = standingSide(row);
+                  const isMe = standingIsMine(row, user?.id);
                   const isLeader = rank === 1;
                   const shortOfMatches = row.played < roundsClosed;
                   const cls =
@@ -705,9 +710,16 @@ export default function LeagueDetail() {
                         {rank}
                       </span>
                       <span className="standings-td-avatar">
-                        <Avatar name={row.user.name} photoUrl={row.user.photo_url} size={30} />
+                        {side.players.map((p) => (
+                          <Avatar
+                            key={p.id}
+                            name={p.name}
+                            photoUrl={p.photo_url}
+                            size={side.one ? 30 : 22}
+                          />
+                        ))}
                       </span>
-                      <span className="standings-td-name">{row.user.name}</span>
+                      <span className="standings-td-name">{side.name}</span>
                       <span className={`standings-td-num${shortOfMatches ? " short" : ""}`} dir="ltr">
                         {row.played}
                       </span>
@@ -720,12 +732,14 @@ export default function LeagueDetail() {
                     </>
                   );
 
-                  return isMe ? (
-                    <div className={cls} key={row.user.id}>
+                  // A pair has no single profile to open, so its row stays a
+                  // plain div like the viewer's own.
+                  return isMe || !side.one ? (
+                    <div className={cls} key={side.key}>
                       {body}
                     </div>
                   ) : (
-                    <Link to={`/players/${row.user.id}`} className={cls} key={row.user.id}>
+                    <Link to={`/players/${side.one.id}`} className={cls} key={side.key}>
                       {body}
                     </Link>
                   );
@@ -1081,8 +1095,8 @@ function MyMatchBlock({
   const [reporting, setReporting] = useState(false);
   const [editing, setEditing] = useState(false);
 
-  const iAmPlayer1 = match.player1.id === userId;
-  const opponent = iAmPlayer1 ? match.player2 : match.player1;
+  const sides = matchSides(match, userId);
+  const iAmPlayer1 = sides.iAmSide1;
   const mine = (sets) =>
     sets && !iAmPlayer1
       ? sets.map((s) => ({ player1_games: s.player2_games, player2_games: s.player1_games }))
@@ -1098,8 +1112,8 @@ function MyMatchBlock({
     return (
       <div className="mm-block">
         <SetScoreForm
-          player1Name={match.player1.name}
-          player2Name={match.player2.name}
+          player1Name={matchSides(match, userId).side1Label}
+          player2Name={matchSides(match, userId).side2Label}
           initialSets={editing ? match.sets : undefined}
           onSubmit={(sets) => {
             onReport(sets);
@@ -1228,13 +1242,27 @@ function MyMatchBlock({
     <div className={`mm-block${voided ? " mm-block--void" : ""}`}>
       <div className="mm-label">{t("המשחק שלך")}</div>
       <div className="mm-row">
-        <Avatar name={opponent.name} photoUrl={opponent.photo_url} size={36} />
+        {sides.opponent ? (
+          <Avatar name={sides.opponent.name} photoUrl={sides.opponent.photo_url} size={36} />
+        ) : (
+          /* Doubles: both faces, since there is no single opponent. */
+          <span className="mm-faces">
+            {sides.opponents.map((p) => (
+              <Avatar key={p.id} name={p.name} photoUrl={p.photo_url} size={30} />
+            ))}
+          </span>
+        )}
         <div className="mm-body">
           <div className="mm-name">
             <span dir="auto" style={{ unicodeBidi: "isolate" }}>
-              {opponent.name}
+              {sides.opponentLabel}
             </span>
           </div>
+          {sides.teammate && (
+            <div className="mm-mate" dir="auto" style={{ unicodeBidi: "isolate" }}>
+              {t("איתך")} {sides.teammate.name}
+            </div>
+          )}
           <div className="mm-meta">{meta}</div>
         </div>
         {action}
@@ -1262,7 +1290,8 @@ function FixtureRow({
   const { t } = useLanguage();
   const navigate = useNavigate();
 
-  const mine = match.player1.id === userId || match.player2.id === userId;
+  const sides = matchSides(match, userId);
+  const mine = sides.isMine;
   const isCompleted = match.status === "completed";
   const isPendingConfirmation = match.status === "pending_confirmation";
   const isDisputed = match.status === "disputed";
@@ -1281,15 +1310,22 @@ function FixtureRow({
 
   // In my row I'm always on the "start" side, so my row doesn't jump around
   // between rounds; the score/result is shown from that side's perspective.
-  const [left, right] =
-    mine && match.player2.id === userId ? [match.player2, match.player1] : [match.player1, match.player2];
+  // Each side as the row needs it: the name to print, and the one player that
+  // name can link to — null in doubles, where a side is two people.
+  const sideView = (players, label) => ({
+    name: label,
+    one: players.length === 1 ? players[0] : null,
+  });
+  const viewOne = sideView(sides.side1, sides.side1Label);
+  const viewTwo = sideView(sides.side2, sides.side2Label);
+  const [left, right] = mine && !sides.iAmSide1 ? [viewTwo, viewOne] : [viewOne, viewTwo];
   // The opponent's name can only be a nested <Link> when the row itself
   // renders as a plain <div> — the iNeedToConfirm/completed-mine cases wrap
   // mainRow in a <button>, where a nested link isn't valid.
   const canLinkOpponent = !(iNeedToConfirm || (isCompleted && mine));
-  const leftLinkable = !mine;
-  const rightLinkable = mine ? canLinkOpponent : true;
-  const leftIsPlayer1 = left.id === match.player1.id;
+  const leftLinkable = !mine && !!left.one;
+  const rightLinkable = (mine ? canLinkOpponent : true) && !!right.one;
+  const leftIsPlayer1 = left === viewOne;
   const orientLeft = (sets) =>
     sets
       ? leftIsPlayer1
@@ -1311,8 +1347,8 @@ function FixtureRow({
     return (
       <div className="fx-row is-mine">
         <SetScoreForm
-          player1Name={match.player1.name}
-          player2Name={match.player2.name}
+          player1Name={matchSides(match, userId).side1Label}
+          player2Name={matchSides(match, userId).side2Label}
           initialSets={match.sets}
           onSubmit={(sets) => {
             onEditScore(sets);
@@ -1331,7 +1367,7 @@ function FixtureRow({
     <div className="fx-main">
       <span className="fx-name start">
         {leftLinkable ? (
-          <Link to={`/players/${left.id}`} onClick={(e) => e.stopPropagation()} className="player-name-link">
+          <Link to={`/players/${left.one.id}`} onClick={(e) => e.stopPropagation()} className="player-name-link">
             <span dir="auto" style={{ unicodeBidi: "isolate" }}>
               {left.name}
             </span>
@@ -1381,7 +1417,7 @@ function FixtureRow({
       </span>
       <span className="fx-name end">
         {rightLinkable ? (
-          <Link to={`/players/${right.id}`} onClick={(e) => e.stopPropagation()} className="player-name-link">
+          <Link to={`/players/${right.one.id}`} onClick={(e) => e.stopPropagation()} className="player-name-link">
             <span dir="auto" style={{ unicodeBidi: "isolate" }}>
               {right.name}
             </span>
@@ -1484,8 +1520,8 @@ function FixtureRow({
       )}
       {mine && isReporting && scheduleState === "ready" && (
         <SetScoreForm
-          player1Name={match.player1.name}
-          player2Name={match.player2.name}
+          player1Name={matchSides(match, userId).side1Label}
+          player2Name={matchSides(match, userId).side2Label}
           onSubmit={onSubmitScore}
           onCancel={onCancelForm}
           onCancelMatch={onCancelMatch}

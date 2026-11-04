@@ -170,6 +170,127 @@ export function timeAgoLabel(date, t) {
   return days === 1 ? say("לפני יום") : say("לפני {n} ימים", { n: days });
 }
 
+// Who is on each side of a match, from the viewer's point of view — the
+// client's half of the backend's match_sides.py.
+//
+// Every screen used to ask this itself, as `match.player1.id === userId`.
+// That works in singles, where the two columns are the two players, and is
+// wrong in doubles: player1_id/player2_id name ONE player from each side, so
+// a pair's second member is in neither. Screens asking that question found
+// none of their own padel matches, and the ones that did show a match drew
+// the opposing captain alone instead of the two people across the net.
+//
+// MatchOut now sends side1/side2 with everyone on them, side one always
+// being the side the stored sets and scores are written from. This reads
+// those, and falls back to player1/player2 so it is still correct against a
+// payload that predates them.
+export function matchSides(match, userId) {
+  const side1 = match.side1?.length ? match.side1 : [match.player1].filter(Boolean);
+  const side2 = match.side2?.length ? match.side2 : [match.player2].filter(Boolean);
+  const iAmSide1 = side1.some((p) => p?.id === userId);
+  const iAmSide2 = side2.some((p) => p?.id === userId);
+  const mine = iAmSide2 ? side2 : side1;
+  const theirs = iAmSide2 ? side1 : side2;
+  const myLabel = iAmSide2 ? match.side2_label : match.side1_label;
+  const theirLabel = iAmSide2 ? match.side1_label : match.side2_label;
+  const fallbackLabel = (side) => side.map((p) => p?.name).filter(Boolean).join("/");
+  return {
+    isDoubles: !!match.is_doubles,
+    // The two sides in the match's own order, for rows that draw both of them
+    // rather than "me and them" — a league's fixture list.
+    side1,
+    side2,
+    side1Label: match.side1_label || fallbackLabel(side1),
+    side2Label: match.side2_label || fallbackLabel(side2),
+    // Whether the viewer is playing in this match at all — a league's round
+    // list shows other people's matches too.
+    isMine: iAmSide1 || iAmSide2,
+    // Which half of the stored score is the viewer's. Named for the side
+    // rather than for player1, because in doubles those are not the same
+    // question.
+    iAmSide1,
+    mine,
+    opponents: theirs,
+    // The single opponent a singles screen draws an avatar and a name for.
+    // Null in doubles, where there are two and the screen reads `opponents`
+    // or `opponentLabel` instead.
+    opponent: theirs.length === 1 ? theirs[0] : null,
+    teammate: mine.find((p) => p?.id !== userId) || null,
+    myLabel: myLabel || fallbackLabel(mine),
+    // "Cohen/Levi" in doubles, the one full name in singles.
+    opponentLabel: theirLabel || fallbackLabel(theirs),
+  };
+}
+
+// Is this match the viewer's own? The question a league's round list asks of
+// every row, and the one that quietly hid a partner's matches.
+export function isMyMatch(match, userId) {
+  return matchSides(match, userId).isMine;
+}
+
+// The same question for the single-match screens, which are served
+// MatchDetailOut / MatchChatOut rather than MatchOut. Those carry `opponent`
+// for singles and leave it null in doubles — where there are two people —
+// filling `opponents` and `opponent_label` instead. Every screen that read
+// `detail.opponent.name` therefore crashed on a padel match.
+export function detailOpponent(detail) {
+  const people = detail?.opponents?.length
+    ? detail.opponents
+    : detail?.opponent
+      ? [detail.opponent]
+      : [];
+  return {
+    // What goes in a sentence: "מול Cohen/Levi".
+    label: detail?.opponent_label || detail?.opponent?.name || "",
+    people,
+    // The one person a singles screen can link to a profile; null in doubles,
+    // where the screen has to offer two or none.
+    one: people.length === 1 ? people[0] : null,
+  };
+}
+
+// Who filed the report on this match. In singles that is always the opponent,
+// which is why the screens said so outright. In doubles it can be the
+// viewer's own partner, and "your opponent reported" would then be wrong
+// about which of four people pressed the button.
+export function reporterName(detail, reportedBy = detail?.reported_by) {
+  const everyone = [
+    ...(detail?.opponents || []),
+    ...(detail?.opponent ? [detail.opponent] : []),
+    ...(detail?.teammate ? [detail.teammate] : []),
+  ];
+  return everyone.find((p) => p?.id === reportedBy)?.name || detailOpponent(detail).label;
+}
+
+// A standings row's side. A singles row carries `user`; a doubles row carries
+// `side` — a pair, printed "Cohen/Levi" — and leaves `user` null, which is
+// what made `row.user.id` throw and take the whole padel league screen with
+// it.
+export function standingSide(row) {
+  if (row?.side) {
+    const players = row.side.players || [];
+    return {
+      key: `pair-${row.side.pair_id}`,
+      name: row.side.name || "",
+      players,
+      // The one player a row can link to a profile: nobody, in a pair.
+      one: players.length === 1 ? players[0] : null,
+    };
+  }
+  const user = row?.user || null;
+  return {
+    key: `user-${user?.id}`,
+    name: user?.name || "",
+    players: user ? [user] : [],
+    one: user,
+  };
+}
+
+// Is this standings row the viewer's own? True for both members of a pair.
+export function standingIsMine(row, userId) {
+  return standingSide(row).players.some((p) => p?.id === userId);
+}
+
 // State machine for the "schedule a time before you can report a score" gate:
 // unscheduled -> proposed_by_me / proposed_by_them -> confirmed_future -> ready.
 export function matchScheduleState(match, userId) {
@@ -298,9 +419,12 @@ export function buildOpenAction(candidates, userId, t) {
   if (candidates.confirm.length > 0) {
     const entry = sortEarliest(candidates.confirm)[0];
     const m = entry.match;
-    const iAmPlayer1 = m.player1.id === userId;
-    const reporter = m.reported_by === m.player1.id ? m.player1 : m.player2;
-    const mySets = iAmPlayer1
+    const sides = matchSides(m, userId);
+    // Whoever actually pressed report, which in doubles is any one of four
+    // people — so look for them across both sides rather than assuming they
+    // are one of the two named columns.
+    const reporter = [...sides.mine, ...sides.opponents].find((p) => p?.id === m.reported_by);
+    const mySets = sides.iAmSide1
       ? m.sets
       : m.sets?.map((s) => ({ player1_games: s.player2_games, player2_games: s.player1_games }));
     return {
@@ -309,14 +433,17 @@ export function buildOpenAction(candidates, userId, t) {
       match: m,
       lime: true,
       title: t("אשר {score}", { score: formatSets(mySets) }),
-      subParts: [reporter.name, m.round_number ? t("מחזור {n}", { n: m.round_number }) : "FRIENDLY"],
+      subParts: [
+        reporter?.name || sides.opponentLabel,
+        m.round_number ? t("מחזור {n}", { n: m.round_number }) : "FRIENDLY",
+      ],
     };
   }
 
   if (candidates.report.length > 0) {
     const entry = sortEarliest(candidates.report)[0];
     const m = entry.match;
-    const opponent = m.player1.id === userId ? m.player2 : m.player1;
+    const { opponentLabel } = matchSides(m, userId);
     const due = roundDueDateObj(entry.schedule_started_at, m.round_number, 7);
     const daysLeft = due ? Math.ceil((due.getTime() - Date.now()) / 86400000) : null;
     const subParts = [
@@ -328,7 +455,7 @@ export function buildOpenAction(candidates, userId, t) {
       entry,
       match: m,
       lime: true,
-      title: t("דווח מול {name}", { name: opponent.name }),
+      title: t("דווח מול {name}", { name: opponentLabel }),
       subParts,
     };
   }
@@ -336,14 +463,14 @@ export function buildOpenAction(candidates, userId, t) {
   if (candidates.proposed.length > 0) {
     const entry = sortEarliest(candidates.proposed)[0];
     const m = entry.match;
-    const opponent = m.player1.id === userId ? m.player2 : m.player1;
+    const { opponentLabel } = matchSides(m, userId);
     return {
       kind: "schedule",
       entry,
       match: m,
       lime: false,
       title: t("{name} הציע {date}", {
-        name: opponent.name,
+        name: opponentLabel,
         date: formatDayMonthTime(new Date(m.scheduled_at)),
       }),
       subParts: [t("לאישור השעה")],
@@ -361,13 +488,12 @@ export function buildOpenAction(candidates, userId, t) {
 export function buildTabbarPreview(item, userId, t) {
   if (!item) return null;
   const m = item.match;
-  const iAmPlayer1 = m.player1.id === userId;
-  const opponent = iAmPlayer1 ? m.player2 : m.player1;
+  const { iAmSide1, opponentLabel } = matchSides(m, userId);
   const roundOrFriendly = m.round_number ? t("מחזור {n}", { n: m.round_number }) : "FRIENDLY";
 
   if (item.type === "confirm") {
     const claimSets = m.corrected_sets ?? m.sets;
-    const mySets = iAmPlayer1
+    const mySets = iAmSide1
       ? claimSets
       : claimSets?.map((s) => ({ player1_games: s.player2_games, player2_games: s.player1_games }));
     return {
@@ -375,7 +501,7 @@ export function buildTabbarPreview(item, userId, t) {
       match: m,
       lime: true,
       title: t("אשר {score}", { score: formatSets(mySets) }),
-      subParts: [opponent.name, roundOrFriendly],
+      subParts: [opponentLabel, roundOrFriendly],
     };
   }
 
@@ -386,7 +512,7 @@ export function buildTabbarPreview(item, userId, t) {
       kind: "report",
       match: m,
       lime: true,
-      title: t("דווח מול {name}", { name: opponent.name }),
+      title: t("דווח מול {name}", { name: opponentLabel }),
       subParts: [roundOrFriendly, daysLeft !== null ? daysLeftLabel(daysLeft) : null].filter(Boolean),
     };
   }
@@ -397,7 +523,7 @@ export function buildTabbarPreview(item, userId, t) {
       match: m,
       lime: false,
       title: t("{name} הציע {date}", {
-        name: opponent.name,
+        name: opponentLabel,
         date: formatDayMonthTime(new Date(m.scheduled_at)),
       }),
       subParts: [t("לאישור השעה")],
@@ -409,7 +535,7 @@ export function buildTabbarPreview(item, userId, t) {
     kind: "waiting",
     match: m,
     lime: false,
-    title: t("ממתין לתשובה מ{name}", { name: opponent.name }),
+    title: t("ממתין לתשובה מ{name}", { name: opponentLabel }),
     subParts: [roundOrFriendly],
   };
 }
@@ -456,8 +582,8 @@ export function openItemRoute(item) {
 // full list always agree on wording.
 export function buildOpenItemDisplay(item, userId, t) {
   const m = item.match;
-  const iAmPlayer1 = m.player1.id === userId;
-  const opponent = iAmPlayer1 ? m.player2 : m.player1;
+  const sides = matchSides(m, userId);
+  const iAmPlayer1 = sides.iAmSide1;
   const roundLabel = m.round_number ? `R${m.round_number}` : null;
   const leagueOrFriendly = item.league_name || t("FRIENDLY");
 
@@ -467,8 +593,10 @@ export function buildOpenItemDisplay(item, userId, t) {
     if (m.corrected_sets != null) {
       return {
         typeLabel: t("CORRECTION SENT · WAITING"),
-        opponentName: opponent.name,
-        opponentId: opponent.id,
+        opponentName: sides.opponentLabel,
+        // Null in doubles: two people, so the row cannot link one profile.
+        opponentId: sides.opponent?.id ?? null,
+        opponents: sides.opponents,
         context: t("NOT COUNTED UNTIL THEY ANSWER"),
         secondaryLabel: t("CANCEL"),
         waitingKind: "correction",
@@ -481,8 +609,10 @@ export function buildOpenItemDisplay(item, userId, t) {
         : m.sets?.map((set) => ({ player1_games: set.player2_games, player2_games: set.player1_games }));
       return {
         typeLabel: notPlayedClaim ? t("YOU REPORTED IT WASN'T PLAYED · WAITING") : t("YOU REPORTED · WAITING"),
-        opponentName: opponent.name,
-        opponentId: opponent.id,
+        opponentName: sides.opponentLabel,
+        // Null in doubles: two people, so the row cannot link one profile.
+        opponentId: sides.opponent?.id ?? null,
+        opponents: sides.opponents,
         value: notPlayedClaim ? null : formatSets(mySets),
         valueKind: "score",
         context: [leagueOrFriendly, roundLabel, t("NOT COUNTED UNTIL THEY ANSWER")]
@@ -494,8 +624,10 @@ export function buildOpenItemDisplay(item, userId, t) {
     }
     return {
       typeLabel: t("TIME PROPOSED · WAITING"),
-      opponentName: opponent.name,
-      opponentId: opponent.id,
+      opponentName: sides.opponentLabel,
+      // Null in doubles: two people, so the row cannot link one profile.
+      opponentId: sides.opponent?.id ?? null,
+      opponents: sides.opponents,
       value: m.scheduled_at ? formatWeekdayTime(new Date(m.scheduled_at)).split(" ")[1] : null,
       valueKind: "time",
       context: [leagueOrFriendly, roundLabel].filter(Boolean).join(" · "),
@@ -510,8 +642,10 @@ export function buildOpenItemDisplay(item, userId, t) {
       return {
         typeLabel: t("דיווח: המשחק לא בוצע"),
         age: compactAge(claimSubmittedAt(m.auto_confirm_at)),
-        opponentName: opponent.name,
-        opponentId: opponent.id,
+        opponentName: sides.opponentLabel,
+        // Null in doubles: two people, so the row cannot link one profile.
+        opponentId: sides.opponent?.id ?? null,
+        opponents: sides.opponents,
         context: [leagueOrFriendly, roundLabel].filter(Boolean).join(" · "),
         primaryLabel: t("מאשר, המשחק לא בוצע"),
         primaryLime: true,
@@ -532,8 +666,10 @@ export function buildOpenItemDisplay(item, userId, t) {
     return {
       typeLabel: t("RESULT TO CONFIRM"),
       age: compactAge(claimSubmittedAt(m.auto_confirm_at)),
-      opponentName: opponent.name,
-      opponentId: opponent.id,
+      opponentName: sides.opponentLabel,
+      // Null in doubles: two people, so the row cannot link one profile.
+      opponentId: sides.opponent?.id ?? null,
+      opponents: sides.opponents,
       value: formatSets(mySets),
       valueKind: "score",
       context: [leagueOrFriendly, roundLabel, rankClause].filter(Boolean).join(" · "),
@@ -555,8 +691,10 @@ export function buildOpenItemDisplay(item, userId, t) {
     return {
       typeLabel: t("TIME PROPOSED TO YOU"),
       age: weekdayShort(new Date(m.scheduled_at)),
-      opponentName: opponent.name,
-      opponentId: opponent.id,
+      opponentName: sides.opponentLabel,
+      // Null in doubles: two people, so the row cannot link one profile.
+      opponentId: sides.opponent?.id ?? null,
+      opponents: sides.opponents,
       value: formatWeekdayTime(new Date(m.scheduled_at)).split(" ")[1],
       valueKind: "time",
       context,
@@ -572,8 +710,10 @@ export function buildOpenItemDisplay(item, userId, t) {
     return {
       typeLabel: t("ROUND CLOSED · NOT REPORTED"),
       age: null,
-      opponentName: opponent.name,
-      opponentId: opponent.id,
+      opponentName: sides.opponentLabel,
+      // Null in doubles: two people, so the row cannot link one profile.
+      opponentId: sides.opponent?.id ?? null,
+      opponents: sides.opponents,
       value: roundLabel,
       valueKind: "meta",
       context: [leagueOrFriendly, t("לא נקבע זמן ולא דווחה תוצאה")].filter(Boolean).join(" · "),
@@ -585,8 +725,10 @@ export function buildOpenItemDisplay(item, userId, t) {
   return {
     typeLabel: t("PLAYED · NOT REPORTED"),
     age: compactAge(new Date(m.scheduled_at)),
-    opponentName: opponent.name,
-    opponentId: opponent.id,
+    opponentName: sides.opponentLabel,
+    // Null in doubles: two people, so the row cannot link one profile.
+    opponentId: sides.opponent?.id ?? null,
+    opponents: sides.opponents,
     value: roundLabel,
     valueKind: "meta",
     context: `${t("PLAYED")} ${formatWeekdayTime(new Date(m.scheduled_at))} · ${t("NEITHER OF YOU REPORTED")}`,
@@ -603,7 +745,7 @@ export function buildOpenItemDisplay(item, userId, t) {
 export function pickStandingsExcerpt(rows, userId) {
   const n = rows.length;
   if (n <= 4) return rows;
-  const meIdx = rows.findIndex((r) => r.user.id === userId);
+  const meIdx = rows.findIndex((r) => standingIsMine(r, userId));
   if (meIdx === -1) return rows.slice(0, 4);
   if (meIdx === 0) return rows.slice(0, 4);
   if (meIdx === n - 1) return rows.slice(n - 4, n);

@@ -4,7 +4,7 @@ import { api } from "../api";
 import { useLanguage } from "../LanguageContext.jsx";
 import { ChevronIcon } from "../Icons.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
-import { formatSets } from "../matchUtils.js";
+import { detailOpponent, formatSets } from "../matchUtils.js";
 
 export default function CorrectScore() {
   const { matchId } = useParams();
@@ -121,7 +121,7 @@ export default function CorrectScore() {
         </div>
         <div className="corr-row">
           <span className="corr-name">
-            <span dir="auto" style={{ unicodeBidi: "isolate" }}>{detail.opponent.name}</span>
+            <span dir="auto" style={{ unicodeBidi: "isolate" }}>{detailOpponent(detail).label}</span>
           </span>
           {theirs.map((v, i) => (
             <input

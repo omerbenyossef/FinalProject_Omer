@@ -5,8 +5,11 @@ import { useLanguage } from "../LanguageContext.jsx";
 import Avatar from "../Avatar.jsx";
 import { ChevronIcon } from "../Icons.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
+import { detailOpponent } from "../matchUtils.js";
 
-/* The two players' conversation about one match. No websockets in this stack,
+/* The players' conversation about one match — two of them in singles, four in
+   doubles, where it is a group chat and every line has to say who wrote it.
+   No websockets in this stack,
    so it polls while the screen is open and stops the moment it isn't — a tab
    left open in a pocket shouldn't keep asking. */
 
@@ -113,6 +116,10 @@ export default function MatchChat() {
 
   let lastDay = null;
   let lastSender = null;
+  const facing = detailOpponent(chat);
+  // Four people in a doubles chat: which side a bubble sits on no longer says
+  // who wrote it, so the name goes above the line.
+  const namesNeeded = facing.people.length > 1;
 
   return (
     <div className="chat">
@@ -120,16 +127,29 @@ export default function MatchChat() {
         <button type="button" className="chat-back" onClick={() => navigate(-1)} aria-label={t("חזרה")}>
           <ChevronIcon aria-hidden="true" />
         </button>
-        <button
-          type="button"
-          className="chat-who"
-          onClick={() => navigate(`/players/${chat.opponent.id}`)}
-        >
-          <Avatar name={chat.opponent.name} photoUrl={chat.opponent.photo_url} size={32} />
-          <span className="chat-who-name" dir="auto" style={{ unicodeBidi: "isolate" }}>
-            {chat.opponent.name}
-          </span>
-        </button>
+        {facing.one ? (
+          <button
+            type="button"
+            className="chat-who"
+            onClick={() => navigate(`/players/${facing.one.id}`)}
+          >
+            <Avatar name={facing.one.name} photoUrl={facing.one.photo_url} size={32} />
+            <span className="chat-who-name" dir="auto" style={{ unicodeBidi: "isolate" }}>
+              {facing.one.name}
+            </span>
+          </button>
+        ) : (
+          <div className="chat-who chat-who--pair">
+            <span className="chat-who-faces">
+              {facing.people.map((p) => (
+                <Avatar key={p.id} name={p.name} photoUrl={p.photo_url} size={28} />
+              ))}
+            </span>
+            <span className="chat-who-name" dir="auto" style={{ unicodeBidi: "isolate" }}>
+              {facing.label}
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="chat-scroll">
@@ -152,6 +172,15 @@ export default function MatchChat() {
             <div key={m.id}>
               {showDay && <div className="chat-day">{dayLabel(at, t)}</div>}
               <div className={`chat-line${m.mine ? " is-mine" : ""}${showWho ? " is-first" : ""}`}>
+                {namesNeeded && showWho && !m.mine && (
+                  /* <bdi> rather than dir="auto": the name has to sit on the
+                     page's own side (right in Hebrew) while a Latin name
+                     inside it still reads left to right. dir="auto" turned the
+                     whole line LTR and pushed the name away from its bubble. */
+                  <span className="chat-sender">
+                    <bdi>{m.sender_name}</bdi>
+                  </span>
+                )}
                 <div className="chat-bubble">
                   <span className="chat-body" dir="auto">
                     {m.body}

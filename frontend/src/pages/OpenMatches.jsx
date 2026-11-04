@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { useLanguage } from "../LanguageContext.jsx";
 import { useAuth } from "../AuthContext.jsx";
-import { formatWeekdayDateTime } from "../matchUtils.js";
+import { formatWeekdayDateTime, matchSides } from "../matchUtils.js";
 import Avatar from "../Avatar.jsx";
 import { useOpenAction } from "../OpenActionContext.jsx";
 import { ChevronIcon } from "../Icons.jsx";
@@ -326,14 +326,16 @@ export default function OpenMatches() {
             <div className="om-rows">
               {mine.map((item) => {
                 const m = item.match;
-                const opponent = m.player1.id === myId ? m.player2 : m.player1;
+                const sides = matchSides(m, myId);
                 const isInvite = item.kind === "friendly" && m.invite_status === "pending";
                 return (
                   <div className="om-row" key={`mine-${m.id}`}>
                     <div className="om-titles">
                       <div className="om-card-top">
-                        <Avatar name={opponent?.name} photoUrl={opponent?.photo_url} size={28} />
-                        <span className="om-row-name">{opponent?.name}</span>
+                        {sides.opponents.map((p) => (
+                          <Avatar key={p.id} name={p.name} photoUrl={p.photo_url} size={28} />
+                        ))}
+                        <span className="om-row-name">{sides.opponentLabel}</span>
                         <span className="om-meta" dir="ltr">
                           {item.league_name ? item.league_name : t("ידידותי")}
                         </span>

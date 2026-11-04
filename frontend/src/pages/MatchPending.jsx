@@ -3,13 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { useLanguage } from "../LanguageContext.jsx";
 import { ChatIcon, ChevronIcon } from "../Icons.jsx";
-import {
-  daysWord,
-  durationLabel,
-  formatDayMonth,
-  roundDueDateObj,
-  weekdayFull,
-} from "../matchUtils.js";
+import { daysWord, detailOpponent, durationLabel, formatDayMonth, roundDueDateObj, weekdayFull } from "../matchUtils.js";
 
 /* friendly-pending-185a — a match whose time one player has put down and the
    other hasn't answered yet. Written for friendlies and since taken over by
@@ -34,7 +28,7 @@ export default function MatchPending({ detail, matchId, onChanged }) {
   const [error, setError] = useState("");
   const [confirming, setConfirming] = useState(false);
 
-  const name = detail.opponent.name;
+  const name = detailOpponent(detail).label;
   const start = detail.scheduled_at ? new Date(detail.scheduled_at) : null;
   // "asked_you" is the other player's time waiting on me; "sent" is mine
   // waiting on them.

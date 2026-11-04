@@ -6,7 +6,7 @@ import { useSport } from "../SportContext.jsx";
 import BookCourtLink from "../BookCourtLink.jsx";
 import { ChevronIcon, CheckIcon, SearchIcon } from "../Icons.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
-import { roundDueDateObj, hasHebrewChars, daysWord, weekdayName } from "../matchUtils.js";
+import { daysWord, detailOpponent, hasHebrewChars, roundDueDateObj, weekdayName } from "../matchUtils.js";
 
 
 function buildDayOptions(roundEndDate, roundStartDate) {
@@ -310,7 +310,7 @@ export default function ProposeSchedule() {
     if (state.kind !== "busy") return null;
     if (state.whose === "me") return t("יש לך משחק");
     if (state.whose === "both") return t("שניכם תפוסים");
-    return t("{name} תפוס", { name: detail.opponent.name });
+    return t("{name} תפוס", { name: detailOpponent(detail).label });
   }
 
   // Steps are numbered as they are shown, and a friendly has one more of
@@ -381,7 +381,7 @@ export default function ProposeSchedule() {
         </button>
       </div>
 
-      <h1 className="sched-title">{t("מול {name}", { name: detail.opponent.name })}</h1>
+      <h1 className="sched-title">{t("מול {name}", { name: detailOpponent(detail).label })}</h1>
       <p className="sched-sub" dir="ltr">
         {detail.round_number ? (
           <>
@@ -440,7 +440,7 @@ export default function ProposeSchedule() {
             <ChevronIcon aria-hidden="true" />
           </button>
           <span className="vp-head-title" dir="auto">
-            {t("הזנת זמן · מול {name}", { name: detail.opponent.name })}
+            {t("הזנת זמן · מול {name}", { name: detailOpponent(detail).label })}
           </span>
           <button
             type="button"
@@ -680,8 +680,8 @@ export default function ProposeSchedule() {
           onClick={() => handleSend(false)}
         >
           {picks.length > 1
-            ? t("שלח {count} זמנים ל{name}", { count: picks.length, name: detail.opponent.name })
-            : t("שלח ל{name} לאישור", { name: detail.opponent.name })}
+            ? t("שלח {count} זמנים ל{name}", { count: picks.length, name: detailOpponent(detail).label })
+            : t("שלח ל{name} לאישור", { name: detailOpponent(detail).label })}
         </button>
         <p className="sched-pending">
           {picks.length > 1 ? t("HE PICKS ONE · THEN IT IS SET") : t("HE CONFIRMS · THEN IT IS SET")}

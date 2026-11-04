@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useLanguage } from "./LanguageContext.jsx";
 import Avatar from "./Avatar.jsx";
 import SetScoreForm from "./SetScoreForm.jsx";
-import { formatRelativeTime, formatDayMonth } from "./matchUtils.js";
+import { formatRelativeTime, formatDayMonth, matchSides } from "./matchUtils.js";
 import { api } from "./api.js";
 
 export default function WaitingConfirmationCard({
@@ -18,9 +18,8 @@ export default function WaitingConfirmationCard({
   const [reminding, setReminding] = useState(false);
   const [reminded, setReminded] = useState(false);
 
-  const iAmPlayer1 = match.player1.id === currentUserId;
-  const me = iAmPlayer1 ? match.player1 : match.player2;
-  const opponent = iAmPlayer1 ? match.player2 : match.player1;
+  const sides = matchSides(match, currentUserId);
+  const iAmPlayer1 = sides.iAmSide1;
   const mySets = iAmPlayer1
     ? match.sets
     : match.sets?.map((s) => ({ player1_games: s.player2_games, player2_games: s.player1_games }));
@@ -42,8 +41,8 @@ export default function WaitingConfirmationCard({
     return (
       <div className="my-match-card">
         <SetScoreForm
-          player1Name={match.player1.name}
-          player2Name={match.player2.name}
+          player1Name={sides.side1Label}
+          player2Name={sides.side2Label}
           initialSets={match.sets}
           onSubmit={(sets) => {
             onSubmit(sets);
@@ -61,8 +60,10 @@ export default function WaitingConfirmationCard({
     <div className="waiting-card">
       <div className="waiting-compare">
         <div className="waiting-side">
-          <Avatar name={me.name} photoUrl={me.photo_url} size={44} color="var(--court)" />
-          <span className="waiting-side-name">{me.name}</span>
+          {sides.mine.map((p) => (
+            <Avatar key={p.id} name={p.name} photoUrl={p.photo_url} size={44} color="var(--court)" />
+          ))}
+          <span className="waiting-side-name">{sides.myLabel}</span>
         </div>
         <div className="waiting-sets" dir="ltr">
           {(mySets || []).map((s, i) => (
@@ -72,13 +73,15 @@ export default function WaitingConfirmationCard({
           ))}
         </div>
         <div className="waiting-side">
-          <Avatar name={opponent.name} photoUrl={opponent.photo_url} size={44} />
-          <span className="waiting-side-name">{opponent.name}</span>
+          {sides.opponents.map((p) => (
+            <Avatar key={p.id} name={p.name} photoUrl={p.photo_url} size={44} />
+          ))}
+          <span className="waiting-side-name">{sides.opponentLabel}</span>
         </div>
       </div>
       <div className="waiting-status">
         <span className="waiting-status-dot" />
-        <span className="waiting-status-text">{t("ממתין לאישור של {name}", { name: opponent.name })}</span>
+        <span className="waiting-status-text">{t("ממתין לאישור של {name}", { name: sides.opponentLabel })}</span>
         {match.played_at && (
           <span className="waiting-status-time">{formatRelativeTime(new Date(match.played_at), t)}</span>
         )}

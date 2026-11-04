@@ -6,14 +6,18 @@ import { useLanguage } from "../LanguageContext.jsx";
 import Avatar from "../Avatar.jsx";
 import SetScoreForm from "../SetScoreForm.jsx";
 import { ChevronIcon } from "../Icons.jsx";
-import { formatDayMonth, formatDayMonthTime, roundDueDateObj, matchScheduleState } from "../matchUtils.js";
+import { formatDayMonth, formatDayMonthTime, isMyMatch, matchSides, roundDueDateObj, matchScheduleState } from "../matchUtils.js";
 import { SkeletonPageHeader, SkeletonHeroStat } from "../Skeleton.jsx";
 
-function PlayerNameLink({ player, userId, className }) {
-  if (player.id === userId) return <span className={className}>{player.name}</span>;
+/* One side of a fixture. In singles that is a person, and the name links to
+   their profile; in doubles it is a pair — "Cohen/Levi" — which is two people
+   and so links nowhere. */
+function SideName({ players, label, userId, className }) {
+  const one = players.length === 1 ? players[0] : null;
+  if (!one || one.id === userId) return <span className={className}>{label}</span>;
   return (
-    <Link to={`/players/${player.id}`} className={`${className || ""} player-name-link`.trim()}>
-      {player.name}
+    <Link to={`/players/${one.id}`} className={`${className || ""} player-name-link`.trim()}>
+      {label}
     </Link>
   );
 }
@@ -55,7 +59,10 @@ export default function RoundDetail() {
 
   const roundMatches = allMatches.filter((m) => m.round_number === roundNumber);
   const myMatch = myMatches.find((m) => m.round_number === roundNumber);
-  const myOpponent = myMatch ? (myMatch.player1.id === user?.id ? myMatch.player2 : myMatch.player1) : null;
+  const mySides = myMatch ? matchSides(myMatch, user?.id) : null;
+  // The one person a head-to-head record can be asked about. Null in doubles,
+  // where there are two of them and the h2h block stays away.
+  const myOpponent = mySides?.opponent ?? null;
   const myScheduleState = myMatch ? matchScheduleState(myMatch, user?.id) : null;
 
   useEffect(() => {
@@ -179,13 +186,15 @@ export default function RoundDetail() {
         </div>
       </div>
 
-      {myMatch && myMatch.status === "pending" && myOpponent && (
+      {myMatch && myMatch.status === "pending" && mySides && (
         <div className="round-my-match">
           <div className="round-my-match-eyebrow">{t("המשחק שלי")}</div>
           <div className="round-my-match-top">
-            <Avatar name={myOpponent.name} photoUrl={myOpponent.photo_url} size={36} />
+            {mySides.opponents.map((p) => (
+              <Avatar key={p.id} name={p.name} photoUrl={p.photo_url} size={36} />
+            ))}
             <div className="round-my-match-info">
-              <div className="round-my-match-name">{t("מול {name}", { name: myOpponent.name })}</div>
+              <div className="round-my-match-name">{t("מול {name}", { name: mySides.opponentLabel })}</div>
               {myScheduleState === "proposed_by_me" && (
                 <div className="round-my-match-h2h">
                   {t("ממתין לאישור שעה: {datetime}", {
@@ -262,17 +271,20 @@ export default function RoundDetail() {
             {played.map((match) => {
               const isCompleted = match.status === "completed";
               const p1Won = isCompleted && match.player1_score > match.player2_score;
+              const sides = matchSides(match, user?.id);
               return (
                 <div className="all-matches-row" key={match.id}>
                   <span className="all-matches-names">
-                    <PlayerNameLink
-                      player={match.player1}
+                    <SideName
+                      players={sides.side1}
+                      label={sides.side1Label}
                       userId={user?.id}
                       className={isCompleted ? (p1Won ? "winner" : "loser") : "strong"}
                     />{" "}
                     <span className="vs-label">vs</span>{" "}
-                    <PlayerNameLink
-                      player={match.player2}
+                    <SideName
+                      players={sides.side2}
+                      label={sides.side2Label}
                       userId={user?.id}
                       className={isCompleted ? (p1Won ? "loser" : "winner") : "strong"}
                     />
@@ -300,13 +312,14 @@ export default function RoundDetail() {
           </div>
           <div className="all-matches-list">
             {notPlayed.map((match) => {
-              const isMine = match.player1.id === user?.id || match.player2.id === user?.id;
+              const isMine = isMyMatch(match, user?.id);
+              const sides = matchSides(match, user?.id);
               return (
                 <div className="all-matches-row" key={match.id}>
                   <span className="all-matches-names dim">
-                    <PlayerNameLink player={match.player1} userId={user?.id} />{" "}
+                    <SideName players={sides.side1} label={sides.side1Label} userId={user?.id} />{" "}
                     <span className="vs-label">vs</span>{" "}
-                    <PlayerNameLink player={match.player2} userId={user?.id} />
+                    <SideName players={sides.side2} label={sides.side2Label} userId={user?.id} />
                   </span>
                   {isMine ? (
                     <span className="round-tag-mine">{t("אני")}</span>
