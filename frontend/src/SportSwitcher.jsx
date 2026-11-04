@@ -159,14 +159,25 @@ export default function SportSwitcher({ userId }) {
 
   return (
     <>
-      <button type="button" className="sportsw" onClick={() => setOpen(true)}>
+      <button
+        type="button"
+        className="sportsw"
+        onClick={() => setOpen(true)}
+        aria-expanded={open}
+      >
         <SportIcon
           sport={selectedSport}
           className="sportsw-icon"
           aria-hidden="true"
         />
-        <span className="sportsw-name">{t(selectedSport.name)}</span>
-        <ChevronDownIcon className="sportsw-chev" aria-hidden="true" />
+        {/* 195a: the sport's name stays Hebrew here even in the English UI.
+            It is one word beside a Hebrew wordmark, and the sheet it opens
+            names every sport in the reader's language anyway. */}
+        <span className="sportsw-name">{selectedSport.name}</span>
+        <ChevronDownIcon
+          className={`sportsw-chev${open ? " is-open" : ""}`}
+          aria-hidden="true"
+        />
       </button>
 
       {/* The sheet goes to <body>, not next to the button. The topbar carries a
