@@ -167,7 +167,10 @@ export const api = {
   openMatches: () => request("/matches/open"),
   remindOpenMatch: (matchId) => request(`/matches/${matchId}/remind`, { method: "POST" }),
 
-  notifications: () => request("/notifications"),
+  // Scoped to the sport in view, like every other list in the app: a padel
+  // player should not be shown tennis business, nor have the bell count it.
+  notifications: (sportId) =>
+    request(`/notifications${sportId ? `?sport_id=${sportId}` : ""}`),
   markNotificationsRead: (ids) => request("/notifications/read", { method: "POST", body: { ids } }),
   markAllNotificationsRead: () => request("/notifications/read-all", { method: "POST" }),
 

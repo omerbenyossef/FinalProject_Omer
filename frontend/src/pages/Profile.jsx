@@ -492,7 +492,7 @@ export default function Profile() {
       .then(setAllLeagues)
       .catch(() => {});
     api
-      .notifications()
+      .notifications(selectedSportId)
       .then((data) => setNotifCount(data.unread_count))
       .catch(() => {});
     api

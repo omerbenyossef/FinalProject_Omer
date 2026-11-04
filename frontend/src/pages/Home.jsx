@@ -70,11 +70,14 @@ export default function Home() {
   useEffect(() => {
     api.myLeagues().then(setLeagues).catch(() => setLeagues([]));
     api.myRatings().then(setRatings).catch(() => {});
+    if (!selectedSportId) return;
+    // The bell counts what needs doing in the sport being looked at, so it
+    // agrees with the screen the bell opens.
     api
-      .notifications()
+      .notifications(selectedSportId)
       .then((data) => setNotifCount(data.unread_count))
       .catch(() => {});
-  }, []);
+  }, [selectedSportId]);
 
   const sportLeagues = (leagues ?? []).filter((l) => l.sport.id === selectedSportId);
   const soloLeague = sportLeagues.length === 1 ? sportLeagues[0] : null;

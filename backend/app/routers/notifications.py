@@ -173,11 +173,25 @@ def _card(match: models.Match, user_id: int, league: models.League | None) -> sc
 TYPE_ORDER = {RESULT_TO_CONFIRM: 0, TIME_PROPOSED: 1, MATCH_TO_REPORT: 2, ROUND_CLOSES: 3}
 
 
+def _sport_of(match: models.Match) -> int | None:
+    """A match's sport. A friendly carries it directly; a league match may
+    leave the column null and answer through its league."""
+    return match.sport_id or (match.league.sport_id if match.league else None)
+
+
 @router.get("", response_model=schemas.NotificationsOut)
 def list_notifications(
+    sport_id: int | None = None,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
+    """Everything waiting on this player, in the sport they are looking at.
+
+    Scoped by sport because every other screen is: the home diary, the open
+    items behind the tab-bar dot, the leagues list. This one answered for all
+    sports at once, so a padel player was shown tennis business — and the bell
+    counted it.
+    """
     _auto_confirm_overdue(db)
 
     mine = match_mine(current_user.id)
@@ -199,8 +213,13 @@ def list_notifications(
     )
 
     action_required = []
+    # Which matches belong to the sport in view, so the updates below can be
+    # held to the same line without asking the database twice.
+    sport_by_match = {m.id: _sport_of(m) for m in matches}
     for match in matches:
         if match.kind == models.MatchKind.friendly and match.invite_status != models.FriendlyInviteStatus.accepted:
+            continue
+        if sport_id is not None and sport_by_match.get(match.id) not in (None, sport_id):
             continue
         card = _card(match, current_user.id, match.league)
         if card:
@@ -217,6 +236,39 @@ def list_notifications(
         .limit(80)
         .all()
     )
+    # A stored update is placed in a sport through whatever it points at. One
+    # that points at neither a match nor a league is about the account rather
+    # than about a sport, so it is shown whichever sport is in view.
+    if sport_id is not None:
+        match_ids = {r.match_id for r in rows if r.match_id}
+        league_ids = {r.league_id for r in rows if r.league_id}
+        unknown_matches = match_ids - set(sport_by_match)
+        if unknown_matches:
+            for m in (
+                db.query(models.Match)
+                .options(joinedload(models.Match.league))
+                .filter(models.Match.id.in_(unknown_matches))
+                .all()
+            ):
+                sport_by_match[m.id] = _sport_of(m)
+        sport_by_league = {}
+        if league_ids:
+            sport_by_league = {
+                lid: sid
+                for lid, sid in db.query(models.League.id, models.League.sport_id)
+                .filter(models.League.id.in_(league_ids))
+                .all()
+            }
+
+        def in_view(row) -> bool:
+            if row.match_id:
+                return sport_by_match.get(row.match_id) in (None, sport_id)
+            if row.league_id:
+                return sport_by_league.get(row.league_id) in (None, sport_id)
+            return True
+
+        rows = [r for r in rows if in_view(r)]
+
     updates = [
         schemas.NotificationItemOut(
             id=str(row.id),

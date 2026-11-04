@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { useLanguage } from "../LanguageContext.jsx";
 import { useOpenAction } from "../OpenActionContext.jsx";
+import { useSport } from "../SportContext.jsx";
 import { ChevronIcon } from "../Icons.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
 import { formatWeekdayDateTime, weekdayName } from "../matchUtils.js";
@@ -71,6 +72,7 @@ function renderUpdate(item, english) {
 
 export default function Notifications() {
   const { t, language } = useLanguage();
+  const { selectedSportId } = useSport();
   const { reload: reloadOpenAction } = useOpenAction();
   const navigate = useNavigate();
 
@@ -80,11 +82,12 @@ export default function Notifications() {
   const [showAllCards, setShowAllCards] = useState(false);
 
   const load = useCallback(() => {
+    if (!selectedSportId) return;
     api
-      .notifications()
+      .notifications(selectedSportId)
       .then(setData)
       .catch((err) => setError(err.message));
-  }, []);
+  }, [selectedSportId]);
 
   useEffect(load, [load]);
 
