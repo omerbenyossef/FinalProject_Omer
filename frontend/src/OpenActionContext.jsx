@@ -1,19 +1,16 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { api } from "./api";
 import { useAuth } from "./AuthContext.jsx";
 import { useSport } from "./SportContext.jsx";
-import { useLanguage } from "./LanguageContext.jsx";
-import { buildTabbarPreview, openItemRoute } from "./matchUtils.js";
+import { openItemRoute } from "./matchUtils.js";
 
 const OpenActionContext = createContext(null);
 
 export function OpenActionProvider({ children }) {
   const { user } = useAuth();
   const { selectedSportId } = useSport();
-  const { t } = useLanguage();
   const location = useLocation();
-  const navigate = useNavigate();
 
   const [nextMatches, setNextMatches] = useState([]);
   const [matchesLoading, setMatchesLoading] = useState(true);
@@ -111,26 +108,10 @@ export function OpenActionProvider({ children }) {
     }
   }, [badgeCount, user, openItemsLoading]);
 
-  const openAction = useMemo(
-    () => buildTabbarPreview(relevantItems[0] ?? null, user?.id, t),
-    [relevantItems, user, t]
-  );
-
   const hasOtherLeagueActivity = useMemo(() => {
     const actionable = relevantItems.filter((item) => item.type !== "waiting");
     return actionable.some((item) => currentLeagueId === null || item.league_id !== currentLeagueId);
   }, [relevantItems, currentLeagueId]);
-
-  function triggerOpenAction() {
-    if (itemCount === 0) return;
-    if (itemCount >= 2) {
-      // The full "what needs you" list lives on the notifications screen;
-      // /needs-you is only the unsettled-results screen now.
-      navigate("/notifications");
-      return;
-    }
-    navigate(openItemRoute(relevantItems[0]));
-  }
 
   return (
     <OpenActionContext.Provider
@@ -142,9 +123,7 @@ export function OpenActionProvider({ children }) {
         itemCount,
         openItemsLoading,
         scheduledCount,
-        openAction,
         hasOtherLeagueActivity,
-        triggerOpenAction,
       }}
     >
       {children}

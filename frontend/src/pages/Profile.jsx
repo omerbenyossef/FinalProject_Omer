@@ -447,8 +447,7 @@ export default function Profile() {
   const { activePairs, loading: pairsLoading } = usePairs();
   const { t } = useLanguage();
   const navigate = useNavigate();
-  const { nextMatches, matchesLoading, reload: loadNextMatches, openAction, itemCount } =
-    useOpenAction();
+  const { nextMatches, matchesLoading, reload: loadNextMatches, itemCount } = useOpenAction();
   const [stats, setStats] = useState(null);
   const [error, setError] = useState("");
   // The bell counts what needs doing, and it comes from the notifications
@@ -616,21 +615,13 @@ export default function Profile() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRoundNotOpened, soloLeague?.id]);
-  const barMatchId = openAction?.match.id ?? null;
-  // A friendly match has no page other than this one to act on it, unlike a league
-  // match (which still shows fully on its LeagueDetail page even while promoted to
-  // the tab bar). So only hide the promoted match here when it's a league match, or
-  // a friendly one whose action (confirm) navigates to the dedicated confirm page
-  // regardless of which page triggered it — report/schedule friendly actions must
-  // stay reachable here.
   const sportEntries = nextMatches.filter((entry) => entry.sport_id === selectedSportId);
-  // The carousel and the "round is done" line read the unfiltered list: the
-  // tab-bar button is a shortcut to a match, not a place the match now lives,
-  // and hiding the only card left made the screen claim the round was over.
-  const relevantEntries = sportEntries.filter(
-    (entry) =>
-      entry.match.id !== barMatchId || (entry.kind === "friendly" && openAction?.kind !== "confirm")
-  );
+  // Everything in this sport, with nothing held back. One match used to be
+  // taken out of this list because the lime "REPORT VS …" bar above the tab
+  // bar was already showing it. That bar is gone, so the match it was hiding
+  // belongs here, with its own card and its own report button — which is the
+  // only place a friendly can be acted on at all.
+  const relevantEntries = sportEntries;
   const confirmationEntries = relevantEntries.filter(
     (entry) => entry.match.status === "pending_confirmation" && entry.match.reported_by !== user?.id
   );

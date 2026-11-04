@@ -896,8 +896,11 @@ a { color: var(--court); text-decoration: none; }
   margin: 0 auto;
 }
 
+/* One state only now: the row has nothing beside it to make room for, since
+   the lime "REPORT VS …" bar that used to sit here is gone. What was the
+   .wide modifier is simply how the bar looks. */
 .tabbar-inner {
-  flex: none;
+  flex: 1;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -909,11 +912,7 @@ a { color: var(--court); text-decoration: none; }
   pointer-events: auto;
 }
 
-.tabbar-inner.wide {
-  flex: 1;
-}
-
-.tabbar-inner.wide .tab {
+.tabbar-inner .tab {
   flex: 1;
   width: auto;
   height: 48px;
@@ -967,86 +966,6 @@ a { color: var(--court); text-decoration: none; }
   box-shadow: 0 0 0 2.5px #12171e;
 }
 
-.tabbar-action {
-  flex: 1;
-  min-width: 0;
-  height: 56px;
-  border: 0;
-  border-radius: 28px;
-  background: #1c222b;
-  color: var(--ink);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-inline: 18px 8px;
-  box-shadow: 0 14px 28px -12px rgba(0, 0, 0, 0.6);
-  pointer-events: auto;
-  text-align: start;
-}
-
-.tabbar-action.lime {
-  background: var(--court);
-  color: var(--court-contrast);
-}
-
-.tabbar-action-body {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 1px;
-  min-width: 0;
-}
-
-.tabbar-action-title {
-  font-family: "Anton", var(--display);
-  font-weight: 400;
-  font-size: 15px;
-  line-height: 1;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.tabbar-action-sub {
-  display: flex;
-  align-items: baseline;
-  gap: 4px;
-  font: 600 10.5px "IBM Plex Mono", "IBM Plex Sans", var(--mono);
-  letter-spacing: 0.06em;
-  opacity: 0.72;
-  max-width: 100%;
-  overflow: hidden;
-  white-space: nowrap;
-}
-
-.tabbar-action.lime .tabbar-action-sub {
-  opacity: 0.62;
-}
-
-.tabbar-action-knob {
-  flex: none;
-  width: 40px;
-  height: 40px;
-  border-radius: 20px;
-  background: rgba(148, 163, 184, 0.14);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.tabbar-action.lime .tabbar-action-knob {
-  background: rgba(14, 17, 22, 0.14);
-}
-
-.tabbar-action-knob svg {
-  width: 17px;
-  height: 17px;
-  stroke-width: 2.1;
-}
 
 .eyebrow {
   display: block;

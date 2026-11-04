@@ -5,7 +5,7 @@ import { useSport } from "./SportContext.jsx";
 import { usePairs } from "./PairContext.jsx";
 import { useLanguage } from "./LanguageContext.jsx";
 import { useOpenAction } from "./OpenActionContext.jsx";
-import { ChevronIcon, HomeIcon, RanksIcon, TennisIcon } from "./Icons.jsx";
+import { HomeIcon, RanksIcon, TennisIcon } from "./Icons.jsx";
 import InstallPrompt from "./InstallPrompt.jsx";
 import PushPrompt from "./PushPrompt.jsx";
 import Onboarding from "./Onboarding.jsx";
@@ -25,7 +25,7 @@ export default function Layout({ children }) {
   const partnerShort = (selectedPair?.partner?.name || "").trim().split(" ")[0];
   const { t } = useLanguage();
   const location = useLocation();
-  const { openAction, hasOtherLeagueActivity, triggerOpenAction } = useOpenAction();
+  const { hasOtherLeagueActivity } = useOpenAction();
   const isAuthRoute = AUTH_PATHS.includes(location.pathname);
   // leaguerosterbeforejoin154b — the join screen owns the full height below
   // the topbar (its roster scrolls, its footer holds the only action), so the
@@ -119,7 +119,11 @@ export default function Layout({ children }) {
       {user && location.pathname !== "/ops" && !isJoinPreview && !isNewMatch && (
         <nav className="tabbar">
           <div className="tabbar-row">
-            <div className={`tabbar-inner${openAction ? "" : " wide"}`}>
+            {/* One row, always the same width. It used to shrink to make
+                room for a lime "REPORT VS …" bar on every screen; that bar is
+                gone, and so is the shrinking — and the labels it used to
+                squeeze out are always shown now. */}
+            <div className="tabbar-inner">
               {/* my-profile-171a put the profile on the avatar in the header
                   and left HOME · LEAGUES · MATCHES here. 189b replaces the
                   middle one with the games hub and names the third for what
@@ -133,7 +137,7 @@ export default function Layout({ children }) {
                 aria-label="HOME"
               >
                 <HomeIcon className="tab-icon" aria-hidden="true" />
-                {!openAction && <span className="tab-label">{t("בית")}</span>}
+                <span className="tab-label">{t("בית")}</span>
               </NavLink>
               <NavLink
                 to="/games"
@@ -141,7 +145,7 @@ export default function Layout({ children }) {
                 aria-label="GAMES"
               >
                 <TennisIcon className="tab-icon" aria-hidden="true" />
-                {!openAction && <span className="tab-label">{t("משחקים")}</span>}
+                <span className="tab-label">{t("משחקים")}</span>
                 {hasOtherLeagueActivity && <span className="tab-dot" aria-hidden="true" />}
               </NavLink>
               <NavLink
@@ -150,32 +154,10 @@ export default function Layout({ children }) {
                 aria-label="RANKING"
               >
                 <RanksIcon className="tab-icon" aria-hidden="true" />
-                {!openAction && <span className="tab-label">{t("דירוג")}</span>}
+                <span className="tab-label">{t("דירוג")}</span>
               </NavLink>
             </div>
 
-            {openAction && (
-              <button
-                type="button"
-                className={`tabbar-action${openAction.lime ? " lime" : ""}`}
-                onClick={triggerOpenAction}
-              >
-                <span className="tabbar-action-body">
-                  <span className="tabbar-action-title">{openAction.title}</span>
-                  <span className="tabbar-action-sub" dir="ltr">
-                    {openAction.subParts.map((part, i) => (
-                      <span key={i} style={{ display: "contents" }}>
-                        {i > 0 && <span aria-hidden="true">·</span>}
-                        <span dir="auto" style={{ unicodeBidi: "isolate" }}>{part}</span>
-                      </span>
-                    ))}
-                  </span>
-                </span>
-                <span className="tabbar-action-knob" aria-hidden="true">
-                  <ChevronIcon style={{ transform: "scaleX(-1)" }} />
-                </span>
-              </button>
-            )}
           </div>
         </nav>
       )}
