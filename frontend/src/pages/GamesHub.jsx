@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { useSport } from "../SportContext.jsx";
+import { usePairs } from "../PairContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import { PlusIcon, TrophyIcon, TwoPeopleIcon } from "../Icons.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
@@ -21,6 +22,7 @@ const PREVIEW_ROWS = 3;
 
 export default function GamesHub() {
   const { selectedSportId } = useSport();
+  const { selectedPair, pairLensReady } = usePairs();
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [leagueCount, setLeagueCount] = useState(null);
@@ -28,14 +30,14 @@ export default function GamesHub() {
   const [busyId, setBusyId] = useState(null);
 
   const load = useCallback(async () => {
-    if (!selectedSportId) return;
+    if (!selectedSportId || !pairLensReady) return;
     const [leagues, open] = await Promise.all([
-      api.myLeagues().catch(() => []),
+      api.myLeagues(selectedPair?.id).catch(() => []),
       api.openGames(selectedSportId).catch(() => []),
     ]);
     setLeagueCount(leagues.filter((l) => l.sport?.id === selectedSportId).length);
     setGames(open);
-  }, [selectedSportId]);
+  }, [selectedSportId, selectedPair?.id, pairLensReady]);
 
   useEffect(() => {
     load();

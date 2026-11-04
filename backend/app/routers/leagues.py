@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session, joinedload
 from .. import models, schemas
 from ..auth import get_current_user
 from ..database import get_db
-from ..match_sides import mine as match_mine
+from ..match_sides import in_pair, mine as match_mine
 from ..match_cleanup import purge_match_references
 from ..push_utils import notify_user
 from ..rating_utils import get_rating, match_winner_id, round_to_half
@@ -204,10 +204,19 @@ def list_leagues(db: Session = Depends(get_db)):
     return [_to_league_out(l) for l in leagues]
 
 
+def _lens(user_id: int, pair_id: int | None):
+    """My matches, or — when a pair is chosen — that pair's alone. The pair
+    switcher is a lens, and these three lists are what a player checks to see
+    what is waiting for them."""
+    pair_filter = in_pair(pair_id)
+    return match_mine(user_id) if pair_filter is None else pair_filter
+
+
 @router.get("/mine", response_model=list[schemas.LeagueOut])
 def list_my_leagues(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
+    pair_id: int | None = None,
 ):
     _auto_confirm_overdue(db)
     leagues = (
@@ -218,7 +227,12 @@ def list_my_leagues(
             joinedload(models.League.memberships),
             joinedload(models.League.creator),
         )
-        .filter(models.LeagueMembership.user_id == current_user.id)
+        # A doubles league is joined by a pair, and the membership row names
+        # it — so the lens reaches the leagues list as well as the matches.
+        .filter(
+            models.LeagueMembership.user_id == current_user.id,
+            *([models.LeagueMembership.pair_id == pair_id] if pair_id else []),
+        )
         .order_by(models.League.created_at.desc())
         .all()
     )
@@ -229,6 +243,7 @@ def list_my_leagues(
 def my_next_matches(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
+    pair_id: int | None = None,
 ):
     _auto_confirm_overdue(db)
     my_leagues = (
@@ -240,7 +255,7 @@ def my_next_matches(
 
     entries = []
     for league in my_leagues:
-        my_match_filter = match_mine(current_user.id)
+        my_match_filter = _lens(current_user.id, pair_id)
         # A match whose round has closed shouldn't hold the league's slot on
         # the home screen — it would hide a live one behind it. It is still
         # returned when there is nothing live, because this feed also carries
@@ -308,7 +323,7 @@ def my_next_matches(
             models.Match.kind == models.MatchKind.friendly,
             models.Match.invite_status != models.FriendlyInviteStatus.declined,
             models.Match.status != models.MatchStatus.completed,
-            match_mine(current_user.id),
+            _lens(current_user.id, pair_id),
         )
         .order_by(models.Match.created_at.desc())
         .all()
@@ -414,6 +429,7 @@ def _rank_impact(db: Session, league: models.League, match: models.Match, user_i
 def my_open_items(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
+    pair_id: int | None = None,
 ):
     """Everything the viewer can act on right now, one server-sorted list —
     see needsyou112a.md. Feeds both the tab-bar action button (1 item ->
@@ -429,7 +445,7 @@ def my_open_items(
 
     items = []
     for league in my_leagues:
-        my_match_filter = match_mine(current_user.id)
+        my_match_filter = _lens(current_user.id, pair_id)
         matches = (
             db.query(models.Match)
             .options(joinedload(models.Match.player1), joinedload(models.Match.player2))
@@ -475,7 +491,7 @@ def my_open_items(
         .filter(
             models.Match.kind == models.MatchKind.friendly,
             models.Match.status.in_([models.MatchStatus.pending, models.MatchStatus.pending_confirmation]),
-            match_mine(current_user.id),
+            _lens(current_user.id, pair_id),
         )
         .all()
     )
@@ -507,7 +523,7 @@ def my_open_items(
 
     items.sort(key=sort_key)
 
-    my_match_filter = match_mine(current_user.id)
+    my_match_filter = _lens(current_user.id, pair_id)
     scheduled_count = (
         db.query(models.Match)
         .filter(

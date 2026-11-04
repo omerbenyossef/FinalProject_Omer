@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import { useSport } from "../SportContext.jsx";
+import { usePairs } from "../PairContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import Avatar from "../Avatar.jsx";
 import { useOpenAction } from "../OpenActionContext.jsx";
@@ -40,6 +41,8 @@ function hhmm(date) {
 export default function Home() {
   const { user } = useAuth();
   const { sports, selectedSportId } = useSport();
+  // The pair switcher is a lens: this week, in the pair being looked at.
+  const { selectedPair, pairLensReady } = usePairs();
   const { t, language } = useLanguage();
   const { reload: reloadOpenAction } = useOpenAction();
   const navigate = useNavigate();
@@ -53,12 +56,13 @@ export default function Home() {
   const [error, setError] = useState("");
 
   const load = useCallback(() => {
-    if (!selectedSportId) return;
+    if (!selectedSportId || !pairLensReady) return;
     api
-      .homeWeek(selectedSportId)
+      .homeWeek(selectedSportId, selectedPair?.id)
       .then(setWeek)
       .catch((err) => setError(err.message));
-  }, [selectedSportId]);
+    // The pair is a lens on the diary, so the diary waits for it.
+  }, [selectedSportId, selectedPair?.id, pairLensReady]);
 
   useEffect(load, [load]);
 
@@ -68,16 +72,18 @@ export default function Home() {
   }, [selectedSportId]);
 
   useEffect(() => {
-    api.myLeagues().then(setLeagues).catch(() => setLeagues([]));
+    if (!pairLensReady) return;
+    api.myLeagues(selectedPair?.id).then(setLeagues).catch(() => setLeagues([]));
     api.myRatings().then(setRatings).catch(() => {});
     if (!selectedSportId) return;
     // The bell counts what needs doing in the sport being looked at, so it
     // agrees with the screen the bell opens.
     api
-      .notifications(selectedSportId)
+      .notifications(selectedSportId, selectedPair?.id)
       .then((data) => setNotifCount(data.unread_count))
       .catch(() => {});
-  }, [selectedSportId]);
+    // Switching pair changes both answers, so both are asked again.
+  }, [selectedSportId, selectedPair?.id, pairLensReady]);
 
   const sportLeagues = (leagues ?? []).filter((l) => l.sport.id === selectedSportId);
   const soloLeague = sportLeagues.length === 1 ? sportLeagues[0] : null;

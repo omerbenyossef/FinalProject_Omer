@@ -1754,6 +1754,17 @@ const PAIRS = [
     "{name} will be told the match is off. It goes back to the matches that still need a time.",
   ],
   ["מוחק...", "Deleting..."],
+
+  // global-pair-lens — the pair switcher in the header. Appended at the end
+  // on purpose: PAIRS is first-wins, so a key added above an existing one
+  // silently rewrites wording already in use elsewhere.
+  ["דרך איזה צמד?", "Which pair?"],
+  ["מה שתבחרו כאן מסנן את כל האפליקציה", "What you pick here filters the whole app"],
+  ["הכל מסודר", "All clear"],
+  ["משהו אחד מחכה לך", "One thing needs you"],
+  ["{n} דברים מחכים לך", "{n} things need you"],
+  ["לעמוד הצמד", "To the pair's page"],
+  ["כל הצמדים", "All my pairs"],
 ];
 
 const heToEn = {};

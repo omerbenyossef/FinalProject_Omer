@@ -25,14 +25,20 @@ function readStored() {
 
 export function PairProvider({ children }) {
   const { user } = useAuth();
-  const { selectedSportId } = useSport();
+  const { selectedSportId, selectedSport } = useSport();
   const [pairs, setPairs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedBySport, setSelectedBySport] = useState(readStored);
+  // Which sport's pair list has actually come back. The selected pair is a
+  // lens on every screen now, so a screen that fetches before the list lands
+  // asks "all my pairs" and then has to correct itself — and for a moment
+  // shows the other pair's match. Screens wait for this instead.
+  const [loadedSportId, setLoadedSportId] = useState(null);
 
   const reload = useCallback(async () => {
     if (!user || !selectedSportId) {
       setPairs([]);
+      setLoadedSportId(selectedSportId);
       return;
     }
     setLoading(true);
@@ -44,6 +50,7 @@ export function PairProvider({ children }) {
       setPairs([]);
     } finally {
       setLoading(false);
+      setLoadedSportId(selectedSportId);
     }
   }, [user, selectedSportId]);
 
@@ -87,6 +94,8 @@ export function PairProvider({ children }) {
         pairsAwaitingMe: awaitingMe,
         selectedPair,
         setSelectedPairId,
+        // A one-against-one sport has no pairs and never waits for them.
+        pairLensReady: !selectedSport?.plays_in_pairs || loadedSportId === selectedSportId,
         loading,
         reload,
       }}
@@ -104,6 +113,7 @@ export function usePairs() {
     pairsAwaitingMe: [],
     selectedPair: null,
     setSelectedPairId: () => {},
+    pairLensReady: true,
     loading: false,
     reload: () => {},
   };

@@ -77,6 +77,38 @@ def _load(db: Session, pair_id: int, user_id: int) -> models.Pair:
     return pair
 
 
+def _needs_you(db: Session, pair: models.Pair, user_id: int) -> int:
+    """How many of this pair's matches are waiting on this player.
+
+    The same three questions the notification cards ask: a result somebody
+    else reported and I have not confirmed, a match whose time has passed with
+    no score, and one with no time agreed at all. It exists so the pair I am
+    NOT looking through can still put a dot on the switcher — a lens that
+    hides things has to say what it is hiding.
+    """
+    if pair.status != models.PairStatus.active:
+        return 0
+    now = datetime.utcnow()
+    count = 0
+    for match in (
+        db.query(models.Match)
+        .filter(
+            or_(models.Match.pair1_id == pair.id, models.Match.pair2_id == pair.id),
+            models.Match.status.in_(
+                [models.MatchStatus.pending, models.MatchStatus.pending_confirmation]
+            ),
+        )
+        .all()
+    ):
+        if match.status == models.MatchStatus.pending_confirmation:
+            if match.reported_by != user_id:
+                count += 1
+            continue
+        if match.scheduled_at is None or match.scheduled_at <= now:
+            count += 1
+    return count
+
+
 def _out(pair: models.Pair, user_id: int, db: Session) -> schemas.PairOut:
     me_first = pair.player_a_id == user_id
     partner = pair.player_b if me_first else pair.player_a
@@ -91,6 +123,7 @@ def _out(pair: models.Pair, user_id: int, db: Session) -> schemas.PairOut:
         proposed_by_me=pair.proposed_by == user_id,
         created_at=pair.created_at,
         accepted_at=pair.accepted_at,
+        needs_you=_needs_you(db, pair, user_id),
     )
 
 

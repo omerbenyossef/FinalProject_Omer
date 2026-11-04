@@ -18,7 +18,7 @@ from sqlalchemy.orm import Session, joinedload
 from .. import models, schemas
 from ..auth import get_current_user
 from ..database import get_db
-from ..match_sides import mine as match_mine
+from ..match_sides import in_pair, mine as match_mine
 from .matches import _auto_confirm_overdue
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
@@ -182,6 +182,7 @@ def _sport_of(match: models.Match) -> int | None:
 @router.get("", response_model=schemas.NotificationsOut)
 def list_notifications(
     sport_id: int | None = None,
+    pair_id: int | None = None,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
@@ -194,7 +195,10 @@ def list_notifications(
     """
     _auto_confirm_overdue(db)
 
-    mine = match_mine(current_user.id)
+    # The pair switcher is a lens here too: what needs you, in the pair you
+    # are looking at.
+    pair_lens = in_pair(pair_id)
+    mine = match_mine(current_user.id) if pair_lens is None else pair_lens
     matches = (
         db.query(models.Match)
         .options(

@@ -95,7 +95,9 @@ export const api = {
   listSports: () => request("/sports/", { auth: false }),
 
   listLeagues: () => request("/leagues/", { auth: false }),
-  myLeagues: () => request("/leagues/mine"),
+  // pairId is the pair switcher's lens: with one chosen, these answer for
+  // that pair alone. Omitted, they answer for all of the player's pairs.
+  myLeagues: (pairId) => request(`/leagues/mine${pairId ? `?pair_id=${pairId}` : ""}`),
 
   // 189b — games somebody opened that anyone at the right level can join.
   openGames: (sportId, { mine = false } = {}) =>
@@ -104,8 +106,10 @@ export const api = {
   joinOpenGame: (id) => request(`/open-games/${id}/join`, { method: "POST" }),
   leaveOpenGame: (id) => request(`/open-games/${id}/leave`, { method: "POST" }),
   cancelOpenGame: (id) => request(`/open-games/${id}/cancel`, { method: "POST" }),
-  myNextMatches: () => request("/leagues/mine/next-matches"),
-  myOpenItems: () => request("/leagues/mine/open-items"),
+  myNextMatches: (pairId) =>
+    request(`/leagues/mine/next-matches${pairId ? `?pair_id=${pairId}` : ""}`),
+  myOpenItems: (pairId) =>
+    request(`/leagues/mine/open-items${pairId ? `?pair_id=${pairId}` : ""}`),
   opsOverview: (range) => request(`/ops/overview?range=${range}`),
   createLeague: (data) => request("/leagues/", { method: "POST", body: data }),
   getLeague: (id) => request(`/leagues/${id}`, { auth: false }),
@@ -166,14 +170,23 @@ export const api = {
   cancelMatch: (leagueId, matchId) =>
     request(`/leagues/${leagueId}/matches/${matchId}`, { method: "DELETE" }),
 
-  homeWeek: (sportId) => request(`/home/week${sportId ? `?sport_id=${sportId}` : ""}`),
+  homeWeek: (sportId, pairId) =>
+    request(
+      `/home/week${sportId ? `?sport_id=${sportId}` : ""}${
+        pairId ? `${sportId ? "&" : "?"}pair_id=${pairId}` : ""
+      }`
+    ),
   openMatches: () => request("/matches/open"),
   remindOpenMatch: (matchId) => request(`/matches/${matchId}/remind`, { method: "POST" }),
 
   // Scoped to the sport in view, like every other list in the app: a padel
   // player should not be shown tennis business, nor have the bell count it.
-  notifications: (sportId) =>
-    request(`/notifications${sportId ? `?sport_id=${sportId}` : ""}`),
+  notifications: (sportId, pairId) =>
+    request(
+      `/notifications${sportId ? `?sport_id=${sportId}` : ""}${
+        pairId ? `${sportId ? "&" : "?"}pair_id=${pairId}` : ""
+      }`
+    ),
   markNotificationsRead: (ids) => request("/notifications/read", { method: "POST", body: { ids } }),
   markAllNotificationsRead: () => request("/notifications/read-all", { method: "POST" }),
 

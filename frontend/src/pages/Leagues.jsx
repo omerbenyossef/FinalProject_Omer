@@ -275,7 +275,7 @@ export default function Leagues() {
   const { sports, selectedSportId } = useSport();
   const { t, language } = useLanguage();
   const { nextMatches } = useOpenAction();
-  const { activePairs } = usePairs();
+  const { activePairs, selectedPair, pairLensReady } = usePairs();
   const [joiningId, setJoiningId] = useState(null);
   const [joinedIds, setJoinedIds] = useState([]);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -288,7 +288,7 @@ export default function Leagues() {
       setLeagues(leaguesData);
 
       if (user) {
-        const mine = await api.myLeagues();
+        const mine = await api.myLeagues(selectedPair?.id);
         setMyLeagues(mine);
       } else {
         setMyLeagues([]);
@@ -301,9 +301,11 @@ export default function Leagues() {
   }
 
   useEffect(() => {
+    if (!pairLensReady) return;
     loadData();
+    // Switching pair changes which leagues are mine.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, selectedPair?.id, pairLensReady]);
 
   useEffect(() => {
     if (!user) {

@@ -4,6 +4,7 @@ import { api } from "../api";
 import { useLanguage } from "../LanguageContext.jsx";
 import { useOpenAction } from "../OpenActionContext.jsx";
 import { useSport } from "../SportContext.jsx";
+import { usePairs } from "../PairContext.jsx";
 import { ChevronIcon } from "../Icons.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
 import { formatWeekdayDateTime, weekdayName } from "../matchUtils.js";
@@ -73,6 +74,7 @@ function renderUpdate(item, english) {
 export default function Notifications() {
   const { t, language } = useLanguage();
   const { selectedSportId } = useSport();
+  const { selectedPair, pairLensReady } = usePairs();
   const { reload: reloadOpenAction } = useOpenAction();
   const navigate = useNavigate();
 
@@ -82,12 +84,12 @@ export default function Notifications() {
   const [showAllCards, setShowAllCards] = useState(false);
 
   const load = useCallback(() => {
-    if (!selectedSportId) return;
+    if (!selectedSportId || !pairLensReady) return;
     api
-      .notifications(selectedSportId)
+      .notifications(selectedSportId, selectedPair?.id)
       .then(setData)
       .catch((err) => setError(err.message));
-  }, [selectedSportId]);
+  }, [selectedSportId, selectedPair?.id, pairLensReady]);
 
   useEffect(load, [load]);
 

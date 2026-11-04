@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session, joinedload
 from .. import models, schemas
 from ..auth import get_current_user
 from ..database import get_db
-from ..match_sides import mine as match_mine, my_side_is_first, opponent_label, opponents, teammate
+from ..match_sides import in_pair, mine as match_mine, my_side_is_first, opponent_label, opponents, teammate
 from ..rating_utils import get_rating, match_winner_id, round_to_half
 from .leagues import _compute_my_standing, _current_round_number, _round_ends_at
 from .matches import _auto_confirm_overdue
@@ -134,8 +134,10 @@ def _players_near_level(db: Session, leagues, user_id: int, level: float | None)
     return len(real)
 
 
-def _last_match(db: Session, user_id: int, sport_id: int | None) -> schemas.HomeWeekLastMatchOut | None:
-    mine = match_mine(user_id)
+def _last_match(
+    db: Session, user_id: int, sport_id: int | None, pair_id: int | None = None
+) -> schemas.HomeWeekLastMatchOut | None:
+    mine = _lens(user_id, pair_id)
     query = (
         db.query(models.Match)
         .options(
@@ -197,26 +199,38 @@ def _last_match(db: Session, user_id: int, sport_id: int | None) -> schemas.Home
     )
 
 
+def _lens(user_id: int, pair_id: int | None):
+    """My matches, or — when a pair is chosen — that pair's alone."""
+    pair_filter = in_pair(pair_id)
+    return match_mine(user_id) if pair_filter is None else pair_filter
+
+
 @router.get("/week", response_model=schemas.HomeWeekOut)
 def home_week(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
     sport_id: int | None = None,
+    pair_id: int | None = None,
 ):
+    """The week ahead. With pair_id, the week of that pair alone — the pair
+    switcher is a lens, and this is the first surface it looks through."""
     _auto_confirm_overdue(db)
     now = datetime.utcnow()
 
+    membership_filter = [models.LeagueMembership.user_id == current_user.id]
+    if pair_id:
+        membership_filter.append(models.LeagueMembership.pair_id == pair_id)
     my_leagues = (
         db.query(models.League)
         .join(models.LeagueMembership)
         .options(joinedload(models.League.memberships))
-        .filter(models.LeagueMembership.user_id == current_user.id)
+        .filter(*membership_filter)
         .all()
     )
     if sport_id is not None:
         my_leagues = [l for l in my_leagues if l.sport_id == sport_id]
 
-    mine = match_mine(current_user.id)
+    mine = _lens(current_user.id, pair_id)
 
     matches: list[schemas.HomeWeekMatchOut] = []
     round_info: schemas.HomeWeekRoundOut | None = None
@@ -405,5 +419,5 @@ def home_week(
         next_round_starts_at=next_round_starts_at,
         players_near_level=_players_near_level(db, my_leagues, current_user.id, my_level),
         my_level=my_level,
-        last_match=_last_match(db, current_user.id, sport_id),
+        last_match=_last_match(db, current_user.id, sport_id, pair_id),
     )

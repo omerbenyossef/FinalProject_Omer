@@ -546,6 +546,10 @@ class PairOut(BaseModel):
     proposed_by_me: bool
     created_at: Optional[UtcDatetime] = None
     accepted_at: Optional[UtcDatetime] = None
+    # How many things in this pair are waiting on this player. The switcher is
+    # a lens, so the pair you are not looking through would go quiet; this is
+    # what puts a dot on the switcher instead of losing it.
+    needs_you: int = 0
 
 
 class PairMemberOut(BaseModel):

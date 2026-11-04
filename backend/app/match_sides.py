@@ -95,6 +95,19 @@ def my_pair_ids(user_id: int):
     )
 
 
+def in_pair(pair_id: int | None):
+    """"This match is that pair's", as SQL.
+
+    The pair switcher is a lens: when one is chosen, every list of the
+    player's own business answers for that pair alone. Written once here
+    beside mine(), so the half-dozen endpoints that apply it cannot drift
+    apart on what it means.
+    """
+    if not pair_id:
+        return None
+    return or_(models.Match.pair1_id == pair_id, models.Match.pair2_id == pair_id)
+
+
 def mine(user_id: int):
     """"This match is mine", as SQL.
 

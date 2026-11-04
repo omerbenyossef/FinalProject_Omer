@@ -10,6 +10,7 @@ import InstallPrompt from "./InstallPrompt.jsx";
 import PushPrompt from "./PushPrompt.jsx";
 import Onboarding from "./Onboarding.jsx";
 import SportSwitcher from "./SportSwitcher.jsx";
+import PairSwitcher from "./PairSwitcher.jsx";
 
 const AUTH_PATHS = ["/signin", "/signup", "/privacy", "/terms"];
 
@@ -20,9 +21,6 @@ export default function Layout({ children }) {
   const selectedSportPlaysInPairs = Boolean(
     sports.find((sport) => sport.id === selectedSportId)?.plays_in_pairs
   );
-  // First name only in the header: there is no room for two full names beside
-  // the wordmark, and the full name is one tap away on the pairs screen.
-  const partnerShort = (selectedPair?.partner?.name || "").trim().split(" ")[0];
   const { t } = useLanguage();
   const location = useLocation();
   const { hasOtherLeagueActivity } = useOpenAction();
@@ -77,28 +75,12 @@ export default function Layout({ children }) {
                   <span className="wordmark-pair-sep" aria-hidden="true">
                     ·
                   </span>
-                  {/* The way into your pairs. It used to be a switcher too —
-                      an invisible <select> over the label — but the selected
-                      pair never filtered anything except which pair joins a
-                      league, so the switch changed almost nothing while hiding
-                      that it existed at all. Every match row names its own
-                      pair now, and the choice is asked where it is a choice.
-
-                      With one partner the label names them, which is true.
-                      With two it says "my pairs" instead: naming one of them
-                      beside a diary that holds both would read as a filter
-                      that is not there. */}
-                  <Link
-                    to={activePairs.length === 1 ? `/pairs/${selectedPair.id}` : "/partners"}
-                    className="wordmark-pair"
-                  >
-                    {activePairs.length === 1
-                      ? t("עם {name}", { name: partnerShort })
-                      : t("הצמדים שלי")}
-                    {pairsAwaitingMe.length > 0 && (
-                      <span className="wordmark-pair-badge" aria-hidden="true" />
-                    )}
-                  </Link>
+                  {/* The selected pair filters the whole app now — diary,
+                      leagues, notifications, open items — so the switch is
+                      worth a real control instead of a label. Its dot is the
+                      safety net: when the pair you are not looking through
+                      has something waiting, nothing disappears in silence. */}
+                  <PairSwitcher />
                 </span>
               )}
             </div>

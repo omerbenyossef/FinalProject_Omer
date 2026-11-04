@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import { api } from "./api";
 import { useAuth } from "./AuthContext.jsx";
 import { useSport } from "./SportContext.jsx";
+import { usePairs } from "./PairContext.jsx";
 import { openItemRoute } from "./matchUtils.js";
 
 const OpenActionContext = createContext(null);
@@ -10,6 +11,8 @@ const OpenActionContext = createContext(null);
 export function OpenActionProvider({ children }) {
   const { user } = useAuth();
   const { selectedSportId } = useSport();
+  // The pair switcher is a lens: what needs me, in the pair I am looking at.
+  const { selectedPair, pairLensReady } = usePairs();
   const location = useLocation();
 
   const [nextMatches, setNextMatches] = useState([]);
@@ -19,14 +22,16 @@ export function OpenActionProvider({ children }) {
   const [openItemsLoading, setOpenItemsLoading] = useState(true);
 
   function reload() {
-    if (!user) return Promise.resolve();
+    // Until the pair list has landed, "what needs me" has no lens to be
+    // answered through, and the answer would have to be thrown away.
+    if (!user || !pairLensReady) return Promise.resolve();
     api
-      .myNextMatches()
+      .myNextMatches(selectedPair?.id)
       .then(setNextMatches)
       .catch(() => {})
       .finally(() => setMatchesLoading(false));
     return api
-      .myOpenItems()
+      .myOpenItems(selectedPair?.id)
       .then((data) => {
         setOpenItems(data.items);
         setScheduledCount(data.scheduled_count);
@@ -45,8 +50,9 @@ export function OpenActionProvider({ children }) {
       return;
     }
     reload();
+    // Switching pair changes what these answer, so they are asked again.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, selectedPair?.id, pairLensReady]);
 
   // The tab-bar button lives in the layout, so it never remounts and used to
   // keep advertising work that was already done — every screen had to remember

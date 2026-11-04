@@ -646,6 +646,12 @@ a { color: var(--court); text-decoration: none; }
   color: var(--court);
 }
 .sportrow-badge svg { width: 22px; height: 22px; }
+/* A pair's badge holds the partner's initial instead of a sport icon. */
+.sportrow-badge {
+  font-family: "IBM Plex Sans Hebrew", "IBM Plex Sans", var(--sans);
+  font-weight: 700;
+  font-size: 18px;
+}
 .sportrow-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .sportrow-name {
   font-family: "IBM Plex Sans Hebrew", "IBM Plex Sans", var(--sans);
@@ -661,6 +667,7 @@ a { color: var(--court); text-decoration: none; }
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.sportrow-status.is-waiting { color: var(--court); font-weight: 600; }
 .sportrow-check {
   flex: none;
   width: 22px;
@@ -710,6 +717,34 @@ a { color: var(--court); text-decoration: none; }
   display: inline-block; width: 6px; height: 6px; margin-inline-start: 5px;
   border-radius: 50%; background: var(--court); vertical-align: middle;
 }
+
+/* The pair switcher's button. Deliberately quieter than the sport's: the
+   sport is the bigger choice of the two, and two loud buttons beside the
+   wordmark would read as a toolbar. */
+.wordmark-pair--btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.wordmark-pair-label { overflow: hidden; text-overflow: ellipsis; }
+.wordmark-pair-chev { width: 11px; height: 11px; flex: none; opacity: 0.75; }
+
+/* One line under the sheet's title, because the switch is not obvious: it
+   changes every screen, not this one. */
+.sportsheet-note {
+  margin: -4px 0 4px;
+  font-weight: 500;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+/* The sheet's footer links. Same shape as its button, since they sit in the
+   same row of the layout. */
+a.sportsheet-more { text-decoration: none; }
 
 .wordmark-pair {
   text-decoration: none;
