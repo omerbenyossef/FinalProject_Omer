@@ -13,15 +13,9 @@ import OpenGameRow from "./OpenGameRow.jsx";
    the leagues list is — what you can join, then what you cannot, with the
    reason on it rather than hidden.
 
-   The "open a game" form at the top is mine, not the spec's: the spec says
-   open games are "games other players opened" and never says how a player
-   opens one, so without this the list can only ever be empty. Minimal on
-   purpose, to be replaced when that flow is designed. */
-
-function isoLocal(date) {
-  const pad = (n) => String(n).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-}
+   Opening one is its own screen (OpenGameNew): the handoff never said how a
+   player opens a game, and a game has the same questions to answer as a match
+   being scheduled — where, how long, when — so it is asked the same way. */
 
 export default function OpenGames() {
   const { selectedSportId } = useSport();
@@ -29,9 +23,6 @@ export default function OpenGames() {
   const navigate = useNavigate();
   const [games, setGames] = useState(null);
   const [busyId, setBusyId] = useState(null);
-  const [opening, setOpening] = useState(false);
-  const [when, setWhen] = useState(() => isoLocal(new Date(Date.now() + 86400000)));
-  const [where, setWhere] = useState("");
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
@@ -79,24 +70,6 @@ export default function OpenGames() {
     }
   }
 
-  async function create(e) {
-    e.preventDefault();
-    setError("");
-    try {
-      await api.createOpenGame({
-        sport_id: selectedSportId,
-        // The input is local time; the server stores UTC.
-        starts_at: new Date(when).toISOString(),
-        court: where.trim() || null,
-      });
-      setOpening(false);
-      setWhere("");
-      await load();
-    } catch (err) {
-      setError(err.message);
-    }
-  }
-
   const open = games || [];
   const joinable = open.filter((g) => !g.blocked_reason);
   const blocked = open.filter((g) => g.blocked_reason);
@@ -112,36 +85,10 @@ export default function OpenGames() {
         <p className="og-sub">{t("משחקים שמישהו פתח ואפשר להצטרף אליהם")}</p>
       </header>
 
-      {opening ? (
-        <form className="og-form" onSubmit={create}>
-          <label className="og-field">
-            <span>{t("מתי")}</span>
-            <input type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} required />
-          </label>
-          <label className="og-field">
-            <span>{t("איפה")}</span>
-            <input
-              value={where}
-              onChange={(e) => setWhere(e.target.value)}
-              placeholder={t("שם המגרש")}
-              maxLength={120}
-            />
-          </label>
-          <div className="og-form-actions">
-            <button type="submit" className="btn-primary">
-              {t("פתח משחק")}
-            </button>
-            <button type="button" className="btn-quiet" onClick={() => setOpening(false)}>
-              {t("ביטול")}
-            </button>
-          </div>
-        </form>
-      ) : (
-        <button type="button" className="og-open-btn" onClick={() => setOpening(true)}>
-          <PlusIcon aria-hidden="true" />
-          {t("פתח משחק")}
-        </button>
-      )}
+      <Link to="/games/open/new" className="og-open-btn">
+        <PlusIcon aria-hidden="true" />
+        {t("פתח משחק")}
+      </Link>
 
       {error && <p className="og-error error">{t(error)}</p>}
 

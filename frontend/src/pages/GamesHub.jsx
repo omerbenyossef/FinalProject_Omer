@@ -118,7 +118,15 @@ export default function GamesHub() {
         {games == null ? (
           <SkeletonBar />
         ) : joinable.length === 0 ? (
-          <p className="gh-preview-empty">{t("אין כרגע משחקים פתוחים ברמה שלך.")}</p>
+          <>
+            <p className="gh-preview-empty">{t("אין כרגע משחקים פתוחים ברמה שלך.")}</p>
+            {/* An empty list is the moment to offer opening one — see
+                firstdayandemptystates109: no content, an action, no
+                placeholder. */}
+            <Link to="/games/open/new" className="gh-preview-open">
+              {t("פתח משחק")}
+            </Link>
+          </>
         ) : (
           joinable
             .slice(0, PREVIEW_ROWS)

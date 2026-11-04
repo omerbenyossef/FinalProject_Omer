@@ -4946,7 +4946,26 @@ button:active { transform: translateY(1px); }
   cursor: pointer;
 }
 .og-open-btn svg { width: 16px; height: 16px; }
-.og-form { display: flex; flex-direction: column; gap: 10px; margin: 6px 18px 0; }
+.og-open-btn:visited { color: var(--court); }
+.gh-preview-open {
+  display: inline-block;
+  margin-top: 12px;
+  font-weight: 600;
+  font-size: 13.5px;
+  color: var(--court);
+}
+/* The two level pickers, side by side under "טווח אחר". */
+.ogn-range { display: flex; gap: 10px; padding: 0 2px; }
+.ogn-range .og-field { flex: 1; }
+.ogn-range select {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card-alt);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+}
 .og-field { display: flex; flex-direction: column; gap: 5px; font-size: 12.5px; color: var(--muted); }
 .og-field input {
   padding: 10px 12px;

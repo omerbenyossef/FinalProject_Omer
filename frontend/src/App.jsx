@@ -9,6 +9,7 @@ import SignIn from "./pages/SignIn.jsx";
 import Leagues from "./pages/Leagues.jsx";
 import GamesHub from "./pages/GamesHub.jsx";
 import OpenGames from "./pages/OpenGames.jsx";
+import OpenGameNew from "./pages/OpenGameNew.jsx";
 import OpenLeagues from "./pages/OpenLeagues.jsx";
 import LeaguePreview from "./pages/LeaguePreview.jsx";
 import FriendlyNew from "./pages/FriendlyNew.jsx";
@@ -147,6 +148,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <OpenGames />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/games/open/new"
+          element={
+            <ProtectedRoute>
+              <OpenGameNew />
             </ProtectedRoute>
           }
         />

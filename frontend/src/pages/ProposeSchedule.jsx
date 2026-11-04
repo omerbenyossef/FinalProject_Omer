@@ -4,6 +4,7 @@ import { api, mediaUrl } from "../api";
 import { useLanguage } from "../LanguageContext.jsx";
 import { useSport } from "../SportContext.jsx";
 import BookCourtLink from "../BookCourtLink.jsx";
+import VenueCard from "../VenueCard.jsx";
 import { ChevronIcon, CheckIcon, SearchIcon } from "../Icons.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
 import { daysWord, detailOpponent, hasHebrewChars, roundDueDateObj, weekdayName } from "../matchUtils.js";
@@ -87,62 +88,6 @@ const MAX_PICKS = 1;
 // by side with nothing to tell them apart — "hours" only looked, the name
 // chose, and both were just text. Here they are two labelled buttons under a
 // photograph of the place.
-function VenueCard({ venue, selected, onChoose, t }) {
-  const [broken, setBroken] = useState(false);
-  const showImage = !!venue.image_url && !broken;
-  const strip = (
-    <div className="vc-strip">
-      {showImage ? (
-        <img
-          src={mediaUrl(venue.image_url)}
-          alt=""
-          loading="lazy"
-          onError={() => setBroken(true)}
-        />
-      ) : (
-        <span className="vc-initials" dir="auto">
-          {(venue.name || "").trim().slice(0, 2)}
-        </span>
-      )}
-    </div>
-  );
-  const choose = (
-    <button type="button" className={`vc-choose${selected ? " on" : ""}`} onClick={onChoose}>
-      {t("בחר")}
-    </button>
-  );
-  return (
-    <div className={`vc${selected ? " on" : ""}`}>
-      {strip}
-      {venue.booking_url ? (
-        <div className="vc-body">
-          <span className="vc-name" dir="auto">
-            {venue.name}
-          </span>
-          <div className="vc-actions">
-            {/* Looking only. Checking three venues before finding a free slot
-                must not commit you to the first one you opened. */}
-            <BookCourtLink className="vc-hours" url={venue.booking_url}>
-              {t("בדוק שעות")} ↗
-            </BookCourtLink>
-            {choose}
-          </div>
-        </div>
-      ) : (
-        <div className="vc-body is-row">
-          <span className="vc-body-main">
-            <span className="vc-name" dir="auto">
-              {venue.name}
-            </span>
-            <span className="vc-nobooking">{t("בלי הזמנה אונליין")}</span>
-          </span>
-          {choose}
-        </div>
-      )}
-    </div>
-  );
-}
-
 // The screen is a sequence, not a form: the court is booked on somebody
 // else's site, so "check the hours there" has to come before "pick a time
 // here", and sending to the opponent is the last thing that happens.
