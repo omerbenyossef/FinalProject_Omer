@@ -154,6 +154,11 @@ export function PadelIcon(props) {
     <svg {...common} {...props}>
       <ellipse cx="12" cy="9.5" rx="6.5" ry="7" />
       <line x1="12" y1="16.5" x2="12" y2="21" />
+      {/* The holes in the face — what tells a padel bat from a ping-pong one
+          at 16px (187c). Filled, so they read at that size. */}
+      <circle cx="9.4" cy="8" r="0.85" fill="currentColor" stroke="none" />
+      <circle cx="14.6" cy="8" r="0.85" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="11.8" r="0.85" fill="currentColor" stroke="none" />
     </svg>
   );
 }

@@ -9,12 +9,13 @@ import { ChevronIcon, HomeIcon, RanksIcon, TrophyIcon } from "./Icons.jsx";
 import InstallPrompt from "./InstallPrompt.jsx";
 import PushPrompt from "./PushPrompt.jsx";
 import Onboarding from "./Onboarding.jsx";
+import SportSwitcher from "./SportSwitcher.jsx";
 
 const AUTH_PATHS = ["/signin", "/signup", "/privacy", "/terms"];
 
 export default function Layout({ children }) {
   const { user } = useAuth();
-  const { sports, selectedSportId, setSelectedSportId } = useSport();
+  const { sports, selectedSportId } = useSport();
   const { activePairs, selectedPair, setSelectedPairId, pairsAwaitingMe } = usePairs();
   const selectedSportPlaysInPairs = Boolean(
     sports.find((sport) => sport.id === selectedSportId)?.plays_in_pairs
@@ -41,8 +42,6 @@ export default function Layout({ children }) {
     return <main className="content auth-content">{children}</main>;
   }
 
-  const selectedSport = sports.find((s) => s.id === selectedSportId);
-
   return (
     <div className="app-shell">
       <header className="topbar">
@@ -57,26 +56,9 @@ export default function Layout({ children }) {
             </Link>
             <div className="wordmark-cluster">
               <span className="wordmark-rally">RALLY</span>
-              <span className="wordmark-dot" />
-              {sports.length > 0 && selectedSport && (
-                <span className="wordmark-sport-wrap">
-                  {/* The sport follows the reader's language; only RALLY itself
-                      is a name that never translates. */}
-                  <span className="wordmark-sport">{t(selectedSport.name)}</span>
-                  <select
-                    className="wordmark-sport-select"
-                    aria-label={t("בחר ענף")}
-                    value={selectedSportId ?? ""}
-                    onChange={(e) => setSelectedSportId(Number(e.target.value))}
-                  >
-                    {sports.map((sport) => (
-                      <option key={sport.id} value={sport.id}>
-                        {t(sport.name)}
-                      </option>
-                    ))}
-                  </select>
-                </span>
-              )}
+              {/* 187c: the sport is a button in the sport's own colour, not a
+                  grey label with an invisible <select> over it. */}
+              <SportSwitcher userId={user.id} />
               {/* In a pairs sport the player is always looking at the game
                   through one of their pairs, so which one sits next to the
                   sport. Nothing is shown until there is a choice to make. */}
@@ -103,7 +85,7 @@ export default function Layout({ children }) {
                   </Link>
                   {activePairs.length > 1 && (
                     <select
-                      className="wordmark-sport-select"
+                      className="wordmark-pair-select"
                       aria-label={t("בחר צמד")}
                       value={selectedPair.id}
                       onChange={(e) => setSelectedPairId(Number(e.target.value))}

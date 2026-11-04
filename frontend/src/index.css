@@ -133,11 +133,15 @@
   --ink-dim: #c9cfdb;
   --muted: #8b93a6;
   --glass: rgba(10, 12, 16, 0.78);
+  /* The accent. Tennis is the default because it is where the app started;
+     --court-rgb exists so a rule can mix its own alpha without hardcoding the
+     three numbers again (187c change 2). */
+  --court-rgb: 198, 242, 78;
   --court: #c6f24e;
   --court-deep: #a8d13a;
   --court-contrast: #0e1116;
-  --court-tint: rgba(198, 242, 78, 0.12);
-  --court-tint-strong: rgba(198, 242, 78, 0.2);
+  --court-tint: rgba(var(--court-rgb), 0.12);
+  --court-tint-strong: rgba(var(--court-rgb), 0.2);
   --surface-2: #242a33;
   --loss: #a57f7b;
   --gold: #e2ac54;
@@ -161,6 +165,15 @@
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
+
+/* 187c change 2: padel is blue. Only the accent moves — every other token,
+   and every rule reading var(--court), follows without being touched. */
+:root[data-sport="padel"] {
+  --court-rgb: 108, 196, 255;
+  --court: #6cc4ff;
+  --court-deep: #49a9e8;
+}
+
 
 * {
   box-sizing: border-box;
@@ -526,7 +539,8 @@ a { color: var(--court); text-decoration: none; }
 .wordmark-cluster {
   display: flex;
   align-items: center;
-  gap: 9px;
+  /* 187c: 10px between the wordmark and the sport button. */
+  gap: 10px;
 }
 
 .wordmark-rally {
@@ -538,35 +552,140 @@ a { color: var(--court); text-decoration: none; }
   color: var(--ink);
 }
 
-.wordmark-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--court);
+/* 187c — the sport button. The grey mono label it replaces told you which
+   sport you were in and gave no hint that it could be changed; this says both,
+   in the sport's own colour. */
+.sportsw {
   flex: none;
-}
-
-.wordmark-sport-wrap {
-  position: relative;
   display: flex;
   align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 10px 0 12px;
+  border: 0;
+  border-radius: 16px;
+  background: rgba(var(--court-rgb), 0.12);
+  box-shadow: inset 0 0 0 1px rgba(var(--court-rgb), 0.4);
+  color: var(--court);
+  cursor: pointer;
 }
+.sportsw-icon { flex: none; width: 16px; height: 16px; }
+.sportsw-name {
+  font-family: "IBM Plex Sans Hebrew", "IBM Plex Sans", var(--sans);
+  font-weight: 700;
+  font-size: 13.5px;
+  line-height: 1;
+}
+.sportsw-chev { flex: none; width: 12px; height: 12px; }
 
-.wordmark-sport {
-  font-family: "IBM Plex Mono", "IBM Plex Sans", var(--mono);
+/* 187d — the sheet it opens. */
+.sportsheet-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: flex-end;
+  background: rgba(5, 7, 10, 0.62);
+}
+.sportsheet {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 18px 30px;
+  border-radius: 26px 26px 0 0;
+  background: #151a21;
+  /* The sheet owns the bottom of the screen, under the notch-safe area. */
+  padding-bottom: calc(30px + env(safe-area-inset-bottom, 0px));
+  /* "להוסיף ענף" can turn one row into six, which on a phone pushes the last
+     of them off the bottom of the screen with no way to reach it. Measured at
+     390x844: the sixth row sat outside the viewport and could not be tapped. */
+  max-height: 86vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.sportsheet-grab {
+  align-self: center;
+  width: 38px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(148, 163, 184, 0.3);
+}
+.sportsheet-title {
+  margin: 4px 0 2px;
+  font-family: "IBM Plex Sans Hebrew", "IBM Plex Sans", var(--sans);
+  font-weight: 700;
+  font-size: 19px;
+  color: var(--ink);
+}
+.sportrow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 0;
+  border-radius: 18px;
+  background: rgba(148, 163, 184, 0.06);
+  text-align: start;
+  cursor: pointer;
+}
+.sportrow.is-on {
+  background: rgba(var(--court-rgb), 0.08);
+  box-shadow: inset 0 0 0 1.5px rgba(var(--court-rgb), 0.55);
+}
+.sportrow-badge {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(var(--court-rgb), 0.14);
+  color: var(--court);
+}
+.sportrow-badge svg { width: 22px; height: 22px; }
+.sportrow-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.sportrow-name {
+  font-family: "IBM Plex Sans Hebrew", "IBM Plex Sans", var(--sans);
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--ink);
+}
+.sportrow-status {
   font-weight: 500;
-  font-size: 12.5px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font-size: 12px;
   color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-
-.wordmark-sport-select {
-  position: absolute;
-  inset: -8px;
-  opacity: 0;
-  width: calc(100% + 16px);
-  height: calc(100% + 16px);
+.sportrow-check {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1.5px rgba(148, 163, 184, 0.35);
+}
+.sportrow-check.is-on {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--court);
+  box-shadow: none;
+  color: var(--court-contrast);
+}
+.sportrow-check svg { width: 15px; height: 15px; }
+.sportsheet-more {
+  align-self: center;
+  margin-top: 2px;
+  padding: 8px 10px;
+  border: 0;
+  background: transparent;
+  font-weight: 600;
+  font-size: 13.5px;
+  color: var(--muted);
   cursor: pointer;
 }
 
@@ -581,6 +700,19 @@ a { color: var(--court); text-decoration: none; }
 }
 
 .wordmark-pair-sep { color: #4b5261; font-size: 11px; }
+
+/* The invisible native select that picks the pair, laid over its label. The
+   sport used to be chosen the same way; 187c gave the sport a real button, and
+   this stayed because a pair switcher of two or three names is not the same
+   discovery problem. */
+.wordmark-pair-select {
+  position: absolute;
+  inset: -8px;
+  opacity: 0;
+  width: calc(100% + 16px);
+  height: calc(100% + 16px);
+  cursor: pointer;
+}
 
 .wordmark-pair--cta { color: var(--court); }
 
@@ -810,10 +942,13 @@ a { color: var(--court); text-decoration: none; }
   transition: background-color 0.15s, color 0.15s;
 }
 
+/* 187c change 2: the active tab is one of the things the sport's accent
+   drives. A tint and accent-coloured content rather than a solid fill — a
+   second solid accent block would compete with the primary button. */
 .tab.active {
-  background: #2b323d;
+  background: rgba(var(--court-rgb), 0.14);
   border-radius: 22px;
-  color: var(--ink);
+  color: var(--court);
 }
 
 .tab-icon {

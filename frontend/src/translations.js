@@ -1033,6 +1033,15 @@ const PAIRS = [
 
   // Padel: who you are playing WITH, on a match that has four people in it.
   ["איתך", "With you"],
+
+  // 187c/187d — the sport switcher sheet.
+  ["באיזה ענף?", "Which sport?"],
+  ["להוסיף ענף", "Add a sport"],
+  ["עוד לא הצטרפת", "You haven't joined yet"],
+  ["יש תוצאה לאישור ב{league}", "A result to confirm in {league}"],
+  ["צריך לאשר שעה ב{league}", "A time to confirm in {league}"],
+  ["צריך לדווח תוצאה ב{league}", "A result to report in {league}"],
+  ["צריך לקבוע שעה ב{league}", "A time to set in {league}"],
   ["הזמנה בקישור", "Invite by link"],
   ["וואטסאפ, או העתקת הקישור", "WhatsApp, or copy the link"],
   ["אושר", "accepted"],
