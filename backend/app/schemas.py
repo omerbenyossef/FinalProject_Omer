@@ -591,6 +591,10 @@ class OpenGameOut(BaseModel):
     is_full: bool
     created_by: int
     creator_name: str = ""
+    # 194a titles the card with whoever opened it — one name in singles, both
+    # halves of the opener's pair in doubles. Sent explicitly rather than left
+    # to the client to guess from the order of `players`.
+    host_names: list[str] = []
     players: list[PairPlayerOut] = []
     # Whether the viewer is already in it, and whether they could be.
     mine: bool = False

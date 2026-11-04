@@ -198,8 +198,10 @@ export default function OpenGameNew() {
           : t("אתה תופס מקום אחד, ומי שמצטרף משלים את המשחק.")}
       </p>
 
+      {/* Not t("מקום"): that key already means the standings rank elsewhere
+          and resolves to "Rank" in English. */}
       <Step n={1} done={!!place}>
-        {t("מקום")}
+        {t("איפה משחקים")}
       </Step>
       {venuesLoaded && venues.length > 0 && !typingCourt ? (
         <>

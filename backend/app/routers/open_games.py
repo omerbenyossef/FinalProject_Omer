@@ -68,6 +68,17 @@ def _blocked_reason(db: Session, game: models.OpenGame, user: models.User) -> st
     return None
 
 
+def _host_names(game: models.OpenGame) -> list[str]:
+    """Who opened it. In doubles that is a pair, so both of its members — the
+    card says "X and Y are looking for a pair"."""
+    host_join = next((j for j in game.joins if j.user_id == game.created_by), None)
+    if host_join and host_join.pair_id:
+        return [j.user.name for j in game.joins if j.pair_id == host_join.pair_id and j.user]
+    if host_join and host_join.user:
+        return [host_join.user.name]
+    return [game.creator.name] if game.creator else []
+
+
 def _out(db: Session, game: models.OpenGame, user: models.User) -> schemas.OpenGameOut:
     players = [j.user for j in game.joins if j.user]
     return schemas.OpenGameOut(
@@ -87,6 +98,7 @@ def _out(db: Session, game: models.OpenGame, user: models.User) -> schemas.OpenG
         is_full=game.is_full,
         created_by=game.created_by,
         creator_name=game.creator.name if game.creator else "",
+        host_names=_host_names(game),
         players=players,
         mine=game.created_by == user.id,
         joined=user.id in game.player_ids,
@@ -337,4 +349,18 @@ def cancel(
         raise HTTPException(status_code=400, detail="המשחק כבר נקבע — אפשר לבטל אותו ממסך המשחק")
     game.status = models.OpenGameStatus.cancelled
     game.cancelled_at = datetime.utcnow()
+    # Whoever had taken a seat had a game in their week until a moment ago, so
+    # they are told it is off (194a).
+    for join in game.joins:
+        if join.user_id == current_user.id:
+            continue
+        notify_user(
+            db,
+            join.user_id,
+            "המשחק בוטל",
+            f"{current_user.name} ביטל/ה את המשחק ב{game.where or 'מגרש'}",
+            "/games/open",
+            title_en="Game cancelled",
+            body_en=f"{current_user.name} called off the game at {game.where or 'the court'}",
+        )
     db.commit()

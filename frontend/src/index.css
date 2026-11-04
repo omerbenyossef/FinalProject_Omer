@@ -4804,52 +4804,223 @@ button:active { transform: translateY(1px); }
   text-wrap: pretty;
 }
 
-/* One open game, shared by the hub preview and the full list. */
-.ogrow {
+/* 194a — one open game, as a card. Joinable cards glow in the sport's
+   accent; a game I am already in, or opened myself, is quiet — there is
+   nothing to tempt me with. */
+.ogc-list { display: flex; flex-direction: column; gap: 10px; }
+.ogc {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  padding: 15px 16px;
+  border-radius: 22px;
+  background: linear-gradient(
+    160deg,
+    rgba(var(--court-rgb), 0.18) 0%,
+    rgba(var(--court-rgb), 0.05) 45%,
+    rgba(148, 163, 184, 0.05) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(var(--court-rgb), 0.45),
+    inset 0 0 0 1px rgba(var(--court-rgb), 0.16);
+}
+.ogc.is-quiet {
+  background: rgba(148, 163, 184, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.1);
+}
+.ogc-glow {
+  position: absolute;
+  top: -60px;
+  inset-inline-start: -40px;
+  width: 170px;
+  height: 170px;
+  background: radial-gradient(circle, rgba(var(--court-rgb), 0.25), transparent 70%);
+  pointer-events: none;
+}
+.ogc > :not(.ogc-glow) { position: relative; }
+
+.ogc-top { display: flex; gap: 14px; }
+.ogc-date {
+  flex: none;
+  width: 58px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 8px 0;
+  border-radius: 16px;
+  background: rgba(14, 17, 22, 0.45);
+}
+.ogc-date-day { font-weight: 600; font-size: 11px; color: #a3abbb; }
+.ogc-date-time { font: 400 22px/1 "Anton", var(--display); }
+.ogc-date-dm { font: 400 10px "IBM Plex Mono", monospace; color: #6f7787; }
+
+.ogc-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.ogc-status { display: flex; align-items: center; gap: 8px; }
+.ogc-status-mine { font-weight: 700; font-size: 11px; color: var(--ink-dim); }
+.ogc-urgent {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 11px 0;
-  border-top: 1px solid rgba(148, 163, 184, 0.1);
-}
-.ogrow-when { flex: none; width: 46px; display: flex; flex-direction: column; gap: 1px; }
-.ogrow-time { font: 400 20px/1 "Anton", var(--display); }
-.ogrow-day { font-size: 10.5px; color: var(--muted); }
-.ogrow-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-.ogrow-where {
+  gap: 5px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 12px;
+  background: rgba(255, 181, 71, 0.16);
+  color: #ffb547;
   font-weight: 700;
-  font-size: 14.5px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.ogc-urgent-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+/* The title is who opened it and what they want — never the venue, which is
+   what made a game with no venue read as "place to be decided". */
+.ogc-title {
+  font-weight: 700;
+  font-size: 17px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.ogrow-meta { font-size: 11.5px; color: var(--muted); }
-.ogrow-join {
+.ogc-meta { font-weight: 500; font-size: 12px; color: #a3abbb; }
+.ogc-ntrp { font-family: "IBM Plex Mono", monospace; }
+.ogc-where {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+  font-size: 12px;
+  color: #a3abbb;
+  min-width: 0;
+}
+.ogc-where svg { flex: none; width: 13px; height: 13px; color: var(--court); }
+.ogc-where > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Wraps, because the two halves do not always fit on one line: a host card
+   carries two links and a share button beside four seats, and at 390px they
+   were overlapping the seat count ("לצאת" printed through "חסר 1"). */
+.ogc-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.ogc-who { flex: 1 1 auto; display: flex; align-items: center; gap: 8px; min-width: 0; }
+.ogc-seats { display: flex; gap: 4px; }
+.ogc-seat {
   flex: none;
-  height: 30px;
-  padding: 0 14px;
-  border: 0;
-  border-radius: 15px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #232a34;
+  font: 400 14px/1 "Anton", var(--display);
+  color: var(--ink);
+}
+/* An empty chair, drawn as one. */
+.ogc-seat.is-open {
   background: transparent;
+  border: 1.5px dashed rgba(var(--court-rgb), 0.6);
+  color: var(--court);
+}
+.ogc-seat.is-open svg { width: 14px; height: 14px; }
+.ogc-need {
+  font-weight: 600;
+  font-size: 11.5px;
+  color: #a3abbb;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ogc-actions { flex: none; display: flex; align-items: center; gap: 12px; }
+.ogc-link {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.ogc-join {
+  height: 40px;
+  padding: 0 24px;
+  border: 0;
+  border-radius: 20px;
+  background: var(--court);
+  color: var(--court-contrast);
+  font-weight: 700;
+  font-size: 14px;
+  box-shadow: 0 6px 18px -6px rgba(var(--court-rgb), 0.7);
+  cursor: pointer;
+}
+.ogc-join:disabled { opacity: 0.65; cursor: default; }
+.ogc-in {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 17px;
+  background: rgba(var(--court-rgb), 0.14);
+  color: var(--court);
+  font-weight: 700;
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+.ogc-in svg { width: 13px; height: 13px; }
+.ogc-share {
+  height: 34px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 17px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.3);
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.ogc-blocked { font-size: 11.5px; color: var(--muted); text-align: end; max-width: 150px; }
+
+/* The full open-games screen. */
+.og { padding-bottom: 20px; }
+.og-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 4px 18px 14px;
+}
+.og-head-text { min-width: 0; }
+/* Anton has no Hebrew glyphs, so the 40px Anton title the handoff asks for is
+   Plex at the size that reads the same in Hebrew. */
+.og-title {
+  margin: 0;
+  font: 700 36px/0.95 "IBM Plex Sans Hebrew", "IBM Plex Sans", var(--sans);
+  letter-spacing: -0.03em;
+}
+.og-sub { margin: 8px 0 0; font-size: 13.5px; color: #a3abbb; }
+.og-new {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 18px;
   box-shadow: inset 0 0 0 1px rgba(var(--court-rgb), 0.45);
   color: var(--court);
   font-weight: 600;
   font-size: 13px;
-  cursor: pointer;
 }
-.ogrow-join:disabled { opacity: 0.5; cursor: default; }
-.ogrow-in { flex: none; font-weight: 600; font-size: 12.5px; color: var(--court); }
-.ogrow-blocked { flex: none; max-width: 44%; font-size: 11.5px; color: var(--muted); text-align: end; }
-
-/* The full open-games screen. */
-.og { padding-bottom: 20px; }
-.og-head { padding: 0 18px 10px; }
-.og-title {
-  margin: 10px 0 0;
-  font: 700 28px/1 "IBM Plex Sans Hebrew", "IBM Plex Sans", var(--sans);
-  letter-spacing: -0.02em;
-}
-.og-sub { margin: 7px 0 0; font-size: 13px; color: var(--muted); }
+.og-new svg { width: 15px; height: 15px; }
+.og-empty { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
 .og-open-btn {
   display: flex;
   align-items: center;
@@ -4908,13 +5079,13 @@ button:active { transform: translateY(1px); }
 }
 .og-row-actions { display: flex; justify-content: flex-start; padding-bottom: 6px; }
 .og-error { margin: 10px 18px 0; }
-.og-section { padding: 16px 18px 0; }
+.og-section { padding: 0 18px; }
 .og-section-title {
   margin: 0;
-  font: 600 10.5px/1 "IBM Plex Mono", monospace;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--muted);
+  padding: 14px 0 8px;
+  font: 600 11px/1 "IBM Plex Mono", monospace;
+  letter-spacing: 0.14em;
+  color: #6f7787;
 }
 
 /* 193a — an open league, as a card with a lit top edge and a corner glow.
