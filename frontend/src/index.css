@@ -4998,53 +4998,154 @@ button:active { transform: translateY(1px); }
   color: var(--muted);
 }
 
-.lg-head {
-  padding: 0 22px;
+/* 190b — the leagues page, one level down from the games hub. */
+.lgp-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
+  gap: 12px;
+  padding: 16px 18px 10px;
 }
-/* Anton has no Hebrew glyphs (player-profile-105a), so page titles are Plex. */
-.lg-h1 {
-  margin: 0;
-  font: 700 34px/1 "IBM Plex Sans Hebrew", "IBM Plex Sans", var(--sans);
-  letter-spacing: -0.025em;
+.lgp-back {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ink-dim);
 }
-.lg-head-actions { flex: none; display: flex; align-items: center; gap: 8px; }
+.lgp-back svg { width: 16px; height: 16px; }
+/* The sport is stated here, not offered: switching it is the header's job. */
+.lgp-sport {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+  font-size: 12.5px;
+  color: var(--court);
+}
+.lgp-sport svg { width: 14px; height: 14px; }
 
-.btn-create-league {
+.lgp-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 4px 18px 16px;
+}
+.lgp-head-text { min-width: 0; }
+/* Anton has no Hebrew glyphs (player-profile-105a), so the 44px Anton title
+   the handoff asks for is Plex at the size that reads the same in Hebrew. */
+.lgp-title {
+  margin: 0;
+  font: 700 40px/0.95 "IBM Plex Sans Hebrew", "IBM Plex Sans", var(--sans);
+  letter-spacing: -0.03em;
+}
+.lgp-sub { margin: 8px 0 0; font-size: 13.5px; color: #a3abbb; }
+.lgp-new {
   flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   height: 38px;
   padding: 0 15px;
   border: 0;
   border-radius: 19px;
-  background: var(--court);
-  color: var(--court-contrast);
-  font: 700 13px "IBM Plex Sans Hebrew", "IBM Plex Sans", var(--sans);
-  display: inline-flex;
-  align-items: center;
-  white-space: nowrap;
-  text-decoration: none;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px rgba(var(--court-rgb), 0.45);
+  color: var(--court);
+  font-weight: 600;
+  font-size: 13.5px;
   cursor: pointer;
 }
-.btn-friendly {
-  flex: none;
+.lgp-new svg { width: 15px; height: 15px; }
+
+.lgp-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 0 18px 14px;
+  padding: 4px;
+  border-radius: 23px;
+  background: rgba(148, 163, 184, 0.07);
+}
+.lgp-tab {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   height: 38px;
-  padding: 0 14px;
   border: 0;
   border-radius: 19px;
-  background: none;
-  box-shadow: inset 0 0 0 1px rgba(242, 242, 239, 0.22);
-  color: #c9cbcd;
-  text-decoration: none;
-  font: 600 13px "IBM Plex Sans Hebrew", "IBM Plex Sans", var(--sans);
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;
+  background: transparent;
+  color: #a3abbb;
+  font-weight: 600;
+  font-size: 14px;
   cursor: pointer;
 }
+.lgp-tab.is-on { background: #eef1f7; color: #0e1116; font-weight: 700; }
+.lgp-tab-count { font: 500 11px "IBM Plex Mono", monospace; color: #6f7787; }
+.lgp-tab.is-on .lgp-tab-count { color: inherit; opacity: 0.6; }
+
+/* Where I stand in the league, at the head of its row. */
+.lg-place {
+  flex: none;
+  width: 52px;
+  height: 52px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  border-radius: 16px;
+  background: rgba(var(--court-rgb), 0.1);
+  color: var(--court);
+}
+.lg-place-n { font: 400 22px/1 "Anton", var(--display); }
+.lg-place-of { font: 500 9.5px "IBM Plex Mono", monospace; color: var(--muted); }
+/* 190b: the next match, in plain words. Never "X is waiting for your reply" —
+   on a list of six leagues that reads as six accusations. */
+.lg-row-next { font-weight: 500; font-size: 12.5px; color: var(--ink-dim); }
+
+.lgp-teaser {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 18px 0;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(148, 163, 184, 0.05);
+}
+.lgp-teaser-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.lgp-teaser-title { font-weight: 700; font-size: 14.5px; }
+.lgp-teaser-names {
+  font-size: 11.5px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lgp-teaser-link {
+  flex: none;
+  border: 0;
+  background: transparent;
+  color: var(--court);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+.lgp-inline-link {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--court);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+
 .btn-friendly svg {
   width: 13px;
   height: 13px;
@@ -7595,18 +7696,6 @@ button:active { transform: translateY(1px); }
 .hw-tile-pos { flex: none; font: 600 16px "IBM Plex Mono", "IBM Plex Sans", monospace; }
 .hw-tile-size { font: 500 11px "IBM Plex Mono", "IBM Plex Sans", monospace; color: #6E7176; }
 
-/* 173 — the rankings row at the foot of the leagues page. */
-.lg-ranks-row {
-  margin: 26px 20px 30px; padding: 17px 0;
-  border-top: 1px solid rgba(148, 163, 184, .16);
-  display: flex; align-items: center; gap: 13px;
-  color: var(--ink); text-decoration: none;
-}
-.lg-ranks-icon { flex: none; width: 22px; height: 22px; color: #c9cfdb; }
-.lg-ranks-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-.lg-ranks-title { font: 600 16px "IBM Plex Sans", var(--sans); }
-.lg-ranks-sub { font: 400 13px "IBM Plex Sans", var(--sans); color: #8b93a6; }
-.lg-ranks-chev { flex: none; width: 15px; height: 15px; color: #6f7787; }
 
 /* my-profile-171a — my own profile. Identity, the numbers, settings, out. */
 .app-shell:has(.mp) { height: 100svh; }
