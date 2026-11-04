@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import { useSport } from "../SportContext.jsx";
@@ -12,6 +12,7 @@ import { SkeletonMatchRow } from "../Skeleton.jsx";
 import {
   NTRP_STEPS,
   WEEKDAY_SHORT,
+  nearestNtrpStep as activeStep,
   acceptFriendlyInvitation,
   calendarDaysUntil as daysUntil,
   dayMonthPadded as dayMonth,
@@ -20,17 +21,6 @@ import {
   weekdayName,
 } from "../matchUtils.js";
 import Profile from "./Profile.jsx";
-
-// The scale runs the app's full NTRP range, 1.5 to 7. A level between steps
-// (or outside the range) sits on the nearest one rather than off the bar.
-function activeStep(level) {
-  if (level == null) return null;
-  let best = NTRP_STEPS[0];
-  for (const step of NTRP_STEPS) {
-    if (Math.abs(step - level) < Math.abs(best - level)) best = step;
-  }
-  return best;
-}
 
 function hhmm(date) {
   return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
@@ -111,6 +101,40 @@ export default function Home() {
   }
 
   const myRating = ratings.find((r) => r.sport_id === selectedSportId) ?? null;
+
+  // In a sport played in pairs, the thing that actually plays is the pair:
+  // it joins the league, it has its own number, and the whole screen is
+  // already read through the selected pair. So the scale shows the pair's
+  // level and keeps the player's own underneath it, rather than showing a
+  // personal number that nothing on this screen is about.
+  //
+  // A pair has no level until both of its members have one (a pair seeded
+  // from its rated half would walk into a league under a number that means
+  // nothing), and until then the personal scale is the only true one there
+  // is — so that is what stays on screen, saying plainly what is missing.
+  const lensPair =
+    selectedPair && sports.find((s) => s.id === selectedSportId)?.plays_in_pairs
+      ? selectedPair
+      : null;
+  const pairLevelMissing = Boolean(lensPair && lensPair.level == null);
+  const scale =
+    lensPair && lensPair.level != null
+      ? {
+          level: lensPair.level,
+          label: t("הצמד"),
+          provisional: lensPair.provisional,
+          // PROVISIONAL_MATCHES on the server. A pair's first three results
+          // move it hard, the same way a player's do.
+          left: Math.max(0, 3 - lensPair.matches_played),
+        }
+      : myRating
+        ? {
+            level: myRating.level,
+            label: null,
+            provisional: myRating.provisional,
+            left: Math.max(0, 3 - myRating.rated_matches),
+          }
+        : null;
   const sportName = sports.find((s) => s.id === selectedSportId)?.name;
   const winRate =
     stats && stats.matches_played > 0 ? Math.round((stats.wins / stats.matches_played) * 100) : null;
@@ -445,33 +469,46 @@ export default function Home() {
           </span>
         </div>
 
-        {myRating && (
+        {scale && (
           <div className="hw-scale">
             <div className="hw-scale-head">
-              <span className="hw-scale-label">NTRP · {sportName ? t(sportName) : ""}</span>
+              <span className="hw-scale-label">
+                NTRP · {sportName ? t(sportName) : ""}
+                {scale.label ? ` · ${scale.label}` : ""}
+              </span>
               <span className="hw-scale-level" dir="ltr">
-                {myRating.level.toFixed(1)}
+                {scale.level.toFixed(1)}
               </span>
             </div>
             <div className="hw-scale-bar" dir="ltr" aria-hidden="true">
               {NTRP_STEPS.map((step) => (
                 <span
                   key={step}
-                  className={`hw-step${step === activeStep(myRating.level) ? " is-here" : ""}`}
+                  className={`hw-step${step === activeStep(scale.level) ? " is-here" : ""}`}
                 />
               ))}
             </div>
             <div className="hw-scale-foot" dir="ltr">
               <span>1.5</span>
               <span className="hw-scale-note" dir="auto">
-                {myRating.provisional
-                  ? 3 - myRating.rated_matches === 1
+                {scale.provisional
+                  ? scale.left === 1
                     ? t("זמני · עוד משחק אחד")
-                    : t("זמני · עוד {n} משחקים", { n: 3 - myRating.rated_matches })
+                    : t("זמני · עוד {n} משחקים", { n: scale.left })
                   : (round && myWeekLeagues[0]?.name) || ""}
               </span>
               <span>7.0</span>
             </div>
+            {/* The personal number is not dropped, only moved below the one
+                the screen is about — and it leads to the pair's page, where
+                both players' levels sit beside the pair's. */}
+            {lensPair && (myRating || pairLevelMissing) && (
+              <Link to={`/pairs/${lensPair.id}`} className="hw-scale-mine">
+                {pairLevelMissing
+                  ? t("לצמד עוד אין רמה")
+                  : t("הרמה שלך: {level}", { level: myRating.level.toFixed(1) })}
+              </Link>
+            )}
           </div>
         )}
       </div>

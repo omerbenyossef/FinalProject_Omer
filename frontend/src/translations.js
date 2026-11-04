@@ -1765,6 +1765,7 @@ const PAIRS = [
   ["{n} דברים מחכים לך", "{n} things need you"],
   ["לעמוד הצמד", "To the pair's page"],
   ["כל הצמדים", "All my pairs"],
+  ["לצמד עוד אין רמה", "The pair has no level yet"],
 ];
 
 const heToEn = {};

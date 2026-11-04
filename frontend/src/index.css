@@ -7826,6 +7826,24 @@ button:active { transform: translateY(1px); }
 .hw-scale-bar { margin-top: 9px; height: 22px; display: flex; align-items: flex-end; gap: 3px; }
 .hw-step { flex: 1; height: 8px; border-radius: 2px; background: #24272B; }
 .hw-step.is-here { height: 22px; background: #C6F24E; }
+/* The player's own number under the pair's: a quiet second line, and the
+   way into the pair's page where both sit side by side. */
+.home-rating-mine {
+  display: inline-block;
+  margin-top: 10px;
+  font-weight: 500;
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.hw-scale-mine {
+  display: inline-block;
+  margin-top: 8px;
+  font-weight: 500;
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+}
 .hw-scale-foot {
   margin-top: 6px; display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
   font: 500 10.5px "IBM Plex Mono", "IBM Plex Sans", monospace; color: #6E7176;

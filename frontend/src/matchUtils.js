@@ -4,6 +4,21 @@
 // it drives every level picker and scale bar in the app.
 export const NTRP_STEPS = [1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7];
 
+// Where a level sits on that bar. A level between steps — which every pair's
+// level is, since it starts at the mean of two — or outside the range sits on
+// the nearest step rather than off the bar entirely.
+export function nearestNtrpStep(level) {
+  if (level == null) return null;
+  let best = NTRP_STEPS[0];
+  for (const step of NTRP_STEPS) {
+    // <=, not <: a level exactly between two steps (3.75, which is what a
+    // pair seeded from a 3.5 and a 4.0 gets) takes the higher one, so the bar
+    // agrees with the number printed above it, which rounds up to 3.8.
+    if (Math.abs(step - level) <= Math.abs(best - level)) best = step;
+  }
+  return best;
+}
+
 const HEBREW_RANGE = new RegExp("[\\u0590-\\u05FF]");
 export function hasHebrewChars(str) {
   return HEBREW_RANGE.test(str || "");

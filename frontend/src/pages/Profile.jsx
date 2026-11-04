@@ -13,6 +13,7 @@ import {
   roundDueDateObj,
   matchScheduleState,
   NTRP_STEPS,
+  nearestNtrpStep,
   activeRoundStatus,
   currentRoundNumber,
   daysUntil,
@@ -444,7 +445,7 @@ function SoloLeagueHero({ league, members, standings, t }) {
 export default function Profile() {
   const { user } = useAuth();
   const { selectedSportId, sports } = useSport();
-  const { activePairs, loading: pairsLoading } = usePairs();
+  const { activePairs, selectedPair, loading: pairsLoading } = usePairs();
   const { t } = useLanguage();
   const navigate = useNavigate();
   const { nextMatches, matchesLoading, reload: loadNextMatches, itemCount } = useOpenAction();
@@ -736,6 +737,40 @@ export default function Profile() {
     stats && stats.matches_played > 0 ? Math.round((stats.wins / stats.matches_played) * 100) : null;
   const myRating = myRatings.find((r) => r.sport_id === selectedSportId) || null;
 
+  // In a sport played in pairs the thing that actually plays is the pair: it
+  // joins the league, it carries its own number, and every screen is already
+  // read through the selected pair. So the scale shows the pair's level and
+  // keeps the player's own underneath it, instead of a personal number that
+  // nothing around it is about.
+  //
+  // A pair has no level until both of its members have one — a pair seeded
+  // from its rated half would enter a league under a number that means
+  // nothing — and until then the personal scale is the only true one there
+  // is, so that is what stays, saying plainly what is missing.
+  const lensPair =
+    selectedPair && sports.find((s) => s.id === selectedSportId)?.plays_in_pairs
+      ? selectedPair
+      : null;
+  const pairLevelMissing = Boolean(lensPair && lensPair.level == null);
+  const scale =
+    lensPair && lensPair.level != null
+      ? {
+          level: lensPair.level,
+          label: t("הצמד"),
+          provisional: lensPair.provisional,
+          // PROVISIONAL_MATCHES on the server: a pair's first three results
+          // move it hard, exactly as a player's do.
+          left: Math.max(0, 3 - lensPair.matches_played),
+        }
+      : myRating
+        ? {
+            level: myRating.level,
+            label: null,
+            provisional: myRating.provisional,
+            left: Math.max(0, 3 - myRating.rated_matches),
+          }
+        : null;
+
   // In a pairs sport there is an order to things: the questionnaire, then a
   // partner, and only then a league. Offering "join a league" to a padel
   // player who has neither is offering three dead ends, since every one of
@@ -840,14 +875,15 @@ export default function Profile() {
           </div>
         )}
 
-        {myRating ? (
+        {scale ? (
           <div className={`home-rating${isRoundNotOpened ? " compact" : ""}`}>
             <div className="home-rating-head">
               <span className="home-rating-label">
                 NTRP · {sportName ? t(sportName) : ""}
+                {scale.label ? ` · ${scale.label}` : ""}
               </span>
               <span className="home-rating-level" dir="ltr">
-                {myRating.level.toFixed(1)}
+                {scale.level.toFixed(1)}
               </span>
             </div>
             {!isRoundNotOpened && (
@@ -856,20 +892,36 @@ export default function Profile() {
                   {NTRP_STEPS.map((step) => (
                     <span
                       key={step}
-                      className={`home-rating-step${step === myRating.level ? " here" : ""}`}
+                      className={`home-rating-step${
+                        step === nearestNtrpStep(scale.level) ? " here" : ""
+                      }`}
                     />
                   ))}
                 </div>
                 <div className="home-rating-foot" dir="ltr">
                   <span>1.5</span>
                   <span>
-                    {myRating.provisional
-                      ? t("זמני · עוד {n} משחקים", { n: 3 - myRating.rated_matches })
+                    {scale.provisional
+                      ? scale.left === 1
+                        ? t("זמני · עוד משחק אחד")
+                        : t("זמני · עוד {n} משחקים", { n: scale.left })
                       : ""}
                   </span>
                   <span>7.0</span>
                 </div>
               </>
+            )}
+            {/* Outside the compact branch on purpose: the compact card drops
+                the bar to save room, and dropping the player's own number
+                with it would mean the pair's level simply replaced it with
+                no trace. It leads to the pair's page, where both players'
+                levels sit beside the pair's. */}
+            {lensPair && (myRating || pairLevelMissing) && (
+              <Link to={`/pairs/${lensPair.id}`} className="home-rating-mine">
+                {pairLevelMissing
+                  ? t("לצמד עוד אין רמה")
+                  : t("הרמה שלך: {level}", { level: myRating.level.toFixed(1) })}
+              </Link>
             )}
           </div>
         ) : (
