@@ -7672,7 +7672,10 @@ button:active { transform: translateY(1px); }
   display: flex; flex-direction: column; gap: 12px; overflow-y: auto;
 }
 
-/* One card per match, growing to fill the diary. */
+/* One card per match, growing to fill the diary — except when there is only
+   one of them, which would otherwise stretch down the whole screen now that
+   nothing sits below it. */
+.hw-diary--one .hw-card { flex: 0 0 auto; }
 .hw-card {
   flex: 1 1 0; min-height: 104px;
   background: #181B1F; border-radius: 22px; overflow: hidden;
@@ -7866,30 +7869,6 @@ button:active { transform: translateY(1px); }
 
 /* 169a — the leagues live in a strip that scrolls the full screen width; it
    sits outside the diary so its overflow isn't clipped. */
-.hw-strip {
-  flex: none; margin-top: 14px; padding: 0 0 18px;
-  overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-}
-.hw-strip::-webkit-scrollbar { display: none; }
-.hw-strip-inner { padding: 0 22px; display: flex; gap: 10px; width: max-content; }
-.hw-tile {
-  flex: none; width: 168px; box-sizing: border-box;
-  padding: 13px 15px; border: 0; border-radius: 16px;
-  background: #181B1F; color: #F2F2EF; cursor: pointer;
-  display: flex; align-items: baseline; gap: 8px; text-align: start;
-}
-.hw-tile--join {
-  background: none; border: 1px solid rgba(242, 242, 239, .22); border-style: dashed;
-  align-items: center; justify-content: flex-start;
-  font: 600 13px "IBM Plex Sans", var(--sans); color: #84878C;
-}
-.hw-tile-name {
-  flex: 1; min-width: 0; font: 600 13px "IBM Plex Sans", var(--sans);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.hw-tile-pos { flex: none; font: 600 16px "IBM Plex Mono", "IBM Plex Sans", monospace; }
-.hw-tile-size { font: 500 11px "IBM Plex Mono", "IBM Plex Sans", monospace; color: #6E7176; }
 
 
 /* my-profile-171a — my own profile. Identity, the numbers, settings, out. */

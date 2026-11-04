@@ -128,7 +128,9 @@ export default function Home() {
 
   const matches = week?.matches ?? [];
   const invites = week?.invites ?? [];
-  const leagueTiles = week?.leagues ?? [];
+  // Only the NTRP scale still reads this — it names the league under the
+  // bar. The row of league tiles it used to fill is gone.
+  const myWeekLeagues = week?.leagues ?? [];
   const round = week?.round ?? null;
 
   const metaLine = (() => {
@@ -444,7 +446,7 @@ export default function Home() {
                   ? 3 - myRating.rated_matches === 1
                     ? t("זמני · עוד משחק אחד")
                     : t("זמני · עוד {n} משחקים", { n: 3 - myRating.rated_matches })
-                  : (round && leagueTiles[0]?.name) || ""}
+                  : (round && myWeekLeagues[0]?.name) || ""}
               </span>
               <span>7.0</span>
             </div>
@@ -454,7 +456,15 @@ export default function Home() {
 
       {error && <p className="hw-error error">{t(error)}</p>}
 
-      <div className={`hw-diary${emptyState ? " hw-diary--empty" : ""}`}>
+      {/* One card used to share the diary's height with the strip of league
+          tiles below it. With the strip gone a single match stretched down the
+          whole screen, so a lone card keeps its own height instead of growing
+          into the space. Two or more still divide it. */}
+      <div
+        className={`hw-diary${emptyState ? " hw-diary--empty" : ""}${
+          matches.length === 1 && invites.length === 0 ? " hw-diary--one" : ""
+        }`}
+      >
         <div className="hw-meta" dir="ltr">
           {metaLine}
         </div>
@@ -527,34 +537,6 @@ export default function Home() {
           </>
         )}
       </div>
-
-      {week && (
-        <div className="hw-strip">
-          <div className="hw-strip-inner">
-            {leagueTiles.map((league) => (
-              <button
-                type="button"
-                className="hw-tile"
-                key={league.id}
-                onClick={() => navigate(`/leagues/${league.id}`)}
-              >
-                <span className="hw-tile-name">{league.name}</span>
-                <span className="hw-tile-pos" dir="ltr">
-                  {league.position ?? "–"}
-                  <span className="hw-tile-size">/{league.size ?? "–"}</span>
-                </span>
-              </button>
-            ))}
-            <button
-              type="button"
-              className="hw-tile hw-tile--join"
-              onClick={() => navigate("/leagues/open")}
-            >
-              {t("הצטרף לליגה")}
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
