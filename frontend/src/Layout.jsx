@@ -5,7 +5,7 @@ import { useSport } from "./SportContext.jsx";
 import { usePairs } from "./PairContext.jsx";
 import { useLanguage } from "./LanguageContext.jsx";
 import { useOpenAction } from "./OpenActionContext.jsx";
-import { ChevronIcon, HomeIcon, RanksIcon, TrophyIcon } from "./Icons.jsx";
+import { ChevronIcon, HomeIcon, RanksIcon, TennisIcon } from "./Icons.jsx";
 import InstallPrompt from "./InstallPrompt.jsx";
 import PushPrompt from "./PushPrompt.jsx";
 import Onboarding from "./Onboarding.jsx";
@@ -31,9 +31,9 @@ export default function Layout({ children }) {
   // the topbar (its roster scrolls, its footer holds the only action), so the
   // tab bar would just be a second bottom bar competing with it.
   const isJoinPreview = /^\/leagues\/\d+\/preview$/.test(location.pathname);
-  // ranks-entry-173: the rankings are pushed over the profile, not a tab —
-  // the only way out is back.
-  const isRanks = location.pathname === "/ranks";
+  // ranks-entry-173 pushed the rankings over the profile with no tab and only
+  // a back arrow out. 189b makes them the third tab, so the bar stays: a tab
+  // that hides the bar it was tapped from strands the reader.
   // 183b: a screen that asks one question and offers two answers, reached from
   // the home screen and left by its own back arrow.
   const isNewMatch = location.pathname === "/new-match";
@@ -116,13 +116,16 @@ export default function Layout({ children }) {
       {user && <InstallPrompt />}
       {user && <PushPrompt />}
       <main className="content">{children}</main>
-      {user && location.pathname !== "/ops" && !isJoinPreview && !isRanks && !isNewMatch && (
+      {user && location.pathname !== "/ops" && !isJoinPreview && !isNewMatch && (
         <nav className="tabbar">
           <div className="tabbar-row">
             <div className={`tabbar-inner${openAction ? "" : " wide"}`}>
-              {/* my-profile-171a: HOME · LEAGUES · MATCHES. The profile moved to
-                  the avatar in the header. Labels are Latin mono here, the same
-                  language the home screen speaks. */}
+              {/* my-profile-171a put the profile on the avatar in the header
+                  and left HOME · LEAGUES · MATCHES here. 189b replaces the
+                  middle one with the games hub and names the third for what
+                  its icon has always been — RanksIcon — so that two tabs are
+                  not both called "משחקים". /needs-you, which the third tab used
+                  to open, keeps its entry on the home screen. */}
               <NavLink
                 to="/profile"
                 end
@@ -133,21 +136,21 @@ export default function Layout({ children }) {
                 {!openAction && <span className="tab-label">{t("בית")}</span>}
               </NavLink>
               <NavLink
-                to="/leagues"
+                to="/games"
                 className={({ isActive }) => `tab${isActive ? " active" : ""}`}
-                aria-label="LEAGUES"
+                aria-label="GAMES"
               >
-                <TrophyIcon className="tab-icon" aria-hidden="true" />
-                {!openAction && <span className="tab-label">{t("ליגות")}</span>}
+                <TennisIcon className="tab-icon" aria-hidden="true" />
+                {!openAction && <span className="tab-label">{t("משחקים")}</span>}
                 {hasOtherLeagueActivity && <span className="tab-dot" aria-hidden="true" />}
               </NavLink>
               <NavLink
-                to="/needs-you"
+                to="/ranks"
                 className={({ isActive }) => `tab${isActive ? " active" : ""}`}
-                aria-label="MATCHES"
+                aria-label="RANKING"
               >
                 <RanksIcon className="tab-icon" aria-hidden="true" />
-                {!openAction && <span className="tab-label">{t("משחקים")}</span>}
+                {!openAction && <span className="tab-label">{t("דירוג")}</span>}
               </NavLink>
             </div>
 

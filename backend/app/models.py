@@ -442,6 +442,97 @@ class MatchTimeOption(Base):
     match = relationship("Match", back_populates="time_options")
 
 
+class OpenGameStatus(str, enum.Enum):
+    open = "open"
+    cancelled = "cancelled"
+
+
+class OpenGame(Base):
+    """189b — a game somebody opened that anyone at the right level can join.
+
+    Distinct from a friendly, which is offered to one named person, and from a
+    league match, which the schedule creates. This one is a standing offer: a
+    place, a time, a level range and a number of seats.
+
+    Whether it is full is NOT stored. It is `seats_taken >= slots`, counted
+    from the join rows — a stored flag and a participant list disagree the
+    first time anybody cancels, and then the screen and the database tell two
+    different stories. Derived, a cancellation reopens the game by arithmetic.
+    """
+
+    __tablename__ = "open_games"
+
+    id = Column(Integer, primary_key=True, index=True)
+    sport_id = Column(Integer, ForeignKey("sports.id"), nullable=False, index=True)
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    # Set from the sport when the game is opened, like a league's: padel
+    # singles and tennis doubles both exist, and a game should not change
+    # shape because someone later decides what its sport usually means.
+    is_doubles = Column(Boolean, nullable=True)
+    venue_id = Column(Integer, ForeignKey("venues.id"), nullable=True)
+    # Free text for a place the app does not know, alongside venue_id.
+    court = Column(String, nullable=True)
+    starts_at = Column(DateTime, nullable=False, index=True)
+    duration_minutes = Column(Integer, nullable=True)
+    level_min = Column(Float, nullable=False, default=RATING_MIN)
+    level_max = Column(Float, nullable=False, default=RATING_MAX)
+    # Counted in people, not courts: "4 players" and "2 courts" are the same
+    # thing in padel and different in tennis.
+    slots = Column(Integer, nullable=False, default=2)
+    status = Column(Enum(OpenGameStatus), default=OpenGameStatus.open, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    cancelled_at = Column(DateTime, nullable=True)
+
+    sport = relationship("Sport")
+    venue = relationship("Venue")
+    creator = relationship("User", foreign_keys=[created_by])
+    joins = relationship(
+        "OpenGameJoin", back_populates="game", cascade="all, delete-orphan", order_by="OpenGameJoin.id"
+    )
+
+    @property
+    def seats_taken(self) -> int:
+        return len(self.joins)
+
+    @property
+    def seats_left(self) -> int:
+        return max(0, (self.slots or 0) - self.seats_taken)
+
+    @property
+    def is_full(self) -> bool:
+        return self.seats_left == 0
+
+    @property
+    def player_ids(self) -> set[int]:
+        return {j.user_id for j in self.joins}
+
+    @property
+    def where(self) -> str:
+        return (self.venue.name if self.venue else None) or self.court or ""
+
+
+class OpenGameJoin(Base):
+    """One person in an open game.
+
+    In a doubles game both members of a pair get a row, each naming the pair —
+    the same shape LeagueMembership uses, so "is this person in this game"
+    stays answerable while the seats are still counted in people.
+    """
+
+    __tablename__ = "open_game_joins"
+    __table_args__ = (UniqueConstraint("open_game_id", "user_id", name="uq_open_game_user"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    open_game_id = Column(Integer, ForeignKey("open_games.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    pair_id = Column(Integer, ForeignKey("pairs.id"), nullable=True, index=True)
+    joined_at = Column(DateTime, default=datetime.utcnow)
+
+    game = relationship("OpenGame", back_populates="joins")
+    user = relationship("User", foreign_keys=[user_id])
+    pair = relationship("Pair", foreign_keys=[pair_id])
+
+
 class Venue(Base):
     """A place people actually play, with the address that books it.
 

@@ -12,6 +12,7 @@ from .routers import (
     chat,
     home,
     friendly,
+    open_games,
     leagues,
     matches,
     notifications,
@@ -380,6 +381,7 @@ app.include_router(push.router)
 app.include_router(ratings.router)
 app.include_router(pairs.router)
 app.include_router(friendly.router)
+app.include_router(open_games.router)
 app.include_router(home.router)
 app.include_router(open_matches.router)
 app.include_router(schedule.router)

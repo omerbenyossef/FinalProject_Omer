@@ -7,6 +7,8 @@ import Loading from "./Loading.jsx";
 import { useAuth } from "./AuthContext.jsx";
 import SignIn from "./pages/SignIn.jsx";
 import Leagues from "./pages/Leagues.jsx";
+import GamesHub from "./pages/GamesHub.jsx";
+import OpenGames from "./pages/OpenGames.jsx";
 import OpenLeagues from "./pages/OpenLeagues.jsx";
 import LeaguePreview from "./pages/LeaguePreview.jsx";
 import FriendlyNew from "./pages/FriendlyNew.jsx";
@@ -127,6 +129,24 @@ export default function App() {
           element={
             <ProtectedRoute>
               <FriendlyInvite />
+            </ProtectedRoute>
+          }
+        />
+        {/* 189b — the hub the middle tab now opens; the leagues list it used
+            to open sits one level down behind its first tile. */}
+        <Route
+          path="/games"
+          element={
+            <ProtectedRoute>
+              <GamesHub />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/games/open"
+          element={
+            <ProtectedRoute>
+              <OpenGames />
             </ProtectedRoute>
           }
         />

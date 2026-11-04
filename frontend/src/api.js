@@ -93,6 +93,14 @@ export const api = {
 
   listLeagues: () => request("/leagues/", { auth: false }),
   myLeagues: () => request("/leagues/mine"),
+
+  // 189b — games somebody opened that anyone at the right level can join.
+  openGames: (sportId, { mine = false } = {}) =>
+    request(`/open-games?sport_id=${sportId}${mine ? "&mine=true" : ""}`),
+  createOpenGame: (body) => request("/open-games", { method: "POST", body }),
+  joinOpenGame: (id) => request(`/open-games/${id}/join`, { method: "POST" }),
+  leaveOpenGame: (id) => request(`/open-games/${id}/leave`, { method: "POST" }),
+  cancelOpenGame: (id) => request(`/open-games/${id}/cancel`, { method: "POST" }),
   myNextMatches: () => request("/leagues/mine/next-matches"),
   myOpenItems: () => request("/leagues/mine/open-items"),
   opsOverview: (range) => request(`/ops/overview?range=${range}`),

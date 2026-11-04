@@ -205,6 +205,18 @@ export function ChessIcon(props) {
   );
 }
 
+/* 189b — open games: somebody already there, somebody joining. */
+export function TwoPeopleIcon(props) {
+  return (
+    <svg {...common} {...props}>
+      <circle cx="9" cy="8" r="3.2" />
+      <path d="M3 19.5c0-3.4 2.7-5.5 6-5.5s6 2.1 6 5.5" />
+      <circle cx="17" cy="9" r="2.6" />
+      <path d="M16.5 14.2c2.7.2 4.5 2 4.5 5.3" />
+    </svg>
+  );
+}
+
 export function ChevronIcon({ className = "", ...rest }) {
   return (
     <svg {...common} className={`chevron-icon ${className}`.trim()} {...rest}>

@@ -556,6 +556,47 @@ class PairCandidateOut(BaseModel):
     level_gap: Optional[float] = None
 
 
+class OpenGameCreate(BaseModel):
+    sport_id: int
+    starts_at: datetime
+    duration_minutes: Optional[int] = Field(default=90, ge=30, le=300)
+    venue_id: Optional[int] = None
+    court: Optional[str] = Field(default=None, max_length=120)
+    level_min: Optional[float] = None
+    level_max: Optional[float] = None
+    # None means "whatever the sport usually is", which is what the screen
+    # sends; a game that wants to say otherwise says so.
+    is_doubles: Optional[bool] = None
+
+
+class OpenGameOut(BaseModel):
+    id: int
+    sport_id: int
+    starts_at: UtcDatetime
+    duration_minutes: Optional[int] = None
+    venue_name: Optional[str] = None
+    court: Optional[str] = None
+    # What the row prints as the place: the venue's name, or the free text.
+    where: str = ""
+    level_min: float
+    level_max: float
+    is_doubles: bool = False
+    slots: int
+    seats_taken: int
+    seats_left: int
+    # Derived from the two above, never stored — see the model.
+    is_full: bool
+    created_by: int
+    creator_name: str = ""
+    players: list[PairPlayerOut] = []
+    # Whether the viewer is already in it, and whether they could be.
+    mine: bool = False
+    joined: bool = False
+    # Empty when the viewer can join. Otherwise why they cannot, in their own
+    # words, because the row shows the reason rather than hiding the game.
+    blocked_reason: Optional[str] = None
+
+
 class LeagueInviteLinkOut(BaseModel):
     token: str
 
