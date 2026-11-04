@@ -1074,6 +1074,7 @@ const PAIRS = [
   ["מחוץ לטווח הרמות של המשחק", "Outside this game's level range"],
   ["צריך צמד כדי לפתוח משחק זוגות", "You need a pair to open a doubles game"],
   ["נשאר מקום לשחקן אחד בלבד", "Only one seat left"],
+  ["המשחק כבר נקבע — אפשר לבטל אותו ממסך המשחק", "The game is set — call it off from the match screen"],
   ["יש תוצאה לאישור ב{league}", "A result to confirm in {league}"],
   ["צריך לאשר שעה ב{league}", "A time to confirm in {league}"],
   ["צריך לדווח תוצאה ב{league}", "A result to report in {league}"],

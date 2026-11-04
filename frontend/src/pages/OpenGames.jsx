@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { useSport } from "../SportContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
@@ -26,6 +26,7 @@ function isoLocal(date) {
 export default function OpenGames() {
   const { selectedSportId } = useSport();
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const [games, setGames] = useState(null);
   const [busyId, setBusyId] = useState(null);
   const [opening, setOpening] = useState(false);
@@ -50,7 +51,14 @@ export default function OpenGames() {
     setBusyId(game.id);
     setError("");
     try {
-      await api.joinOpenGame(game.id);
+      const after = await api.joinOpenGame(game.id);
+      // The last seat turns the game into a match, and the game leaves this
+      // list — so the player lands on the match rather than on a row that
+      // disappeared.
+      if (after?.match_id) {
+        navigate(`/matches/${after.match_id}`);
+        return;
+      }
     } catch (err) {
       setError(err.message);
     } finally {

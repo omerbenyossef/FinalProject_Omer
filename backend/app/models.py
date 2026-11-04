@@ -482,10 +482,16 @@ class OpenGame(Base):
     status = Column(Enum(OpenGameStatus), default=OpenGameStatus.open, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     cancelled_at = Column(DateTime, nullable=True)
+    # The match this game turned into once its last seat was taken. A full game
+    # IS a match: it has a chat, a score to report and a rating to move, and
+    # all of that already exists for friendlies — so the game hands over to one
+    # rather than growing its own copy of it.
+    match_id = Column(Integer, ForeignKey("matches.id"), nullable=True, index=True)
 
     sport = relationship("Sport")
     venue = relationship("Venue")
     creator = relationship("User", foreign_keys=[created_by])
+    match = relationship("Match", foreign_keys=[match_id])
     joins = relationship(
         "OpenGameJoin", back_populates="game", cascade="all, delete-orphan", order_by="OpenGameJoin.id"
     )

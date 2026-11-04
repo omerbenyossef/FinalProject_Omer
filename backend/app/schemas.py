@@ -595,6 +595,9 @@ class OpenGameOut(BaseModel):
     # Empty when the viewer can join. Otherwise why they cannot, in their own
     # words, because the row shows the reason rather than hiding the game.
     blocked_reason: Optional[str] = None
+    # Set once the game filled and became a match, so the screen can send the
+    # player to it.
+    match_id: Optional[int] = None
 
 
 class LeagueInviteLinkOut(BaseModel):

@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session, joinedload
 from .. import models, schemas
 from ..auth import get_current_user
 from ..database import get_db
+from ..push_utils import notify_user
 from ..rating_utils import get_rating
 
 router = APIRouter(prefix="/open-games", tags=["open-games"])
@@ -90,12 +91,16 @@ def _out(db: Session, game: models.OpenGame, user: models.User) -> schemas.OpenG
         mine=game.created_by == user.id,
         joined=user.id in game.player_ids,
         blocked_reason=_blocked_reason(db, game, user),
+        match_id=game.match_id,
     )
 
 
 def _live(query):
     return query.filter(
         models.OpenGame.status == models.OpenGameStatus.open,
+        # A game that has become a match is not an offer any more: it lives
+        # where every other match of theirs does.
+        models.OpenGame.match_id.is_(None),
         models.OpenGame.starts_at >= datetime.utcnow(),
         models.OpenGame.starts_at <= datetime.utcnow() + HORIZON,
     )
@@ -107,6 +112,76 @@ def _loaded(db: Session):
         joinedload(models.OpenGame.creator),
         joinedload(models.OpenGame.joins).joinedload(models.OpenGameJoin.user),
     )
+
+
+def _sides(game: models.OpenGame) -> tuple[list[models.OpenGameJoin], list[models.OpenGameJoin]]:
+    """The two sides of a full game. In doubles that is the two pairs; in
+    singles the opener and whoever took the other seat. The opener's side is
+    always side one, so the match reads the way the game did."""
+    if game.is_doubles:
+        order, seen = [], set()
+        for j in game.joins:
+            if j.pair_id and j.pair_id not in seen:
+                seen.add(j.pair_id)
+                order.append(j.pair_id)
+        first = [j for j in game.joins if j.pair_id == order[0]]
+        second = [j for j in game.joins if j.pair_id == order[1]]
+        return first, second
+    opener = [j for j in game.joins if j.user_id == game.created_by]
+    other = [j for j in game.joins if j.user_id != game.created_by]
+    return opener, other
+
+
+def _hand_over_to_match(db: Session, game: models.OpenGame) -> models.Match | None:
+    """A full game becomes a match.
+
+    Everything a played game needs — a chat, a score to report, an opponent to
+    confirm it and a rating to move — already exists for a friendly, so the
+    game hands over to one instead of growing a second copy of all of it. The
+    time needs no confirming: everybody agreed to it by joining.
+    """
+    if game.match_id or not game.is_full:
+        return None
+    first, second = _sides(game)
+    if not first or not second:
+        return None
+
+    match = models.Match(
+        league_id=None,
+        sport_id=game.sport_id,
+        kind=models.MatchKind.friendly,
+        # Nobody was invited to this: they all chose it. So it starts where an
+        # accepted invitation ends.
+        invite_status=models.FriendlyInviteStatus.accepted,
+        player1_id=first[0].user_id,
+        player2_id=second[0].user_id,
+        pair1_id=first[0].pair_id,
+        pair2_id=second[0].pair_id,
+        scheduled_at=game.starts_at,
+        scheduled_by=game.created_by,
+        schedule_confirmed=True,
+        duration_minutes=game.duration_minutes,
+        venue_id=game.venue_id,
+        court=game.court,
+    )
+    db.add(match)
+    db.flush()
+    game.match_id = match.id
+
+    for join in game.joins:
+        if join.user_id == game.created_by:
+            continue
+        notify_user(
+            db,
+            join.user_id,
+            "המשחק מלא",
+            f"המשחק ב{game.where or 'מגרש'} מלא — אפשר לתאם ולדווח תוצאה",
+            f"/matches/{match.id}",
+            title_en="Your game is full",
+            body_en=f"The game at {game.where or 'the court'} is full — you can talk and report the score",
+            match_id=match.id,
+        )
+    return match
 
 
 @router.get("", response_model=list[schemas.OpenGameOut])
@@ -210,6 +285,9 @@ def join(
     if pair and game.seats_left < 2:
         raise HTTPException(status_code=400, detail="נשאר מקום לשחקן אחד בלבד")
     _seat(db, game, current_user, pair)
+    db.flush()
+    db.refresh(game)
+    _hand_over_to_match(db, game)
     db.commit()
     db.refresh(game)
     return _out(db, game, current_user)
@@ -226,6 +304,10 @@ def leave(
     game = _loaded(db).filter(models.OpenGame.id == game_id).first()
     if not game:
         raise HTTPException(status_code=404, detail="המשחק לא נמצא")
+    if game.match_id:
+        # Past the handover there is a match with a chat and a result waiting;
+        # calling it off is that match's business, not this one's.
+        raise HTTPException(status_code=400, detail="המשחק כבר נקבע — אפשר לבטל אותו ממסך המשחק")
     rows = [j for j in game.joins if j.user_id == current_user.id]
     if not rows:
         raise HTTPException(status_code=400, detail="אינך במשחק הזה")
@@ -251,6 +333,8 @@ def cancel(
         raise HTTPException(status_code=404, detail="המשחק לא נמצא")
     if game.created_by != current_user.id:
         raise HTTPException(status_code=403, detail="רק מי שפתח את המשחק יכול לבטל אותו")
+    if game.match_id:
+        raise HTTPException(status_code=400, detail="המשחק כבר נקבע — אפשר לבטל אותו ממסך המשחק")
     game.status = models.OpenGameStatus.cancelled
     game.cancelled_at = datetime.utcnow()
     db.commit()

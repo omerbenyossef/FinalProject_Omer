@@ -44,7 +44,14 @@ export default function GamesHub() {
   async function join(game) {
     setBusyId(game.id);
     try {
-      await api.joinOpenGame(game.id);
+      const after = await api.joinOpenGame(game.id);
+      // Taking the last seat turns the game into a match. It leaves this list
+      // at that moment, so without this the row would simply vanish — the
+      // player goes to the match instead.
+      if (after?.match_id) {
+        navigate(`/matches/${after.match_id}`);
+        return;
+      }
       await load();
     } catch {
       // The row's own reason is the message; a failed join just reloads so the
