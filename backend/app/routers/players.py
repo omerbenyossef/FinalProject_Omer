@@ -234,6 +234,30 @@ def player_photo(player_id: int, db: Session = Depends(get_db)):
     )
 
 
+def _row_is(row, user_id: int) -> bool:
+    """Whether a standings row belongs to this player.
+
+    Tolerant of both shapes on purpose: get_standings builds a singles table
+    out of plain dicts and a doubles one out of StandingRow objects, and only
+    FastAPI's response model makes them look alike over HTTP. Called directly,
+    as here, it hands back whichever it built — so this read dictionaries and
+    answered 500 for a shared doubles league, and reading attributes instead
+    would only move the 500 to the singles ones.
+
+    A doubles row has no single `user` at all: it is a pair, and the player is
+    one of the two inside it.
+    """
+    get = (lambda key: row.get(key)) if isinstance(row, dict) else (lambda key: getattr(row, key, None))
+    user = get("user")
+    if user is not None:
+        return (user["id"] if isinstance(user, dict) else user.id) == user_id
+    side = get("side")
+    if not side:
+        return False
+    players = side["players"] if isinstance(side, dict) else side.players
+    return any((p["id"] if isinstance(p, dict) else p.id) == user_id for p in players or [])
+
+
 @router.get("/{player_id}", response_model=schemas.PlayerProfileOut)
 def get_player_profile(
     player_id: int,
@@ -312,8 +336,8 @@ def get_player_profile(
         if not league:
             continue
         rows = get_standings(membership.league_id, db)
-        my_rank = next((i + 1 for i, r in enumerate(rows) if r["user"].id == current_user.id), None)
-        their_rank = next((i + 1 for i, r in enumerate(rows) if r["user"].id == player_id), None)
+        my_rank = next((i + 1 for i, r in enumerate(rows) if _row_is(r, current_user.id)), None)
+        their_rank = next((i + 1 for i, r in enumerate(rows) if _row_is(r, player_id)), None)
         shared_leagues.append(
             schemas.SharedLeagueOut(
                 id=league.id,
