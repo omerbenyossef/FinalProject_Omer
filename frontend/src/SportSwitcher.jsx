@@ -86,18 +86,32 @@ export default function SportSwitcher({ userId }) {
   useEffect(() => {
     if (!open || summary) return;
     let alive = true;
-    Promise.all([api.myLeagues(), api.myNextMatches()])
-      .then(([leagues, entries]) => {
-        if (alive) setSummary({ leagues, entries });
+    // A pairs sport is asked about its pairs too: "you haven't joined yet" is
+    // true there and useless, because joining is not what is blocking you —
+    // finding a partner is. One call per pairs sport, which today is padel.
+    const pairSports = sports.filter((sport) => sport.plays_in_pairs);
+    Promise.all([
+      api.myLeagues(),
+      api.myNextMatches(),
+      ...pairSports.map((sport) =>
+        api
+          .myPairs(sport.id)
+          .then((pairs) => [sport.id, pairs])
+          .catch(() => [sport.id, []]),
+      ),
+    ])
+      .then(([leagues, entries, ...pairLists]) => {
+        if (alive)
+          setSummary({ leagues, entries, pairsBySport: Object.fromEntries(pairLists) });
       })
       .catch(() => {
         // The sheet's job is switching sport; the status lines are a bonus.
-        if (alive) setSummary({ leagues: [], entries: [] });
+        if (alive) setSummary({ leagues: [], entries: [], pairsBySport: {} });
       });
     return () => {
       alive = false;
     };
-  }, [open, summary]);
+  }, [open, summary, sports]);
 
   // Escape closes it, like any other layer over the page.
   useEffect(() => {
@@ -115,6 +129,19 @@ export default function SportSwitcher({ userId }) {
     (summary?.leagues || []).filter((l) => l.sport?.id === sportId).length;
   const entriesFor = (sportId) =>
     (summary?.entries || []).filter((e) => e.sport_id === sportId);
+
+  // What to say about a sport the player has no league in. In a pairs sport
+  // the honest answer is never "you haven't joined": you cannot join one
+  // without a partner, so the sheet names the step actually in front of them.
+  function nothingYetLine(sport) {
+    if (!summary) return null;
+    if (!sport.plays_in_pairs) return t("עוד לא הצטרפת");
+    const pairs = summary.pairsBySport?.[sport.id] || [];
+    if (pairs.some((p) => p.status === "active")) return t("יש צמד · עוד לא בליגה");
+    if (pairs.some((p) => p.status === "pending" && !p.proposed_by_me))
+      return t("מחכה לך הזמנה לצמד");
+    return t("צריך פרטנר כדי להתחיל");
+  }
 
   // The sports the player actually plays lead; the rest are behind
   // "להוסיף ענף", so a six-sport list doesn't bury the two that matter.
@@ -174,9 +201,7 @@ export default function SportSwitcher({ userId }) {
                   : null;
                 const countLine =
                   count === 0
-                    ? summary
-                      ? t("עוד לא הצטרפת")
-                      : null
+                    ? nothingYetLine(sport)
                     : count === 1
                       ? t("ליגה אחת")
                       : t("{n} ליגות", { n: count });

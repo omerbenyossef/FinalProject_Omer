@@ -1038,6 +1038,10 @@ const PAIRS = [
   ["באיזה ענף?", "Which sport?"],
   ["להוסיף ענף", "Add a sport"],
   ["עוד לא הצטרפת", "You haven't joined yet"],
+  // A pairs sport with no league: joining is not the blocker, a partner is.
+  ["צריך פרטנר כדי להתחיל", "You need a partner to start"],
+  ["יש צמד · עוד לא בליגה", "You have a pair · not in a league yet"],
+  ["מחכה לך הזמנה לצמד", "A pair invitation is waiting for you"],
   ["יש תוצאה לאישור ב{league}", "A result to confirm in {league}"],
   ["צריך לאשר שעה ב{league}", "A time to confirm in {league}"],
   ["צריך לדווח תוצאה ב{league}", "A result to report in {league}"],
