@@ -4834,7 +4834,10 @@ button:active { transform: translateY(1px); }
 .gh-tile--primary .gh-tile-icon { color: var(--court-contrast); }
 .gh-tile--primary .gh-tile-sub { color: rgba(14, 17, 22, 0.65); }
 
+/* The hub scrolls now that it carries the player's own games, so its last
+   section needs the same clearance from the tab bar the diary has. */
 .gh-preview { padding: 22px 18px 0; }
+.gh-preview:last-child { padding-bottom: 24px; }
 .gh-preview-head {
   display: flex;
   align-items: baseline;
@@ -7968,6 +7971,9 @@ button:active { transform: translateY(1px); }
    screen between them and overflow:hidden cuts the action off the bottom —
    measured as a 121px card with its button sliced in half. The list scrolls
    instead. */
+/* The hub shows the same cards as the diary, in a list of their own. */
+.gh-mine { display: flex; flex-direction: column; gap: 12px; }
+
 .mc { flex: none; cursor: pointer; text-align: start; gap: 12px; }
 .mc-top { display: flex; align-items: flex-start; gap: 14px; }
 

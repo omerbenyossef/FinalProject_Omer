@@ -7,6 +7,7 @@ import { useLanguage } from "../LanguageContext.jsx";
 import { PlusIcon, TrophyIcon, TwoPeopleIcon } from "../Icons.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
 import OpenGameRow from "./OpenGameRow.jsx";
+import MatchCard from "../MatchCard.jsx";
 
 /* 189b — the Games hub.
    The middle tab used to go straight to the leagues list, which made a league
@@ -27,16 +28,21 @@ export default function GamesHub() {
   const navigate = useNavigate();
   const [leagueCount, setLeagueCount] = useState(null);
   const [games, setGames] = useState(null);
+  const [mine, setMine] = useState(null);
   const [busyId, setBusyId] = useState(null);
 
   const load = useCallback(async () => {
     if (!selectedSportId || !pairLensReady) return;
-    const [leagues, open] = await Promise.all([
+    const [leagues, open, week] = await Promise.all([
       api.myLeagues(selectedPair?.id).catch(() => []),
       api.openGames(selectedSportId).catch(() => []),
+      // The player's own games. Same source as the home screen's diary, so
+      // the two can never disagree about what they have coming up.
+      api.homeWeek(selectedSportId, selectedPair?.id).catch(() => null),
     ]);
     setLeagueCount(leagues.filter((l) => l.sport?.id === selectedSportId).length);
     setGames(open);
+    setMine(week?.matches ?? []);
   }, [selectedSportId, selectedPair?.id, pairLensReady]);
 
   useEffect(() => {
@@ -108,6 +114,33 @@ export default function GamesHub() {
           </span>
         </button>
       </div>
+
+      {/* Under the three ways to start a game: the games you already have.
+          The tab is called Matches, and it held nothing but ways to find a
+          new one — a player who came here looking for their own came away
+          thinking the app had lost them. */}
+      <section className="gh-preview">
+        <div className="gh-preview-head">
+          <h2 className="gh-preview-title">{t("המשחקים שלי")}</h2>
+          {(mine?.length ?? 0) > PREVIEW_ROWS && (
+            <Link to="/profile" className="gh-preview-all">
+              {t("הכל")}
+            </Link>
+          )}
+        </div>
+
+        {mine == null ? (
+          <SkeletonBar />
+        ) : mine.length === 0 ? (
+          <p className="gh-preview-empty">{t("אין לך משחקים קרובים.")}</p>
+        ) : (
+          <div className="gh-mine">
+            {mine.slice(0, PREVIEW_ROWS).map((match) => (
+              <MatchCard key={match.id} match={match} />
+            ))}
+          </div>
+        )}
+      </section>
 
       <section className="gh-preview">
         <div className="gh-preview-head">
