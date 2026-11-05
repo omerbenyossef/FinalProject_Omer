@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { api } from "./api";
 import { useAuth } from "./AuthContext.jsx";
 import { useSport } from "./SportContext.jsx";
+import { useLiveData } from "./liveData.js";
 
 /* In padel you are never just yourself: the thing that enters a league, holds
    a rating and plays a match is the pair. So the app keeps one of your pairs
@@ -61,6 +62,10 @@ export function PairProvider({ children }) {
   useEffect(() => {
     reload();
   }, [reload]);
+
+  // A partner's invitation is somebody else's action, so it has to arrive on
+  // its own — this is what puts the dot on the switcher without a reload.
+  useLiveData(reload, Boolean(user && selectedSportId));
 
   const active = useMemo(() => pairs.filter((p) => p.status === "active"), [pairs]);
   const pending = useMemo(() => pairs.filter((p) => p.status === "pending"), [pairs]);

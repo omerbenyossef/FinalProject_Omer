@@ -5,6 +5,7 @@ import { useAuth } from "./AuthContext.jsx";
 import { useSport } from "./SportContext.jsx";
 import { usePairs } from "./PairContext.jsx";
 import { openItemRoute } from "./matchUtils.js";
+import { useLiveData } from "./liveData.js";
 
 const OpenActionContext = createContext(null);
 
@@ -64,6 +65,10 @@ export function OpenActionProvider({ children }) {
     if (user) reload();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
+
+  // And without a route change: a result reported on the other side of the
+  // city is the tab bar's business as much as a tap on this phone is.
+  useLiveData(reload, Boolean(user));
 
   const currentLeagueId = useMemo(() => {
     const m = location.pathname.match(/^\/leagues\/(\d+)/);

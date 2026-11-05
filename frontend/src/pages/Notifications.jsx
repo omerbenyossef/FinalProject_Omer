@@ -5,6 +5,7 @@ import { useLanguage } from "../LanguageContext.jsx";
 import { useOpenAction } from "../OpenActionContext.jsx";
 import { useSport } from "../SportContext.jsx";
 import { usePairs } from "../PairContext.jsx";
+import { useLiveData } from "../liveData.js";
 import { ChevronIcon } from "../Icons.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
 import { formatWeekdayDateTime, weekdayName } from "../matchUtils.js";
@@ -90,6 +91,9 @@ export default function Notifications() {
       .then(setData)
       .catch((err) => setError(err.message));
   }, [selectedSportId, selectedPair?.id, pairLensReady]);
+
+  // The one screen whose whole content is other people acting.
+  useLiveData(load);
 
   useEffect(load, [load]);
 

@@ -7,6 +7,7 @@ import { usePairs } from "../PairContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import Avatar from "../Avatar.jsx";
 import { useOpenAction } from "../OpenActionContext.jsx";
+import { useLiveData } from "../liveData.js";
 import { BellIcon, PinIcon } from "../Icons.jsx";
 import { SkeletonMatchRow } from "../Skeleton.jsx";
 import {
@@ -51,10 +52,19 @@ export default function Home() {
       .homeWeek(selectedSportId, selectedPair?.id)
       .then(setWeek)
       .catch((err) => setError(err.message));
-    // The pair is a lens on the diary, so the diary waits for it.
+    // The bell counts what needs doing in the sport being looked at, so it
+    // agrees with the screen the bell opens — and it is refreshed with the
+    // diary, since a notification is the other half of the same news.
+    api
+      .notifications(selectedSportId, selectedPair?.id)
+      .then((data) => setNotifCount(data.unread_count))
+      .catch(() => {});
+    // The pair is a lens on both, so both wait for it.
   }, [selectedSportId, selectedPair?.id, pairLensReady]);
 
   useEffect(load, [load]);
+  // Somebody else's invitation, or a time they just confirmed, arrives here.
+  useLiveData(load);
 
   useEffect(() => {
     if (!selectedSportId) return;
@@ -65,15 +75,8 @@ export default function Home() {
     if (!pairLensReady) return;
     api.myLeagues(selectedPair?.id).then(setLeagues).catch(() => setLeagues([]));
     api.myRatings().then(setRatings).catch(() => {});
-    if (!selectedSportId) return;
-    // The bell counts what needs doing in the sport being looked at, so it
-    // agrees with the screen the bell opens.
-    api
-      .notifications(selectedSportId, selectedPair?.id)
-      .then((data) => setNotifCount(data.unread_count))
-      .catch(() => {});
-    // Switching pair changes both answers, so both are asked again.
-  }, [selectedSportId, selectedPair?.id, pairLensReady]);
+    // Switching pair changes which leagues are mine.
+  }, [selectedPair?.id, pairLensReady]);
 
   const sportLeagues = (leagues ?? []).filter((l) => l.sport.id === selectedSportId);
   const soloLeague = sportLeagues.length === 1 ? sportLeagues[0] : null;

@@ -5,6 +5,7 @@ import Avatar from "../Avatar.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import { useSport } from "../SportContext.jsx";
 import { usePairs } from "../PairContext.jsx";
+import { useLiveData } from "../liveData.js";
 import { SkeletonBar } from "../Skeleton.jsx";
 import { ChevronIcon } from "../Icons.jsx";
 
@@ -48,6 +49,10 @@ export default function Partners() {
     const timer = setTimeout(loadCandidates, query ? 300 : 0);
     return () => clearTimeout(timer);
   }, [loadCandidates, query]);
+
+  // This screen is where a pair invitation lands, and the person waiting on
+  // one is often sitting on it.
+  useLiveData(reload);
 
   async function act(fn, id) {
     setBusyId(id);

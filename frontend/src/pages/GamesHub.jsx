@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { useSport } from "../SportContext.jsx";
 import { usePairs } from "../PairContext.jsx";
+import { useLiveData } from "../liveData.js";
 import { useLanguage } from "../LanguageContext.jsx";
 import { PlusIcon, TrophyIcon, TwoPeopleIcon } from "../Icons.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
@@ -42,6 +43,9 @@ export default function GamesHub() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Events fill up while you are looking at them.
+  useLiveData(load);
 
   async function join(game) {
     setBusyId(game.id);
