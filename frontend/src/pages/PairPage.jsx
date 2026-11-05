@@ -235,6 +235,14 @@ export default function PairPage() {
       </section>
 
       <div className="pr-foot">
+        {/* A player can be in several pairs at once, each with its own rating
+            and history — but the only way to start another one was to find
+            the pairs screen, which this page links to in small type at the
+            very top. The way to a second partner belongs where the first one
+            is being looked at. */}
+        <Link to="/partners" className="pr-invite">
+          {t("הזמן שותף נוסף")}
+        </Link>
         <button type="button" className="pr-dissolve" onClick={() => setConfirming(true)}>
           {t("פירוק הצמד")}
         </button>

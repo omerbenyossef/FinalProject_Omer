@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { usePairs } from "./PairContext.jsx";
 import { useLanguage } from "./LanguageContext.jsx";
 import { ChevronDownIcon } from "./Icons.jsx";
+import { useDropdownAnchor } from "./dropdownAnchor.js";
 
 /* Which pair you are looking through — the whole app, not just this screen.
    The pair used to be a label that led to the pairs list: picking one changed
@@ -29,15 +30,10 @@ export default function PairSwitcher() {
   const { activePairs, selectedPair, setSelectedPairId, pairsAwaitingMe } = usePairs();
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open]);
+  // The same menu the sport switcher opens, hung from its own button: the two
+  // sit side by side in the header, and two controls in one row that open in
+  // two different directions read as two different kinds of thing.
+  const { buttonRef, anchor } = useDropdownAnchor(open, () => setOpen(false));
 
   if (!activePairs.length || !selectedPair) return null;
 
@@ -72,29 +68,35 @@ export default function PairSwitcher() {
       <button
         type="button"
         className="wordmark-pair wordmark-pair--btn"
+        ref={buttonRef}
         onClick={() => setOpen(true)}
+        aria-expanded={open}
         aria-label={t("דרך איזה צמד?")}
       >
         <span className="wordmark-pair-label">{label}</span>
-        <ChevronDownIcon className="wordmark-pair-chev" aria-hidden="true" />
+        <ChevronDownIcon
+          className={`wordmark-pair-chev${open ? " is-open" : ""}`}
+          aria-hidden="true"
+        />
         {elsewhere && <span className="wordmark-pair-badge" aria-hidden="true" />}
       </button>
 
       {/* To <body>: the topbar's backdrop-filter would otherwise make it the
-          containing block and trap the sheet inside a 56px bar. */}
+          containing block and trap the menu inside a 56px bar. */}
       {open &&
+        anchor &&
         createPortal(
-          <div className="sportsheet-overlay" onClick={() => setOpen(false)}>
+          <div className="sportmenu-overlay" onClick={() => setOpen(false)}>
             <div
-              className="sportsheet"
+              className="sportmenu"
               role="dialog"
               aria-modal="true"
               aria-label={t("דרך איזה צמד?")}
+              style={{ top: anchor.top, insetInlineStart: anchor.start }}
               onClick={(e) => e.stopPropagation()}
             >
-              <span className="sportsheet-grab" aria-hidden="true" />
-              <h2 className="sportsheet-title">{t("דרך איזה צמד?")}</h2>
-              <p className="sportsheet-note">{t("מה שתבחרו כאן מסנן את כל האפליקציה")}</p>
+              <h2 className="sportmenu-title">{t("דרך איזה צמד?")}</h2>
+              <p className="sportmenu-note">{t("מה שתבחרו כאן מסנן את כל האפליקציה")}</p>
 
               {activePairs.map((pair) => {
                 const on = pair.id === selectedPair.id;
@@ -141,12 +143,12 @@ export default function PairSwitcher() {
 
               <Link
                 to={`/pairs/${selectedPair.id}`}
-                className="sportsheet-more"
+                className="sportmenu-more"
                 onClick={() => setOpen(false)}
               >
                 {t("לעמוד הצמד")}
               </Link>
-              <Link to="/partners" className="sportsheet-more" onClick={() => setOpen(false)}>
+              <Link to="/partners" className="sportmenu-more" onClick={() => setOpen(false)}>
                 {t("כל הצמדים")}
               </Link>
             </div>
