@@ -7862,7 +7862,11 @@ button:active { transform: translateY(1px); }
    stats: its own card, so the bar reads as one object. The hero's padding
    stops at the gutter, so this one carries its own. */
 .hw-scale {
-  margin: 22px 18px 0;
+  /* 18px from the screen's edges, like the name above it and the cards
+     below. The block sits inside the hero, which already holds that gutter,
+     so repeating it here pushed the card 36px in and left it alone in its
+     own column — symmetric in itself and out of line with everything. */
+  margin: 22px 0 0;
   padding: 16px;
   border-radius: 18px;
   background: rgba(148, 163, 184, .05);
