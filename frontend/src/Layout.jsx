@@ -1,11 +1,12 @@
-import { Link, NavLink, useLocation } from "react-router-dom";
-import { mediaUrl } from "./api";
+import { useEffect, useState } from "react";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { api, mediaUrl } from "./api";
 import { useAuth } from "./AuthContext.jsx";
 import { useSport } from "./SportContext.jsx";
 import { usePairs } from "./PairContext.jsx";
 import { useLanguage } from "./LanguageContext.jsx";
 import { useOpenAction } from "./OpenActionContext.jsx";
-import { HomeIcon, RanksIcon, TennisIcon } from "./Icons.jsx";
+import { BellIcon, HomeIcon, RanksIcon, TennisIcon } from "./Icons.jsx";
 import InstallPrompt from "./InstallPrompt.jsx";
 import PushPrompt from "./PushPrompt.jsx";
 import Onboarding from "./Onboarding.jsx";
@@ -17,7 +18,9 @@ const AUTH_PATHS = ["/signin", "/signup", "/privacy", "/terms"];
 export default function Layout({ children }) {
   const { user } = useAuth();
   const { sports, selectedSportId } = useSport();
-  const { activePairs, selectedPair, pairsAwaitingMe } = usePairs();
+  const { activePairs, selectedPair, pairsAwaitingMe, pairLensReady } = usePairs();
+  const navigate = useNavigate();
+  const [notifCount, setNotifCount] = useState(0);
   const selectedSportPlaysInPairs = Boolean(
     sports.find((sport) => sport.id === selectedSportId)?.plays_in_pairs
   );
@@ -36,6 +39,20 @@ export default function Layout({ children }) {
   // the home screen and left by its own back arrow.
   const isNewMatch = location.pathname === "/new-match";
 
+  // What the bell is for: unread notifications in the sport and pair being
+  // looked at, so it agrees with the screen it opens. Re-asked on every
+  // route change, which is also how it clears after a visit to the list.
+  useEffect(() => {
+    if (!user || !selectedSportId || !pairLensReady) {
+      setNotifCount(0);
+      return;
+    }
+    api
+      .notifications(selectedSportId, selectedPair?.id)
+      .then((data) => setNotifCount(data.unread_count))
+      .catch(() => {});
+  }, [user, selectedSportId, selectedPair?.id, pairLensReady, location.pathname]);
+
   if (isAuthRoute) {
     return <main className="content auth-content">{children}</main>;
   }
@@ -45,13 +62,6 @@ export default function Layout({ children }) {
       <header className="topbar">
         {user ? (
           <>
-            <Link to="/me" className="topbar-avatar" aria-label={t("פרופיל")}>
-              {user.photo_url ? (
-                <img src={mediaUrl(user.photo_url)} alt="" />
-              ) : (
-                user.name?.trim()?.[0] ?? "?"
-              )}
-            </Link>
             <div className="wordmark-cluster">
               <span className="wordmark-rally">RALLY</span>
               {/* 187c: the sport is a button in the sport's own colour, not a
@@ -83,6 +93,29 @@ export default function Layout({ children }) {
                   <PairSwitcher />
                 </span>
               )}
+            </div>
+            {/* 196b — the bell belongs to the app, not to one screen. It used
+                to live in the home screen's own hero, which meant every other
+                screen either had its own copy or none at all. Here it is in
+                the same place everywhere, and the screens below it stop
+                carrying one. */}
+            <div className="topbar-end">
+              <button
+                type="button"
+                className="topbar-bell"
+                onClick={() => navigate("/notifications")}
+                aria-label={t("התראות")}
+              >
+                <BellIcon aria-hidden="true" />
+                {notifCount > 0 && <span className="topbar-bell-dot" aria-hidden="true" />}
+              </button>
+              <Link to="/me" className="topbar-avatar" aria-label={t("פרופיל")}>
+                {user.photo_url ? (
+                  <img src={mediaUrl(user.photo_url)} alt="" />
+                ) : (
+                  user.name?.trim()?.[0] ?? "?"
+                )}
+              </Link>
             </div>
           </>
         ) : (
