@@ -526,8 +526,9 @@ a { color: var(--court); text-decoration: none; }
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 15px 20px;
-  border-bottom: 1px solid var(--line);
+  /* 196b §1 */
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(148, 163, 184, .12);
   background: var(--glass);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
@@ -581,7 +582,7 @@ a { color: var(--court); text-decoration: none; }
 .wordmark-rally {
   font-family: "Anton", var(--display);
   font-weight: 400;
-  font-size: 17px;
+  font-size: 18px;
   line-height: 1;
   letter-spacing: 0.03em;
   color: var(--ink);
@@ -843,7 +844,7 @@ a.sportsheet-more { text-decoration: none; }
 
 /* my-profile-171a — the way into my profile, on every screen with a header. */
 .topbar-avatar {
-  flex: none; width: 30px; height: 30px; border-radius: 50%;
+  flex: none; width: 32px; height: 32px; border-radius: 50%;
   background: #24272B; color: #C9CBCD;
   display: flex; align-items: center; justify-content: center;
   font: 400 14px/1 "Anton", var(--display); text-transform: uppercase;
@@ -7903,8 +7904,12 @@ button:active { transform: translateY(1px); }
 }
 /* Under the bar: what the ends of the scale no longer say. */
 .hw-scale-foot2 {
-  margin-top: 10px; display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+  margin-top: 10px; display: flex; align-items: baseline; justify-content: space-between;
+  /* Two short statements, each whole: they go onto their own lines before
+     either of them breaks mid-phrase. */
+  flex-wrap: wrap; gap: 4px 10px;
 }
+.hw-scale-foot2 > * { white-space: nowrap; }
 .hw-scale-prov {
   font: 500 10.5px "IBM Plex Mono", "IBM Plex Sans", monospace; letter-spacing: .08em;
   text-transform: uppercase; color: #6f7787;
@@ -7924,19 +7929,19 @@ button:active { transform: translateY(1px); }
   scroll-padding-bottom: 24px;
 }
 
-/* One card per match, growing to fill the diary — except when there is only
-   one of them, which would otherwise stretch down the whole screen now that
-   nothing sits below it. */
-.hw-diary--one .hw-card { flex: 0 0 auto; }
+/* 196b: a card is 132px and keeps it. Cards used to stretch to divide the
+   diary between them, which made the same match look different depending on
+   how many others there were — and the list scrolls now, so there is nothing
+   to divide. */
 .hw-card {
-  flex: 1 1 0; min-height: 132px;
+  flex: 0 0 auto; min-height: 132px;
   background: #181c22; border-radius: 22px; overflow: hidden;
   display: flex; cursor: pointer; text-align: start;
 }
 .hw-card--invite { flex: none; cursor: default; }
 /* The voided card carries a sentence as well as an action, so it never gets
    squeezed below what its own content needs. */
-.hw-card--void { flex: 1 0 auto; }
+.hw-card--void { flex: 0 0 auto; }
 
 .hw-date {
   flex: none; width: 84px; background: #20252c; color: #8b93a6;
@@ -7978,9 +7983,11 @@ button:active { transform: translateY(1px); }
    the name above it — it used to be pushed to the opposite side, where it
    read as a tag rather than as where to go. */
 .hw-place {
-  display: flex; align-items: center; gap: 6px; min-width: 0;
+  align-self: flex-start;
+  display: flex; align-items: center; gap: 6px; max-width: 100%;
   font: 500 12.5px "IBM Plex Sans", var(--sans); color: #c9cfdb;
 }
+.hw-place-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hw-place-pin { flex: none; width: 13px; height: 13px; }
 
 /* The one line a card needs when the state is the whole story: a match both
@@ -8007,12 +8014,6 @@ button:active { transform: translateY(1px); }
   text-transform: uppercase;
 }
 
-/* Three cards or more: the card gets shorter and the button gives way to a
-   lime line — 168a's "under 120px" rule. */
-.hw-card.is-compact { min-height: 84px; }
-.hw-card.is-compact .hw-opponent { font-size: 20px; }
-.hw-card.is-compact .hw-body { padding: 14px 16px; gap: 3px; }
-.hw-card.is-compact .hw-action { margin-top: 5px; }
 .hw-text-action {
   border: 0; background: none; padding: 0; text-align: start;
   font: 700 13.5px "IBM Plex Sans", var(--sans); color: var(--court); cursor: pointer;

@@ -33,7 +33,7 @@ export default function Home() {
   const { sports, selectedSportId } = useSport();
   // The pair switcher is a lens: this week, in the pair being looked at.
   const { selectedPair, pairLensReady } = usePairs();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { reload: reloadOpenAction } = useOpenAction();
   const navigate = useNavigate();
 
@@ -180,7 +180,10 @@ export default function Home() {
     return parts.join(" · ");
   })();
 
-  const compact = matches.length >= 3;
+  // 168a shrank the cards once there were three of them, because they all
+  // had to share one screenful. 196b gives every card the same 132px and
+  // lets the list scroll, so there is one card and one action, however many
+  // matches there are.
   const emptyState = !!week && matches.length === 0 && invites.length === 0;
 
   function cardFor(match) {
@@ -241,12 +244,6 @@ export default function Home() {
                 : t("הכול מוכן")}
         </span>
       );
-    } else if (compact) {
-      action = (
-        <button type="button" className="hw-text-action" onClick={() => navigate(target)}>
-          {label}
-        </button>
-      );
     } else {
       action = (
         <button
@@ -273,7 +270,7 @@ export default function Home() {
 
     return (
       <div
-        className={`hw-card${compact ? " is-compact" : ""}${voided ? " hw-card--void" : ""}`}
+        className={`hw-card${voided ? " hw-card--void" : ""}`}
         key={`m${match.id}`}
         onClick={() => navigate(route)}
       >
@@ -320,11 +317,16 @@ export default function Home() {
             {match.round ? ` · ${t("מחזור {n}", { n: match.round })}` : ""}
           </span>
           {/* Where to go. The card is the last thing most players look at
-              before leaving the house, and it did not say. */}
+              before leaving the house, and it did not say.
+
+              The line reads from the same edge as the name above it: the
+              venue's own name keeps its direction inside a <bdi>, where a
+              dir="auto" on the line itself would flip the whole row, pin
+              and all, whenever the venue is Hebrew. */}
           {match.place && (
-            <span className="hw-place" dir="auto">
+            <span className="hw-place">
               <PinIcon className="hw-place-pin" aria-hidden="true" />
-              {match.place}
+              <bdi className="hw-place-name">{match.place}</bdi>
             </span>
           )}
           {voided && match.note && <span className="hw-note">{t(match.note)}</span>}
@@ -450,7 +452,7 @@ export default function Home() {
             <span className="hw-stat-value" dir="ltr">
               {`${stats ? stats.wins : 0}–${stats ? stats.losses : 0}`}
             </span>
-            <span className="hw-stat-label">{t("מאזן")}</span>
+            <span className="hw-stat-label">{language === "en" ? "W–L" : t("מאזן")}</span>
           </span>
           <span className="hw-stat">
             <span className="hw-stat-value">{stats ? stats.matches_played : 0}</span>
@@ -518,11 +520,7 @@ export default function Home() {
           tiles below it. With the strip gone a single match stretched down the
           whole screen, so a lone card keeps its own height instead of growing
           into the space. Two or more still divide it. */}
-      <div
-        className={`hw-diary${emptyState ? " hw-diary--empty" : ""}${
-          matches.length === 1 && invites.length === 0 ? " hw-diary--one" : ""
-        }`}
-      >
+      <div className={`hw-diary${emptyState ? " hw-diary--empty" : ""}`}>
         <div className="hw-meta" dir="ltr">
           {metaLine}
         </div>
