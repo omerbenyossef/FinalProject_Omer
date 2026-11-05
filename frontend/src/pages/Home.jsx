@@ -7,7 +7,7 @@ import { usePairs } from "../PairContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import Avatar from "../Avatar.jsx";
 import { useOpenAction } from "../OpenActionContext.jsx";
-import { PinIcon } from "../Icons.jsx";
+import { BellIcon } from "../Icons.jsx";
 import { SkeletonMatchRow } from "../Skeleton.jsx";
 import {
   NTRP_STEPS,
@@ -41,6 +41,7 @@ export default function Home() {
   const [leagues, setLeagues] = useState(null);
   const [ratings, setRatings] = useState([]);
   const [stats, setStats] = useState(null);
+  const [notifCount, setNotifCount] = useState(0);
   const [busyId, setBusyId] = useState(null);
   const [error, setError] = useState("");
 
@@ -62,10 +63,17 @@ export default function Home() {
 
   useEffect(() => {
     if (!pairLensReady) return;
-    // Switching pair changes which leagues are mine, so both are asked again.
     api.myLeagues(selectedPair?.id).then(setLeagues).catch(() => setLeagues([]));
     api.myRatings().then(setRatings).catch(() => {});
-  }, [selectedPair?.id, pairLensReady]);
+    if (!selectedSportId) return;
+    // The bell counts what needs doing in the sport being looked at, so it
+    // agrees with the screen the bell opens.
+    api
+      .notifications(selectedSportId, selectedPair?.id)
+      .then((data) => setNotifCount(data.unread_count))
+      .catch(() => {});
+    // Switching pair changes both answers, so both are asked again.
+  }, [selectedSportId, selectedPair?.id, pairLensReady]);
 
   const sportLeagues = (leagues ?? []).filter((l) => l.sport.id === selectedSportId);
   const soloLeague = sportLeagues.length === 1 ? sportLeagues[0] : null;
@@ -180,10 +188,7 @@ export default function Home() {
     return parts.join(" · ");
   })();
 
-  // 168a shrank the cards once there were three of them, because they all
-  // had to share one screenful. 196b gives every card the same 132px and
-  // lets the list scroll, so there is one card and one action, however many
-  // matches there are.
+  const compact = matches.length >= 3;
   const emptyState = !!week && matches.length === 0 && invites.length === 0;
 
   function cardFor(match) {
@@ -244,6 +249,12 @@ export default function Home() {
                 : t("הכול מוכן")}
         </span>
       );
+    } else if (compact) {
+      action = (
+        <button type="button" className="hw-text-action" onClick={() => navigate(target)}>
+          {label}
+        </button>
+      );
     } else {
       action = (
         <button
@@ -270,7 +281,7 @@ export default function Home() {
 
     return (
       <div
-        className={`hw-card${voided ? " hw-card--void" : ""}`}
+        className={`hw-card${compact ? " is-compact" : ""}${voided ? " hw-card--void" : ""}`}
         key={`m${match.id}`}
         onClick={() => navigate(route)}
       >
@@ -290,7 +301,7 @@ export default function Home() {
         </div>
         <div className="hw-body">
           <span className="hw-who">
-            <Avatar name={match.opponent_name} photoUrl={match.opponent_photo_url} size={28} />
+            <Avatar name={match.opponent_name} photoUrl={match.opponent_photo_url} size={30} />
             <span className={`hw-opponent${dim ? " dim" : ""}`}>{match.opponent_name}</span>
           </span>
           <span className="hw-sub">
@@ -317,16 +328,10 @@ export default function Home() {
             {match.round ? ` · ${t("מחזור {n}", { n: match.round })}` : ""}
           </span>
           {/* Where to go. The card is the last thing most players look at
-              before leaving the house, and it did not say.
-
-              The line reads from the same edge as the name above it: the
-              venue's own name keeps its direction inside a <bdi>, where a
-              dir="auto" on the line itself would flip the whole row, pin
-              and all, whenever the venue is Hebrew. */}
+              before leaving the house, and it did not say. */}
           {match.place && (
-            <span className="hw-place">
-              <PinIcon className="hw-place-pin" aria-hidden="true" />
-              <bdi className="hw-place-name">{match.place}</bdi>
+            <span className="hw-place" dir="auto">
+              {match.place}
             </span>
           )}
           {voided && match.note && <span className="hw-note">{t(match.note)}</span>}
@@ -430,37 +435,37 @@ export default function Home() {
       <div className="hw-hero">
         <div className="hw-top">
           <span className="hw-name">{user?.name}</span>
+          <div className="hw-top-side">
+            <span className="hw-leagues">
+              {sportLeagues.length === 1 ? t("ליגה אחת") : t("{n} ליגות", { n: sportLeagues.length })}
+            </span>
+            <button
+              type="button"
+              className="hw-bell"
+              onClick={() => navigate("/notifications")}
+              aria-label={t("התראות")}
+            >
+              <BellIcon aria-hidden="true" />
+              {notifCount > 0 && <span className="hw-bell-dot" aria-hidden="true" />}
+            </button>
+          </div>
         </div>
 
-        {/* 196b — four equal stats, each a number with its label under it.
-            The line they replace mixed a percentage, a W–L record and a
-            count in one run of text at three different weights, and the
-            league count hung off the bell row on the other side of the
-            screen. Four columns say the same in one shape. */}
-        {/* No dir on the row: in Hebrew it reads from the right like
-            everything else, and only the record itself is a Latin run. */}
-        <div className="hw-stats">
-          <span className="hw-stat">
-            <span className="hw-stat-value">{winRate !== null ? `${winRate}%` : "–"}</span>
-            <span className="hw-stat-label">{t("ניצחונות")}</span>
+        <div className="hw-nums" dir="ltr">
+          <span className="hw-num">
+            <span dir="ltr">{winRate !== null ? winRate : "–"}%</span>
+            <span className="hw-num-unit">{t("ניצחונות")}</span>
           </span>
-          <span className="hw-stat">
-            {/* The W/L letters only work inside an English run — in Hebrew
-                the letters and the digits fight over the order, so the
-                record is just the two numbers, and the label carries the
-                meaning either way. */}
-            <span className="hw-stat-value" dir="ltr">
-              {`${stats ? stats.wins : 0}–${stats ? stats.losses : 0}`}
-            </span>
-            <span className="hw-stat-label">{language === "en" ? "W–L" : t("מאזן")}</span>
+          {/* The W/L letters only work inside an English run — in Hebrew the
+              letters and the digits fight over the order, so the record is
+              just the two numbers. */}
+          <span className="hw-num" dir="ltr">
+            {language === "en"
+              ? `${stats ? stats.wins : 0}W-${stats ? stats.losses : 0}L`
+              : `${stats ? stats.wins : 0}-${stats ? stats.losses : 0}`}
           </span>
-          <span className="hw-stat">
-            <span className="hw-stat-value">{stats ? stats.matches_played : 0}</span>
-            <span className="hw-stat-label">{t("שוחקו")}</span>
-          </span>
-          <span className="hw-stat">
-            <span className="hw-stat-value">{sportLeagues.length}</span>
-            <span className="hw-stat-label">{t("ליגות")}</span>
+          <span className="hw-num">
+            {t("{n} שוחקו", { n: stats ? stats.matches_played : 0 })}
           </span>
         </div>
 
@@ -485,30 +490,24 @@ export default function Home() {
             </div>
             <div className="hw-scale-foot" dir="ltr">
               <span>1.5</span>
+              <span className="hw-scale-note" dir="auto">
+                {scale.provisional
+                  ? scale.left === 1
+                    ? t("זמני · עוד משחק אחד")
+                    : t("זמני · עוד {n} משחקים", { n: scale.left })
+                  : (round && myWeekLeagues[0]?.name) || ""}
+              </span>
               <span>7.0</span>
             </div>
-            {/* 196b put only 1.5 and 7.0 at the ends of the bar, so what
-                used to sit in the middle of it moves here: whether the
-                number is still settling, and — because the screen is read
-                through a pair — the player's own level beside it, leading
-                to the pair's page where both sit next to the pair's. */}
-            {(scale.provisional || lensPair) && (
-              <div className="hw-scale-foot2">
-                <span className="hw-scale-prov">
-                  {scale.provisional
-                    ? scale.left === 1
-                      ? t("זמני · עוד משחק אחד")
-                      : t("זמני · עוד {n} משחקים", { n: scale.left })
-                    : ""}
-                </span>
-                {lensPair && (myRating || pairLevelMissing) && (
-                  <Link to={`/pairs/${lensPair.id}`} className="hw-scale-mine">
-                    {pairLevelMissing
-                      ? t("לצמד עוד אין רמה")
-                      : t("הרמה שלך: {level}", { level: myRating.level.toFixed(1) })}
-                  </Link>
-                )}
-              </div>
+            {/* The personal number is not dropped, only moved below the one
+                the screen is about — and it leads to the pair's page, where
+                both players' levels sit beside the pair's. */}
+            {lensPair && (myRating || pairLevelMissing) && (
+              <Link to={`/pairs/${lensPair.id}`} className="hw-scale-mine">
+                {pairLevelMissing
+                  ? t("לצמד עוד אין רמה")
+                  : t("הרמה שלך: {level}", { level: myRating.level.toFixed(1) })}
+              </Link>
             )}
           </div>
         )}
@@ -520,7 +519,11 @@ export default function Home() {
           tiles below it. With the strip gone a single match stretched down the
           whole screen, so a lone card keeps its own height instead of growing
           into the space. Two or more still divide it. */}
-      <div className={`hw-diary${emptyState ? " hw-diary--empty" : ""}`}>
+      <div
+        className={`hw-diary${emptyState ? " hw-diary--empty" : ""}${
+          matches.length === 1 && invites.length === 0 ? " hw-diary--one" : ""
+        }`}
+      >
         <div className="hw-meta" dir="ltr">
           {metaLine}
         </div>

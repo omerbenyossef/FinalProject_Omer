@@ -170,10 +170,10 @@ export default function SportSwitcher({ userId }) {
           className="sportsw-icon"
           aria-hidden="true"
         />
-        {/* 195a kept this Hebrew in both languages; 196b changes that one
-            thing: the label follows the UI language, like every other word
-            on the screen. */}
-        <span className="sportsw-name">{t(selectedSport.name)}</span>
+        {/* 195a: the sport's name stays Hebrew here even in the English UI.
+            It is one word beside a Hebrew wordmark, and the sheet it opens
+            names every sport in the reader's language anyway. */}
+        <span className="sportsw-name">{selectedSport.name}</span>
         <ChevronDownIcon
           className={`sportsw-chev${open ? " is-open" : ""}`}
           aria-hidden="true"

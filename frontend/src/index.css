@@ -526,50 +526,14 @@ a { color: var(--court); text-decoration: none; }
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  /* 196b §1 */
-  padding: 14px 18px;
-  border-bottom: 1px solid rgba(148, 163, 184, .12);
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--line);
   background: var(--glass);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   position: sticky;
   top: 0;
   z-index: 10;
-}
-
-/* 196b — the end of the header: the bell, then the avatar. */
-.topbar-end {
-  flex: none;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-.topbar-bell {
-  position: relative;
-  flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: #c9cfdb;
-  cursor: pointer;
-}
-.topbar-bell svg { width: 21px; height: 21px; }
-/* A dot, not a number: the question it answers is "is there anything", and
-   the screen it opens says what. */
-.topbar-bell-dot {
-  position: absolute;
-  top: 2px;
-  inset-inline-end: 3px;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--court);
-  border: 2px solid #0e1116;
 }
 
 .wordmark-cluster {
@@ -582,7 +546,7 @@ a { color: var(--court); text-decoration: none; }
 .wordmark-rally {
   font-family: "Anton", var(--display);
   font-weight: 400;
-  font-size: 18px;
+  font-size: 17px;
   line-height: 1;
   letter-spacing: 0.03em;
   color: var(--ink);
@@ -844,7 +808,7 @@ a.sportsheet-more { text-decoration: none; }
 
 /* my-profile-171a — the way into my profile, on every screen with a header. */
 .topbar-avatar {
-  flex: none; width: 32px; height: 32px; border-radius: 50%;
+  flex: none; width: 30px; height: 30px; border-radius: 50%;
   background: #24272B; color: #C9CBCD;
   display: flex; align-items: center; justify-content: center;
   font: 400 14px/1 "Anton", var(--display); text-transform: uppercase;
@@ -964,13 +928,10 @@ a.sportsheet-more { text-decoration: none; }
 .tabbar {
   position: sticky;
   bottom: 0;
-  padding: 0 14px calc(16px + env(safe-area-inset-bottom));
+  padding: 0 16px calc(14px + env(safe-area-inset-bottom));
   pointer-events: none;
-  /* 196b — the nav is the page, not a bar on top of it: the same background
-     with a long shadow upwards, so content fades out above the pill instead
-     of being cut off by a line. */
-  background: var(--paper);
-  box-shadow: 0 -24px 24px -8px var(--paper);
+  background: #161d26;
+  border-top: 1px solid rgba(148, 163, 184, .10);
 }
 
 .tabbar-row {
@@ -7840,48 +7801,31 @@ button:active { transform: translateY(1px); }
 }
 
 /* 169a — the identity block that used to live on the profile screen. */
-.hw-hero { flex: none; padding: 20px 18px 0; }
+.hw-hero { flex: none; padding: 0 22px; }
 .hw-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .hw-name {
-  min-width: 0; font: 400 52px/.9 "Anton", var(--display); text-transform: uppercase;
+  min-width: 0; font: 400 44px/.92 "Anton", var(--display); text-transform: uppercase;
   letter-spacing: .01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-
-/* 196b — four stats of the same shape, a value over its label. */
-.hw-stats { margin-top: 16px; display: flex; align-items: flex-start; gap: 26px; }
-.hw-stat { display: flex; flex-direction: column; gap: 3px; }
-.hw-stat-value { font: 400 22px/1 "Anton", var(--display); color: #F2F2EF; }
-.hw-stat-label {
-  font: 500 10px "IBM Plex Mono", "IBM Plex Sans", monospace;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  color: #8b93a6;
+.hw-top-side { flex: none; margin-top: 6px; display: flex; align-items: center; gap: 13px; }
+.hw-leagues { font: 500 11px "IBM Plex Mono", "IBM Plex Sans", monospace; letter-spacing: .14em; color: #84878C;   text-transform: uppercase;
 }
 
-/* 196b — the level is a block of its own now, not a line floating under the
-   stats: its own card, so the bar reads as one object. The hero's padding
-   stops at the gutter, so this one carries its own. */
-.hw-scale {
-  /* 18px from the screen's edges, like the name above it and the cards
-     below. The block sits inside the hero, which already holds that gutter,
-     so repeating it here pushed the card 36px in and left it alone in its
-     own column — symmetric in itself and out of line with everything. */
-  margin: 22px 0 0;
-  padding: 16px;
-  border-radius: 18px;
-  background: rgba(148, 163, 184, .05);
+.hw-nums { margin-top: 11px; display: flex; align-items: baseline; gap: 16px; }
+.hw-num { font: 500 13px "IBM Plex Mono", "IBM Plex Sans", monospace; color: #C9CBCD; }
+.hw-num-unit { margin-inline-start: 5px; color: #6E7176;   text-transform: uppercase;
 }
+
+.hw-scale { margin-top: 18px; }
 .hw-scale-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
 .hw-scale-label {
-  font: 500 11px "IBM Plex Mono", "IBM Plex Sans", monospace; letter-spacing: .08em; color: #8b93a6;
+  font: 500 11px "IBM Plex Mono", "IBM Plex Sans", monospace; letter-spacing: .08em; color: #6E7176;
   text-transform: uppercase;
 }
-.hw-scale-level { flex: none; font: 400 26px/1 "Anton", var(--display); }
-.hw-scale-bar { margin-top: 12px; height: 14px; display: flex; align-items: flex-end; gap: 4px; }
-.hw-step { flex: 1; height: 6px; border-radius: 2px; background: #262c36; }
-/* The accent, not a fixed lime: padel's home screen is blue like the rest
-   of padel (187c). */
-.hw-step.is-here { height: 14px; background: var(--court); }
+.hw-scale-level { flex: none; font: 400 20px/1 "Anton", var(--display); }
+.hw-scale-bar { margin-top: 9px; height: 22px; display: flex; align-items: flex-end; gap: 3px; }
+.hw-step { flex: 1; height: 8px; border-radius: 2px; background: #24272B; }
+.hw-step.is-here { height: 22px; background: #C6F24E; }
 /* The player's own number under the pair's: a quiet second line, and the
    way into the pair's page where both sit side by side. */
 .home-rating-mine {
@@ -7894,6 +7838,7 @@ button:active { transform: translateY(1px); }
 }
 .hw-scale-mine {
   display: inline-block;
+  margin-top: 8px;
   font-weight: 500;
   font-size: 12px;
   color: var(--muted);
@@ -7901,77 +7846,68 @@ button:active { transform: translateY(1px); }
 }
 .hw-scale-foot {
   margin-top: 6px; display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
-  font: 500 10.5px "IBM Plex Mono", "IBM Plex Sans", monospace; color: #6f7787;
+  font: 500 10.5px "IBM Plex Mono", "IBM Plex Sans", monospace; color: #6E7176;
 }
 .hw-scale-note {
   min-width: 0; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-/* Under the bar: what the ends of the scale no longer say. */
-.hw-scale-foot2 {
-  margin-top: 10px; display: flex; align-items: baseline; justify-content: space-between;
-  /* Two short statements, each whole: they go onto their own lines before
-     either of them breaks mid-phrase. */
-  flex-wrap: wrap; gap: 4px 10px;
+.hw-bell {
+  position: relative; flex: none; display: flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border: 0; background: none; padding: 0; color: #F2F2EF; cursor: pointer;
 }
-.hw-scale-foot2 > * { white-space: nowrap; }
-.hw-scale-prov {
-  font: 500 10.5px "IBM Plex Mono", "IBM Plex Sans", monospace; letter-spacing: .08em;
-  text-transform: uppercase; color: #6f7787;
+.hw-bell svg { width: 23px; height: 23px; }
+.hw-bell-dot {
+  position: absolute; top: 0; inset-inline-end: 1px; width: 8px; height: 8px; border-radius: 50%;
+  background: #C6F24E; border: 2px solid #0F1113;
 }
+
 .hw-meta {
-  flex: none; font: 500 10.5px "IBM Plex Mono", "IBM Plex Sans", monospace; letter-spacing: .1em; color: #8b93a6;
+  flex: none; font: 500 11.5px "IBM Plex Mono", "IBM Plex Sans", monospace; letter-spacing: .1em; color: #84878C;
   text-transform: uppercase;
-  margin-bottom: 12px;
 }
 .hw-error { margin: 12px 22px 0; }
 
 .hw-diary {
-  flex: 1; min-height: 0; padding: 26px 18px 24px;
+  flex: 1; min-height: 0; margin-top: 22px; padding: 18px 22px 0;
+  border-top: 1px solid rgba(242, 242, 239, .12);
   display: flex; flex-direction: column; gap: 12px; overflow-y: auto;
-  /* 196b: the last card must never sit against the nav, so the list keeps
-     its own clearance below the fade the nav casts over it. */
-  scroll-padding-bottom: 24px;
 }
 
-/* 196b: a card is 132px and keeps it. Cards used to stretch to divide the
-   diary between them, which made the same match look different depending on
-   how many others there were — and the list scrolls now, so there is nothing
-   to divide. */
+/* One card per match, growing to fill the diary — except when there is only
+   one of them, which would otherwise stretch down the whole screen now that
+   nothing sits below it. */
+.hw-diary--one .hw-card { flex: 0 0 auto; }
 .hw-card {
-  flex: 0 0 auto; min-height: 132px;
-  background: #181c22; border-radius: 22px; overflow: hidden;
+  flex: 1 1 0; min-height: 104px;
+  background: #181B1F; border-radius: 22px; overflow: hidden;
   display: flex; cursor: pointer; text-align: start;
 }
 .hw-card--invite { flex: none; cursor: default; }
 /* The voided card carries a sentence as well as an action, so it never gets
    squeezed below what its own content needs. */
-.hw-card--void { flex: 0 0 auto; }
+.hw-card--void { flex: 1 0 auto; }
 
 .hw-date {
-  flex: none; width: 84px; background: #20252c; color: #8b93a6;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  flex: none; width: 74px; background: #24272B; color: #84878C;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
 }
-/* A date that is actually settled, in the sport's accent. */
-.hw-date.is-lime { background: var(--court); color: #0e1116; }
-.hw-date-day { font: 500 11px "IBM Plex Mono", "IBM Plex Sans", monospace; letter-spacing: .14em;   text-transform: uppercase;
+.hw-date.is-lime { background: #C6F24E; color: #0F1113; }
+.hw-date-day { font: 500 10.5px "IBM Plex Mono", "IBM Plex Sans", monospace; letter-spacing: .14em;   text-transform: uppercase;
 }
-.hw-date-num { font: 400 36px/1 "Anton", var(--display); }
-/* No date at all: a smaller mark, because it is a gap, not a day. */
-.hw-date:not(.is-lime) .hw-date-num { font-size: 32px; color: #6f7787; }
-.hw-date-time { font: 500 11.5px "IBM Plex Mono", "IBM Plex Sans", monospace;   text-transform: uppercase;
+.hw-date-num { font: 400 34px/1 "Anton", var(--display); }
+.hw-date-time { font: 500 10.5px "IBM Plex Mono", "IBM Plex Sans", monospace;   text-transform: uppercase;
 }
-.hw-date:not(.is-lime) .hw-date-time { font-size: 10px; }
 
 .hw-body {
-  flex: 1; min-width: 0; padding: 14px 16px;
+  flex: 1; min-width: 0; padding: 18px;
   display: flex; flex-direction: column; justify-content: center; gap: 6px;
 }
 .hw-opponent {
-  min-width: 0; font: 700 18px/1.2 "IBM Plex Sans", var(--sans); letter-spacing: -.015em; color: #F2F2EF;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font: 700 24px/1.2 "IBM Plex Sans", var(--sans); letter-spacing: -.015em; color: #F2F2EF;
+  text-wrap: pretty;
 }
 .hw-opponent.dim { color: #C9CBCD; }
-.hw-sub { font: 500 10.5px "IBM Plex Mono", "IBM Plex Sans", monospace; color: #8b93a6;   text-transform: uppercase;
+.hw-sub { font: 500 11.5px "IBM Plex Mono", "IBM Plex Sans", monospace; color: #84878C;   text-transform: uppercase;
 }
 /* Which pair the match is, inside the mono line — a person's name, so it
    keeps its own case and face for the same reason the venue below does. */
@@ -7983,44 +7919,38 @@ button:active { transform: translateY(1px); }
 
 /* Where it is being played. Sans, not the mono of the line above it, because
    it is a name rather than a label. */
-/* 196b: a line like any other in the card, reading from the same edge as
-   the name above it — it used to be pushed to the opposite side, where it
-   read as a tag rather than as where to go. */
-.hw-place {
-  align-self: flex-start;
-  display: flex; align-items: center; gap: 6px; max-width: 100%;
-  font: 500 12.5px "IBM Plex Sans", var(--sans); color: #c9cfdb;
-}
-.hw-place-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.hw-place-pin { flex: none; width: 13px; height: 13px; }
+.hw-place { margin-top: 2px; font: 500 13px "IBM Plex Sans", var(--sans); color: #C9CBCD; }
 
 /* The one line a card needs when the state is the whole story: a match both
    players said never happened. */
 .hw-note { margin-top: 3px; font: 500 12.5px "IBM Plex Sans", var(--sans); color: #C9CBCD; }
-.hw-action { margin-top: 4px; display: flex; align-self: flex-start; }
+.hw-action { margin-top: 8px; display: flex; }
 .hw-action--pair { gap: 9px; }
 
 .hw-btn {
-  align-self: flex-start; height: 32px; padding: 0 14px; border: 0; border-radius: 16px;
-  font: 700 13px "IBM Plex Sans", var(--sans); cursor: pointer;
+  align-self: flex-start; height: 42px; padding: 0 20px; border: 0; border-radius: 21px;
+  font: 700 14px "IBM Plex Sans", var(--sans); cursor: pointer;
 }
-/* The urgent action is filled; the one that can wait is outlined in the same
-   accent, so a card says which it is before it is read. */
-.hw-btn--lime { background: var(--court); color: #0e1116; }
+.hw-btn--lime { background: #C6F24E; color: #0F1113; }
 .hw-btn--ghost {
-  border: 0; box-shadow: inset 0 0 0 1px rgba(var(--court-rgb), .45);
-  background: none; color: var(--court);
+  border: 1px solid rgba(242, 242, 239, .22); background: none; color: #F2F2EF; font-weight: 600;
 }
-.hw-btn--sm { height: 32px; padding: 0 14px; font-size: 13px; }
+.hw-btn--sm { height: 38px; padding: 0 18px; font-size: 13.5px; }
 .hw-btn:disabled { opacity: .55; cursor: default; }
 .hw-mono-action {
   font: 500 11.5px "IBM Plex Mono", "IBM Plex Sans", monospace; letter-spacing: .08em; color: #84878C;
   text-transform: uppercase;
 }
 
+/* Three cards or more: the card gets shorter and the button gives way to a
+   lime line — 168a's "under 120px" rule. */
+.hw-card.is-compact { min-height: 84px; }
+.hw-card.is-compact .hw-opponent { font-size: 20px; }
+.hw-card.is-compact .hw-body { padding: 14px 16px; gap: 3px; }
+.hw-card.is-compact .hw-action { margin-top: 5px; }
 .hw-text-action {
   border: 0; background: none; padding: 0; text-align: start;
-  font: 700 13.5px "IBM Plex Sans", var(--sans); color: var(--court); cursor: pointer;
+  font: 700 13.5px "IBM Plex Sans", var(--sans); color: #C6F24E; cursor: pointer;
 }
 
 .hw-invites { flex: none; display: flex; flex-direction: column; gap: 12px; }

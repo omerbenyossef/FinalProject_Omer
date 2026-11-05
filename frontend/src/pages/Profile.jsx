@@ -8,7 +8,7 @@ import { useLanguage } from "../LanguageContext.jsx";
 import { useOpenAction } from "../OpenActionContext.jsx";
 import SetScoreForm from "../SetScoreForm.jsx";
 import Avatar from "../Avatar.jsx";
-import { ChevronIcon } from "../Icons.jsx";
+import { BellIcon, ChevronIcon } from "../Icons.jsx";
 import {
   roundDueDateObj,
   matchScheduleState,
@@ -464,6 +464,7 @@ export default function Profile() {
   const [error, setError] = useState("");
   // The bell counts what needs doing, and it comes from the notifications
   // endpoint itself so the badge and the screen can never disagree.
+  const [notifCount, setNotifCount] = useState(0);
   // open-matches-156a: the row's number is what waits on *you*, so the tag
   // doesn't shout when there is nothing to do.
   const [openMatches, setOpenMatches] = useState({ waiting_on_you: [], waiting_on_them: [] });
@@ -506,6 +507,10 @@ export default function Profile() {
     api
       .listLeagues()
       .then(setAllLeagues)
+      .catch(() => {});
+    api
+      .notifications(selectedSportId, selectedPair?.id)
+      .then((data) => setNotifCount(data.unread_count))
       .catch(() => {});
     api
       .openMatches()
@@ -856,7 +861,15 @@ export default function Profile() {
 
           </div>
           <div className="home-head-actions">
-            {/* 196b: the bell lives in the header now, on every screen. */}
+            <button
+              type="button"
+              className="home-bell"
+              onClick={() => navigate("/notifications")}
+              aria-label={t("התראות")}
+            >
+              <BellIcon aria-hidden="true" />
+              {notifCount > 0 && <span className="home-bell-count">{notifCount}</span>}
+            </button>
             <PageHelp
               pageKey="profile"
               title="עמוד הבית"
