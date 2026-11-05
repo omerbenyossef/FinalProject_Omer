@@ -38,7 +38,11 @@ export function PairProvider({ children }) {
   const reload = useCallback(async () => {
     if (!user || !selectedSportId) {
       setPairs([]);
-      setLoadedSportId(selectedSportId);
+      // Only a signed-in player with a sport can have a settled pair list.
+      // Marking it settled while the session is still loading made the lens
+      // read "ready, no pairs" for a moment, and every screen fetched the
+      // unfiltered question in that moment.
+      setLoadedSportId(user ? selectedSportId : null);
       return;
     }
     setLoading(true);
@@ -95,7 +99,15 @@ export function PairProvider({ children }) {
         selectedPair,
         setSelectedPairId,
         // A one-against-one sport has no pairs and never waits for them.
-        pairLensReady: !selectedSport?.plays_in_pairs || loadedSportId === selectedSportId,
+        // Not ready until the selected sport itself is known: before the
+        // sports load there is no way to tell a pairs sport from a singles
+        // one, and `!undefined?.plays_in_pairs` reads as "singles, go ahead".
+        // A screen that fetched in that gap asked the unfiltered question and
+        // then had to race its own answer — measured as two rounds of
+        // /leagues/mine, the second one filtered.
+        pairLensReady: selectedSport
+          ? !selectedSport.plays_in_pairs || loadedSportId === selectedSportId
+          : false,
         loading,
         reload,
       }}

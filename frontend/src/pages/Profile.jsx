@@ -316,6 +316,17 @@ function NoLeagueBlock({ t, navigate, openCount, showLevelRow, onSetLevel }) {
           <ChevronIcon className="nl-opt-chev" aria-hidden="true" />
         </button>
 
+        {/* The fourth way in, and the only one that needs nobody lined up
+            first: say where and when you are playing and let whoever is free
+            at your level take the seats. A league is a season and a friendly
+            needs somebody you already know — this is the one that turns an
+            empty Tuesday into a game. It sits above the friendly because it
+            asks for less, not because it matters more. */}
+        <button type="button" className="nl-opt" onClick={() => navigate("/games/open/new")}>
+          <span className="nl-opt-label">{t("פתח משחק")}</span>
+          <ChevronIcon className="nl-opt-chev" aria-hidden="true" />
+        </button>
+
         <button type="button" className="nl-opt" onClick={() => navigate("/friendly/new")}>
           <span className="nl-opt-label nl-opt-label--quiet">{t("משחק ידידותי בלי ליגה")}</span>
           <ChevronIcon className="nl-opt-chev" aria-hidden="true" />
@@ -445,7 +456,7 @@ function SoloLeagueHero({ league, members, standings, t }) {
 export default function Profile() {
   const { user } = useAuth();
   const { selectedSportId, sports } = useSport();
-  const { activePairs, selectedPair, loading: pairsLoading } = usePairs();
+  const { activePairs, selectedPair, pairLensReady, loading: pairsLoading } = usePairs();
   const { t } = useLanguage();
   const navigate = useNavigate();
   const { nextMatches, matchesLoading, reload: loadNextMatches, itemCount } = useOpenAction();
@@ -479,8 +490,13 @@ export default function Profile() {
   const requestedFriendlyNtrpRef = useRef(new Set());
 
   useEffect(() => {
+    // Same lens as every other screen: in a pairs sport "my leagues" and
+    // "what is waiting for me" are the selected pair's, not both pairs'.
+    // Without this the leagues page said one thing and this screen another
+    // about the very same pair.
+    if (!pairLensReady) return;
     api
-      .myLeagues()
+      .myLeagues(selectedPair?.id)
       .then(setMyLeagues)
       .catch(() => {});
     api
@@ -493,14 +509,15 @@ export default function Profile() {
       .then(setAllLeagues)
       .catch(() => {});
     api
-      .notifications(selectedSportId)
+      .notifications(selectedSportId, selectedPair?.id)
       .then((data) => setNotifCount(data.unread_count))
       .catch(() => {});
     api
       .openMatches()
       .then(setOpenMatches)
       .catch(() => {});
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pairLensReady, selectedPair?.id, selectedSportId]);
 
   useEffect(() => {
     setActiveToPlay(0);
