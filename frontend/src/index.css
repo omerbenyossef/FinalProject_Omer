@@ -7868,7 +7868,9 @@ button:active { transform: translateY(1px); }
 .hw-error { margin: 12px 22px 0; }
 
 .hw-diary {
-  flex: 1; min-height: 0; margin-top: 22px; padding: 18px 22px 0;
+  /* The list ends above the tab bar, not against it: the last card used to
+     run right into the pill. */
+  flex: 1; min-height: 0; margin-top: 22px; padding: 18px 22px 16px;
   border-top: 1px solid rgba(242, 242, 239, .12);
   display: flex; flex-direction: column; gap: 12px; overflow-y: auto;
 }
