@@ -4905,12 +4905,7 @@ button:active { transform: translateY(1px); }
    accent; a game I am already in, or opened myself, is quiet — there is
    nothing to tempt me with. */
 .ogc-list { display: flex; flex-direction: column; gap: 10px; }
-/* 198c — the home match card wears the same chrome as an open game's, so
-   the two lists read as one family. Both selectors are listed on every rule
-   that draws the card itself; change one and you change both, which is the
-   point. */
-.ogc,
-.mc {
+.ogc {
   position: relative;
   overflow: hidden;
   display: flex;
@@ -4928,13 +4923,11 @@ button:active { transform: translateY(1px); }
     inset 0 1px 0 rgba(var(--court-rgb), 0.45),
     inset 0 0 0 1px rgba(var(--court-rgb), 0.16);
 }
-.ogc.is-quiet,
-.mc.is-quiet {
+.ogc.is-quiet {
   background: rgba(148, 163, 184, 0.06);
   box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.1);
 }
-.ogc-glow,
-.mc-glow {
+.ogc-glow {
   position: absolute;
   top: -60px;
   inset-inline-start: -40px;
@@ -4944,7 +4937,6 @@ button:active { transform: translateY(1px); }
   pointer-events: none;
 }
 .ogc > :not(.ogc-glow) { position: relative; }
-.mc > :not(.mc-glow) { position: relative; }
 
 .ogc-top { display: flex; gap: 14px; }
 .ogc-date {
@@ -7943,7 +7935,7 @@ button:active { transform: translateY(1px); }
 .hw-diary {
   /* The list ends above the tab bar, not against it: the last card used to
      run right into the pill. */
-  flex: 1; min-height: 0; margin-top: 22px; padding: 18px 22px 16px;
+  flex: 1; min-height: 0; margin-top: 22px; padding: 18px 22px 24px;
   border-top: 1px solid rgba(242, 242, 239, .12);
   display: flex; flex-direction: column; gap: 12px; overflow-y: auto;
 }
@@ -8028,99 +8020,134 @@ button:active { transform: translateY(1px); }
   font: 700 13.5px "IBM Plex Sans", var(--sans); color: #C6F24E; cursor: pointer;
 }
 
-/* 198c — the home "this week" card. */
-/* flex: none, or the diary (a flex column) shrinks every card to share the
-   screen between them and overflow:hidden cuts the action off the bottom —
-   measured as a 121px card with its button sliced in half. The list scrolls
-   instead. */
-.mc { flex: none; cursor: pointer; text-align: start; gap: 12px; }
-.mc-top { display: flex; align-items: flex-start; gap: 14px; }
+/* 198b — the home "this week" card.
+   The day and the hour are the headline, because that is what a player came
+   to the screen for. One card is the sport's own colour — the match that is
+   happening now or has gone by without a result — and the rest are dark, so
+   the colour still means something when the week is full. */
+.mc {
+  position: relative;
+  overflow: hidden;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 18px;
+  border-radius: 22px;
+  background: #181c22;
+  cursor: pointer;
+  text-align: start;
+}
+.mc--lime { background: var(--court); color: #0e1116; }
 
-.mc-date {
-  flex: none; width: 58px; padding: 8px 0; border-radius: 16px;
-  background: rgba(14, 17, 22, .45);
-  display: flex; flex-direction: column; align-items: center; gap: 2px;
+/* The sport's mark, bleeding off the top corner. The icons are drawn in a
+   24-unit box, so the stroke is set here to land on the 5px the design
+   asks for at this size rather than the 10px it would inherit. */
+/* svg.mc-mark, not .mc-mark: the "everything else sits above it" rule below
+   has the same specificity and comes later, so the plain class lost the tie
+   and the watermark was laid out in the flow — a 130px hole that made the
+   lime card twice the height of its neighbours. */
+.mc > svg.mc-mark {
+  position: absolute;
+  top: -26px;
+  inset-inline-end: -26px;
+  width: 130px;
+  height: 130px;
+  stroke-width: 1.1;
+  color: #0e1116;
+  opacity: 0.14;
+  pointer-events: none;
 }
-.mc-date-day {
-  font: 500 10px "IBM Plex Mono", monospace; letter-spacing: .1em; text-transform: uppercase;
-  color: #a3abbb;
-}
-.mc-date-time { font: 400 22px/1 "Anton", var(--display); color: var(--ink); }
-.mc-date-dm { font: 500 10px "IBM Plex Mono", monospace; color: #6f7787; }
-/* No time agreed yet: an outline where the date will go, rather than a
-   filled block pretending to hold one. */
-.mc-date--none {
-  height: 64px; padding: 0; justify-content: center;
-  background: none; border: 1.5px dashed rgba(148, 163, 184, .3);
-}
-.mc-date-q { font: 400 20px/1 "Anton", var(--display); color: #6f7787; }
-.mc-date-no {
-  font: 500 9px "IBM Plex Mono", monospace; letter-spacing: .1em; text-transform: uppercase;
-  color: #6f7787;
-}
+.mc > :not(.mc-mark) { position: relative; }
 
-.mc-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-
-/* Amber, not the sport's accent: the accent already says "this card is
-   yours to move", and this says what the clock is doing. */
-.mc-pill {
-  align-self: flex-start; display: flex; align-items: center; gap: 6px;
-  height: 22px; padding: 0 9px; border-radius: 11px;
-  background: rgba(255, 181, 71, .16);
-  font-weight: 700; font-size: 11px; color: #ffb547;
+.mc-when { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+.mc-when-big {
+  font: 400 38px/.9 "Anton", var(--display);
+  text-transform: uppercase;
+  color: #eef1f7;
+  white-space: nowrap;
 }
-.mc-pill-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-
-.mc-who { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.mc-name {
-  min-width: 0; font: 700 17px/1.2 "IBM Plex Sans", var(--sans); color: var(--ink);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-
-.mc-meta {
-  display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 6px; min-width: 0;
-}
-.mc-meta-sep { color: #6f7787; }
-/* Latin labels only. Tracking pulls a Hebrew word apart letter by letter —
-   ה ל ו ז ר י ם — because Hebrew has no inter-letter spacing to widen. */
-.mc-meta-label {
-  font: 500 10.5px "IBM Plex Mono", monospace; letter-spacing: .1em; text-transform: uppercase;
+.mc--lime .mc-when-big { color: #0e1116; }
+/* A date nobody has agreed yet is the same size as a real one, so the cards
+   line up down the screen either way. */
+.mc-when-big--none { color: #3a414d; }
+.mc-when-date {
+  flex: none;
+  font: 600 11px "IBM Plex Mono", monospace;
+  letter-spacing: .1em;
+  text-transform: uppercase;
   color: #8b93a6;
 }
-/* Names keep their own face, their own case and no tracking at all. */
-.mc-meta-name {
-  min-width: 0; font: 500 12px "IBM Plex Sans Hebrew", "IBM Plex Sans", var(--sans);
-  letter-spacing: 0; color: #a3abbb;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
+.mc--lime .mc-when-date { color: #0e1116; opacity: .6; }
 
-.mc-place {
-  align-self: flex-start; display: flex; align-items: center; gap: 6px; max-width: 100%;
-  font: 500 12px "IBM Plex Sans", var(--sans); color: #c9cfdb;
+.mc-who { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; min-width: 0; }
+.mc-vs { font-weight: 600; font-size: 14px; color: #c9cfdb; }
+.mc-name { font-weight: 700; color: #eef1f7; }
+.mc--lime .mc-vs, .mc--lime .mc-name { color: #0e1116; }
+.mc-dot { color: #6f7787; }
+.mc--lime .mc-dot { color: #0e1116; opacity: .5; }
+/* Latin label: mono, tracked. */
+.mc-kind {
+  font: 500 10.5px "IBM Plex Mono", monospace;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: #8b93a6;
 }
-.mc-place svg { flex: none; width: 12px; height: 12px; color: var(--court); }
-.mc-place-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-.mc-note { font: 500 12px "IBM Plex Sans", var(--sans); color: #a3abbb; }
-
-.mc-action { display: flex; align-items: center; justify-content: flex-end; }
-.mc-btn { border: 0; cursor: pointer; font: 700 13.5px "IBM Plex Sans", var(--sans); }
-.mc-btn--primary {
-  height: 38px; padding: 0 18px; border-radius: 19px;
-  background: var(--court); color: #0e1116;
-  box-shadow: 0 6px 18px -6px rgba(var(--court-rgb), .7);
+.mc--lime .mc-kind { color: #0e1116; opacity: .7; }
+/* A name: sans, its own case, no tracking at all. */
+.mc-league {
+  min-width: 0;
+  font: 500 12px "IBM Plex Sans Hebrew", "IBM Plex Sans", var(--sans);
+  letter-spacing: 0;
+  color: #a3abbb;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.mc-btn--ghost {
-  height: 34px; padding: 0 14px; border-radius: 17px;
-  background: none; color: var(--court);
+.mc--lime .mc-league { color: rgba(14, 17, 22, .75); }
+
+.mc-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.mc-note {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font: 500 12px "IBM Plex Sans", var(--sans);
+  color: #8b93a6;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mc--lime .mc-note { color: rgba(14, 17, 22, .7); }
+.mc-note-pin { flex: none; width: 12px; height: 12px; }
+
+.mc-action { flex: none; }
+/* On a dark card the button is an accent outline; on the lime one it is the
+   page's own dark, so it reads as a button and not as a hole. */
+.mc-btn {
+  height: 36px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 18px;
+  background: none;
   box-shadow: inset 0 0 0 1px rgba(var(--court-rgb), .45);
+  color: var(--court);
+  font: 700 13px "IBM Plex Sans", var(--sans);
+  cursor: pointer;
 }
-/* Nothing to press: the card says what it is waiting for, in the same place
-   the button would have been. */
+.mc-btn--onlime {
+  background: #0e1116;
+  box-shadow: none;
+  color: var(--court);
+}
+/* Nothing to press: what the card is waiting for, where the button would be. */
 .mc-wait {
-  font: 500 11.5px "IBM Plex Mono", "IBM Plex Sans", monospace; letter-spacing: .08em;
-  text-transform: uppercase; color: #6f7787;
+  font: 500 11.5px "IBM Plex Mono", "IBM Plex Sans", monospace;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #6f7787;
 }
+.mc--lime .mc-wait { color: rgba(14, 17, 22, .7); }
 
 .hw-invites { flex: none; display: flex; flex-direction: column; gap: 12px; }
 .hw-sec { display: flex; align-items: center; gap: 10px; }

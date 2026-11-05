@@ -1776,6 +1776,8 @@ const PAIRS = [
   ["האירוע לא נמצא", "Event not found"],
   ["לצפייה במשחק", "View match"],
   ["הזמן שותף נוסף", "Invite another partner"],
+  ["עוד אין תאריך", "No date yet"],
+  ["המחזור נסגר {day} {date}", "Round ends {day} {date}"],
   ["ליגה", "League"],
   [
     "אפשר להיכנס ולראות הכול, אבל לא להצטרף — הרמה של הצמד מחוץ לטווח של הליגות האלה.",
