@@ -59,12 +59,12 @@ def _blocked_reason(db: Session, game: models.OpenGame, user: models.User) -> st
     if game.is_doubles and not _active_pair(db, user.id, game.sport_id):
         return "צריך צמד כדי להצטרף"
     if game.is_full:
-        return "המשחק מלא"
+        return "האירוע מלא"
     level = _level_of(db, user, game)
     if level is None:
         return "צריך דירוג כדי להצטרף"
     if level < game.level_min or level > game.level_max:
-        return "מחוץ לטווח הרמות של המשחק"
+        return "מחוץ לטווח הרמות של האירוע"
     return None
 
 
@@ -186,8 +186,8 @@ def _hand_over_to_match(db: Session, game: models.OpenGame) -> models.Match | No
         notify_user(
             db,
             join.user_id,
-            "המשחק מלא",
-            f"המשחק ב{game.where or 'מגרש'} מלא — אפשר לתאם ולדווח תוצאה",
+            "האירוע מלא",
+            f"האירוע ב{game.where or 'מגרש'} מלא — אפשר לתאם ולדווח תוצאה",
             f"/matches/{match.id}",
             title_en="Your game is full",
             body_en=f"The game at {game.where or 'the court'} is full — you can talk and report the score",
@@ -234,7 +234,7 @@ def open_game(
     # always has at least the person who wants to play in it.
     pair = _active_pair(db, current_user.id, sport.id) if is_doubles else None
     if is_doubles and not pair:
-        raise HTTPException(status_code=400, detail="צריך צמד כדי לפתוח משחק זוגות")
+        raise HTTPException(status_code=400, detail="צריך צמד כדי לפתוח אירוע זוגות")
 
     level = pair.level if is_doubles else (
         get_rating(db, current_user.id, sport.id).level
@@ -284,7 +284,7 @@ def join(
 ):
     game = _loaded(db).filter(models.OpenGame.id == game_id).first()
     if not game or game.status != models.OpenGameStatus.open:
-        raise HTTPException(status_code=404, detail="המשחק לא נמצא")
+        raise HTTPException(status_code=404, detail="האירוע לא נמצא")
     if current_user.id in game.player_ids:
         return _out(db, game, current_user)
     reason = _blocked_reason(db, game, current_user)
@@ -315,14 +315,14 @@ def leave(
     reopens a full game."""
     game = _loaded(db).filter(models.OpenGame.id == game_id).first()
     if not game:
-        raise HTTPException(status_code=404, detail="המשחק לא נמצא")
+        raise HTTPException(status_code=404, detail="האירוע לא נמצא")
     if game.match_id:
         # Past the handover there is a match with a chat and a result waiting;
         # calling it off is that match's business, not this one's.
-        raise HTTPException(status_code=400, detail="המשחק כבר נקבע — אפשר לבטל אותו ממסך המשחק")
+        raise HTTPException(status_code=400, detail="האירוע כבר נקבע — אפשר לבטל אותו ממסך המשחק")
     rows = [j for j in game.joins if j.user_id == current_user.id]
     if not rows:
-        raise HTTPException(status_code=400, detail="אינך במשחק הזה")
+        raise HTTPException(status_code=400, detail="אינך באירוע הזה")
     # Leaving as half of a pair takes the pair out: the other half cannot play
     # a doubles game alone.
     pair_id = rows[0].pair_id
@@ -342,11 +342,11 @@ def cancel(
 ):
     game = db.query(models.OpenGame).filter(models.OpenGame.id == game_id).first()
     if not game:
-        raise HTTPException(status_code=404, detail="המשחק לא נמצא")
+        raise HTTPException(status_code=404, detail="האירוע לא נמצא")
     if game.created_by != current_user.id:
-        raise HTTPException(status_code=403, detail="רק מי שפתח את המשחק יכול לבטל אותו")
+        raise HTTPException(status_code=403, detail="רק מי שפתח את האירוע יכול לבטל אותו")
     if game.match_id:
-        raise HTTPException(status_code=400, detail="המשחק כבר נקבע — אפשר לבטל אותו ממסך המשחק")
+        raise HTTPException(status_code=400, detail="האירוע כבר נקבע — אפשר לבטל אותו ממסך המשחק")
     game.status = models.OpenGameStatus.cancelled
     game.cancelled_at = datetime.utcnow()
     # Whoever had taken a seat had a game in their week until a moment ago, so
@@ -357,8 +357,8 @@ def cancel(
         notify_user(
             db,
             join.user_id,
-            "המשחק בוטל",
-            f"{current_user.name} ביטל/ה את המשחק ב{game.where or 'מגרש'}",
+            "האירוע בוטל",
+            f"{current_user.name} ביטל/ה את האירוע ב{game.where or 'מגרש'}",
             "/games/open",
             title_en="Game cancelled",
             body_en=f"{current_user.name} called off the game at {game.where or 'the court'}",

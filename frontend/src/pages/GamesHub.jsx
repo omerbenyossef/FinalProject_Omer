@@ -76,7 +76,7 @@ export default function GamesHub() {
     <div className="gh">
       <header className="gh-head">
         <h1 className="gh-title">{t("משחקים")}</h1>
-        <p className="gh-sub">{t("ליגות, משחקים פתוחים ומשחק ידידותי")}</p>
+        <p className="gh-sub">{t("ליגות, אירועים ומשחק ידידותי")}</p>
       </header>
 
       <div className="gh-tiles">
@@ -93,7 +93,7 @@ export default function GamesHub() {
         <Link to="/games/open" className="gh-tile">
           <TwoPeopleIcon className="gh-tile-icon" aria-hidden="true" />
           <span className="gh-tile-body">
-            <span className="gh-tile-title">{t("פתוחים")}</span>
+            <span className="gh-tile-title">{t("אירועים")}</span>
             <span className="gh-tile-sub">
               {games == null ? "—" : t("{n} השבוע", { n: thisWeek })}
             </span>
@@ -111,7 +111,7 @@ export default function GamesHub() {
 
       <section className="gh-preview">
         <div className="gh-preview-head">
-          <h2 className="gh-preview-title">{t("משחקים פתוחים ברמה שלך")}</h2>
+          <h2 className="gh-preview-title">{t("אירועים ברמה שלך")}</h2>
           <Link to="/games/open" className="gh-preview-all">
             {t("הכל")}
           </Link>
@@ -121,12 +121,12 @@ export default function GamesHub() {
           <SkeletonBar />
         ) : joinable.length === 0 ? (
           <>
-            <p className="gh-preview-empty">{t("אין כרגע משחקים פתוחים ברמה שלך.")}</p>
+            <p className="gh-preview-empty">{t("אין כרגע אירועים ברמה שלך.")}</p>
             {/* An empty list is the moment to offer opening one — see
                 firstdayandemptystates109: no content, an action, no
                 placeholder. */}
             <Link to="/games/open/new" className="gh-preview-open">
-              {t("פתח משחק")}
+              {t("צור אירוע")}
             </Link>
           </>
         ) : (

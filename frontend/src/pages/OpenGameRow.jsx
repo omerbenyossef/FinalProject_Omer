@@ -73,7 +73,7 @@ export default function OpenGameRow({ game, onJoin, onLeave, onCancel, onShare, 
               the card does not say. */}
           {(mine || urgency) && (
             <span className="ogc-status">
-              {mine && <span className="ogc-status-mine">{t("המשחק שלך")}</span>}
+              {mine && <span className="ogc-status-mine">{t("האירוע שלך")}</span>}
               {urgency && (
                 <span className="ogc-urgent">
                   <span className="ogc-urgent-dot" aria-hidden="true" />
@@ -127,7 +127,7 @@ export default function OpenGameRow({ game, onJoin, onLeave, onCancel, onShare, 
           {mine ? (
             <>
               <button type="button" className="ogc-link" onClick={onCancel} disabled={busy}>
-                {t("לבטל משחק")}
+                {t("לבטל אירוע")}
               </button>
               <button type="button" className="ogc-share" onClick={onShare}>
                 {t("שתף")}

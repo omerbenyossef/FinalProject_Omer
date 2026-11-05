@@ -169,10 +169,10 @@ export default function OpenGameNew() {
           <button type="button" className="sched-nav-back" onClick={() => navigate(-1)} aria-label={t("חזרה")}>
             <ChevronIcon aria-hidden="true" />
           </button>
-          <span className="sched-nav-label">{t("פתח משחק")}</span>
+          <span className="sched-nav-label">{t("צור אירוע")}</span>
         </div>
         <h1 className="sched-title">{t("צריך פרטנר כדי להתחיל")}</h1>
-        <p className="sched-sub">{t("בפאדל משחקים בזוגות, אז קודם מוצאים פרטנר ואז פותחים משחק.")}</p>
+        <p className="sched-sub">{t("בפאדל משחקים בזוגות, אז קודם מוצאים פרטנר ואז פותחים אירוע.")}</p>
         <div className="sched-bottom">
           <button type="button" className="sched-send" onClick={() => navigate("/partners")}>
             {t("מצא שותף")}
@@ -188,14 +188,14 @@ export default function OpenGameNew() {
         <button type="button" className="sched-nav-back" onClick={() => navigate(-1)} aria-label={t("חזרה")}>
           <ChevronIcon aria-hidden="true" />
         </button>
-        <span className="sched-nav-label">{t("פתח משחק")}</span>
+        <span className="sched-nav-label">{t("צור אירוע")}</span>
       </div>
 
-      <h1 className="sched-title">{t("פתח משחק")}</h1>
+      <h1 className="sched-title">{t("צור אירוע")}</h1>
       <p className="sched-sub">
         {isDoubles
-          ? t("אתם תופסים שני מקומות, וצמד נוסף משלים את המשחק.")
-          : t("אתה תופס מקום אחד, ומי שמצטרף משלים את המשחק.")}
+          ? t("אתם תופסים שני מקומות, וצמד נוסף משלים את האירוע.")
+          : t("אתה תופס מקום אחד, ומי שמצטרף משלים את האירוע.")}
       </p>
 
       {/* Not t("מקום"): that key already means the standings rank elsewhere
@@ -374,9 +374,9 @@ export default function OpenGameNew() {
           </span>
         </div>
         <button type="button" className="sched-send" disabled={!ready} onClick={submit}>
-          {t("פתח משחק")}
+          {t("צור אירוע")}
         </button>
-        <p className="sched-pending">{t("המשחק יופיע לכל מי שבטווח הרמות שבחרת")}</p>
+        <p className="sched-pending">{t("האירוע יופיע לכל מי שבטווח הרמות שבחרת")}</p>
       </div>
     </div>
   );

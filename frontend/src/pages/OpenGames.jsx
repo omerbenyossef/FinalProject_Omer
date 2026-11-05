@@ -87,7 +87,7 @@ export default function OpenGames() {
 
   async function share(game) {
     const url = `${window.location.origin}/games/open`;
-    const text = t("יש לי משחק פתוח ב{where} — מצטרף/ת?", { where: game.where || t("מגרש") });
+    const text = t("יש לי אירוע ב{where} — מצטרף/ת?", { where: game.where || t("מגרש") });
     try {
       if (navigator.share) {
         await navigator.share({ text: `${text}\n${url}` });
@@ -125,12 +125,12 @@ export default function OpenGames() {
 
       <header className="og-head">
         <div className="og-head-text">
-          <h1 className="og-title">{t("משחקים פתוחים")}</h1>
+          <h1 className="og-title">{t("אירועים")}</h1>
           <p className="og-sub">{t("שחקנים ברמה שלך שמחפשים יריב")}</p>
         </div>
         <Link to="/games/open/new" className="og-new">
           <PlusIcon aria-hidden="true" />
-          {t("פתח משחק")}
+          {t("צור אירוע")}
         </Link>
       </header>
 
@@ -142,7 +142,7 @@ export default function OpenGames() {
         <>
           {myGames.length > 0 && (
             <section className="og-section">
-              <h2 className="og-section-title">{t("המשחקים שלי")}</h2>
+              <h2 className="og-section-title">{t("האירועים שלי")}</h2>
               <div className="ogc-list">
                 {myGames.map((game) => (
                   <OpenGameRow
@@ -162,9 +162,9 @@ export default function OpenGames() {
             <h2 className="og-section-title">{t("אפשר להצטרף")}</h2>
             {joinable.length === 0 ? (
               <div className="og-empty">
-                <p className="gh-preview-empty">{t("אין כרגע משחקים פתוחים ברמה שלך")}</p>
+                <p className="gh-preview-empty">{t("אין כרגע אירועים ברמה שלך")}</p>
                 <Link to="/games/open/new" className="btn-secondary btn-small">
-                  {t("פתח משחק")}
+                  {t("צור אירוע")}
                 </Link>
               </div>
             ) : (
@@ -202,12 +202,12 @@ export default function OpenGames() {
           <div className="confirm-sheet" onClick={(e) => e.stopPropagation()}>
             <span className="confirm-sheet-handle" aria-hidden="true" />
             <div className="confirm-sheet-title">
-              {confirming.kind === "leave" ? t("לצאת מהמשחק?") : t("לבטל את המשחק?")}
+              {confirming.kind === "leave" ? t("לצאת מהאירוע?") : t("לבטל את האירוע?")}
             </div>
             <p className="add-round-subtitle">
               {confirming.kind === "leave"
                 ? t("המקום שלך ייפתח מחדש לשחקנים אחרים.")
-                : t("מי שכבר הצטרף יקבל הודעה שהמשחק בוטל.")}
+                : t("מי שכבר הצטרף יקבל הודעה שהאירוע בוטל.")}
             </p>
             <div className="add-round-actions">
               <button
@@ -217,7 +217,7 @@ export default function OpenGames() {
                   confirming.kind === "leave" ? doLeave(confirming.game) : doCancel(confirming.game)
                 }
               >
-                {confirming.kind === "leave" ? t("לצאת") : t("לבטל משחק")}
+                {confirming.kind === "leave" ? t("לצאת") : t("לבטל אירוע")}
               </button>
               <button type="button" className="btn-quiet" onClick={() => setConfirming(null)}>
                 {t("ביטול")}

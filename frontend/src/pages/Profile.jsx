@@ -323,7 +323,7 @@ function NoLeagueBlock({ t, navigate, openCount, showLevelRow, onSetLevel }) {
             empty Tuesday into a game. It sits above the friendly because it
             asks for less, not because it matters more. */}
         <button type="button" className="nl-opt" onClick={() => navigate("/games/open/new")}>
-          <span className="nl-opt-label">{t("פתח משחק")}</span>
+          <span className="nl-opt-label">{t("צור אירוע")}</span>
           <ChevronIcon className="nl-opt-chev" aria-hidden="true" />
         </button>
 
