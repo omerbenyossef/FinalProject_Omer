@@ -131,19 +131,23 @@ export const api = {
     }),
   deleteLeague: (id) => request(`/leagues/${id}`, { method: "DELETE" }),
   updateLeagueRules: (id, data) => request(`/leagues/${id}/rules`, { method: "PATCH", body: data }),
-  getOpenLeagues: (sportId, { lat, lng, ntrpMin, ntrpMax } = {}) =>
+  // pairId: a doubles league is entered by the pair, so it is the pair's
+  // level that has to fit the league's range — see _entrant_level.
+  getOpenLeagues: (sportId, { lat, lng, ntrpMin, ntrpMax, pairId } = {}) =>
     request(
       `/leagues/open?sport_id=${sportId}` +
         (lat != null ? `&lat=${lat}` : "") +
         (lng != null ? `&lng=${lng}` : "") +
         (ntrpMin != null ? `&ntrp_min=${ntrpMin}` : "") +
-        (ntrpMax != null ? `&ntrp_max=${ntrpMax}` : "")
+        (ntrpMax != null ? `&ntrp_max=${ntrpMax}` : "") +
+        (pairId ? `&pair_id=${pairId}` : "")
     ),
-  getLeaguePreview: (id, { lat, lng } = {}) =>
+  getLeaguePreview: (id, { lat, lng, pairId } = {}) =>
     request(
       `/leagues/${id}/preview?` +
         (lat != null ? `lat=${lat}&` : "") +
-        (lng != null ? `lng=${lng}` : "")
+        (lng != null ? `lng=${lng}&` : "") +
+        (pairId ? `pair_id=${pairId}` : "")
     ),
 
   headToHead: (opponentId) => request(`/players/${opponentId}/head-to-head`),

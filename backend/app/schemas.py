@@ -311,6 +311,9 @@ class LeaguePreviewOut(BaseModel):
     # press the button rather than after.
     out_of_level: bool = False
     my_level: Optional[float] = None
+    # Whose level my_level is: in a doubles league the entrant is the pair,
+    # so the screen names the pair rather than the person reading it.
+    my_level_is_pair: bool = False
 
 
 class MemberOut(BaseModel):

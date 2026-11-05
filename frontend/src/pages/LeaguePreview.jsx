@@ -42,7 +42,9 @@ export default function LeaguePreview() {
 
   useEffect(() => {
     api
-      .getLeaguePreview(leagueId)
+      // The pair is the entrant in a doubles league, so the server measures
+      // the level range against it rather than against one of its members.
+      .getLeaguePreview(leagueId, { pairId: selectedPair?.id })
       .then((data) => {
         if (data.is_member) {
           navigate(`/leagues/${leagueId}`, { replace: true });
@@ -52,7 +54,7 @@ export default function LeaguePreview() {
       })
       .catch((err) => setError(err.message));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [leagueId]);
+  }, [leagueId, selectedPair?.id]);
 
   async function handleJoin() {
     if (outOfLevel) return;
@@ -263,11 +265,16 @@ export default function LeaguePreview() {
 
       {outOfLevel && (
         <p className="lpv-needs-partner">
-          {t("הרמה שלך היא {mine}, והליגה הזו פתוחה לרמות {min}–{max}. אפשר לראות הכול כאן, אבל אי אפשר להצטרף.", {
-            mine: preview.my_level?.toFixed(1),
-            min: preview.level_min.toFixed(1),
-            max: preview.level_max.toFixed(1),
-          })}
+          {t(
+            preview.my_level_is_pair
+              ? "הרמה של הצמד היא {mine}, והליגה הזו פתוחה לרמות {min}–{max}. אפשר לראות הכול כאן, אבל אי אפשר להצטרף."
+              : "הרמה שלך היא {mine}, והליגה הזו פתוחה לרמות {min}–{max}. אפשר לראות הכול כאן, אבל אי אפשר להצטרף.",
+            {
+              mine: preview.my_level?.toFixed(1),
+              min: preview.level_min.toFixed(1),
+              max: preview.level_max.toFixed(1),
+            },
+          )}
         </p>
       )}
       {!outOfLevel && needsPartner && (

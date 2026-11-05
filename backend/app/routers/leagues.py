@@ -79,6 +79,45 @@ def _haversine_km(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
     return 2 * r * math.asin(math.sqrt(a))
 
 
+def _my_active_pair(db: Session, user_id: int, sport_id: int, pair_id: int | None):
+    """The pair the player is looking through, if it really is theirs. Never
+    trust the id on the query string: it names whose numbers we are about to
+    judge a player by."""
+    if not pair_id:
+        return None
+    return (
+        db.query(models.Pair)
+        .filter(
+            models.Pair.id == pair_id,
+            models.Pair.sport_id == sport_id,
+            models.Pair.status == models.PairStatus.active,
+            or_(models.Pair.player_a_id == user_id, models.Pair.player_b_id == user_id),
+        )
+        .first()
+    )
+
+
+def _entrant_level(db: Session, user_id: int, sport_id: int, pair_id: int | None, is_doubles: bool):
+    """Whose level a league's range is measured against.
+
+    In a doubles league the entrant is the pair, not the person: a 3.0 plays
+    in a 4.0 league beside a 5.0 because together they are a 4.0 team. The
+    join endpoint has always known this; the listing and the preview did not,
+    so a pair that could join perfectly well was filed under "outside my
+    range" by one of its members' personal numbers.
+
+    None means "no claim": a doubles league looked at without a pair, or a
+    pair whose members have not both been rated. Nothing is then called out
+    of range — what is in the way is the partner or the questionnaire, and
+    the join flow says so in those words.
+    """
+    if is_doubles:
+        pair = _my_active_pair(db, user_id, sport_id, pair_id)
+        return round_to_half(pair.level) if pair and pair.level is not None else None
+    rating = get_rating(db, user_id, sport_id)
+    return round_to_half(rating.level) if rating else None
+
+
 def _validate_level_range(level_min: float | None, level_max: float | None) -> None:
     for value in (level_min, level_max):
         if value is None:
@@ -545,6 +584,7 @@ def list_open_leagues(
     lng: float | None = None,
     ntrp_min: float | None = None,
     ntrp_max: float | None = None,
+    pair_id: int | None = None,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
@@ -570,9 +610,13 @@ def list_open_leagues(
 
     my_rating = get_rating(db, current_user.id, sport_id)
     my_level = round_to_half(my_rating.level) if my_rating else None
+    # A doubles league is entered by the pair, so it is judged by the pair's
+    # number; a singles one by the player's. Both are worked out once here.
+    pair_level = _entrant_level(db, current_user.id, sport_id, pair_id, True)
 
     rows = []
     for league in leagues:
+        entrant_level = pair_level if league.is_doubles else my_level
         level_min = league.level_min if league.level_min is not None else models.RATING_MIN
         level_max = league.level_max if league.level_max is not None else models.RATING_MAX
         if ntrp_min is not None and level_max < ntrp_min:
@@ -587,8 +631,10 @@ def list_open_leagues(
             if lat is not None and lng is not None and league.lat is not None and league.lng is not None
             else None
         )
-        level_fit = abs(my_level - (level_min + level_max) / 2) if my_level is not None else None
-        out_of_level = my_level is not None and not (level_min <= my_level <= level_max)
+        level_fit = (
+            abs(entrant_level - (level_min + level_max) / 2) if entrant_level is not None else None
+        )
+        out_of_level = entrant_level is not None and not (level_min <= entrant_level <= level_max)
         spots_remaining = (league.capacity - joined) if league.capacity is not None else 10_000
 
         rows.append(
@@ -829,6 +875,7 @@ def preview_league(
     league_id: int,
     lat: float | None = None,
     lng: float | None = None,
+    pair_id: int | None = None,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
@@ -855,7 +902,13 @@ def preview_league(
     )
 
     my_rating = get_rating(db, current_user.id, league.sport_id)
-    my_level = round_to_half(my_rating.level) if my_rating else None
+    # What the range is measured against: the pair in a doubles league, the
+    # player in a singles one.
+    my_level = _entrant_level(
+        db, current_user.id, league.sport_id, pair_id, bool(league.is_doubles)
+    )
+    if my_level is None and not league.is_doubles:
+        my_level = round_to_half(my_rating.level) if my_rating else None
 
     ratings_by_user = {
         r.user_id: r
@@ -911,6 +964,8 @@ def preview_league(
             and not (level_min <= my_level <= level_max)
         ),
         my_level=my_level,
+        # So the screen can say whose level it just named.
+        my_level_is_pair=bool(league.is_doubles and my_level is not None),
     )
 
 

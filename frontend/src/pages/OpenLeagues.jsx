@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { useSport } from "../SportContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
+import { usePairs } from "../PairContext.jsx";
 import { getCurrentPosition } from "../geo.js";
 import { ChevronIcon } from "../Icons.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
@@ -73,6 +74,9 @@ function OpenRow({ league, t }) {
 export default function OpenLeagues() {
   const { selectedSportId } = useSport();
   const { t } = useLanguage();
+  // A doubles league is entered by the pair, so the server marks a row out of
+  // range by the pair's level, not by one member's.
+  const { selectedPair } = usePairs();
   const navigate = useNavigate();
 
   const [leagues, setLeagues] = useState(null);
@@ -112,10 +116,11 @@ export default function OpenLeagues() {
         lng: position?.lng,
         ntrpMin,
         ntrpMax,
+        pairId: selectedPair?.id,
       })
       .then(setLeagues)
       .catch((err) => setError(err.message));
-  }, [selectedSportId, position, ntrpMin, ntrpMax]);
+  }, [selectedSportId, position, ntrpMin, ntrpMax, selectedPair?.id]);
 
   function openSheet() {
     setDraftMin(ntrpMin ?? (myLevel != null ? Math.max(1.5, myLevel - 0.5) : 1.5));

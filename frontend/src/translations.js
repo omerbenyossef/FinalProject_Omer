@@ -1766,6 +1766,13 @@ const PAIRS = [
   ["לעמוד הצמד", "To the pair's page"],
   ["כל הצמדים", "All my pairs"],
   ["לצמד עוד אין רמה", "The pair has no level yet"],
+  ["הרמה של הצמד", "YOUR PAIR'S LEVEL"],
+  [
+    "אפשר להיכנס ולראות הכול, אבל לא להצטרף — הרמה של הצמד מחוץ לטווח של הליגות האלה.",
+    "You can open these and read everything, but not join them — your pair's level is outside their range.",
+  ],
+  ["הרמה של הצמד היא {mine}, והליגה הזו פתוחה לרמות {min}–{max}. אפשר לראות הכול כאן, אבל אי אפשר להצטרף.",
+   "Your pair's level is {mine}, and this league is open to {min}–{max}. You can read everything here, but not join."],
 ];
 
 const heToEn = {};

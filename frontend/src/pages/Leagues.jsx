@@ -437,6 +437,7 @@ export default function Leagues() {
   }
 
   const bySelectedSport = (l) => l.sport.id === selectedSportId;
+  const inPairsSport = Boolean(sports.find((s) => s.id === selectedSportId)?.plays_in_pairs);
   const myLeagueIds = new Set(myLeagues.map((l) => l.id));
   // Whether this league's range would admit this player. It used to decide
   // whether to list the league at all, on the grounds that offering a join
@@ -444,9 +445,19 @@ export default function Leagues() {
   // why instead of refusing now, so the league is listed and marked: somebody
   // looking for a league wants to know what there is, including what they are
   // not ready for yet.
+  // Whose level that is. In a sport played in pairs the entrant is the pair,
+  // not the person: a 3.0 plays in a 4.0 league beside a 5.0 because together
+  // they are a 4.0 team, and the join endpoint has always measured the range
+  // against the pair. This screen measured it against one member's personal
+  // number, so a pair at 3.0 that a 2.5–3.5 league would admit without a
+  // murmur was filed under "outside my range".
+  //
+  // A pair with no level yet makes no claim either way: what is in the way
+  // then is the questionnaire, and the preview says so in those words.
+  const entrantLevel = inPairsSport ? (selectedPair?.level ?? null) : myLevel;
   const takesMe = (l) =>
-    myLevel == null ||
-    ((l.level_min ?? 1.5) <= myLevel && myLevel <= (l.level_max ?? 7.0));
+    entrantLevel == null ||
+    ((l.level_min ?? 1.5) <= entrantLevel && entrantLevel <= (l.level_max ?? 7.0));
   const openLeagues = leagues.filter(
     (l) => l.is_open && bySelectedSport(l) && !myLeagueIds.has(l.id)
   );
@@ -631,7 +642,8 @@ export default function Leagues() {
                       <OpenLeagueCard
                         key={league.id}
                         league={league}
-                        myLevel={myLevel}
+                        myLevel={entrantLevel}
+                        levelIsPair={inPairsSport}
                         busy={joiningId === league.id}
                         joined={joinedIds.includes(league.id)}
                         onJoin={() => joinFromCard(league)}
@@ -652,7 +664,9 @@ export default function Leagues() {
                   <>
                     <SectionHead title={t("מחוץ לטווח שלי")} />
                     <p className="lg-sec-note">
-                      {t("אפשר להיכנס ולראות הכול, אבל לא להצטרף — הרמה שלך מחוץ לטווח של הליגות האלה.")}
+                      {inPairsSport
+                        ? t("אפשר להיכנס ולראות הכול, אבל לא להצטרף — הרמה של הצמד מחוץ לטווח של הליגות האלה.")
+                        : t("אפשר להיכנס ולראות הכול, אבל לא להצטרף — הרמה שלך מחוץ לטווח של הליגות האלה.")}
                     </p>
                     <div className="lg-list">
                       {openOutOfRange.map((league) => (

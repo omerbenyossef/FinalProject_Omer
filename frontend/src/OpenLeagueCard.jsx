@@ -13,7 +13,17 @@ import { formatDayMonth, weekdayFull } from "./matchUtils.js";
    ones would be worse than one that leaves them out — so every line here is
    conditional on having something to say. */
 
-export default function OpenLeagueCard({ league, myLevel, onJoin, onOpen, busy, joined }) {
+/* levelIsPair: in a sport played in pairs the level this card was matched
+   against is the pair's, not the reader's own, so the badge says so. */
+export default function OpenLeagueCard({
+  league,
+  myLevel,
+  levelIsPair = false,
+  onJoin,
+  onOpen,
+  busy,
+  joined,
+}) {
   const { t } = useLanguage();
 
   const min = league.level_min ?? 1.5;
@@ -71,7 +81,7 @@ export default function OpenLeagueCard({ league, myLevel, onJoin, onOpen, busy, 
         {inRange && (
           <span className="olc-tag">
             <CheckIcon aria-hidden="true" />
-            {t("הרמה שלך")}
+            {t(levelIsPair ? "הרמה של הצמד" : "הרמה שלך")}
           </span>
         )}
       </div>
