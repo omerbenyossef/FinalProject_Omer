@@ -7,7 +7,7 @@ import { usePairs } from "../PairContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import Avatar from "../Avatar.jsx";
 import { useOpenAction } from "../OpenActionContext.jsx";
-import { BellIcon } from "../Icons.jsx";
+import { BellIcon, PinIcon } from "../Icons.jsx";
 import { SkeletonMatchRow } from "../Skeleton.jsx";
 import {
   NTRP_STEPS,
@@ -188,7 +188,6 @@ export default function Home() {
     return parts.join(" · ");
   })();
 
-  const compact = matches.length >= 3;
   const emptyState = !!week && matches.length === 0 && invites.length === 0;
 
   function cardFor(match) {
@@ -207,12 +206,8 @@ export default function Home() {
     const staleProposal =
       (timeFromMe || timeFromThem) && !!scheduled && scheduled.getTime() < Date.now();
     const unsettled = sentInvite || timeFromMe || timeFromThem;
-    const dim =
-      match.state === "waiting_on_them" || match.state === "no_time" || voided || sentInvite || timeFromMe;
-    const limeDate = !!scheduled && !voided && !unsettled && match.state !== "waiting_on_them";
-
-    // Three cards or more and a full-size button stops fitting: the action
-    // becomes a lime line instead (168a's short-card rule).
+    // 198c replaced the lime date column and the dimmed name with the two
+    // card states below, so neither flag is read any more.
     const label =
       match.state === "played"
         ? t("דווח תוצאה")
@@ -236,10 +231,50 @@ export default function Home() {
             ? `/matches/${match.id}/reschedule`
             : `/matches/${match.id}`;
 
+    // 198c — two states, and which one a card is in.
+    //
+    // Glowing means "this one is yours to move": a result to report or
+    // confirm, a time to approve, or a match close enough that looking at it
+    // is the point. Everything else — no time yet, waiting on them, a match
+    // next week — is quiet, so the glow keeps meaning something.
+    const HOURS_48 = 48 * 60 * 60 * 1000;
+    const soon =
+      !!scheduled && !voided && !unsettled &&
+      scheduled.getTime() - Date.now() <= HOURS_48 &&
+      scheduled.getTime() >= Date.now();
+    const myMove =
+      match.state === "played" || match.state === "confirm_mine" || timeFromThem;
+    const needsAction = !voided && (myMove || soon);
+
+    // The one line above the name, when there is something to say about
+    // timing. "Awaiting result" outranks the day, because a match whose time
+    // has gone is no longer about when it is.
+    const pill = !needsAction
+      ? null
+      : match.state === "played" || match.state === "confirm_mine"
+        ? t("ממתין לתוצאה")
+        : soon
+          ? daysUntil(scheduled) <= 0
+            ? t("היום")
+            : t("מחר")
+          : null;
+
     let action;
-    if (!label) {
+    if (!label && soon) {
+      // Nothing to do yet, but it is today or tomorrow: the card is already
+      // glowing, so it ends in a way in rather than in "all set".
       action = (
-        <span className="hw-mono-action">
+        <button
+          type="button"
+          className="mc-btn mc-btn--primary"
+          onClick={() => navigate(target)}
+        >
+          {t("לצפייה במשחק")}
+        </button>
+      );
+    } else if (!label) {
+      action = (
+        <span className="mc-wait">
           {sentInvite
             ? t("מחכה שיאשרו את ההזמנה")
             : timeFromMe
@@ -249,17 +284,11 @@ export default function Home() {
                 : t("הכול מוכן")}
         </span>
       );
-    } else if (compact) {
-      action = (
-        <button type="button" className="hw-text-action" onClick={() => navigate(target)}>
-          {label}
-        </button>
-      );
     } else {
       action = (
         <button
           type="button"
-          className={`hw-btn ${match.state === "no_time" || voided ? "hw-btn--ghost" : "hw-btn--lime"}`}
+          className={`mc-btn ${needsAction ? "mc-btn--primary" : "mc-btn--ghost"}`}
           onClick={() => navigate(target)}
         >
           {label}
@@ -281,63 +310,89 @@ export default function Home() {
 
     return (
       <div
-        className={`hw-card${compact ? " is-compact" : ""}${voided ? " hw-card--void" : ""}`}
+        className={`mc${needsAction ? "" : " is-quiet"}${voided ? " mc--void" : ""}`}
         key={`m${match.id}`}
         onClick={() => navigate(route)}
       >
-        <div className={`hw-date${limeDate ? " is-lime" : ""}`} dir="ltr">
+        {needsAction && <span className="mc-glow" aria-hidden="true" />}
+
+        <div className="mc-top">
           {scheduled ? (
-            <>
-              <span className="hw-date-day">{weekdayName(scheduled, t)}</span>
-              <span className="hw-date-num">{scheduled.getDate()}</span>
-              <span className="hw-date-time">{voided ? t("לא שוחק") : hhmm(scheduled)}</span>
-            </>
-          ) : (
-            <>
-              <span className="hw-date-num">?</span>
-              <span className="hw-date-time">{t("אין תאריך")}</span>
-            </>
-          )}
-        </div>
-        <div className="hw-body">
-          <span className="hw-who">
-            <Avatar name={match.opponent_name} photoUrl={match.opponent_photo_url} size={30} />
-            <span className={`hw-opponent${dim ? " dim" : ""}`}>{match.opponent_name}</span>
-          </span>
-          <span className="hw-sub">
-            {/* Which of my pairs this is. A padel player with two partners
-                sees both pairs' matches in one diary, so the row says which
-                world it belongs to rather than leaving it to be guessed. */}
-            {match.partner_name && (
-              <>
-                {/* Sans and not uppercased, like the venue below: a partner is
-                    a name, not a label. */}
-                <span className="hw-sub-name" dir="auto" style={{ unicodeBidi: "isolate" }}>
-                  {t("עם {name}", { name: match.partner_name })}
-                </span>
-                {" · "}
-              </>
-            )}
-            {match.league_name ? (
-              <span dir="auto" style={{ unicodeBidi: "isolate" }}>
-                {match.league_name}
+            <div className="mc-date">
+              {/* Latin labels keep the mono face and its tracking; the day
+                  and the clock are digits, so they are safe there too. */}
+              <span className="mc-date-day">{weekdayName(scheduled, t)}</span>
+              <span className="mc-date-time">
+                {voided ? "—" : hhmm(scheduled)}
               </span>
-            ) : (
-              t("משחק ידידותי")
-            )}
-            {match.round ? ` · ${t("מחזור {n}", { n: match.round })}` : ""}
-          </span>
-          {/* Where to go. The card is the last thing most players look at
-              before leaving the house, and it did not say. */}
-          {match.place && (
-            <span className="hw-place" dir="auto">
-              {match.place}
-            </span>
+              <span className="mc-date-dm">{dayMonth(scheduled)}</span>
+            </div>
+          ) : (
+            <div className="mc-date mc-date--none">
+              <span className="mc-date-q">?</span>
+              <span className="mc-date-no">{t("אין תאריך")}</span>
+            </div>
           )}
-          {voided && match.note && <span className="hw-note">{t(match.note)}</span>}
-          <div className="hw-action" onClick={(e) => e.stopPropagation()}>
-            {action}
+
+          <div className="mc-info">
+            {pill && (
+              <span className="mc-pill">
+                <i className="mc-pill-dot" aria-hidden="true" />
+                {pill}
+              </span>
+            )}
+
+            <span className="mc-who">
+              <Avatar name={match.opponent_name} photoUrl={match.opponent_photo_url} size={24} />
+              <span className="mc-name" dir="auto">
+                {match.opponent_name}
+              </span>
+            </span>
+
+            {/* 198c's typography rule. Mono with letter-spacing is for Latin
+                labels only: tracking a Hebrew word pulls its letters apart
+                into ה ל ו ז ר י ם, because Hebrew has no spacing between
+                letters to widen. Names — the league's, the partner's, the
+                venue's — are sans with no tracking and their own direction. */}
+            <span className="mc-meta">
+              <span className="mc-meta-label">
+                {match.league_name
+                  ? match.round
+                    ? t("מחזור {n}", { n: match.round })
+                    : t("ליגה")
+                  : t("ידידותי")}
+              </span>
+              {match.league_name && (
+                <>
+                  <span className="mc-meta-sep" aria-hidden="true">·</span>
+                  <span className="mc-meta-name" dir="auto">
+                    {match.league_name}
+                  </span>
+                </>
+              )}
+              {match.partner_name && (
+                <>
+                  <span className="mc-meta-sep" aria-hidden="true">·</span>
+                  <span className="mc-meta-name" dir="auto">
+                    {t("עם {name}", { name: match.partner_name })}
+                  </span>
+                </>
+              )}
+            </span>
+
+            {match.place && (
+              <span className="mc-place">
+                <PinIcon aria-hidden="true" />
+                <bdi className="mc-place-name">{match.place}</bdi>
+              </span>
+            )}
+
+            {voided && match.note && <span className="mc-note">{t(match.note)}</span>}
           </div>
+        </div>
+
+        <div className="mc-action" onClick={(e) => e.stopPropagation()}>
+          {action}
         </div>
       </div>
     );

@@ -1774,6 +1774,8 @@ const PAIRS = [
   ["לבטל את האירוע?", "Cancel the event?"],
   ["האירוע שלך", "Your event"],
   ["האירוע לא נמצא", "Event not found"],
+  ["לצפייה במשחק", "View match"],
+  ["ליגה", "League"],
   [
     "אפשר להיכנס ולראות הכול, אבל לא להצטרף — הרמה של הצמד מחוץ לטווח של הליגות האלה.",
     "You can open these and read everything, but not join them — your pair's level is outside their range.",
