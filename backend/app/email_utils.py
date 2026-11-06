@@ -67,6 +67,14 @@ def _send_via_resend(to_email: str, subject: str, html: str) -> bool:
         headers={
             "Authorization": f"Bearer {RESEND_API_KEY}",
             "Content-Type": "application/json",
+            "Accept": "application/json",
+            # Resend's API sits behind Cloudflare, and Cloudflare blocks
+            # urllib's default "Python-urllib/3.11" as a bot before the
+            # request ever reaches them — a 403 with Cloudflare's own
+            # "error code: 1010" in the body, which reads like Resend
+            # refusing the mail and is nothing of the sort. Any ordinary
+            # agent string gets through; this one also says who is calling.
+            "User-Agent": "Rally/1.0 (+https://rallyou.com)",
         },
         method="POST",
     )
