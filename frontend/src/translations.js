@@ -1778,6 +1778,25 @@ const PAIRS = [
   ["הזמן שותף נוסף", "Invite another partner"],
   ["עוד אין תאריך", "No date yet"],
   ["המחזור נסגר {day} {date}", "Round ends {day} {date}"],
+
+  // The password door, back after "one door: Google and nothing else".
+  ["נא להזין אימייל וסיסמה", "Enter an email and a password"],
+  ["לפחות 8 תווים", "At least 8 characters"],
+  ["כבר יש חשבון עם הכתובת הזאת", "That address already has an account"],
+  [
+    "כבר יש חשבון עם הכתובת הזאת. התחברו עם Google, ואפשר להגדיר סיסמה בהגדרות.",
+    "That address already has an account. Sign in with Google — you can set a password in Settings.",
+  ],
+  [
+    "החשבון הזה נפתח עם Google. התחברו עם Google, ואפשר להגדיר סיסמה בהגדרות.",
+    "This account was opened with Google. Sign in with Google — you can set a password in Settings.",
+  ],
+  ["הסיסמה נשמרה", "Password saved"],
+  ["הגדרת סיסמה", "Set a password"],
+  ["סיסמה נוספת לחשבון, למקרה שההתחברות עם Google לא עובדת.",
+   "A second way into your account, for when signing in with Google will not work."],
+  ["סיסמה חדשה", "New password"],
+  ["שמור סיסמה", "Save password"],
   ["ליגה", "League"],
   [
     "אפשר להיכנס ולראות הכול, אבל לא להצטרף — הרמה של הצמד מחוץ לטווח של הליגות האלה.",

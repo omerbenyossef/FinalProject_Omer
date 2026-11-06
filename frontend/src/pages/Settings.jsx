@@ -16,6 +16,64 @@ function monthAbbrev(dateStr, t) {
   return monthName(new Date(dateStr), t);
 }
 
+/* A second way into your own account. An account opened with Google has no
+   password, so the morning Google will not let you in — a blocked popup, a
+   browser that eats third-party frames, an account your school manages —
+   there is no other door. This builds one, and asks for no current password:
+   whoever is holding a valid token has already proved who they are, which is
+   the same reasoning the deletion row below uses. */
+function PasswordSection() {
+  const { t } = useLanguage();
+  const [password, setPassword] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [done, setDone] = useState("");
+  const [error, setError] = useState("");
+
+  async function save(e) {
+    e.preventDefault();
+    if (password.length < 8) {
+      setError("הסיסמה חייבת להכיל 8 תווים לפחות");
+      return;
+    }
+    setError("");
+    setSaving(true);
+    try {
+      await api.setPassword(password);
+      setPassword("");
+      setDone("הסיסמה נשמרה");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <form className="settings-password" onSubmit={save}>
+      <p className="settings-password-note">
+        {t("סיסמה נוספת לחשבון, למקרה שההתחברות עם Google לא עובדת.")}
+      </p>
+      <input
+        className="signfield-input"
+        type="password"
+        autoComplete="new-password"
+        dir="ltr"
+        placeholder={t("סיסמה חדשה")}
+        value={password}
+        onChange={(e) => {
+          setPassword(e.target.value);
+          setDone("");
+        }}
+      />
+      {error && <p className="signfield-error">{t(error)}</p>}
+      {done && <p className="settings-password-done">{t(done)}</p>}
+      <button type="submit" className="btn-secondary btn-small" disabled={saving || !password}>
+        {t("שמור סיסמה")}
+      </button>
+    </form>
+  );
+}
+
 export default function Settings() {
   const { user, updateUser, logout } = useAuth();
   const { t } = useLanguage();
@@ -114,6 +172,13 @@ export default function Settings() {
           <span>{t("NOTIFICATIONS")}</span>
         </div>
         <NotificationsSection user={user} updateUser={updateUser} />
+      </div>
+
+      <div className="settings-section">
+        <div className="profile-section-header" style={{ justifyContent: "flex-start" }}>
+          <span>{t("הגדרת סיסמה")}</span>
+        </div>
+        <PasswordSection />
       </div>
 
       <div className="settings-section">

@@ -3800,6 +3800,31 @@ button:active { transform: translateY(1px); }
 
 .signscreen-door-error { text-align: center; }
 
+/* Between the two doors. Not a decoration: without it the password fields
+   read as part of the Google button's business. */
+.signscreen-or {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0 4px;
+}
+.signscreen-or span { flex: 1; height: 1px; background: rgba(148, 163, 184, 0.18); }
+.signscreen-or em {
+  font-style: normal;
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.signfield-hint { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
+.settings-password { display: flex; flex-direction: column; gap: 10px; padding: 4px 0 2px; align-items: stretch; }
+.settings-password-note { margin: 0; font-size: 13px; color: var(--muted); text-wrap: pretty; }
+.settings-password-done { margin: 0; font-size: 13px; font-weight: 600; color: var(--court); }
+.settings-password .btn-secondary { align-self: flex-start; }
+.signscreen-footer { margin-top: 18px; text-align: center; font-size: 13.5px; color: var(--muted); }
+.signscreen-footer a { color: var(--court); font-weight: 600; text-decoration: none; }
+
 .signscreen-door-note {
   margin: 0;
   text-align: center;

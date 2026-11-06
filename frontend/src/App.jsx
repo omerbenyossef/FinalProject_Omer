@@ -6,6 +6,7 @@ import { SplashProvider } from "./SplashContext.jsx";
 import Loading from "./Loading.jsx";
 import { useAuth } from "./AuthContext.jsx";
 import SignIn from "./pages/SignIn.jsx";
+import SignUp from "./pages/SignUp.jsx";
 import Leagues from "./pages/Leagues.jsx";
 import GamesHub from "./pages/GamesHub.jsx";
 import OpenGames from "./pages/OpenGames.jsx";
@@ -118,6 +119,7 @@ export default function App() {
         <Route path="/privacy" element={<LegalPage doc="privacy" />} />
         <Route path="/terms" element={<LegalPage doc="terms" />} />
         <Route path="/signin" element={<SignIn />} />
+        <Route path="/signup" element={<SignUp />} />
         {/* There is no sign-up screen any more — the Google button is both.
             The path stays because invite links carrying it are in people's
             chats, and the query string goes with them. */}

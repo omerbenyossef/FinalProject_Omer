@@ -1,16 +1,23 @@
 import { useState } from "react";
-import { Navigate, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import { api } from "../api";
 import GoogleSignInButton from "../GoogleSignInButton.jsx";
 import { useAuth } from "../AuthContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import { useSplashDone } from "../SplashContext.jsx";
 
-/* The only door. There are no passwords in Rally: signing in and signing up
-   are the same tap, and which of the two it was is the server's business, not
-   a choice to put in front of someone who just wants to play tennis. */
+/* Two doors. Google is the short one — signing in and signing up are the
+   same tap, and which of the two it was is the server's business. The email
+   and password below it exist because a door that depends on nobody else's
+   service being reachable is the one that always opens. */
 export default function SignIn() {
   const [error, setError] = useState("");
-  const { user, loading } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const navigate = useNavigate();
+  const { user, loading, loginWithToken } = useAuth();
   const { t } = useLanguage();
   const splashDone = useSplashDone();
   const [searchParams] = useSearchParams();
@@ -25,6 +32,29 @@ export default function SignIn() {
     const friendly = searchParams.get("friendly");
     if (friendly) return <Navigate to={`/friendly/invite/${friendly}`} replace />;
     return <Navigate to={searchParams.get("redirect") || "/profile"} replace />;
+  }
+
+  const redirectSuffix = searchParams.get("redirect")
+    ? `?redirect=${encodeURIComponent(searchParams.get("redirect"))}`
+    : "";
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!email.trim() || !password) {
+      setError("נא להזין אימייל וסיסמה");
+      return;
+    }
+    setError("");
+    setSubmitting(true);
+    try {
+      const data = await api.login({ email: email.trim(), password });
+      loginWithToken(data.access_token, data.user);
+      navigate(searchParams.get("redirect") || "/profile");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -65,8 +95,67 @@ export default function SignIn() {
         <div className="signscreen-door">
           <GoogleSignInButton onError={setError} />
           {error && <p className="signfield-error signscreen-door-error">{t(error)}</p>}
-          <p className="signscreen-door-note">
-            {t("ההתחברות הראשונה פותחת לך חשבון. אין סיסמה לזכור.")}
+
+          {/* The second door. Google is the shorter way in and stays on top,
+              but a door that depends on nobody else's service being reachable
+              is the one that always opens — a blocked popup, a browser that
+              eats third-party frames, or Google simply having a bad morning
+              used to mean nobody could get in at all. */}
+          <div className="signscreen-or" aria-hidden="true">
+            <span />
+            <em>{t("או")}</em>
+            <span />
+          </div>
+
+          <form className="signscreen-form" onSubmit={handleSubmit} noValidate>
+            <div className="signfield">
+              <label className="signfield-label" htmlFor="signin-email" dir="ltr">
+                EMAIL
+              </label>
+              <input
+                id="signin-email"
+                className="signfield-input signfield-input-email"
+                type="email"
+                autoComplete="username"
+                dir="ltr"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+
+            <div className="signfield">
+              <label className="signfield-label" htmlFor="signin-password" dir="ltr">
+                PASSWORD
+              </label>
+              <div className="signfield-password-wrap">
+                <input
+                  id="signin-password"
+                  className="signfield-input signfield-input-password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  dir="ltr"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="signfield-show"
+                  onClick={() => setShowPassword((v) => !v)}
+                  dir="ltr"
+                >
+                  {showPassword ? t("הסתר") : t("הצג")}
+                </button>
+              </div>
+            </div>
+
+            <button type="submit" className="btn-bright" disabled={submitting}>
+              {submitting ? t("מתחבר...") : t("התחברות")}
+            </button>
+          </form>
+
+          <p className="signscreen-footer">
+            {t("אין לך חשבון?")}{" "}
+            <Link to={`/signup${redirectSuffix}`}>{t("יצירת חשבון")}</Link>
           </p>
         </div>
       )}

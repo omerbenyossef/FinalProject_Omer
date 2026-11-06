@@ -9,12 +9,18 @@ from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from .. import models, schemas
-from ..auth import create_access_token, get_current_user, hash_password, normalize_email
+from ..auth import (
+    create_access_token,
+    get_current_user,
+    hash_password,
+    normalize_email,
+    verify_password,
+)
 from ..database import get_db
 from ..match_sides import mine as match_mine, my_side_is_first
 from ..google_auth import fetch_profile_photo, verify_google_id_token
 from ..match_cleanup import purge_match_references
-from ..rate_limit import limiter
+from ..rate_limit import client_ip, forget, hit, limiter
 from ..rating_utils import match_winner_id
 from .matches import _auto_confirm_overdue
 
@@ -29,6 +35,71 @@ RESET_TOKEN_EXPIRE_HOURS = 1
 # and it is never switched on by the mere absence of mail credentials — if mail
 # is not configured the reset simply cannot be done, which is the lesser harm.
 RESET_WITHOUT_EMAIL = os.environ.get("PASSWORD_RESET_WITHOUT_EMAIL", "0") == "1"
+
+
+@router.post(
+    "/register",
+    response_model=schemas.Token,
+    dependencies=[Depends(limiter("register", 10, 3600))],
+)
+def register(user_in: schemas.UserCreate, db: Session = Depends(get_db)):
+    """The second door. Google is still the short way in, but an address and
+    a password is a door that does not depend on anyone else's service being
+    reachable — which is the whole reason this is back."""
+    email = normalize_email(user_in.email)
+    existing = db.query(models.User).filter(func.lower(models.User.email) == email).first()
+    if existing:
+        # Never adopt an existing account on the strength of a typed address:
+        # that would hand anyone who knows an email the account behind it.
+        # The owner signs in the way they already can, and sets a password
+        # from inside.
+        detail = (
+            "כבר יש חשבון עם הכתובת הזאת. התחברו עם Google, ואפשר להגדיר סיסמה בהגדרות."
+            if existing.google_sub
+            else "כבר יש חשבון עם הכתובת הזאת"
+        )
+        raise HTTPException(status_code=400, detail=detail)
+
+    user = models.User(
+        name=user_in.name.strip(),
+        email=email,
+        hashed_password=hash_password(user_in.password),
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return schemas.Token(access_token=create_access_token({"sub": str(user.id)}), user=user)
+
+
+@router.post("/login", response_model=schemas.Token)
+def login(request: Request, credentials: schemas.UserLogin, db: Session = Depends(get_db)):
+    # Two buckets: one stops a single machine working through many accounts,
+    # the other stops many machines working through one account. Both are
+    # generous enough that a person who has forgotten which password they
+    # used will never meet them.
+    email = normalize_email(credentials.email)
+    by_caller = f"login-ip:{client_ip(request)}"
+    by_account = f"login-email:{email}"
+    hit(by_caller, 20, 900)
+    hit(by_account, 10, 900)
+
+    user = db.query(models.User).filter(func.lower(models.User.email) == email).first()
+    if not user or user.deleted_at is not None or not verify_password(
+        credentials.password, user.hashed_password
+    ):
+        # An account opened through Google holds a random hash nobody can
+        # type, so "wrong password" would be true and useless. Say which door
+        # this address has, since the register endpoint says as much anyway.
+        if user and user.deleted_at is None and user.google_sub:
+            raise HTTPException(
+                status_code=401,
+                detail="החשבון הזה נפתח עם Google. התחברו עם Google, ואפשר להגדיר סיסמה בהגדרות.",
+            )
+        raise HTTPException(status_code=401, detail="אימייל או סיסמה שגויים")
+
+    forget(by_caller)
+    forget(by_account)
+    return schemas.Token(access_token=create_access_token({"sub": str(user.id)}), user=user)
 
 
 @router.post(
@@ -140,6 +211,21 @@ def update_notification_preferences(
     db.commit()
     db.refresh(current_user)
     return current_user
+
+
+@router.post("/me/password", response_model=schemas.MessageOut)
+def set_password(
+    payload: schemas.SetPasswordRequest,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """A second way into your own account. An account opened with Google has
+    no password, so the day Google will not let you in — a blocked popup, a
+    school account, a browser that eats third-party frames — there is no other
+    door. This builds one."""
+    current_user.hashed_password = hash_password(payload.password)
+    db.commit()
+    return schemas.MessageOut(message="הסיסמה נשמרה")
 
 
 @router.get("/me/stats", response_model=schemas.UserStats)

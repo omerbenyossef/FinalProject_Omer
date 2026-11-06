@@ -44,11 +44,20 @@ def normalize_email(email: str) -> str:
 
 
 def hash_password(password: str) -> str:
-    """Nobody signs in with a password any more, and nothing checks one. This
-    stays because users.hashed_password is NOT NULL and an account opened
-    through Google still has to put something in it — a random string it will
-    never be asked for."""
+    """An account opened through Google still has to put something in
+    users.hashed_password, which is NOT NULL — a random string nobody will
+    ever be asked for. An account opened with a password stores that."""
     return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+
+def verify_password(plain: str, hashed: str) -> bool:
+    """False rather than an exception for anything that is not a hash we
+    wrote: a row whose password was never set holds random bytes, and asking
+    bcrypt about them must read as "wrong password", not as a server error."""
+    try:
+        return bcrypt.checkpw(plain.encode("utf-8"), (hashed or "").encode("utf-8"))
+    except (ValueError, TypeError):
+        return False
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:

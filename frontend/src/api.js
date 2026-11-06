@@ -61,6 +61,12 @@ export const api = {
   // signature before it means anything.
   googleSignIn: (credential) =>
     request("/auth/google", { method: "POST", body: { credential }, auth: false }),
+  // The second door. Google is the short way in, but a door that depends on
+  // nobody else's service being reachable is the one that always opens.
+  register: (data) => request("/auth/register", { method: "POST", body: data, auth: false }),
+  login: (data) => request("/auth/login", { method: "POST", body: data, auth: false }),
+  setPassword: (password) =>
+    request("/auth/me/password", { method: "POST", body: { password } }),
   me: () => request("/auth/me"),
   myStats: (sportId) => request(`/auth/me/stats${sportId ? `?sport_id=${sportId}` : ""}`),
   updateProfile: (fields) => request("/auth/me", { method: "PATCH", body: fields }),

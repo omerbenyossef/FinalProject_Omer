@@ -126,6 +126,30 @@ class UserOut(BaseModel):
         from_attributes = True
 
 
+class UserCreate(BaseModel):
+    """Opening an account with an address and a password, rather than through
+    Google. Both doors lead to the same account: whichever one a person used
+    first, the other can be added later."""
+
+    name: str = Field(min_length=1)
+    email: EmailStr
+    password: str = Field(min_length=8)
+
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class SetPasswordRequest(BaseModel):
+    """Giving an account a password it did not have, or replacing the one it
+    has. The old password is not asked for: whoever is holding a valid token
+    has already proved who they are, which is the same reasoning the account
+    deletion endpoint uses."""
+
+    password: str = Field(min_length=8)
+
+
 class GoogleSignIn(BaseModel):
     """The JWT Google's button handed the browser. Verified server-side."""
 
