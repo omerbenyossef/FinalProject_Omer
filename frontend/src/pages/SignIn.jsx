@@ -124,9 +124,19 @@ export default function SignIn() {
             </div>
 
             <div className="signfield">
-              <label className="signfield-label" htmlFor="signin-password" dir="ltr">
-                PASSWORD
-              </label>
+              <div className="signfield-label-row" dir="ltr">
+                <label className="signfield-label" htmlFor="signin-password">
+                  PASSWORD
+                </label>
+                {/* Carry the address over: somebody who already typed it here
+                    should not have to identify themselves twice. */}
+                <Link
+                  className="signscreen-inline-link"
+                  to={`/forgot-password${email.trim() ? `?email=${encodeURIComponent(email.trim())}` : ""}`}
+                >
+                  {t("שכחתי סיסמה")}
+                </Link>
+              </div>
               <div className="signfield-password-wrap">
                 <input
                   id="signin-password"

@@ -3818,6 +3818,15 @@ button:active { transform: translateY(1px); }
   color: var(--muted);
 }
 .signfield-hint { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
+.signscreen-title {
+  margin: 0 0 4px;
+  font-family: "IBM Plex Sans Hebrew", "IBM Plex Sans", var(--sans);
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--ink);
+}
+.signscreen-sent { margin: 0; font-size: 14px; color: var(--ink-dim, #c9cfdb); text-wrap: pretty; }
+.signscreen-inline-link { font-size: 12px; font-weight: 600; color: var(--court); text-decoration: none; }
 .settings-password { display: flex; flex-direction: column; gap: 10px; padding: 4px 0 2px; align-items: stretch; }
 .settings-password-note { margin: 0; font-size: 13px; color: var(--muted); text-wrap: pretty; }
 .settings-password-done { margin: 0; font-size: 13px; font-weight: 600; color: var(--court); }

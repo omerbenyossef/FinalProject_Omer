@@ -17,6 +17,7 @@ from ..auth import (
     verify_password,
 )
 from ..database import get_db
+from ..email_utils import send_reset_email
 from ..match_sides import mine as match_mine, my_side_is_first
 from ..google_auth import fetch_profile_photo, verify_google_id_token
 from ..match_cleanup import purge_match_references
@@ -211,6 +212,65 @@ def update_notification_preferences(
     db.commit()
     db.refresh(current_user)
     return current_user
+
+
+@router.post(
+    "/forgot-password",
+    response_model=schemas.ForgotPasswordOut,
+    dependencies=[Depends(limiter("forgot", 5, 3600))],
+)
+def forgot_password(payload: schemas.ForgotPasswordRequest, db: Session = Depends(get_db)):
+    """A password door with no way back through it is a trap, and the person
+    who falls into it is the one who did what the app suggested."""
+    user = (
+        db.query(models.User)
+        .filter(func.lower(models.User.email) == normalize_email(payload.email))
+        .first()
+    )
+    if user and user.deleted_at is None:
+        user.reset_token = secrets.token_urlsafe(32)
+        user.reset_token_expires = datetime.utcnow() + timedelta(hours=RESET_TOKEN_EXPIRE_HOURS)
+        db.commit()
+        if RESET_WITHOUT_EMAIL:
+            return schemas.ForgotPasswordOut(
+                message="אפשר להגדיר סיסמה חדשה", reset_token=user.reset_token
+            )
+        # Whether it actually went is deliberately not reflected in the reply:
+        # a failure here is ours, and the difference would tell a stranger
+        # which addresses are registered. The log says what happened.
+        send_reset_email(user.email, user.reset_token)
+
+    # The same sentence either way, whether or not the address is registered:
+    # the difference is exactly what somebody fishing would be looking for.
+    return schemas.ForgotPasswordOut(
+        message="אם קיים חשבון עם האימייל הזה, נשלח אליו מייל עם קישור לאיפוס הסיסמה"
+    )
+
+
+@router.post(
+    "/reset-password",
+    response_model=schemas.MessageOut,
+    dependencies=[Depends(limiter("reset", 20, 3600))],
+)
+def reset_password(payload: schemas.ResetPasswordRequest, db: Session = Depends(get_db)):
+    user = (
+        db.query(models.User)
+        .filter(
+            models.User.reset_token == payload.token,
+            models.User.reset_token_expires > datetime.utcnow(),
+        )
+        .first()
+    )
+    if not user:
+        raise HTTPException(status_code=400, detail="קישור האיפוס אינו תקין או שפג תוקפו")
+
+    user.hashed_password = hash_password(payload.new_password)
+    # Spent, so the same link cannot be used twice — and so a mailbox somebody
+    # else later reads holds nothing that still opens the account.
+    user.reset_token = None
+    user.reset_token_expires = None
+    db.commit()
+    return schemas.MessageOut(message="הסיסמה עודכנה בהצלחה")
 
 
 @router.post("/me/password", response_model=schemas.MessageOut)

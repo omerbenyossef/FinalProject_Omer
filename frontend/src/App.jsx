@@ -7,6 +7,8 @@ import Loading from "./Loading.jsx";
 import { useAuth } from "./AuthContext.jsx";
 import SignIn from "./pages/SignIn.jsx";
 import SignUp from "./pages/SignUp.jsx";
+import ForgotPassword from "./pages/ForgotPassword.jsx";
+import ResetPassword from "./pages/ResetPassword.jsx";
 import Leagues from "./pages/Leagues.jsx";
 import GamesHub from "./pages/GamesHub.jsx";
 import OpenGames from "./pages/OpenGames.jsx";
@@ -120,6 +122,8 @@ export default function App() {
         <Route path="/terms" element={<LegalPage doc="terms" />} />
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         {/* There is no sign-up screen any more — the Google button is both.
             The path stays because invite links carrying it are in people's
             chats, and the query string goes with them. */}

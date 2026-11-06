@@ -141,6 +141,15 @@ class UserLogin(BaseModel):
     password: str
 
 
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str = Field(min_length=8)
+
+
 class SetPasswordRequest(BaseModel):
     """Giving an account a password it did not have, or replacing the one it
     has. The old password is not asked for: whoever is holding a valid token
@@ -160,6 +169,11 @@ class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserOut
+
+
+class ForgotPasswordOut(MessageOut):
+    # Only set on a machine with no mail configured — see forgot_password.
+    reset_token: Optional[str] = None
 
 
 class SportOut(BaseModel):

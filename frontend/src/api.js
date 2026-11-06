@@ -67,6 +67,14 @@ export const api = {
   login: (data) => request("/auth/login", { method: "POST", body: data, auth: false }),
   setPassword: (password) =>
     request("/auth/me/password", { method: "POST", body: { password } }),
+  forgotPassword: (email) =>
+    request("/auth/forgot-password", { method: "POST", body: { email }, auth: false }),
+  resetPassword: (token, newPassword) =>
+    request("/auth/reset-password", {
+      method: "POST",
+      body: { token, new_password: newPassword },
+      auth: false,
+    }),
   me: () => request("/auth/me"),
   myStats: (sportId) => request(`/auth/me/stats${sportId ? `?sport_id=${sportId}` : ""}`),
   updateProfile: (fields) => request("/auth/me", { method: "PATCH", body: fields }),

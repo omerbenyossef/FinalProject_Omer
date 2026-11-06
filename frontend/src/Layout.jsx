@@ -12,7 +12,7 @@ import Onboarding from "./Onboarding.jsx";
 import SportSwitcher from "./SportSwitcher.jsx";
 import PairSwitcher from "./PairSwitcher.jsx";
 
-const AUTH_PATHS = ["/signin", "/signup", "/privacy", "/terms"];
+const AUTH_PATHS = ["/signin", "/signup", "/forgot-password", "/reset-password", "/privacy", "/terms"];
 
 export default function Layout({ children }) {
   const { user } = useAuth();

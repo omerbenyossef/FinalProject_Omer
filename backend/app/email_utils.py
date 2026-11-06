@@ -6,10 +6,10 @@ credentials are — it fails at the socket, not at the login. Anything sent from
 production therefore goes over HTTPS through Resend; SMTP stays for a local
 machine, where it works and needs no third party.
 
-Nothing calls this at the moment: signing in goes through Google, so there are
-no passwords and nothing to reset. It is kept because working out that SMTP is
-blocked, and reaching for an HTTP sender instead, is the whole cost here — the
-sending itself is twenty lines.
+What it sends today is the password reset link. Note that Resend will send
+from its own test address without any setup, but only to the address that owns
+the Resend account — reaching anybody else needs a domain verified with them
+and RESEND_FROM pointed at it.
 """
 
 import json
@@ -28,6 +28,8 @@ RESEND_API_KEY = os.environ.get("RESEND_API_KEY")
 # verified with them, and RESEND_FROM pointed at it.
 RESEND_FROM = os.environ.get("RESEND_FROM", "Rally <onboarding@resend.dev>")
 RESEND_ENDPOINT = "https://api.resend.com/emails"
+# Where the link in the mail points. Wrong here means a link to nowhere.
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5200").rstrip("/")
 
 SMTP_TIMEOUT = 10
 HTTP_TIMEOUT = 10
@@ -124,3 +126,21 @@ def send_email(to_email: str, subject: str, html: str) -> bool:
     if not email_configured():
         print(f"[dev] no mail configured; nothing sent to {for_log(to_email)}")
     return False
+
+
+def send_reset_email(to_email: str, token: str) -> bool:
+    """The one mail this app sends. On a machine with no mail configured the
+    link is printed instead, so the flow can be walked end to end locally."""
+    reset_link = f"{FRONTEND_URL}/reset-password?token={token}"
+
+    if not email_configured():
+        print(f"[dev] Password reset link for {for_log(to_email)}: {reset_link}")
+        return False
+
+    html = (
+        "<p>שלום,</p>"
+        "<p>לחצו על הקישור הבא כדי לאפס את הסיסמה שלכם ב-Rally:</p>"
+        f'<p><a href="{reset_link}">{reset_link}</a></p>'
+        "<p>הקישור תקף לשעה אחת. אם לא ביקשתם איפוס סיסמה, אפשר להתעלם מהמייל הזה.</p>"
+    )
+    return send_email(to_email, "איפוס סיסמה - Rally", html)
