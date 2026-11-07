@@ -1144,6 +1144,10 @@ class HomeWeekMatchOut(BaseModel):
     # the venue itself and not only the line of text `place` prints.
     venue: Optional[VenueOut] = None
     last_meeting: Optional[HomeWeekLastMeetingOut] = None
+    # 205a — the Play screen groups by day and prints "Round 1 · ends Sat",
+    # so a row has to know when its round closes. Null for a friendly, which
+    # has no round to close.
+    round_ends_at: Optional[UtcDatetime] = None
 
 
 class RescheduleRoundOptionOut(BaseModel):

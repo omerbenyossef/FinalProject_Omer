@@ -316,7 +316,7 @@ export default function Home() {
         ? t("מקום אחד פנוי")
         : t("{n} מקומות פנויים", { n: game.seats_left });
     return (
-      <article className="ha-og" key={`g${game.id}`} onClick={() => navigate("/games/open")}>
+      <article className="ha-og" key={`g${game.id}`} onClick={() => navigate("/games?tab=open")}>
         <CourtImage
           photoUrl={game.venue_image_url}
           surface={game.venue_surface}
@@ -556,7 +556,7 @@ export default function Home() {
         <div className="ha-sec-head">
           <h2 className="ha-sec-title">{t("אירועים לידך")}</h2>
           {openGames.length > 0 && (
-            <Link to="/games/open" className="ha-sec-link">
+            <Link to="/games?tab=open" className="ha-sec-link">
               {`${t("הכל")} ${openGames.length}`}
             </Link>
           )}

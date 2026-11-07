@@ -203,6 +203,15 @@ export const api = {
   // Same reach the feed uses, so the two cannot contradict each other.
   playersNearMe: (sportId) => request(`/players/near-me?sport_id=${sportId}`),
 
+  // 205a — every match of mine that is not finished, for the Play screen.
+  // /home/week answers "this week" and drops what fell out of it; this one
+  // drops nothing, which is the point of the screen.
+  myMatches: (sportId, pairId) =>
+    request(
+      `/home/matches${sportId ? `?sport_id=${sportId}` : ""}${
+        pairId ? `${sportId ? "&" : "?"}pair_id=${pairId}` : ""
+      }`
+    ),
   openMatches: () => request("/matches/open"),
   remindOpenMatch: (matchId) => request(`/matches/${matchId}/remind`, { method: "POST" }),
 

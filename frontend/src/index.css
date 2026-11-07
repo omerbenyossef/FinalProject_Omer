@@ -10581,3 +10581,134 @@ button.st-row { cursor: pointer; }
   background: none; color: var(--court, #c6f24e); cursor: pointer;
   font: 700 11.5px "IBM Plex Sans", var(--sans);
 }
+
+/* ============================================================
+   play-205a — the middle tab
+
+   It was three tiles that answered "what kinds of game exist", a question
+   nobody arrives with. Now it is three tabs that answer "what do I do now",
+   and the first of them is the list people could not find: every match of
+   mine, grouped by the day it is on.
+   ============================================================ */
+
+.content:has(.pl) { padding: 0; }
+
+.pl {
+  position: relative;
+  display: flex; flex-direction: column; gap: 20px;
+  /* The floating button's height plus a gap, so the last row is never under
+     it — the one thing a button that hovers always gets wrong. */
+  padding: 8px 18px 92px; box-sizing: border-box;
+  background: #0e1116; color: #eef1f7; min-height: 100%;
+}
+
+.pl-head { display: flex; flex-direction: column; gap: 6px; }
+.pl-title {
+  margin: 0; font: 700 26px/1.15 "IBM Plex Sans", var(--sans); letter-spacing: -.01em;
+  color: #f4f6fa;
+}
+.pl-sub { margin: 0; font: 500 13.5px/1.4 "IBM Plex Sans", var(--sans); color: #a3abbb; }
+
+/* ---- the three tabs ---- */
+.pl-tabs {
+  display: flex; gap: 4px; padding: 4px; border-radius: 23px;
+  background: rgba(148, 163, 184, .08);
+}
+.pl-tab {
+  flex: 1; min-width: 0; height: 38px; border: 0; border-radius: 19px;
+  background: none; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  color: #a3abbb; font: 600 13px "IBM Plex Sans", var(--sans);
+}
+.pl-tab.is-on { background: #eef1f7; color: #0e1116; font-weight: 700; }
+.pl-tab-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pl-tab-count { font: 600 11px "IBM Plex Mono", monospace; color: #6f7787; }
+.pl-tab.is-on .pl-tab-count { color: inherit; opacity: .55; }
+
+/* ---- my matches ---- */
+.pl-matches { display: flex; flex-direction: column; gap: 18px; }
+.pl-group { display: flex; flex-direction: column; gap: 8px; }
+.pl-group-head { display: flex; align-items: baseline; gap: 8px; }
+.pl-group-title { margin: 0; font: 700 15px "IBM Plex Sans", var(--sans); color: #f4f6fa; }
+.pl-group-sub { font: 500 12px "IBM Plex Sans", var(--sans); color: #6f7787; }
+
+.pl-card {
+  border-radius: 20px; overflow: hidden; background: #161b22;
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, .08);
+}
+.pl-row {
+  width: 100%; display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; border: 0; border-top: 1px solid rgba(148, 163, 184, .08);
+  /* 199b's per-opponent colour, as a wash off the leading edge rather than a
+     whole tinted card: a stack of fully tinted rows is a stack of nothing. */
+  background: linear-gradient(to left, rgba(var(--tint), .22), rgba(var(--tint), 0) 55%);
+  color: inherit; text-align: start; cursor: pointer;
+}
+.pl-row:first-child { border-top: 0; }
+.pl-row .avatar { flex: none; }
+.pl-row-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.pl-row-name {
+  font: 700 15px "IBM Plex Sans", var(--sans); color: #f4f6fa;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pl-row-ctx {
+  font: 500 12px "IBM Plex Sans", var(--sans); color: #a3abbb;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.pl-go, .pl-outline, .pl-chip {
+  flex: none; display: inline-flex; align-items: center; gap: 5px;
+  max-width: 42%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pl-go {
+  height: 32px; padding: 0 14px; border-radius: 16px;
+  background: var(--court, #c6f24e); color: #0e1116;
+  font: 700 12.5px "IBM Plex Sans", var(--sans);
+}
+.pl-outline {
+  height: 32px; padding: 0 14px; border-radius: 16px;
+  box-shadow: inset 0 0 0 1px rgba(var(--court-rgb, 198, 242, 78), .45);
+  color: var(--court, #c6f24e); font: 700 12.5px "IBM Plex Sans", var(--sans);
+}
+.pl-chip {
+  height: 24px; padding: 0 10px; border-radius: 12px;
+  background: rgba(148, 163, 184, .12); color: #a3abbb;
+  font: 600 11.5px "IBM Plex Sans", var(--sans);
+}
+.pl-chip.is-ok {
+  background: rgba(var(--court-rgb, 198, 242, 78), .16); color: var(--court, #c6f24e);
+}
+.pl-chip svg { width: 11px; height: 11px; }
+
+.pl-empty {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 12px;
+  padding: 22px 18px; border-radius: 20px; background: #161b22;
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, .08);
+}
+.pl-empty-text { margin: 0; font: 500 14px "IBM Plex Sans", var(--sans); color: #a3abbb; }
+
+/* ---- the friendly button, over every tab ---- */
+.pl-fab {
+  position: fixed; inset-inline-end: 18px; bottom: 96px; z-index: 5;
+  height: 52px; padding: 0 20px; border: 0; border-radius: 26px;
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--court, #c6f24e); color: #0e1116;
+  font: 700 14.5px "IBM Plex Sans", var(--sans); cursor: pointer;
+  box-shadow: 0 12px 30px -8px rgba(var(--court-rgb, 198, 242, 78), .6);
+}
+.pl-fab svg { width: 18px; height: 18px; }
+
+/* ---- the two lists, as tabs rather than pages ---- */
+.pl .og, .pl .lgp { padding: 0; background: none; }
+.og--embedded .og-head, .lgp--embedded .lgp-head {
+  padding-inline: 0; justify-content: flex-end;
+}
+
+/* The open-games filters. */
+.og-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+.og-chip {
+  height: 30px; padding: 0 13px; border: 0; border-radius: 15px;
+  background: rgba(148, 163, 184, .10); color: #a3abbb;
+  font: 600 12.5px "IBM Plex Sans", var(--sans); cursor: pointer;
+}
+.og-chip.is-on { background: #eef1f7; color: #0e1116; font-weight: 700; }

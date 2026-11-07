@@ -208,7 +208,7 @@ export default function ActivityFeed({ items, onChanged }) {
       );
     if (item.type === "open_game_created")
       return (
-        <button type="button" className="af-btn" onClick={() => navigate("/games/open")}>
+        <button type="button" className="af-btn" onClick={() => navigate("/games?tab=open")}>
           {t("הצטרף")}
         </button>
       );

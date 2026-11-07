@@ -15,7 +15,7 @@ import OpenGameRow from "./OpenGameRow.jsx";
 
    Opening a game is its own screen (OpenGameNew). */
 
-export default function OpenGames() {
+export default function OpenGames({ embedded = false }) {
   const { selectedSportId, selectedSport } = useSport();
   const { t } = useLanguage();
   const navigate = useNavigate();
@@ -25,6 +25,9 @@ export default function OpenGames() {
   // A seat given up and a game called off are both things somebody else is
   // waiting on, so neither happens on one tap.
   const [confirming, setConfirming] = useState(null);
+  // 205a — four chips, because the two questions people actually arrive with
+  // are "is there anything today" and "singles or doubles".
+  const [filter, setFilter] = useState("all");
 
   const load = useCallback(async () => {
     if (!selectedSportId) return;
@@ -99,7 +102,22 @@ export default function OpenGames() {
     }
   }
 
-  const all = games || [];
+  const FILTERS = [
+    { key: "all", label: t("הכל") },
+    { key: "today", label: t("היום") },
+    { key: "singles", label: t("יחידים") },
+    { key: "doubles", label: t("זוגות") },
+  ];
+
+  function keep(game) {
+    if (filter === "today")
+      return new Date(game.starts_at).toDateString() === new Date().toDateString();
+    if (filter === "singles") return !game.is_doubles;
+    if (filter === "doubles") return game.is_doubles;
+    return true;
+  }
+
+  const all = (games || []).filter(keep);
   const myGames = all.filter((g) => g.mine || g.joined);
   // Soonest first, and the ones I could actually take — a game I am in is in
   // the group above, and one out of my range or already full is not an offer.
@@ -109,7 +127,8 @@ export default function OpenGames() {
   const blocked = all.filter((g) => !g.mine && !g.joined && g.blocked_reason);
 
   return (
-    <div className="og">
+    <div className={`og${embedded ? " og--embedded" : ""}`}>
+      {!embedded && (
       <div className="lgp-top">
         <Link to="/games" className="lgp-back">
           <ChevronIcon aria-hidden="true" />
@@ -122,12 +141,17 @@ export default function OpenGames() {
           </span>
         )}
       </div>
+      )}
 
       <header className="og-head">
-        <div className="og-head-text">
-          <h1 className="og-title">{t("אירועים")}</h1>
-          <p className="og-sub">{t("שחקנים ברמה שלך שמחפשים יריב")}</p>
-        </div>
+        {/* As a tab the title is said twice — once on the tab itself and
+            once here — so inside Play only the action survives. */}
+        {!embedded && (
+          <div className="og-head-text">
+            <h1 className="og-title">{t("אירועים")}</h1>
+            <p className="og-sub">{t("שחקנים ברמה שלך שמחפשים יריב")}</p>
+          </div>
+        )}
         <Link to="/games/open/new" className="og-new">
           <PlusIcon aria-hidden="true" />
           {t("צור אירוע")}
@@ -135,6 +159,20 @@ export default function OpenGames() {
       </header>
 
       {error && <p className="og-error error">{t(error)}</p>}
+
+      <div className="og-chips">
+        {FILTERS.map((item) => (
+          <button
+            type="button"
+            key={item.key}
+            className={`og-chip${filter === item.key ? " is-on" : ""}`}
+            aria-pressed={filter === item.key}
+            onClick={() => setFilter(item.key)}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
 
       {games == null ? (
         <SkeletonBar />

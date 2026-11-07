@@ -10,7 +10,7 @@ import SignUp from "./pages/SignUp.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
 import ResetPassword from "./pages/ResetPassword.jsx";
 import Leagues from "./pages/Leagues.jsx";
-import GamesHub from "./pages/GamesHub.jsx";
+import Play from "./pages/Play.jsx";
 import OpenGames from "./pages/OpenGames.jsx";
 import OpenGameNew from "./pages/OpenGameNew.jsx";
 import PairPage from "./pages/PairPage.jsx";
@@ -140,13 +140,14 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-        {/* 189b — the hub the middle tab now opens; the leagues list it used
-            to open sits one level down behind its first tile. */}
+        {/* 205a — the middle tab. It was a hub of three tiles (189b), which
+            answered "what kinds of game exist"; this answers "what do I do
+            now", with my matches, the open games and my leagues as tabs. */}
         <Route
           path="/games"
           element={
             <ProtectedRoute>
-              <GamesHub />
+              <Play />
             </ProtectedRoute>
           }
         />

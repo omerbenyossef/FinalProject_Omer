@@ -1871,6 +1871,21 @@ const PAIRS = [
   ["{n} שחקנים ברמה שלך ב{area}", "{n} players at your level in {area}"],
   ["לראות", "See"],
   ["בוא לשחק איתי ב-Rally", "Come play with me on Rally"],
+  // 205a — the Play screen.
+  ["בוא נשחק", "Let's play"],
+  ["משחק אחד מחכה לתוצאה", "1 match needs your score"],
+  ["{n} משחקים מחכים לתוצאה", "{n} matches need your score"],
+  ["משחק אחד מחכה לתיאום", "1 match to schedule"],
+  ["{n} משחקים מחכים לתיאום", "{n} matches to schedule"],
+  ["הבא: {day} {time} מול {name}", "Next: {day} {time} vs {name}"],
+  ["עוד לא נקבע כלום. אפשר להצטרף לאירוע למטה", "Nothing booked yet. Join a game below"],
+  ["המשחקים שלי", "My matches"],
+  ["בלי תאריך", "Not scheduled"],
+  ["מחכה לתוצאה", "waiting for score"],
+  ["שוחק", "Played"],
+  ["מחכה ל{name}", "Waiting for {name}"],
+  ["נסגר {day}", "ends {day}"],
+  ["אין לך משחקים פתוחים", "No open matches"],
 ];
 
 const heToEn = {};

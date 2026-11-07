@@ -572,3 +572,82 @@ def home_week(
         matches_this_week=_matches_this_week(db, current_user.id, sport_id, pair_id, now),
         win_streak=_win_streak(db, current_user.id, sport_id, pair_id),
     )
+
+
+@router.get("/matches", response_model=list[schemas.HomeWeekMatchOut])
+def my_matches(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+    sport_id: int | None = None,
+    pair_id: int | None = None,
+):
+    """205a — every match of mine that is not finished, league and friendly
+    alike, in the shape the cards already read.
+
+    Not /home/week with the filters taken off: that one answers "this week",
+    and deliberately drops a match whose round has closed and a friendly a
+    week past its time, because a diary of the week should not carry them.
+    The Play screen is the opposite question — "everything I still have to
+    deal with" — so nothing is dropped for being late. It is exactly the
+    matches that fell out of the week's answer that somebody opening this
+    screen is looking for.
+
+    An invitation nobody has accepted is left out: it is not a match yet, it
+    is a question, and it has its own screen."""
+    _auto_confirm_overdue(db)
+    mine = _lens(current_user.id, pair_id)
+
+    rows = (
+        db.query(models.Match)
+        .options(
+            joinedload(models.Match.player1),
+            joinedload(models.Match.player2),
+            joinedload(models.Match.league),
+            joinedload(models.Match.venue),
+        )
+        .filter(
+            models.Match.status.in_(
+                [
+                    models.MatchStatus.pending,
+                    models.MatchStatus.pending_confirmation,
+                    models.MatchStatus.disputed,
+                ]
+            ),
+            mine,
+        )
+        .all()
+    )
+
+    out: list[schemas.HomeWeekMatchOut] = []
+    for match in rows:
+        if match.status == models.MatchStatus.disputed and not _not_played_void(match):
+            continue
+        if match.invite_status == models.FriendlyInviteStatus.pending:
+            continue
+        league = match.league
+        match_sport = league.sport_id if league else match.sport_id
+        if sport_id is not None and match_sport != sport_id:
+            continue
+        facing = opponents(db, match, current_user.id)
+        out.append(
+            schemas.HomeWeekMatchOut(
+                id=match.id,
+                opponent_name=opponent_label(db, match, current_user.id),
+                opponent_photo_url=facing[0].photo_url if len(facing) == 1 else None,
+                opponent_id=facing[0].id if len(facing) == 1 else None,
+                partner_name=(teammate(db, match, current_user.id) or _NOBODY).name,
+                league_name=league.name if league else None,
+                round=match.round_number,
+                scheduled_at=match.scheduled_at,
+                state=_match_state(match, current_user.id),
+                place=_match_place(match),
+                venue=_venue_out(match),
+                note=_void_note(match, current_user.id) if _not_played_void(match) else None,
+                round_ends_at=_round_ends_at(league, match.round_number) if league else None,
+            )
+        )
+
+    # Soonest first; the ones with no time at all last, where the screen's
+    # own "not scheduled" group puts them anyway.
+    out.sort(key=lambda m: (m.scheduled_at is None, m.scheduled_at or datetime.max))
+    return out

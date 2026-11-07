@@ -251,7 +251,7 @@ function nextSunday(from = new Date()) {
   return day;
 }
 
-export default function Leagues() {
+export default function Leagues({ embedded = false }) {
   const [leagues, setLeagues] = useState([]);
   const [myLeagues, setMyLeagues] = useState([]);
   const [myLevel, setMyLevel] = useState(null);
@@ -495,10 +495,13 @@ export default function Leagues() {
   ];
 
   return (
-    <div className="lgp">
+    <div className={`lgp${embedded ? " lgp--embedded" : ""}`}>
       {/* 1 · one level down from the hub, so the way back is named. The sport
           is shown, not offered: switching it is the header's job, and two
-          sport controls on one screen is one too many. */}
+          sport controls on one screen is one too many. Inside the Play
+          screen there is nothing to go back to — it is a tab there — so the
+          bar is not drawn at all. */}
+      {!embedded && (
       <div className="lgp-top">
         <Link to="/games" className="lgp-back">
           <ChevronIcon aria-hidden="true" />
@@ -511,12 +514,15 @@ export default function Leagues() {
           </span>
         )}
       </div>
+      )}
 
       <header className="lgp-head">
-        <div className="lgp-head-text">
-          <h1 className="lgp-title">{t("ליגות")}</h1>
-          <p className="lgp-sub">{t("הכל במקום אחד")}</p>
-        </div>
+        {!embedded && (
+          <div className="lgp-head-text">
+            <h1 className="lgp-title">{t("ליגות")}</h1>
+            <p className="lgp-sub">{t("הכל במקום אחד")}</p>
+          </div>
+        )}
         {user && (
           <button type="button" className="lgp-new" onClick={requestCreate}>
             <PlusIcon aria-hidden="true" />
