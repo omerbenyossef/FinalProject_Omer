@@ -35,6 +35,21 @@ def match_result(db: Session, match: models.Match, winner_id: int | None) -> Non
         return
     loser_id = match.player2_id if winner_id == match.player1_id else match.player1_id
     winner = db.get(models.User, winner_id) if winner_id else None
+    # Stored the winner's way round. The line reads "A beat B 6-4 6-3", and a
+    # reader of the feed has no way to know which half of a stored p1-p2 score
+    # is A's — so the orientation is decided here, once, by the side that won.
+    first = winner_id == match.player1_id
+    sets = [
+        {
+            "player1_games": s["player1_games"] if first else s["player2_games"],
+            "player2_games": s["player2_games"] if first else s["player1_games"],
+        }
+        for s in (match.sets or [])
+        if isinstance(s, dict) and "player1_games" in s and "player2_games" in s
+    ]
+    won, lost = (
+        (match.player1_score, match.player2_score) if first else (match.player2_score, match.player1_score)
+    )
     _record(
         db,
         type=models.ActivityType.match_result,
@@ -44,7 +59,7 @@ def match_result(db: Session, match: models.Match, winner_id: int | None) -> Non
         match_id=match.id,
         sport_id=match.sport_id or (match.league.sport_id if match.league else None),
         area=_area_of(winner),
-        payload={"sets": match.sets or [], "score": f"{match.player1_score}-{match.player2_score}"},
+        payload={"sets": sets, "score": f"{won}-{lost}"},
     )
 
 
