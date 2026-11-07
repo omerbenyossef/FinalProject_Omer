@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { api, mediaUrl } from "../api";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import { useSport } from "../SportContext.jsx";
@@ -108,7 +108,10 @@ export default function Settings() {
   const navigate = useNavigate();
   const [myRatings, setMyRatings] = useState([]);
   const [retaking, setRetaking] = useState(false);
-  const [editing, setEditing] = useState(false);
+  // Arriving from the profile page's "edit profile" opens it already open:
+  // the tap was the request, and a second one to repeat it is a toll.
+  const [searchParams] = useSearchParams();
+  const [editing, setEditing] = useState(searchParams.get("edit") === "1");
   const [settingPassword, setSettingPassword] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
@@ -153,15 +156,10 @@ export default function Settings() {
         </button>
       </div>
 
-      <header className="st-hero">
-        <span className="st-face">
-          {user?.photo_url ? (
-            <img src={mediaUrl(user.photo_url)} alt="" />
-          ) : (
-            (user?.name || "?").trim()[0]
-          )}
-        </span>
-        <h1 className="st-name">{user?.name}</h1>
+      {/* 202a: the profile page owns the big hero now — two screens opening
+          with the same face, name and "member since" was one too many. */}
+      <header className="st-head">
+        <h1 className="st-title">{t("הגדרות")}</h1>
         {subLine && <p className="st-sub">{subLine}</p>}
       </header>
 

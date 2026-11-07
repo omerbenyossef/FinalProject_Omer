@@ -10139,3 +10139,218 @@ button.st-row { cursor: pointer; }
 .st-toggle .toggle-knob { width: 20px; height: 20px; background: #8b93a6; }
 .st-toggle.on { background: var(--court); }
 .st-toggle.on .toggle-knob { background: #0e1116; }
+
+
+/* 202a — my own profile. Same content as before; what changed is which of
+   it the eye lands on first: the player, then where they stand, then the
+   three numbers, then the three places to go. */
+.pf {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 18px calc(24px + env(safe-area-inset-bottom, 0px));
+}
+
+.pf-hero { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
+/* A gap, then the sport's ring, then a glow under it — the same face the
+   settings screen used to wear, now worn here alone. */
+.pf-face {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #1d2938;
+  box-shadow:
+    0 0 0 4px var(--paper),
+    0 0 0 6px rgba(var(--court-rgb), 0.55),
+    0 10px 40px -8px rgba(var(--court-rgb), 0.5);
+  font: 400 36px/1 "Anton", var(--display);
+  color: #c9cfdb;
+  text-transform: uppercase;
+}
+.pf-face img { width: 100%; height: 100%; object-fit: cover; }
+.pf-name {
+  margin: 0;
+  font: 400 34px/1 "Anton", var(--display);
+  text-transform: uppercase;
+  letter-spacing: .01em;
+  color: var(--ink);
+}
+.pf-meta {
+  margin: 0;
+  font: 500 12px "IBM Plex Sans Hebrew", "IBM Plex Sans", var(--sans);
+  letter-spacing: 0;
+  color: #8b93a6;
+}
+.pf-meta.is-latin {
+  font: 500 10.5px "IBM Plex Mono", monospace;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.pf-edit {
+  margin-top: 4px;
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 13px;
+  border-radius: 15px;
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.3);
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+/* The main stat, and the way into the rankings. */
+.pf-ntrp {
+  position: relative;
+  overflow: hidden;
+  padding: 16px;
+  border-radius: 20px;
+  background: linear-gradient(160deg, rgba(var(--court-rgb), 0.2), rgba(var(--court-rgb), 0.05) 55%), #161b22;
+  box-shadow:
+    inset 0 1px 0 rgba(var(--court-rgb), 0.4),
+    inset 0 0 0 1px rgba(var(--court-rgb), 0.16);
+}
+.pf-ntrp-glow {
+  position: absolute;
+  top: -60px;
+  inset-inline-end: -40px;
+  width: 170px;
+  height: 170px;
+  background: radial-gradient(circle, rgba(var(--court-rgb), 0.25), transparent 70%);
+  pointer-events: none;
+}
+.pf-ntrp > :not(.pf-ntrp-glow) { position: relative; }
+/* The pill drops to its own line rather than squeezing the standing into
+   an ellipsis: "20 מתוך 28" beside a five-word Hebrew button does not fit
+   a 390px screen, and the number is the point of the card. */
+.pf-ntrp-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px 12px;
+}
+.pf-ntrp-left { flex: 1 1 auto; }
+.pf-ntrp-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.pf-ntrp-num { font: 400 48px/1 "Anton", var(--display); color: var(--court); }
+.pf-ntrp-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.pf-ntrp-label {
+  font: 500 10px "IBM Plex Mono", monospace;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: #8b93a6;
+}
+.pf-ntrp-standing {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--ink);
+  /* One line: "20 of 28 players" wrapped into three beside the pill. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pf-ntrp-pill {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 30px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 15px;
+  background: rgba(14, 17, 22, 0.5);
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+}
+.pf-ntrp-pill svg { width: 12px; height: 12px; }
+
+/* One segment per player: how far along the table I am, as a shape. */
+.pf-bar { margin-top: 14px; display: flex; align-items: flex-end; gap: 3px; height: 12px; }
+.pf-seg { flex: 1; height: 5px; border-radius: 2px; background: #262c36; }
+.pf-seg.is-above { background: rgba(var(--court-rgb), 0.35); }
+.pf-seg.is-me { height: 12px; background: var(--court); }
+.pf-bar-ends {
+  margin-top: 6px;
+  display: flex;
+  justify-content: space-between;
+  font: 500 10px "IBM Plex Mono", monospace;
+  color: #6f7787;
+}
+
+.pf-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.pf-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: #161b22;
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.08);
+}
+.pf-tile-num { font: 400 28px/1 "Anton", var(--display); color: #eef1f7; }
+.pf-tile-num.is-accent { color: var(--court); }
+.pf-tile-label {
+  font: 500 9.5px "IBM Plex Mono", monospace;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: #8b93a6;
+}
+
+.pf-list {
+  border-radius: 18px;
+  background: #161b22;
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.08);
+  overflow: hidden;
+}
+.pf-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 0;
+  background: none;
+  text-align: start;
+  text-decoration: none;
+  color: var(--ink);
+  cursor: pointer;
+}
+.pf-row + .pf-row { border-top: 1px solid rgba(148, 163, 184, 0.1); }
+.pf-row-icon {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: rgba(var(--court-rgb), 0.12);
+  color: var(--court);
+}
+/* Admin is the one row that is not about this player, so it is the one row
+   that is filled rather than tinted. */
+.pf-row-icon.is-filled { background: var(--court); color: #0e1116; }
+.pf-row-icon svg { width: 18px; height: 18px; }
+.pf-row-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.pf-row-title { font-weight: 600; font-size: 15px; }
+.pf-row-sub { font-weight: 500; font-size: 12px; color: #8b93a6; }
+.pf-row-chev { flex: none; width: 14px; height: 14px; color: #6f7787; }
+.pf-row.is-danger .pf-row-icon { background: rgba(255, 122, 107, 0.12); color: #ff7a6b; }
+.pf-row.is-danger .pf-row-title { color: #ff7a6b; }
+
+/* 202a — the settings header, now that the profile owns the hero. */
+.st-head { padding: 10px 18px 16px; }
+.st-title {
+  margin: 0;
+  font: 400 28px/1 "Anton", var(--display);
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.st-head .st-sub { margin-top: 6px; text-align: start; }

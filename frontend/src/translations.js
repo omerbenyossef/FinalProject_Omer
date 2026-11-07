@@ -1828,6 +1828,11 @@ const PAIRS = [
   ["תצטרכו להתחבר שוב כדי לחזור.", "You will have to sign in again to come back."],
   ["מחיקת החשבון", "Delete account"],
   ["שפה", "Language"],
+
+  // 202a — the profile page.
+  ["עוד משחק אחד לדירוג", "One match to be ranked"],
+  ["עוד {n} משחקים לדירוג", "{n} matches to be ranked"],
+  ["{rank} מתוך {total}", "#{rank} of {total}"],
 ];
 
 const heToEn = {};
