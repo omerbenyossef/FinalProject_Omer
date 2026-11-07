@@ -1398,3 +1398,13 @@ class ActivityItemOut(BaseModel):
 class ActivityClapOut(BaseModel):
     claps: int
     i_clapped: bool
+
+
+class PlayersNearMeOut(BaseModel):
+    """203b's feed, when there is not much in it — who else is around at the
+    same level. A count and a few faces, never the list itself: this answers
+    "is there anybody here", not "who"."""
+
+    count: int = 0
+    area: Optional[str] = None
+    people: list[PairPlayerOut] = []

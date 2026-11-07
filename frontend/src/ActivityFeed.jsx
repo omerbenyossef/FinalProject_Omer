@@ -5,6 +5,7 @@ import { useLanguage } from "./LanguageContext.jsx";
 import Avatar from "./Avatar.jsx";
 import { tintColor } from "./tint.js";
 import { formatSets, weekdayName, dayMonthPadded as dayMonth } from "./matchUtils.js";
+import { PinIcon } from "./Icons.jsx";
 
 /* 203b — "around you".
 
@@ -19,10 +20,22 @@ import { formatSets, weekdayName, dayMonthPadded as dayMonth } from "./matchUtil
 // A row nobody did — a league starting, or the generic lines a thin feed is
 // padded with — has no face to show, so it shows the sport's own mark.
 function Face({ item }) {
-  if (item.type === "players_joined") {
+  if (item.type === "venue")
+    return (
+      <span className="af-face" aria-hidden="true">
+        <PinIcon />
+      </span>
+    );
+  if (item.type === "invite_friend")
+    return (
+      <span className="af-face" aria-hidden="true">
+        +
+      </span>
+    );
+  if (item.type === "players_joined" || item.type === "players_near") {
     return (
       <span className="af-stack" aria-hidden="true">
-        {item.people.slice(0, 3).map((person) => (
+        {(item.people ?? []).slice(0, 3).map((person) => (
           <Avatar
             key={person.id}
             name={person.name}
@@ -145,10 +158,30 @@ export default function ActivityFeed({ items, onChanged }) {
         return fill(t("{league} יצאה לדרך"), {
           league: strong(item.payload?.name ?? item.league_name ?? ""),
         });
+      case "venue":
+        return fill(t("אפשר להזמין מגרש ב{venue}"), { venue: strong(item.venue?.name ?? "") });
       case "invite_friend":
         return t("הזמן חבר לשחק");
+      case "players_near":
+        return fill(t("{n} שחקנים ברמה שלך ב{area}"), {
+          n: strong(item.count),
+          area: strong(item.payload?.area ?? ""),
+        });
       default:
         return item.payload?.text ?? "";
+    }
+  }
+
+  // The phone's own share sheet, the same way the open-game and partner
+  // screens do it, with the clipboard where there is no sheet to open.
+  async function invite() {
+    const url = window.location.origin;
+    const text = t("בוא לשחק איתי ב-Rally");
+    try {
+      if (navigator.share) await navigator.share({ text: `${text}\n${url}` });
+      else await navigator.clipboard?.writeText(`${text}\n${url}`);
+    } catch {
+      // A dismissed share sheet is not an error worth a message.
     }
   }
 
@@ -189,10 +222,27 @@ export default function ActivityFeed({ items, onChanged }) {
           {t("צפה")}
         </button>
       );
+    if (item.type === "venue")
+      return (
+        <a
+          className="af-btn"
+          href={item.venue.booking_url}
+          target="_blank"
+          rel="noreferrer noopener"
+        >
+          {t("צפה")}
+        </a>
+      );
     if (item.type === "invite_friend")
       return (
-        <button type="button" className="af-btn" onClick={() => navigate("/friendly/new")}>
-          {t("הזמן חבר")}
+        <button type="button" className="af-btn" onClick={invite}>
+          {t("הזמן")}
+        </button>
+      );
+    if (item.type === "players_near")
+      return (
+        <button type="button" className="af-btn" onClick={() => navigate("/ranks")}>
+          {t("לראות")}
         </button>
       );
     if (!item.id) return null;

@@ -1863,6 +1863,14 @@ const PAIRS = [
   ["כפיים", "Clap"],
   ["הזמן חבר לשחק", "Invite a friend to play"],
   ["עוד שקט סביבך", "Quiet around you"],
+  // 203b fixes — the sections that are never empty.
+  ["עוד אין אירועים לידך", "No open games near you yet"],
+  ["תהיה הראשון — שחקנים לידך יראו את זה", "Be the first — others nearby will see it"],
+  ["פתח אירוע", "Open a game"],
+  ["אפשר להזמין מגרש ב{venue}", "Book a court at {venue}"],
+  ["{n} שחקנים ברמה שלך ב{area}", "{n} players at your level in {area}"],
+  ["לראות", "See"],
+  ["בוא לשחק איתי ב-Rally", "Come play with me on Rally"],
 ];
 
 const heToEn = {};

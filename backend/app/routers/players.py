@@ -10,6 +10,7 @@ from .. import models, schemas
 from ..auth import get_current_user
 from ..database import get_db
 from ..match_sides import my_side_is_first
+from .activity import _near_level
 from .matches import _auto_confirm_overdue
 from .leagues import get_standings
 from ..rating_utils import match_winner_id, round_to_half
@@ -141,6 +142,42 @@ def rankings(
         players=[schemas.RankingsPlayerOut(**e) for e in page],
         next_cursor=next_cursor,
         min_matches=RANKINGS_MIN_MATCHES_FOR_RECORD,
+    )
+
+
+@router.get("/near-me", response_model=schemas.PlayersNearMeOut)
+def players_near_me(
+    sport_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """How many players at this player's level are in their area, and three
+    of their faces.
+
+    Declared above the /{player_id} routes on purpose: FastAPI matches in
+    order, and "near-me" would otherwise be read as a player id.
+
+    The same reach the feed uses, so the two cannot disagree about who counts
+    as nearby — one of them saying "4 players at your level" while the other
+    shows nobody would make both look broken."""
+    near = _near_level(db, current_user, sport_id)
+    near.discard(current_user.id)
+    if not near:
+        return schemas.PlayersNearMeOut(count=0, area=current_user.area, people=[])
+    people = (
+        db.query(models.User)
+        .filter(models.User.id.in_(near))
+        .order_by(models.User.photo.is_(None), models.User.id.desc())
+        .limit(3)
+        .all()
+    )
+    return schemas.PlayersNearMeOut(
+        count=len(near),
+        area=current_user.area,
+        people=[
+            schemas.PairPlayerOut(id=u.id, name=u.name, photo_url=u.photo_url, area=u.area)
+            for u in people
+        ],
     )
 
 

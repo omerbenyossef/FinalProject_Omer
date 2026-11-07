@@ -5,7 +5,7 @@ import { useSport } from "./SportContext.jsx";
 import { usePairs } from "./PairContext.jsx";
 import { useLanguage } from "./LanguageContext.jsx";
 import { useOpenAction } from "./OpenActionContext.jsx";
-import { HomeIcon, RanksIcon, TennisIcon } from "./Icons.jsx";
+import { BellIcon, HomeIcon, RanksIcon, TennisIcon } from "./Icons.jsx";
 import InstallPrompt from "./InstallPrompt.jsx";
 import PushPrompt from "./PushPrompt.jsx";
 import Onboarding from "./Onboarding.jsx";
@@ -23,7 +23,7 @@ export default function Layout({ children }) {
   );
   const { t } = useLanguage();
   const location = useLocation();
-  const { hasOtherLeagueActivity } = useOpenAction();
+  const { hasOtherLeagueActivity, unreadCount } = useOpenAction();
   const isAuthRoute = AUTH_PATHS.includes(location.pathname);
   // leaguerosterbeforejoin154b — the join screen owns the full height below
   // the topbar (its roster scrolls, its footer holds the only action), so the
@@ -45,13 +45,24 @@ export default function Layout({ children }) {
       <header className="topbar">
         {user ? (
           <>
-            <Link to="/me" className="topbar-avatar" aria-label={t("פרופיל")}>
-              {user.photo_url ? (
-                <img src={mediaUrl(user.photo_url)} alt="" />
-              ) : (
-                user.name?.trim()?.[0] ?? "?"
-              )}
-            </Link>
+            {/* 203b — the bell belongs beside the face, in the bar that is on
+                every screen, not inside one screen's greeting. It used to be
+                the home screen's own, which meant the one place you could
+                find out something was waiting was the place that already
+                showed you what. */}
+            <div className="topbar-me">
+              <Link to="/me" className="topbar-avatar" aria-label={t("פרופיל")}>
+                {user.photo_url ? (
+                  <img src={mediaUrl(user.photo_url)} alt="" />
+                ) : (
+                  user.name?.trim()?.[0] ?? "?"
+                )}
+              </Link>
+              <Link to="/notifications" className="topbar-bell" aria-label={t("התראות")}>
+                <BellIcon aria-hidden="true" />
+                {unreadCount > 0 && <span className="topbar-bell-dot" aria-hidden="true" />}
+              </Link>
+            </div>
             <div className="wordmark-cluster">
               <span className="wordmark-rally">RALLY</span>
               {/* 187c: the sport is a button in the sport's own colour, not a

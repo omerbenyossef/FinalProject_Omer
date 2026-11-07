@@ -199,6 +199,9 @@ export const api = {
   activity: (sportId, limit = 6) =>
     request(`/activity?limit=${limit}${sportId ? `&sport_id=${sportId}` : ""}`),
   clapActivity: (eventId) => request(`/activity/${eventId}/clap`, { method: "POST" }),
+  // How many players at my level are in my area, and three of their faces.
+  // Same reach the feed uses, so the two cannot contradict each other.
+  playersNearMe: (sportId) => request(`/players/near-me?sport_id=${sportId}`),
 
   openMatches: () => request("/matches/open"),
   remindOpenMatch: (matchId) => request(`/matches/${matchId}/remind`, { method: "POST" }),

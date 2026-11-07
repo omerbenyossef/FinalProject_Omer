@@ -20,12 +20,20 @@ export function OpenActionProvider({ children }) {
   const [matchesLoading, setMatchesLoading] = useState(true);
   const [openItems, setOpenItems] = useState([]);
   const [scheduledCount, setScheduledCount] = useState(0);
+  // 203b moved the bell into the app header, so the count it carries has to
+  // live somewhere every screen can see. Here, with the rest of "what is
+  // waiting for me": same lens, same refresh, one place that can be wrong.
+  const [unreadCount, setUnreadCount] = useState(0);
   const [openItemsLoading, setOpenItemsLoading] = useState(true);
 
   function reload() {
     // Until the pair list has landed, "what needs me" has no lens to be
     // answered through, and the answer would have to be thrown away.
     if (!user || !pairLensReady) return Promise.resolve();
+    api
+      .notifications(selectedSportId, selectedPair?.id)
+      .then((data) => setUnreadCount(data.unread_count))
+      .catch(() => {});
     api
       .myNextMatches(selectedPair?.id)
       .then(setNextMatches)
@@ -46,6 +54,7 @@ export function OpenActionProvider({ children }) {
       setNextMatches([]);
       setOpenItems([]);
       setScheduledCount(0);
+      setUnreadCount(0);
       setMatchesLoading(false);
       setOpenItemsLoading(false);
       return;
@@ -53,7 +62,8 @@ export function OpenActionProvider({ children }) {
     reload();
     // Switching pair changes what these answer, so they are asked again.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, selectedPair?.id, pairLensReady]);
+    // The bell is scoped to the sport as well, so switching sport re-asks.
+  }, [user, selectedSportId, selectedPair?.id, pairLensReady]);
 
   // The tab-bar button lives in the layout, so it never remounts and used to
   // keep advertising work that was already done — every screen had to remember
@@ -134,6 +144,7 @@ export function OpenActionProvider({ children }) {
         itemCount,
         openItemsLoading,
         scheduledCount,
+        unreadCount,
         hasOtherLeagueActivity,
       }}
     >

@@ -867,6 +867,21 @@ a { color: var(--court); text-decoration: none; }
 }
 .topbar-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
 
+/* 203b — the face and the bell travel together at the start of the bar. */
+.topbar-me { flex: none; display: flex; align-items: center; gap: 4px; }
+.topbar-bell {
+  position: relative; width: 32px; height: 32px; display: grid; place-items: center;
+  color: #c9cfdb; text-decoration: none;
+}
+.topbar-bell svg { width: 20px; height: 20px; }
+/* Warm red, not the sport's accent: the accent means "yours" all over the
+   app, and this one mark has to mean "new". */
+.topbar-bell-dot {
+  position: absolute; top: 4px; inset-inline-end: 4px;
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #ff7a6b; box-shadow: 0 0 0 2px #0F1113;
+}
+
 .link-btn {
   background: none;
   border: none;
@@ -10379,28 +10394,12 @@ button.st-row { cursor: pointer; }
 }
 
 /* ---- the greeting ---- */
-.ha-greet { display: flex; align-items: flex-start; gap: 12px; }
-.ha-greet-text { flex: 1; min-width: 0; }
 .ha-hello {
   margin: 0; font: 700 26px/1.15 "IBM Plex Sans", var(--sans); letter-spacing: -.01em;
   color: #f4f6fa;
 }
 .ha-sub { margin: 6px 0 0; font: 500 13.5px/1.4 "IBM Plex Sans", var(--sans); color: #a3abbb; }
 .ha-streak { color: var(--court, #c6f24e); font-weight: 700; }
-
-.ha-bell {
-  flex: none; position: relative; width: 34px; height: 34px; margin-top: 2px;
-  display: grid; place-items: center;
-  border: 0; background: none; color: #c9cfdb; cursor: pointer;
-}
-.ha-bell svg { width: 21px; height: 21px; }
-/* Warm red, not the sport's accent: the accent is all over this screen
-   saying "yours", and the dot has the one other job of saying "new". */
-.ha-bell-dot {
-  position: absolute; top: 3px; inset-inline-end: 4px;
-  width: 8px; height: 8px; border-radius: 50%;
-  background: #ff7a6b; box-shadow: 0 0 0 2px #0e1116;
-}
 
 /* ---- the court picture, shared by the next-match card and the carousel ---- */
 .court { position: relative; width: 100%; overflow: hidden; }
@@ -10523,6 +10522,18 @@ button.st-row { cursor: pointer; }
   font: 600 13px "IBM Plex Sans", var(--sans); color: var(--court, #c6f24e);
   background: #181c22;
 }
+/* The section is never hidden, so it needs something to be when it is
+   empty: the same card shape, saying what is missing and offering the one
+   thing that fixes it. */
+.ha-og--empty { width: 100%; cursor: default; }
+.ha-og-empty-body { padding: 14px; display: flex; flex-direction: column; gap: 4px; }
+.ha-og-empty-title { font: 700 15px "IBM Plex Sans", var(--sans); color: #f4f6fa; }
+.ha-og-empty-sub { font: 500 12.5px/1.4 "IBM Plex Sans", var(--sans); color: #8b93a6; }
+.ha-og-empty-go {
+  align-self: flex-start; margin-top: 8px; height: 36px; padding: 0 16px;
+  border: 0; border-radius: 18px; background: var(--court, #c6f24e); color: #0e1116;
+  font: 700 13px "IBM Plex Sans", var(--sans); cursor: pointer;
+}
 .ha-og-spots {
   flex: none; font: 700 11.5px "IBM Plex Sans", var(--sans); color: var(--court, #c6f24e);
 }
@@ -10546,8 +10557,10 @@ button.st-row { cursor: pointer; }
 .af-side { flex: none; }
 .af-face {
   width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center;
-  background: rgba(148, 163, 184, .12); color: var(--court, #c6f24e); font-size: 15px;
+  background: rgba(148, 163, 184, .12); color: var(--court, #c6f24e);
+  font: 600 17px "IBM Plex Sans", var(--sans);
 }
+.af-face svg { width: 17px; height: 17px; }
 .af-stack { display: flex; }
 .af-stack .avatar { box-shadow: 0 0 0 2px #0e1116; }
 .af-stack .avatar + .avatar { margin-inline-start: -9px; }
@@ -10563,6 +10576,7 @@ button.st-row { cursor: pointer; }
 .af-clap-n { font: 700 11.5px "IBM Plex Mono", monospace; }
 .af-btn {
   height: 28px; padding: 0 12px; border-radius: 14px;
+  display: inline-flex; align-items: center; text-decoration: none;
   border: 1px solid rgba(var(--court-rgb, 198, 242, 78), .5);
   background: none; color: var(--court, #c6f24e); cursor: pointer;
   font: 700 11.5px "IBM Plex Sans", var(--sans);

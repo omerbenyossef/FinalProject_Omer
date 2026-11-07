@@ -8,14 +8,11 @@ import { useLanguage } from "../LanguageContext.jsx";
 import Avatar from "../Avatar.jsx";
 import { useOpenAction } from "../OpenActionContext.jsx";
 import { useLiveData } from "../liveData.js";
-import { BellIcon, PinIcon } from "../Icons.jsx";
-import { tintColor, tintFor } from "../tint.js";
+import { tintColor } from "../tint.js";
 import CourtImage from "../CourtImage.jsx";
 import ActivityFeed from "../ActivityFeed.jsx";
 import { SkeletonMatchRow } from "../Skeleton.jsx";
 import {
-  NTRP_STEPS,
-  nearestNtrpStep as activeStep,
   acceptFriendlyInvitation,
   calendarDaysUntil as daysUntil,
   dayMonthPadded as dayMonth,
@@ -32,7 +29,7 @@ function hhmm(date) {
 // is to play, when, and the one action each match is asking for.
 export default function Home() {
   const { user } = useAuth();
-  const { sports, selectedSportId } = useSport();
+  const { selectedSportId } = useSport();
   // The pair switcher is a lens: this week, in the pair being looked at.
   const { selectedPair, pairLensReady } = usePairs();
   const { t } = useLanguage();
@@ -41,11 +38,13 @@ export default function Home() {
 
   const [week, setWeek] = useState(null);
   const [leagues, setLeagues] = useState(null);
-  const [ratings, setRatings] = useState([]);
-  const [notifCount, setNotifCount] = useState(0);
   // 203b — the two things on the screen that are about other people.
   const [openGames, setOpenGames] = useState([]);
   const [feed, setFeed] = useState([]);
+  // What a thin feed is padded with. Both are facts about the player's own
+  // surroundings, fetched once per sport rather than per render.
+  const [nearby, setNearby] = useState(null);
+  const [venues, setVenues] = useState([]);
   const [busyId, setBusyId] = useState(null);
   const [error, setError] = useState("");
 
@@ -55,13 +54,6 @@ export default function Home() {
       .homeWeek(selectedSportId, selectedPair?.id)
       .then(setWeek)
       .catch((err) => setError(err.message));
-    // The bell counts what needs doing in the sport being looked at, so it
-    // agrees with the screen the bell opens — and it is refreshed with the
-    // diary, since a notification is the other half of the same news.
-    api
-      .notifications(selectedSportId, selectedPair?.id)
-      .then((data) => setNotifCount(data.unread_count))
-      .catch(() => {});
     // 203b — other people's games and other people's news. Neither is read
     // through the pair lens: an open game is somebody else's offer and the
     // feed is the neighbourhood, and filtering either by which of my pairs I
@@ -71,6 +63,8 @@ export default function Home() {
       .then((games) => setOpenGames(games.filter((g) => !g.is_full && !g.joined)))
       .catch(() => setOpenGames([]));
     api.activity(selectedSportId, 5).then(setFeed).catch(() => setFeed([]));
+    api.playersNearMe(selectedSportId).then(setNearby).catch(() => setNearby(null));
+    api.venues(selectedSportId).then(setVenues).catch(() => setVenues([]));
     // The pair is a lens on both, so both wait for it.
   }, [selectedSportId, selectedPair?.id, pairLensReady]);
 
@@ -82,7 +76,6 @@ export default function Home() {
   useEffect(() => {
     if (!pairLensReady) return;
     api.myLeagues(selectedPair?.id).then(setLeagues).catch(() => setLeagues([]));
-    api.myRatings().then(setRatings).catch(() => {});
     // Switching pair changes which leagues are mine.
   }, [selectedPair?.id, pairLensReady]);
 
@@ -111,43 +104,6 @@ export default function Home() {
     return <Profile />;
   }
 
-  const myRating = ratings.find((r) => r.sport_id === selectedSportId) ?? null;
-
-  // In a sport played in pairs, the thing that actually plays is the pair:
-  // it joins the league, it has its own number, and the whole screen is
-  // already read through the selected pair. So the scale shows the pair's
-  // level and keeps the player's own underneath it, rather than showing a
-  // personal number that nothing on this screen is about.
-  //
-  // A pair has no level until both of its members have one (a pair seeded
-  // from its rated half would walk into a league under a number that means
-  // nothing), and until then the personal scale is the only true one there
-  // is — so that is what stays on screen, saying plainly what is missing.
-  const lensPair =
-    selectedPair && sports.find((s) => s.id === selectedSportId)?.plays_in_pairs
-      ? selectedPair
-      : null;
-  const pairLevelMissing = Boolean(lensPair && lensPair.level == null);
-  const scale =
-    lensPair && lensPair.level != null
-      ? {
-          level: lensPair.level,
-          label: t("הצמד"),
-          provisional: lensPair.provisional,
-          // PROVISIONAL_MATCHES on the server. A pair's first three results
-          // move it hard, the same way a player's do.
-          left: Math.max(0, 3 - lensPair.matches_played),
-        }
-      : myRating
-        ? {
-            level: myRating.level,
-            label: null,
-            provisional: myRating.provisional,
-            left: Math.max(0, 3 - myRating.rated_matches),
-          }
-        : null;
-  const sportName = sports.find((s) => s.id === selectedSportId)?.name;
-
   async function act(id, run) {
     setBusyId(id);
     setError("");
@@ -170,10 +126,6 @@ export default function Home() {
 
   const matches = week?.matches ?? [];
   const invites = week?.invites ?? [];
-  // Only the NTRP scale still reads this — it names the league under the
-  // bar. The row of league tiles it used to fill is gone.
-  const myWeekLeagues = week?.leagues ?? [];
-  const round = week?.round ?? null;
   // What a match is asking its player to do, if anything. Shared, because
   // the big card at the top and the small cards under it must never disagree
   // about whether something is waiting — the top one used to offer only
@@ -243,10 +195,10 @@ export default function Home() {
     return t("אין עוד משחקים השבוע. אפשר למצוא אחד למטה");
   })();
 
-  // The soonest match, which gets the picture and the faces. Everything else
-  // this week keeps the 199b card underneath it.
+  // The soonest match, and the only one on this screen. The rest of the
+  // week's matches live on the Play tab now (205a): a home screen that
+  // listed them all was the diary this one replaces.
   const next = matches[0] ?? null;
-  const rest = matches.slice(1);
 
   function nextCard(match) {
     const ask = askOf(match);
@@ -405,176 +357,6 @@ export default function Home() {
     );
   }
 
-  function cardFor(match) {
-    const scheduled = match.scheduled_at ? new Date(match.scheduled_at) : null;
-    const voided = match.state === "not_played";
-    // An invitation I sent reads like anything else I'm waiting on: the time
-    // is only a proposal until they answer, so it isn't lime yet.
-    const sentInvite = match.state === "invite_sent";
-    // A time one side put forward and the other hasn't agreed to yet.
-    const timeFromMe = match.state === "time_from_me";
-    const timeFromThem = match.state === "time_from_them";
-    const unsettled = sentInvite || timeFromMe || timeFromThem;
-    // What the card offers to do about it — the same answer the big card at
-    // the top of the screen gets, from the same place.
-    const { label, target } = askOf(match);
-
-    // 199b — the card is tinted with the opponent's own colour, so a week of
-    // matches looks like a week of different people. What used to be said by
-    // one card being lime is said by a chip on every card instead: there is
-    // always a state, and it is never the grey "all set" that told nobody
-    // anything.
-    const tint = tintFor(match.opponent_name);
-    const confirmed = !!scheduled && !unsettled && !voided;
-
-    const waitingFor = sentInvite
-      ? t("מחכה שיאשרו את ההזמנה")
-      : timeFromMe
-        ? t("מחכה שיאשרו את השעה")
-        : match.state === "waiting_on_them"
-          ? t("מחכה לתשובה שלו")
-          : null;
-
-    // The chip on the left of the bottom row. Amber when the clock has run
-    // out on us, accent when everything is agreed, grey when the ball is in
-    // somebody else's court.
-    const chip =
-      match.state === "played" || match.state === "confirm_mine"
-        ? { tone: "amber", text: t("ממתין לתוצאה"), dot: true }
-        : waitingFor
-          ? { tone: "quiet", text: waitingFor }
-          : confirmed
-            ? { tone: "accent", text: t("מאושר"), check: true }
-            : null;
-
-    // The line it gives way to when there is no chip to show: what the card
-    // is waiting on, rather than a blank.
-    const note = voided && match.note
-      ? t(match.note)
-      : !scheduled
-        ? match.league_name && round
-          ? t("המחזור נסגר {day} {date}", {
-              day: weekdayName(new Date(round.ends_at), t),
-              date: dayMonth(new Date(round.ends_at)),
-            })
-          : t("עוד אין תאריך")
-        : null;
-
-    const action = label ? (
-      <button type="button" className="mc-btn" onClick={() => navigate(target)}>
-        {label}
-      </button>
-    ) : null;
-
-    // Where a sent invitation can be re-timed or withdrawn.
-    const route = voided
-      ? `/matches/${match.id}/reschedule`
-      : timeFromMe
-        // Their screen to answer; this one shows what was offered.
-        ? `/matches/${match.id}`
-        : sentInvite
-          ? "/needs-you"
-        : match.state === "waiting_on_them"
-          ? `/matches/${match.id}/pending`
-          : `/matches/${match.id}`;
-
-    return (
-      <div
-        className={`mc${voided ? " mc--void" : ""}`}
-        key={`m${match.id}`}
-        onClick={() => navigate(route)}
-        style={{ "--tint": tint }}
-      >
-        <div className="mc-top">
-          <div className="mc-who">
-            <span className="mc-face" aria-hidden="true">
-              {(match.opponent_name || "?").trim()[0]}
-            </span>
-            <div className="mc-who-text">
-              <span className="mc-vs">{t("מול")}</span>
-              <span className="mc-name" dir="auto">
-                {match.opponent_name}
-              </span>
-              {/* Mono with letter-spacing is for Latin labels only: tracking
-                  a Hebrew word pulls it apart into ה ל ו ז ר י ם. Names keep
-                  their own face, case and direction. */}
-              <span className="mc-meta">
-                <span className="mc-meta-label">
-                  {match.league_name
-                    ? match.round
-                      ? t("מחזור {n}", { n: match.round })
-                      : t("ליגה")
-                    : t("ידידותי")}
-                </span>
-                {match.league_name && (
-                  <span className="mc-meta-name" dir="auto">
-                    {` · ${match.league_name}`}
-                  </span>
-                )}
-              </span>
-            </div>
-          </div>
-
-          {/* A clock and a date are a Latin run whichever way the page
-              reads: "--:--" under RTL came out as scattered dashes. */}
-          <div className="mc-when" dir="ltr">
-            {scheduled ? (
-              <>
-                <span className="mc-when-big">{voided ? "—" : hhmm(scheduled)}</span>
-                <span className="mc-when-date">
-                  {`${weekdayName(scheduled, t)} ${dayMonth(scheduled)}`}
-                </span>
-              </>
-            ) : (
-              <>
-                <span className="mc-when-big mc-when-big--none">--:--</span>
-                <span className="mc-when-date mc-when-date--none">{t("אין תאריך")}</span>
-              </>
-            )}
-          </div>
-        </div>
-
-        <div className="mc-foot">
-          {chip ? (
-            <span className={`mc-chip mc-chip--${chip.tone}`}>
-              {chip.dot && <i className="mc-chip-dot" aria-hidden="true" />}
-              {chip.check && (
-                <svg className="mc-chip-check" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <polyline
-                    points="5 12.5 10 17.5 19 7"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              )}
-              {chip.text}
-            </span>
-          ) : (
-            <span className="mc-note">{note}</span>
-          )}
-
-          {action ? (
-            <span className="mc-action" onClick={(e) => e.stopPropagation()}>
-              {action}
-            </span>
-          ) : (
-            /* The venue, and only ever the venue: the match's own court or
-               the venue it was booked at. When there is none the line is not
-               there at all — nothing else is allowed to stand in for it. */
-            match.place && (
-              <span className="mc-place">
-                <PinIcon aria-hidden="true" />
-                <bdi className="mc-place-name">{match.place}</bdi>
-              </span>
-            )
-          )}
-        </div>
-      </div>
-    );
-  }
-
   // home-week-empty-170a: a week with nothing to play isn't one stretched
   // empty card — it's the countdown to the next round, what to do meanwhile,
   // and the last result, with only the last block growing.
@@ -652,36 +434,42 @@ export default function Home() {
     );
   }
 
-  // 203b — a feed with almost nothing in it is worse than a short one: it
-  // reads as a broken section rather than a quiet week. One honest filler
-  // line, not a page of invented activity.
-  const feedItems = feed.length > 0 && feed.length < 3
-    ? [...feed, { id: 0, type: "invite_friend", payload: {}, people: [], count: 0 }]
-    : feed;
+  // 203b — a feed with almost nothing in it reads as a broken section
+  // rather than a quiet week, so it is padded to three. The fillers are
+  // facts about the player's own surroundings and each one leads somewhere;
+  // none of them invents activity that did not happen.
+  const feedItems = (() => {
+    const items = [...feed];
+    if (items.length >= 3) return items;
+    const filler = [];
+    // A place to play, with the button that actually books it — a row
+    // naming a venue we cannot book is a dead end.
+    const venue = venues.find((v) => v.booking_url && (!user?.area || v.area === user.area));
+    if (venue)
+      filler.push({ id: 0, type: "venue", venue, payload: {}, people: [], count: 0 });
+    filler.push({ id: 0, type: "invite_friend", payload: {}, people: [], count: 0 });
+    if (nearby?.count)
+      filler.push({
+        id: 0,
+        type: "players_near",
+        payload: { area: nearby.area },
+        people: nearby.people ?? [],
+        count: nearby.count,
+      });
+    return [...items, ...filler].slice(0, Math.max(3, items.length));
+  })();
 
   return (
     <div className="ha">
+      {/* The bell used to sit here. It lives in the app header now, beside
+          the face, where it is on every screen. */}
       <header className="ha-greet">
-        <div className="ha-greet-text">
-          <h1 className="ha-hello" dir="auto">
-            {hello} 👋
-          </h1>
-          <p className="ha-sub" dir="auto">
-            {helloSub}
-          </p>
-        </div>
-        {/* The bell's dot is warm red rather than the sport's accent: the
-            accent is everywhere on this screen and says "this is yours", and
-            this one thing has to say "this is new". */}
-        <button
-          type="button"
-          className="ha-bell"
-          onClick={() => navigate("/notifications")}
-          aria-label={t("התראות")}
-        >
-          <BellIcon aria-hidden="true" />
-          {notifCount > 0 && <span className="ha-bell-dot" aria-hidden="true" />}
-        </button>
+        <h1 className="ha-hello" dir="auto">
+          {hello} 👋
+        </h1>
+        <p className="ha-sub" dir="auto">
+          {helloSub}
+        </p>
       </header>
 
       {error && <p className="hw-error error">{t(error)}</p>}
@@ -753,67 +541,6 @@ export default function Home() {
         </section>
       )}
 
-      {/* The NTRP scale is not in the 203b spec, which is all about other
-          people. It stays because it is the one number the player asked to
-          see here — in a pairs sport it is the pair's, which is the thing
-          that actually enters a league — only moved below the match, where
-          the screen now starts. */}
-      {scale && (
-        <div className="ha-card ha-scale">
-          <div className="hw-scale">
-            <div className="hw-scale-head">
-              <span className="hw-scale-label">
-                NTRP · {sportName ? t(sportName) : ""}
-                {scale.label ? ` · ${scale.label}` : ""}
-              </span>
-              <span className="hw-scale-level" dir="ltr">
-                {scale.level.toFixed(1)}
-              </span>
-            </div>
-            <div className="hw-scale-bar" dir="ltr" aria-hidden="true">
-              {NTRP_STEPS.map((step) => (
-                <span
-                  key={step}
-                  className={`hw-step${step === activeStep(scale.level) ? " is-here" : ""}`}
-                />
-              ))}
-            </div>
-            <div className="hw-scale-foot" dir="ltr">
-              <span>1.5</span>
-              <span className="hw-scale-note" dir="auto">
-                {scale.provisional
-                  ? scale.left === 1
-                    ? t("זמני · עוד משחק אחד")
-                    : t("זמני · עוד {n} משחקים", { n: scale.left })
-                  : (round && myWeekLeagues[0]?.name) || ""}
-              </span>
-              <span>7.0</span>
-            </div>
-            {lensPair && (myRating || pairLevelMissing) && (
-              <Link to={`/pairs/${lensPair.id}`} className="hw-scale-mine">
-                {pairLevelMissing
-                  ? t("לצמד עוד אין רמה")
-                  : t("הרמה שלך: {level}", { level: myRating.level.toFixed(1) })}
-              </Link>
-            )}
-          </div>
-        </div>
-      )}
-
-      {rest.length > 0 && (
-        <section className="ha-sec">
-          <div className="ha-sec-head">
-            <h2 className="ha-sec-title">{t("גם השבוע")}</h2>
-            {round && (
-              <span className="ha-sec-note" dir="auto">
-                {t("מחזור {n}", { n: round.number })}
-              </span>
-            )}
-          </div>
-          <div className="ha-rest">{rest.map(cardFor)}</div>
-        </section>
-      )}
-
       {/* The week with nothing in it keeps its countdown and its last
           result — the CTA card above says what to do, these say where the
           player stands. */}
@@ -821,29 +548,46 @@ export default function Home() {
         <section className="ha-sec ha-sec--empty">{emptyWeek()}</section>
       )}
 
-      {openGames.length > 0 && (
-        <section className="ha-sec">
-          <div className="ha-sec-head">
-            <h2 className="ha-sec-title">{t("אירועים לידך")}</h2>
+      {/* Always here, even with nothing in it. A section that disappears
+          when it is empty teaches the reader that the app has no such thing —
+          and this is the one part of it where they can make something happen
+          for everybody else. */}
+      <section className="ha-sec">
+        <div className="ha-sec-head">
+          <h2 className="ha-sec-title">{t("אירועים לידך")}</h2>
+          {openGames.length > 0 && (
             <Link to="/games/open" className="ha-sec-link">
               {`${t("הכל")} ${openGames.length}`}
             </Link>
-          </div>
-          {/* Bleeds off the end of the screen on purpose: a row of cards that
-              stops neatly at the gutter looks like all there is. */}
+          )}
+        </div>
+        {openGames.length > 0 ? (
+          /* Bleeds off the end of the screen on purpose: a row of cards that
+             stops neatly at the gutter looks like all there is. */
           <div className="ha-rail">{openGames.slice(0, 8).map(openGameCard)}</div>
-        </section>
-      )}
+        ) : (
+          <article className="ha-og ha-og--empty">
+            <CourtImage height={70} className="ha-og-court" />
+            <div className="ha-og-empty-body">
+              <span className="ha-og-empty-title">{t("עוד אין אירועים לידך")}</span>
+              <span className="ha-og-empty-sub">{t("תהיה הראשון — שחקנים לידך יראו את זה")}</span>
+              <button
+                type="button"
+                className="ha-og-empty-go"
+                onClick={() => navigate("/games/open/new")}
+              >
+                {t("פתח אירוע")}
+              </button>
+            </div>
+          </article>
+        )}
+      </section>
 
       <section className="ha-sec">
         <div className="ha-sec-head">
           <h2 className="ha-sec-title">{t("מה קורה סביבך")}</h2>
         </div>
-        {feedItems.length > 0 ? (
-          <ActivityFeed items={feedItems} />
-        ) : (
-          <p className="ha-quiet">{t("עוד שקט סביבך")}</p>
-        )}
+        <ActivityFeed items={feedItems} />
       </section>
     </div>
   );
