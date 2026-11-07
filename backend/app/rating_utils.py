@@ -2,7 +2,7 @@ from datetime import datetime
 
 from sqlalchemy.orm import Session
 
-from . import models
+from . import activity, models
 
 # Post-match adjustment: no formula was specified in the design doc, so this
 # is a deliberately simple ELO-style update — a bigger K-factor during the
@@ -206,6 +206,7 @@ def update_ratings_for_doubles_match(db: Session, match: models.Match) -> None:
     side1_level = side_level([r.level for r in side1])
     side2_level = side_level([r.level for r in side2])
     side1_won = winner_id == match.player1_id
+    befores = [(r, r.level) for r in (*side1, *side2)]
 
     for rating in side1:
         _apply_result(db, match, rating, side2_level, side1_won)
@@ -214,6 +215,7 @@ def update_ratings_for_doubles_match(db: Session, match: models.Match) -> None:
 
     _apply_pair_result(pair1, pair2.level if pair2.level is not None else side2_level, side1_won)
     _apply_pair_result(pair2, pair1.level if pair1.level is not None else side1_level, not side1_won)
+    _announce(db, match, winner_id, befores, sport_id)
     db.commit()
 
 
@@ -235,6 +237,23 @@ def match_winner_id(match: models.Match) -> int | None:
     if p1_games != p2_games:
         return match.player1_id if p1_games > p2_games else match.player2_id
     return None
+
+
+def _announce(db, match, winner_id, ratings_before, sport_id) -> None:
+    """What the rest of the app is told about a finished match: the result,
+    and any level that crossed a half-step because of it.
+
+    A level that moves from 3.42 to 3.47 is not news; one that moves from 3.4
+    to 3.5 is, because that is the number the player sees and the one leagues
+    are gated on. Only the crossing is announced."""
+    activity.match_result(db, match, winner_id)
+    for rating, before in ratings_before:
+        if before is None or rating.level is None:
+            continue
+        if round_to_half(rating.level) > round_to_half(before):
+            player = db.get(models.User, rating.user_id)
+            if player:
+                activity.level_up(db, player, sport_id, round_to_half(rating.level))
 
 
 def update_ratings_for_match(db: Session, match: models.Match) -> None:
@@ -264,4 +283,5 @@ def update_ratings_for_match(db: Session, match: models.Match) -> None:
     r1_level_before, r2_level_before = r1.level, r2.level
     _apply_result(db, match, r1, r2_level_before, p1_won)
     _apply_result(db, match, r2, r1_level_before, not p1_won)
+    _announce(db, match, winner_id, [(r1, r1_level_before), (r2, r2_level_before)], sport_id)
     db.commit()

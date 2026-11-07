@@ -685,6 +685,12 @@ class OpenGameOut(BaseModel):
     court: Optional[str] = None
     # What the row prints as the place: the venue's name, or the free text.
     where: str = ""
+    # 203b — the carousel card is mostly a picture of the court. The photo
+    # when the venue has one, otherwise the surface, which colours the drawn
+    # one. Flat rather than a nested VenueOut: the card wants a picture and a
+    # colour, not a venue.
+    venue_image_url: Optional[str] = None
+    venue_surface: Optional[str] = None
     level_min: float
     level_max: float
     is_doubles: bool = False
@@ -974,6 +980,9 @@ class VenueOut(BaseModel):
     booking_url: Optional[str] = None
     # Path to the picture endpoint, or None — never the image itself.
     image_url: Optional[str] = None
+    # hard | clay | grass, or None. Only picks the colour of the court a card
+    # draws when there is no photograph, so None is no worse than a wrong one.
+    surface: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -985,6 +994,7 @@ class VenueIn(BaseModel):
     # None means the venue hosts any sport.
     sport_id: Optional[int] = None
     booking_url: Optional[str] = Field(default=None, max_length=500)
+    surface: Optional[str] = Field(default=None, max_length=10)
     # The picture is not part of the form: it has its own endpoint, because it
     # needs a venue id to belong to and is sent as its own request.
 
@@ -1099,10 +1109,23 @@ class MatchDetailOut(BaseModel):
     venue: Optional[VenueOut] = None
 
 
+class HomeWeekLastMeetingOut(BaseModel):
+    """203b — the last time these two played each other, for the next match
+    card's "you won last time" line. Absent when they never have, which the
+    card says instead ("first time playing each other")."""
+
+    won: Optional[bool] = None
+    played_at: Optional[UtcDatetime] = None
+    score: Optional[str] = None
+
+
 class HomeWeekMatchOut(BaseModel):
     id: int
     opponent_name: str
     opponent_photo_url: Optional[str] = None
+    # Who the opponent is, when there is exactly one of them — the 203b card
+    # stacks two faces, so it needs a person and not only a label.
+    opponent_id: Optional[int] = None
     # Which of my pairs this match is: the partner's name, in a sport played
     # in pairs. A player with two partners sees both pairs' matches in one
     # list, so the row has to say which world it belongs to.
@@ -1117,6 +1140,10 @@ class HomeWeekMatchOut(BaseModel):
     place: Optional[str] = None
     # Only for the "not_played" state: what actually happened to the match.
     note: Optional[str] = None
+    # 203b — the next match card is mostly a picture of the court, so it needs
+    # the venue itself and not only the line of text `place` prints.
+    venue: Optional[VenueOut] = None
+    last_meeting: Optional[HomeWeekLastMeetingOut] = None
 
 
 class RescheduleRoundOptionOut(BaseModel):
@@ -1187,6 +1214,10 @@ class HomeWeekOut(BaseModel):
     players_near_level: int = 0
     my_level: Optional[float] = None
     last_match: Optional[HomeWeekLastMatchOut] = None
+    # 203b — what the greeting says under the name. A streak is only a streak
+    # from two, so 0 and 1 both mean "no streak worth mentioning".
+    matches_this_week: int = 0
+    win_streak: int = 0
 
 
 class OpenMatchItemOut(BaseModel):
@@ -1331,3 +1362,39 @@ class OpsOverviewOut(BaseModel):
     voided_count: int
     flagged: list[OpsFlaggedLeague]
     healthy: list[OpsHealthyLeague]
+
+
+class ActivityItemOut(BaseModel):
+    """One line of the "around you" feed (203b).
+
+    Mostly flat on purpose: the row is a sentence, a face and a count, and
+    every event type builds its sentence out of the same handful of fields
+    rather than each bringing its own shape."""
+
+    # 0 for a row the server assembled out of several events (the weekly
+    # "N new players"), which is therefore not something you can clap at.
+    id: int = 0
+    type: str
+    created_at: UtcDatetime
+    actor_id: Optional[int] = None
+    actor_name: Optional[str] = None
+    actor_photo_url: Optional[str] = None
+    target_name: Optional[str] = None
+    league_id: Optional[int] = None
+    league_name: Optional[str] = None
+    match_id: Optional[int] = None
+    open_game_id: Optional[int] = None
+    # Whatever this kind of event needs to be readable: a score, a level, a
+    # count. The client's copy for the type decides what it reads out of it.
+    payload: dict = {}
+    claps: int = 0
+    i_clapped: bool = False
+    # Only on an aggregated row: the faces to stack and how many there are in
+    # total, which can be more than the faces.
+    people: list[PairPlayerOut] = []
+    count: int = 0
+
+
+class ActivityClapOut(BaseModel):
+    claps: int
+    i_clapped: bool

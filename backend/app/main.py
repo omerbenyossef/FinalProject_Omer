@@ -8,6 +8,7 @@ from sqlalchemy import Enum, inspect, text
 from . import models
 from .database import Base, engine, SessionLocal
 from .routers import (
+    activity,
     auth,
     chat,
     home,
@@ -389,6 +390,7 @@ app.include_router(ops.router)
 app.include_router(chat.router)
 app.include_router(venues.router)
 app.include_router(notifications.router)
+app.include_router(activity.router)
 
 
 @app.get("/health")

@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import or_
+from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session, joinedload
 
 from .. import models, schemas
@@ -199,6 +199,143 @@ def _last_match(
     )
 
 
+def _venue_out(match: models.Match) -> schemas.VenueOut | None:
+    """The venue itself, for the card that draws its court. `place` still
+    carries the line of text, which is all the smaller cards want."""
+    if not match.venue:
+        return None
+    return schemas.VenueOut.model_validate(match.venue)
+
+
+def _played_at(match: models.Match):
+    return match.played_at or match.confirmed_at or match.scheduled_at or match.created_at or datetime.min
+
+
+def _i_won(db: Session, match: models.Match, user_id: int) -> bool | None:
+    """Did this viewer's side win. None when the match was a dead heat on both
+    sets and games, which match_winner_id's own docstring says must never be
+    read as a loss for either side."""
+    winner_id = match_winner_id(match)
+    if winner_id is None:
+        return None
+    return (winner_id == match.player1_id) == my_side_is_first(db, match, user_id)
+
+
+def _last_meeting(
+    db: Session, user_id: int, opponent_id: int | None, before: datetime
+) -> schemas.HomeWeekLastMeetingOut | None:
+    """203b — the last finished match between these two.
+
+    The line it feeds ("you won last time") is the one thing that makes a
+    fixture feel like a rivalry rather than an appointment, and it is worth a
+    query of its own: the alternative is loading every result the viewer has
+    and finding the opponent in it, which is most of their history to answer
+    one sentence.
+
+    Opponent-by-id, so it is only asked in singles: in doubles "last time"
+    would have to mean the pair, and the pair's opponent is a label."""
+    if not opponent_id:
+        return None
+    rows = (
+        db.query(models.Match)
+        .filter(
+            models.Match.status == models.MatchStatus.completed,
+            or_(
+                and_(models.Match.player1_id == user_id, models.Match.player2_id == opponent_id),
+                and_(models.Match.player1_id == opponent_id, models.Match.player2_id == user_id),
+            ),
+        )
+        .all()
+    )
+    rows = [m for m in rows if m.sets and _played_at(m) < before]
+    if not rows:
+        return None
+    rows.sort(key=_played_at, reverse=True)
+    match = rows[0]
+    i_am_player1 = my_side_is_first(db, match, user_id)
+    mine, theirs = (
+        (match.player1_score, match.player2_score)
+        if i_am_player1
+        else (match.player2_score, match.player1_score)
+    )
+    return schemas.HomeWeekLastMeetingOut(
+        won=_i_won(db, match, user_id),
+        played_at=_played_at(match),
+        score=f"{mine}-{theirs}" if mine is not None and theirs is not None else None,
+    )
+
+
+def _win_streak(db: Session, user_id: int, sport_id: int | None, pair_id: int | None) -> int:
+    """How many in a row, counting back from the most recent result.
+
+    A drawn match (no winner at all) ends the count rather than being skipped:
+    it is the last thing that happened, and a streak that reaches past it
+    would be claiming something the player did not do."""
+    rows = (
+        db.query(models.Match)
+        .filter(models.Match.status == models.MatchStatus.completed, _lens(user_id, pair_id))
+        .all()
+    )
+    rows = [m for m in rows if m.sets]
+    if sport_id is not None:
+        rows = [
+            m for m in rows
+            if (m.league.sport_id if m.league_id and m.league else m.sport_id) == sport_id
+        ]
+    rows.sort(key=_played_at, reverse=True)
+    streak = 0
+    for match in rows:
+        if _i_won(db, match, user_id) is not True:
+            break
+        streak += 1
+    return streak
+
+
+def _week_bounds(now: datetime) -> tuple[datetime, datetime]:
+    """The calendar week the player is in. Sunday to Sunday, because that is
+    the week here — a Saturday match belongs to the week that is ending, not
+    to the one starting the next morning."""
+    start = (now - timedelta(days=(now.weekday() + 1) % 7)).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+    return start, start + timedelta(days=7)
+
+
+def _matches_this_week(
+    db: Session, user_id: int, sport_id: int | None, pair_id: int | None, now: datetime
+) -> int:
+    """Matches of mine with a time inside this calendar week — played or still
+    to come. Counted off the agreed time rather than the result, because the
+    greeting is about how busy the week is, and a match on Friday is part of
+    the week on Tuesday."""
+    start, end = _week_bounds(now)
+    rows = (
+        db.query(models.Match)
+        .filter(
+            models.Match.scheduled_at.isnot(None),
+            models.Match.scheduled_at >= start,
+            models.Match.scheduled_at < end,
+            _lens(user_id, pair_id),
+        )
+        .all()
+    )
+    if sport_id is not None:
+        rows = [
+            m for m in rows
+            if (m.league.sport_id if m.league_id and m.league else m.sport_id) == sport_id
+        ]
+    # An invitation nobody has accepted is not a match in anybody's week yet.
+    return sum(
+        1
+        for m in rows
+        # A match both sides agreed never happened did not happen, however it
+        # sits in the table; an invitation nobody accepted is not in anybody's
+        # week yet.
+        if m.invite_status in (None, models.FriendlyInviteStatus.accepted)
+        and not _not_played_void(m)
+    )
+
+
 def _lens(user_id: int, pair_id: int | None):
     """My matches, or — when a pair is chosen — that pair's alone."""
     pair_filter = in_pair(pair_id)
@@ -281,12 +418,14 @@ def home_week(
                     # One face in singles; in doubles the card would have to
                     # show two, so it shows none and leans on the names.
                     opponent_photo_url=facing[0].photo_url if len(facing) == 1 else None,
+                    opponent_id=facing[0].id if len(facing) == 1 else None,
                     partner_name=(teammate(db, match, current_user.id) or _NOBODY).name,
                     league_name=league.name,
                     round=match.round_number,
                     scheduled_at=match.scheduled_at,
                     state=_match_state(match, current_user.id),
                     place=_match_place(match),
+                    venue=_venue_out(match),
                     note=_void_note(match, current_user.id) if _not_played_void(match) else None,
                 )
             )
@@ -329,12 +468,14 @@ def home_week(
                         id=match.id,
                         opponent_name=opponent_label(db, match, current_user.id),
                         opponent_photo_url=facing[0].photo_url if len(facing) == 1 else None,
+                        opponent_id=facing[0].id if len(facing) == 1 else None,
                         partner_name=(teammate(db, match, current_user.id) or _NOBODY).name,
                         league_name=None,
                         round=None,
                         scheduled_at=match.scheduled_at,
                         state="invite_sent",
                         place=_match_place(match),
+                        venue=_venue_out(match),
                     )
                 )
                 continue
@@ -359,12 +500,14 @@ def home_week(
                 id=match.id,
                 opponent_name=opponent_label(db, match, current_user.id),
                 opponent_photo_url=facing[0].photo_url if len(facing) == 1 else None,
+                opponent_id=facing[0].id if len(facing) == 1 else None,
                 partner_name=(teammate(db, match, current_user.id) or _NOBODY).name,
                 league_name=None,
                 round=None,
                 scheduled_at=match.scheduled_at,
                 state=_match_state(match, current_user.id),
                 place=_match_place(match),
+                venue=_venue_out(match),
             )
         )
 
@@ -381,6 +524,12 @@ def home_week(
 
     # Scheduled first, earliest to latest; everything without a time after.
     matches.sort(key=lambda m: (m.scheduled_at is None, m.scheduled_at or datetime.max))
+
+    # 203b asks "have we played before" of the next match only. Asked of every
+    # card it would be a query per row for a line only the top card has room
+    # to print.
+    if matches:
+        matches[0].last_meeting = _last_meeting(db, current_user.id, matches[0].opponent_id, now)
 
     leagues_out: list[schemas.HomeWeekLeagueOut] = []
     for league in my_leagues:
@@ -420,4 +569,6 @@ def home_week(
         players_near_level=_players_near_level(db, my_leagues, current_user.id, my_level),
         my_level=my_level,
         last_match=_last_match(db, current_user.id, sport_id, pair_id),
+        matches_this_week=_matches_this_week(db, current_user.id, sport_id, pair_id, now),
+        win_streak=_win_streak(db, current_user.id, sport_id, pair_id),
     )

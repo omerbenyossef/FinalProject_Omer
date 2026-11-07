@@ -3,7 +3,7 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from .. import models, schemas
+from .. import activity, models, schemas
 from ..auth import get_current_user
 from ..database import get_db
 from ..rating_utils import (
@@ -142,6 +142,9 @@ def submit_rating(
         user_id=current_user.id, sport_id=league.sport_id, level=level, competitive=competitive
     )
     db.add(rating)
+    # A player with no level is not somebody anybody can be matched against,
+    # so this — not the sign-up — is when they arrive for everyone else.
+    activity.player_joined(db, current_user, league.sport_id, level)
     db.commit()
     db.refresh(rating)
 
@@ -237,6 +240,7 @@ def submit_rating_for_sport(
     level, competitive = _compute_level_from_answers(answers)
 
     rating = models.PlayerRating(user_id=current_user.id, sport_id=sport_id, level=level, competitive=competitive)
+    activity.player_joined(db, current_user, sport_id, level)
     db.add(rating)
     db.commit()
     db.refresh(rating)

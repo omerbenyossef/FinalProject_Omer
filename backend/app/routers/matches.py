@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import or_
 from sqlalchemy.orm import Session, joinedload
 
-from .. import models, schemas
+from .. import activity, models, schemas
 from ..auth import get_current_user
 from ..database import get_db
 from ..match_cleanup import purge_match_references
@@ -696,6 +696,7 @@ def generate_schedule(
         # from whenever this button happened to be pressed. Generating the
         # schedule a week early no longer opens round 1 a week early.
         league.schedule_started_at = league.starts_at or datetime.utcnow()
+        activity.league_started(db, league, len(player_ids))
 
     db.commit()
     for match in created:

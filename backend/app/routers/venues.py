@@ -45,6 +45,16 @@ def _clean_url(url: str | None) -> str | None:
     return url
 
 
+SURFACES = ("hard", "clay", "grass")
+
+
+def _clean_surface(surface: str | None) -> str | None:
+    """Anything that isn't one of the three is None, not an error: the field
+    only decides a colour, and a venue with a typo in it should still save."""
+    value = (surface or "").strip().lower()
+    return value if value in SURFACES else None
+
+
 def _out(venue: models.Venue) -> schemas.VenueOut:
     return schemas.VenueOut(
         id=venue.id,
@@ -54,6 +64,7 @@ def _out(venue: models.Venue) -> schemas.VenueOut:
         sport_name=venue.sport.name if venue.sport else None,
         booking_url=venue.booking_url,
         image_url=venue.image_url,
+        surface=_clean_surface(venue.surface),
     )
 
 
@@ -85,6 +96,7 @@ def create_venue(
         area=(payload.area or "").strip() or None,
         sport_id=payload.sport_id,
         booking_url=_clean_url(payload.booking_url),
+        surface=_clean_surface(payload.surface),
     )
     db.add(venue)
     db.commit()
@@ -107,6 +119,7 @@ def update_venue(
     venue.area = (payload.area or "").strip() or None
     venue.sport_id = payload.sport_id
     venue.booking_url = _clean_url(payload.booking_url)
+    venue.surface = _clean_surface(payload.surface)
     db.commit()
     db.refresh(venue)
     return _out(venue)

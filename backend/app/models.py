@@ -567,6 +567,10 @@ class Venue(Base):
     # admin can set it; players only ever see it.
     image = Column(Text, nullable=True)
     image_updated_at = Column(DateTime, nullable=True)
+    # hard | clay | grass. Only used to colour the drawn court a card falls
+    # back to when the venue has no photograph — blue for hard, green for the
+    # other two — so an unknown surface is no worse than a guess.
+    surface = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     @property
@@ -739,3 +743,61 @@ class Notification(Base):
     read_at = Column(DateTime, nullable=True)
 
     user = relationship("User", foreign_keys=[user_id])
+
+
+class ActivityType(str, enum.Enum):
+    """What happened. The feed shows other people playing, which is the one
+    thing a league app has that a calendar does not."""
+
+    match_result = "match_result"
+    level_up = "level_up"
+    player_joined = "player_joined"
+    open_game_created = "open_game_created"
+    league_started = "league_started"
+
+
+class ActivityEvent(Base):
+    """One thing that happened, worth telling the people around it about.
+
+    Written at the moment it happens rather than derived later: a result can
+    be corrected, a level moves on its own, and a feed assembled by querying
+    history would have to re-derive the past every time anybody opened the
+    home screen.
+
+    The payload holds whatever that kind of event needs to be readable —
+    a score, a new level, a count — so a new kind of event costs a row here
+    and nothing in the schema."""
+
+    __tablename__ = "activity_events"
+
+    id = Column(Integer, primary_key=True, index=True)
+    type = Column(Enum(ActivityType), nullable=False)
+    actor_user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    target_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    league_id = Column(Integer, ForeignKey("leagues.id"), nullable=True)
+    match_id = Column(Integer, ForeignKey("matches.id"), nullable=True)
+    open_game_id = Column(Integer, ForeignKey("open_games.id"), nullable=True)
+    sport_id = Column(Integer, ForeignKey("sports.id"), nullable=True, index=True)
+    # Where it happened, so a feed can be "around you" rather than "around
+    # everybody". Copied from the actor at write time: people move, and an
+    # event belongs to the place it happened in.
+    area = Column(String, nullable=True)
+    payload = Column(JSON, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+
+    actor = relationship("User", foreign_keys=[actor_user_id])
+    target = relationship("User", foreign_keys=[target_user_id])
+    league = relationship("League")
+
+
+class ActivityReaction(Base):
+    """A clap. One per person per event — the table says so rather than the
+    code remembering to."""
+
+    __tablename__ = "activity_reactions"
+    __table_args__ = (UniqueConstraint("event_id", "user_id", name="uq_reaction_once"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    event_id = Column(Integer, ForeignKey("activity_events.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)

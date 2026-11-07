@@ -15,7 +15,7 @@ from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
 
-from .. import models, schemas
+from .. import activity, models, schemas
 from ..auth import get_current_user
 from ..database import get_db
 from ..push_utils import notify_user
@@ -89,6 +89,8 @@ def _out(db: Session, game: models.OpenGame, user: models.User) -> schemas.OpenG
         venue_name=game.venue.name if game.venue else None,
         court=game.court,
         where=game.where,
+        venue_image_url=game.venue.image_url if game.venue else None,
+        venue_surface=game.venue.surface if game.venue else None,
         level_min=game.level_min,
         level_max=game.level_max,
         is_doubles=bool(game.is_doubles),
@@ -261,6 +263,8 @@ def open_game(
     db.add(game)
     db.flush()
     _seat(db, game, current_user, pair)
+    # The people around this player are the ones who can take the other seat.
+    activity.open_game_created(db, current_user, game)
     db.commit()
     db.refresh(game)
     return _out(db, game, current_user)
