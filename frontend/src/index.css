@@ -8054,134 +8054,139 @@ button:active { transform: translateY(1px); }
   font: 700 13.5px "IBM Plex Sans", var(--sans); color: #C6F24E; cursor: pointer;
 }
 
-/* 198b — the home "this week" card.
-   The day and the hour are the headline, because that is what a player came
-   to the screen for. One card is the sport's own colour — the match that is
-   happening now or has gone by without a result — and the rest are dark, so
-   the colour still means something when the week is full. */
+/* 199b — the home "this week" card.
+   Tinted with the opponent's own colour, so a week of matches reads as a
+   week of different people rather than one card repeated. The state is
+   always a chip or a button: the grey "all set" it replaces said nothing
+   the player could act on or even be reassured by. */
 .mc {
   position: relative;
   overflow: hidden;
   flex: none;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
   padding: 16px 18px;
   border-radius: 22px;
-  background: #181c22;
+  /* --tint is set per card, in JS, from the opponent's name. */
+  background: linear-gradient(
+    135deg,
+    rgba(var(--tint), 0.45) 0%,
+    rgba(var(--tint), 0.12) 50%,
+    #181c22 100%
+  );
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
   cursor: pointer;
   text-align: start;
 }
-.mc--lime { background: var(--court); color: #0e1116; }
 
-/* The sport's mark, bleeding off the top corner. The icons are drawn in a
-   24-unit box, so the stroke is set here to land on the 5px the design
-   asks for at this size rather than the 10px it would inherit. */
-/* svg.mc-mark, not .mc-mark: the "everything else sits above it" rule below
-   has the same specificity and comes later, so the plain class lost the tie
-   and the watermark was laid out in the flow — a 130px hole that made the
-   lime card twice the height of its neighbours. */
-.mc > svg.mc-mark {
-  position: absolute;
-  top: -26px;
-  inset-inline-end: -26px;
-  width: 130px;
-  height: 130px;
-  stroke-width: 1.1;
-  color: #0e1116;
-  opacity: 0.14;
-  pointer-events: none;
-}
-.mc > :not(.mc-mark) { position: relative; }
+.mc-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 
-.mc-when { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
-.mc-when-big {
-  font: 400 38px/.9 "Anton", var(--display);
-  text-transform: uppercase;
-  color: #eef1f7;
-  white-space: nowrap;
-}
-.mc--lime .mc-when-big { color: #0e1116; }
-/* A date nobody has agreed yet is the same size as a real one, so the cards
-   line up down the screen either way. */
-.mc-when-big--none { color: #3a414d; }
-.mc-when-date {
+.mc-who { display: flex; align-items: flex-start; gap: 12px; min-width: 0; }
+.mc-face {
   flex: none;
-  font: 600 11px "IBM Plex Mono", monospace;
-  letter-spacing: .1em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgb(var(--tint));
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
+  font: 400 24px/1 "Anton", var(--display);
+  color: #fff;
   text-transform: uppercase;
-  color: #8b93a6;
 }
-.mc--lime .mc-when-date { color: #0e1116; opacity: .6; }
-
-.mc-who { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; min-width: 0; }
-.mc-vs { font-weight: 600; font-size: 14px; color: #c9cfdb; }
-.mc-name { font-weight: 700; color: #eef1f7; }
-.mc--lime .mc-vs, .mc--lime .mc-name { color: #0e1116; }
-.mc-dot { color: #6f7787; }
-.mc--lime .mc-dot { color: #0e1116; opacity: .5; }
-/* Latin label: mono, tracked. */
-.mc-kind {
-  font: 500 10.5px "IBM Plex Mono", monospace;
-  letter-spacing: .1em;
+.mc-who-text { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.mc-vs {
+  font: 500 11px "IBM Plex Mono", monospace;
+  letter-spacing: .12em;
   text-transform: uppercase;
-  color: #8b93a6;
+  color: rgba(238, 241, 247, 0.6);
 }
-.mc--lime .mc-kind { color: #0e1116; opacity: .7; }
-/* A name: sans, its own case, no tracking at all. */
-.mc-league {
+.mc-name {
   min-width: 0;
-  font: 500 12px "IBM Plex Sans Hebrew", "IBM Plex Sans", var(--sans);
-  letter-spacing: 0;
-  color: #a3abbb;
+  font: 700 22px/1.1 "IBM Plex Sans", var(--sans);
+  color: #eef1f7;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.mc--lime .mc-league { color: rgba(14, 17, 22, .75); }
+.mc-meta { min-width: 0; color: #8b93a6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Latin label: mono, tracked. */
+.mc-meta-label {
+  font: 500 10.5px "IBM Plex Mono", monospace;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+/* A name: sans, its own case, no tracking at all. */
+.mc-meta-name {
+  font: 500 12px "IBM Plex Sans Hebrew", "IBM Plex Sans", var(--sans);
+  letter-spacing: 0;
+}
 
-.mc-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.mc-when { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+.mc-when-big { font: 400 34px/.9 "Anton", var(--display); color: #eef1f7; }
+.mc-when-big--none { color: rgba(238, 241, 247, 0.35); }
+.mc-when-date {
+  font: 600 11px "IBM Plex Mono", monospace;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--court);
+}
+/* Amber, because no date is the one thing on this card nobody has settled. */
+.mc-when-date--none { color: #ffb547; }
+
+.mc-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+
+.mc-chip {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 9px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 11px;
+}
+.mc-chip--accent { background: rgba(var(--court-rgb), 0.16); color: var(--court); }
+.mc-chip--amber { background: rgba(255, 181, 71, 0.16); color: #ffb547; }
+.mc-chip--quiet { background: rgba(148, 163, 184, 0.12); color: #c9cfdb; }
+.mc-chip-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.mc-chip-check { width: 11px; height: 11px; }
+
 .mc-note {
+  min-width: 0;
+  font: 500 12px "IBM Plex Sans", var(--sans);
+  color: #c9cfdb;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mc-place {
   min-width: 0;
   display: flex;
   align-items: center;
   gap: 6px;
   font: 500 12px "IBM Plex Sans", var(--sans);
-  color: #8b93a6;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  color: #d6d9e0;
 }
-.mc--lime .mc-note { color: rgba(14, 17, 22, .7); }
-.mc-note-pin { flex: none; width: 12px; height: 12px; }
+.mc-place svg { flex: none; width: 12px; height: 12px; }
+.mc-place-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .mc-action { flex: none; }
-/* On a dark card the button is an accent outline; on the lime one it is the
-   page's own dark, so it reads as a button and not as a hole. */
 .mc-btn {
-  height: 36px;
-  padding: 0 16px;
+  height: 34px;
+  padding: 0 15px;
   border: 0;
-  border-radius: 18px;
-  background: none;
-  box-shadow: inset 0 0 0 1px rgba(var(--court-rgb), .45);
-  color: var(--court);
-  font: 700 13px "IBM Plex Sans", var(--sans);
+  border-radius: 17px;
+  background: var(--court);
+  color: #0e1116;
+  font: 700 12.5px "IBM Plex Sans", var(--sans);
   cursor: pointer;
 }
-.mc-btn--onlime {
-  background: #0e1116;
-  box-shadow: none;
-  color: var(--court);
-}
-/* Nothing to press: what the card is waiting for, where the button would be. */
-.mc-wait {
-  font: 500 11.5px "IBM Plex Mono", "IBM Plex Sans", monospace;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: #6f7787;
-}
-.mc--lime .mc-wait { color: rgba(14, 17, 22, .7); }
 
 .hw-invites { flex: none; display: flex; flex-direction: column; gap: 12px; }
 .hw-sec { display: flex; align-items: center; gap: 10px; }

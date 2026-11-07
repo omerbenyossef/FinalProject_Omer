@@ -300,6 +300,8 @@ const PAIRS = [
   ["טבלה", "Table"],
   ["מקום", "Rank"],
   ["מאזן", "Record"],
+  // 199b — the chip that replaced the grey "all set".
+  ["מאושר", "Confirmed"],
   ["רצף", "Streak"],
   ["ניצחון אחד מאחורי {name} · {n} מחזורים נותרו", "one win behind {name} · {n} rounds left"],
   ["{count} ניצחונות מאחורי {name} · {n} מחזורים נותרו", "{count} wins behind {name} · {n} rounds left"],

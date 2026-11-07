@@ -9,6 +9,7 @@ import Avatar from "../Avatar.jsx";
 import { useOpenAction } from "../OpenActionContext.jsx";
 import { useLiveData } from "../liveData.js";
 import { BellIcon, PinIcon } from "../Icons.jsx";
+import { tintFor } from "../tint.js";
 import { SportIcon } from "../SportSwitcher.jsx";
 import { SkeletonMatchRow } from "../Skeleton.jsx";
 import {
@@ -253,34 +254,52 @@ export default function Home() {
             ? `/matches/${match.id}/reschedule`
             : `/matches/${match.id}`;
 
-    // 198b — one card is lime, the rest are dark. Lime means the match is
-    // now: its time has gone by with no result, or it is today. Which of
-    // them gets it was decided once, above, so a week of urgent matches
-    // doesn't turn into a week of lime.
-    const isUrgent = match.id === urgentId;
-    const today =
-      !!scheduled && scheduled.toDateString() === new Date().toDateString();
+    // 199b — the card is tinted with the opponent's own colour, so a week of
+    // matches looks like a week of different people. What used to be said by
+    // one card being lime is said by a chip on every card instead: there is
+    // always a state, and it is never the grey "all set" that told nobody
+    // anything.
+    const tint = tintFor(match.opponent_name);
+    const confirmed = !!scheduled && !unsettled && !voided;
 
-    const buttonLabel = label || (isUrgent || today ? t("לצפייה במשחק") : null);
-    const action = buttonLabel ? (
-      <button
-        type="button"
-        className={`mc-btn${isUrgent ? " mc-btn--onlime" : ""}`}
-        onClick={() => navigate(target)}
-      >
-        {buttonLabel}
+    const waitingFor = sentInvite
+      ? t("מחכה שיאשרו את ההזמנה")
+      : timeFromMe
+        ? t("מחכה שיאשרו את השעה")
+        : match.state === "waiting_on_them"
+          ? t("מחכה לתשובה שלו")
+          : null;
+
+    // The chip on the left of the bottom row. Amber when the clock has run
+    // out on us, accent when everything is agreed, grey when the ball is in
+    // somebody else's court.
+    const chip =
+      match.state === "played" || match.state === "confirm_mine"
+        ? { tone: "amber", text: t("ממתין לתוצאה"), dot: true }
+        : waitingFor
+          ? { tone: "quiet", text: waitingFor }
+          : confirmed
+            ? { tone: "accent", text: t("מאושר"), check: true }
+            : null;
+
+    // The line it gives way to when there is no chip to show: what the card
+    // is waiting on, rather than a blank.
+    const note = voided && match.note
+      ? t(match.note)
+      : !scheduled
+        ? match.league_name && round
+          ? t("המחזור נסגר {day} {date}", {
+              day: weekdayName(new Date(round.ends_at), t),
+              date: dayMonth(new Date(round.ends_at)),
+            })
+          : t("עוד אין תאריך")
+        : null;
+
+    const action = label ? (
+      <button type="button" className="mc-btn" onClick={() => navigate(target)}>
+        {label}
       </button>
-    ) : (
-      <span className="mc-wait">
-        {sentInvite
-          ? t("מחכה שיאשרו את ההזמנה")
-          : timeFromMe
-            ? t("מחכה שיאשרו את השעה")
-            : match.state === "waiting_on_them"
-              ? t("מחכה לתשובה שלו")
-              : t("הכול מוכן")}
-      </span>
-    );
+    ) : null;
 
     // Where a sent invitation can be re-timed or withdrawn.
     const route = voided
@@ -296,91 +315,96 @@ export default function Home() {
 
     return (
       <div
-        className={`mc${isUrgent ? " mc--lime" : ""}${voided ? " mc--void" : ""}`}
+        className={`mc${voided ? " mc--void" : ""}`}
         key={`m${match.id}`}
         onClick={() => navigate(route)}
+        style={{ "--tint": tint }}
       >
-        {/* The sport's own mark, bleeding off the corner. Only the lime card
-            has room for it: on a dark card it would be one more grey shape
-            among the text. */}
-        {isUrgent && lensSport && (
-          <SportIcon sport={lensSport} className="mc-mark" aria-hidden="true" />
-        )}
-
-        {/* The headline. The day and the hour are what a player came to the
-            screen for, so they are the biggest thing on the card — and
-            "NO DATE" is set at the same size, so a week of cards lines up
-            whether or not anybody has agreed a time. */}
-        <div className="mc-when">
-          {scheduled ? (
-            <>
-              <span className="mc-when-big">
-                {`${weekdayName(scheduled, t)} ${voided ? "—" : hhmm(scheduled)}`}
+        <div className="mc-top">
+          <div className="mc-who">
+            <span className="mc-face" aria-hidden="true">
+              {(match.opponent_name || "?").trim()[0]}
+            </span>
+            <div className="mc-who-text">
+              <span className="mc-vs">{t("מול")}</span>
+              <span className="mc-name" dir="auto">
+                {match.opponent_name}
               </span>
-              <span className="mc-when-date">{dayMonth(scheduled)}</span>
-            </>
-          ) : (
-            <span className="mc-when-big mc-when-big--none">{t("אין תאריך")}</span>
-          )}
-        </div>
+              {/* Mono with letter-spacing is for Latin labels only: tracking
+                  a Hebrew word pulls it apart into ה ל ו ז ר י ם. Names keep
+                  their own face, case and direction. */}
+              <span className="mc-meta">
+                <span className="mc-meta-label">
+                  {match.league_name
+                    ? match.round
+                      ? t("מחזור {n}", { n: match.round })
+                      : t("ליגה")
+                    : t("ידידותי")}
+                </span>
+                {match.league_name && (
+                  <span className="mc-meta-name" dir="auto">
+                    {` · ${match.league_name}`}
+                  </span>
+                )}
+              </span>
+            </div>
+          </div>
 
-        <div className="mc-who">
-          <Avatar name={match.opponent_name} photoUrl={match.opponent_photo_url} size={24} />
-          <span className="mc-vs">
-            {t("מול")}{" "}
-            <span className="mc-name" dir="auto">
-              {match.opponent_name}
-            </span>
-          </span>
-          <span className="mc-dot" aria-hidden="true">·</span>
-          {/* 198b's typography rule. Mono with letter-spacing is for Latin
-              labels only: tracking a Hebrew word pulls its letters apart into
-              ה ל ו ז ר י ם, because Hebrew has no spacing between letters to
-              widen. Names keep their own face, case and direction. */}
-          <span className="mc-kind">
-            {match.league_name
-              ? match.round
-                ? t("מחזור {n}", { n: match.round })
-                : t("ליגה")
-              : t("ידידותי")}
-          </span>
-          {match.league_name && (
-            <span className="mc-league" dir="auto">
-              {match.league_name}
-            </span>
-          )}
+          {/* A clock and a date are a Latin run whichever way the page
+              reads: "--:--" under RTL came out as scattered dashes. */}
+          <div className="mc-when" dir="ltr">
+            {scheduled ? (
+              <>
+                <span className="mc-when-big">{voided ? "—" : hhmm(scheduled)}</span>
+                <span className="mc-when-date">
+                  {`${weekdayName(scheduled, t)} ${dayMonth(scheduled)}`}
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="mc-when-big mc-when-big--none">--:--</span>
+                <span className="mc-when-date mc-when-date--none">{t("אין תאריך")}</span>
+              </>
+            )}
+          </div>
         </div>
 
         <div className="mc-foot">
-          {/* The lime card is the one you are about to leave the house for,
-              so it says where. The rest say what they are waiting for. */}
-          <span className="mc-note">
-            {isUrgent && match.place ? (
-              <>
-                <PinIcon className="mc-note-pin" aria-hidden="true" />
-                <bdi>{match.place}</bdi>
-              </>
-            ) : voided && match.note ? (
-              t(match.note)
-            ) : !scheduled ? (
-              t("עוד אין תאריך")
-            ) : match.league_name && round ? (
-              t("המחזור נסגר {day} {date}", {
-                day: weekdayName(new Date(round.ends_at), t),
-                date: dayMonth(new Date(round.ends_at)),
-              })
-            ) : match.place ? (
-              <>
-                <PinIcon className="mc-note-pin" aria-hidden="true" />
-                <bdi>{match.place}</bdi>
-              </>
-            ) : (
-              ""
-            )}
-          </span>
-          <span className="mc-action" onClick={(e) => e.stopPropagation()}>
-            {action}
-          </span>
+          {chip ? (
+            <span className={`mc-chip mc-chip--${chip.tone}`}>
+              {chip.dot && <i className="mc-chip-dot" aria-hidden="true" />}
+              {chip.check && (
+                <svg className="mc-chip-check" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <polyline
+                    points="5 12.5 10 17.5 19 7"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
+              {chip.text}
+            </span>
+          ) : (
+            <span className="mc-note">{note}</span>
+          )}
+
+          {action ? (
+            <span className="mc-action" onClick={(e) => e.stopPropagation()}>
+              {action}
+            </span>
+          ) : (
+            /* The venue, and only ever the venue: the match's own court or
+               the venue it was booked at. When there is none the line is not
+               there at all — nothing else is allowed to stand in for it. */
+            match.place && (
+              <span className="mc-place">
+                <PinIcon aria-hidden="true" />
+                <bdi className="mc-place-name">{match.place}</bdi>
+              </span>
+            )
+          )}
         </div>
       </div>
     );
