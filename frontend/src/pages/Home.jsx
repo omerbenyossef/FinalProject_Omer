@@ -9,18 +9,17 @@ import Avatar from "../Avatar.jsx";
 import { useOpenAction } from "../OpenActionContext.jsx";
 import { useLiveData } from "../liveData.js";
 import { BellIcon, PinIcon } from "../Icons.jsx";
-import { tintFor } from "../tint.js";
-import { SportIcon } from "../SportSwitcher.jsx";
+import { tintColor, tintFor } from "../tint.js";
+import CourtImage from "../CourtImage.jsx";
+import ActivityFeed from "../ActivityFeed.jsx";
 import { SkeletonMatchRow } from "../Skeleton.jsx";
 import {
   NTRP_STEPS,
-  WEEKDAY_SHORT,
   nearestNtrpStep as activeStep,
   acceptFriendlyInvitation,
   calendarDaysUntil as daysUntil,
   dayMonthPadded as dayMonth,
   formatSets,
-  monthName,
   weekdayName,
 } from "../matchUtils.js";
 import Profile from "./Profile.jsx";
@@ -36,15 +35,17 @@ export default function Home() {
   const { sports, selectedSportId } = useSport();
   // The pair switcher is a lens: this week, in the pair being looked at.
   const { selectedPair, pairLensReady } = usePairs();
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const { reload: reloadOpenAction } = useOpenAction();
   const navigate = useNavigate();
 
   const [week, setWeek] = useState(null);
   const [leagues, setLeagues] = useState(null);
   const [ratings, setRatings] = useState([]);
-  const [stats, setStats] = useState(null);
   const [notifCount, setNotifCount] = useState(0);
+  // 203b — the two things on the screen that are about other people.
+  const [openGames, setOpenGames] = useState([]);
+  const [feed, setFeed] = useState([]);
   const [busyId, setBusyId] = useState(null);
   const [error, setError] = useState("");
 
@@ -61,6 +62,15 @@ export default function Home() {
       .notifications(selectedSportId, selectedPair?.id)
       .then((data) => setNotifCount(data.unread_count))
       .catch(() => {});
+    // 203b — other people's games and other people's news. Neither is read
+    // through the pair lens: an open game is somebody else's offer and the
+    // feed is the neighbourhood, and filtering either by which of my pairs I
+    // am looking through would empty them for no reason anybody could see.
+    api
+      .openGames(selectedSportId)
+      .then((games) => setOpenGames(games.filter((g) => !g.is_full && !g.joined)))
+      .catch(() => setOpenGames([]));
+    api.activity(selectedSportId, 5).then(setFeed).catch(() => setFeed([]));
     // The pair is a lens on both, so both wait for it.
   }, [selectedSportId, selectedPair?.id, pairLensReady]);
 
@@ -68,10 +78,6 @@ export default function Home() {
   // Somebody else's invitation, or a time they just confirmed, arrives here.
   useLiveData(load);
 
-  useEffect(() => {
-    if (!selectedSportId) return;
-    api.myStats(selectedSportId).then(setStats).catch(() => {});
-  }, [selectedSportId]);
 
   useEffect(() => {
     if (!pairLensReady) return;
@@ -141,8 +147,6 @@ export default function Home() {
           }
         : null;
   const sportName = sports.find((s) => s.id === selectedSportId)?.name;
-  const winRate =
-    stats && stats.matches_played > 0 ? Math.round((stats.wins / stats.matches_played) * 100) : null;
 
   async function act(id, run) {
     setBusyId(id);
@@ -170,48 +174,236 @@ export default function Home() {
   // bar. The row of league tiles it used to fill is gone.
   const myWeekLeagues = week?.leagues ?? [];
   const round = week?.round ?? null;
-  // The sport being looked at, for the watermark on the lime card.
-  const lensSport = sports.find((s) => s.id === selectedSportId) ?? null;
+  // What a match is asking its player to do, if anything. Shared, because
+  // the big card at the top and the small cards under it must never disagree
+  // about whether something is waiting — the top one used to offer only
+  // "details" while the card for the same match downstairs said "confirm the
+  // result".
+  function askOf(match) {
+    const scheduled = match.scheduled_at ? new Date(match.scheduled_at) : null;
+    const voided = match.state === "not_played";
+    const timeFromMe = match.state === "time_from_me";
+    const timeFromThem = match.state === "time_from_them";
+    const staleProposal =
+      (timeFromMe || timeFromThem) && !!scheduled && scheduled.getTime() < Date.now();
+    const label =
+      match.state === "played"
+        ? t("דווח תוצאה")
+        : staleProposal
+          ? t("הזמן עבר · קבעו זמן חדש")
+          : match.state === "no_time"
+            ? t("קבעו זמן")
+            : timeFromThem
+              ? t("אשר את השעה")
+              : match.state === "confirm_mine"
+                ? t("אשר תוצאה")
+                : voided
+                  ? t("תיאום במחזור אחר")
+                  : null;
+    const target =
+      match.state === "no_time" || staleProposal
+        ? `/matches/${match.id}`
+        : match.state === "confirm_mine"
+          ? `/matches/${match.id}/confirm`
+          : voided
+            ? `/matches/${match.id}/reschedule`
+            : `/matches/${match.id}`;
+    return { label, target, staleProposal, voided };
+  }
 
-  const metaLine = (() => {
+  // 203b — the greeting. The time of day is the phone's, not the server's:
+  // it is the reader's evening that the word is about.
+  const hello = (() => {
+    const hour = new Date().getHours();
+    const key =
+      hour >= 5 && hour < 12
+        ? "בוקר טוב, {name}"
+        : hour >= 12 && hour < 17
+          ? "צהריים טובים, {name}"
+          : "ערב טוב, {name}";
+    return t(key, { name: (user?.name || "").trim().split(" ")[0] });
+  })();
+
+  // The line under it, in the order the spec puts them: a streak is the best
+  // thing there is to say, then how busy the week is, then the prompt.
+  const helloSub = (() => {
     if (!week) return "";
-    // 183c: the headline right below says "no matches this week" in full, so
-    // the mono row above it is just the period it is talking about.
-    if (matches.length === 0) return t("השבוע");
-    const parts = [
-      t("השבוע"),
-      matches.length === 1 ? t("משחק אחד") : t("{n} משחקים", { n: matches.length }),
-    ];
-    if (round) {
-      const ends = new Date(round.ends_at);
-      parts.push(
-        t("מחזור {n} נסגר {day} {date}", {
-          n: round.number,
-          day: weekdayName(ends, t),
-          date: dayMonth(ends),
-        })
+    const count = week.matches_this_week ?? 0;
+    const busy =
+      count === 1 ? t("משחק אחד השבוע") : count > 1 ? t("{n} משחקים השבוע", { n: count }) : null;
+    if ((week.win_streak ?? 0) >= 2) {
+      const streak = t("{n} ניצחונות ברצף", { n: week.win_streak });
+      return (
+        <>
+          <span className="ha-streak">{streak}</span> 🔥{busy ? ` · ${busy}` : ""}
+        </>
       );
     }
-    return parts.join(" · ");
+    if (busy) return busy;
+    return t("אין עוד משחקים השבוע. אפשר למצוא אחד למטה");
   })();
 
-  const emptyState = !!week && matches.length === 0 && invites.length === 0;
+  // The soonest match, which gets the picture and the faces. Everything else
+  // this week keeps the 199b card underneath it.
+  const next = matches[0] ?? null;
+  const rest = matches.slice(1);
 
-  // 198b — at most one lime card. A screen of them is a screen of nothing:
-  // if two matches both want the colour, the sooner one gets it and the
-  // other falls back to the regular card with an outlined button.
-  const urgentId = (() => {
-    const now = Date.now();
-    const wants = matches.filter((m) => {
-      if (m.state === "not_played" || !m.scheduled_at) return false;
-      const at = new Date(m.scheduled_at).getTime();
-      // A time that has gone by with no result, or a match today.
-      if (m.state === "played" || m.state === "confirm_mine") return true;
-      return at >= now && new Date(m.scheduled_at).toDateString() === new Date().toDateString();
-    });
-    wants.sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at));
-    return wants[0]?.id ?? null;
-  })();
+  function nextCard(match) {
+    const ask = askOf(match);
+    const scheduled = match.scheduled_at ? new Date(match.scheduled_at) : null;
+    const days = scheduled ? daysUntil(scheduled) : null;
+    const when = !scheduled
+      ? t("אין תאריך")
+      : days === 0
+        ? `${t("היום")} · ${hhmm(scheduled)}`
+        : days === 1
+          ? `${t("מחר")} · ${hhmm(scheduled)}`
+          : `${weekdayName(scheduled, t)} ${dayMonth(scheduled)} · ${hhmm(scheduled)}`;
+
+    // The context line: which competition this is, and whether these two
+    // have met before. "You won last time" is the whole reason the card
+    // feels like a rivalry rather than an appointment.
+    const meeting = match.last_meeting;
+    const history = !meeting
+      ? match.opponent_id
+        ? t("פעם ראשונה שאתם משחקים")
+        : null
+      : meeting.won === true
+        ? `${t("ניצחת בפעם הקודמת")} 🏆`
+        : meeting.won === false
+          ? t("הפסדת בפעם הקודמת")
+          : null;
+    const competition = match.league_name
+      ? match.round
+        ? `${t("מחזור {n}", { n: match.round })} · ${match.league_name}`
+        : match.league_name
+      : t("ידידותי");
+
+    return (
+      <article className="ha-next" onClick={() => navigate(`/matches/${match.id}`)}>
+        <CourtImage
+          photoUrl={match.venue?.image_url}
+          surface={match.venue?.surface}
+          height={96}
+          className="ha-next-court"
+        >
+          <span className="ha-next-chip" dir="auto">
+            {when}
+          </span>
+          {match.place && (
+            <bdi className="ha-next-place">{match.place}</bdi>
+          )}
+        </CourtImage>
+
+        <div className="ha-next-body">
+          <span className="ha-next-faces" aria-hidden="true">
+            <Avatar
+              name={user?.name}
+              photoUrl={user?.photo_url}
+              size={38}
+              background={tintColor(user?.name || "")}
+              color="#0e1116"
+            />
+            <Avatar
+              name={match.opponent_name}
+              photoUrl={match.opponent_photo_url}
+              size={38}
+              background={tintColor(match.opponent_name)}
+              color="#0e1116"
+            />
+          </span>
+          <div className="ha-next-text">
+            <span className="ha-next-title">
+              {`${t("מול")} `}
+              <bdi>{match.opponent_name}</bdi>
+            </span>
+            <span className="ha-next-ctx" dir="auto">
+              {[competition, history].filter(Boolean).join(" · ")}
+            </span>
+          </div>
+          {/* The button is "details" only when the match is asking for
+              nothing. When something is waiting, the biggest thing on the
+              screen says what it is. */}
+          <button
+            type="button"
+            className={`ha-next-btn${ask.label ? " is-ask" : ""}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(ask.label ? ask.target : `/matches/${match.id}`);
+            }}
+          >
+            {ask.label ?? t("פרטים")}
+          </button>
+        </div>
+      </article>
+    );
+  }
+
+  // Nothing lined up. Not the same thing as the empty week further down: this
+  // is the card that stands where the next match would be.
+  function noNextCard() {
+    return (
+      <article className="ha-cta">
+        <span className="ha-cta-title">{t("אין משחק מתוכנן")}</span>
+        <div className="ha-cta-btns">
+          <button type="button" className="ha-cta-go" onClick={() => navigate("/new-match")}>
+            {t("מצא משחק")}
+          </button>
+          <button type="button" className="ha-cta-alt" onClick={() => navigate("/friendly/new")}>
+            {t("הזמן חבר")}
+          </button>
+        </div>
+      </article>
+    );
+  }
+
+  function openGameCard(game) {
+    const at = new Date(game.starts_at);
+    const spots =
+      game.seats_left === 1
+        ? t("מקום אחד פנוי")
+        : t("{n} מקומות פנויים", { n: game.seats_left });
+    return (
+      <article className="ha-og" key={`g${game.id}`} onClick={() => navigate("/games/open")}>
+        <CourtImage
+          photoUrl={game.venue_image_url}
+          surface={game.venue_surface}
+          height={70}
+          className="ha-og-court"
+        />
+        <div className="ha-og-body">
+          <span className="ha-og-when" dir="auto">
+            {`${weekdayName(at, t)} ${hhmm(at)}`}
+          </span>
+          <span className="ha-og-where" dir="auto">
+            {[game.where, game.is_doubles ? t("זוגות") : t("יחידים")].filter(Boolean).join(" · ")}
+          </span>
+          <div className="ha-og-foot">
+            <span className="ha-og-faces" aria-hidden="true">
+              {game.players.slice(0, 3).map((person) => (
+                <Avatar
+                  key={person.id}
+                  name={person.name}
+                  photoUrl={person.photo_url}
+                  size={26}
+                  background={tintColor(person.name)}
+                  color="#0e1116"
+                />
+              ))}
+              {/* One dashed circle per seat still open — the card says what it
+                  is missing rather than how full it is. */}
+              {Array.from({ length: Math.min(game.seats_left, 3) }).map((_, i) => (
+                <span className="ha-og-open" key={`o${i}`}>
+                  +
+                </span>
+              ))}
+            </span>
+            <span className="ha-og-spots">{spots}</span>
+          </div>
+        </div>
+      </article>
+    );
+  }
 
   function cardFor(match) {
     const scheduled = match.scheduled_at ? new Date(match.scheduled_at) : null;
@@ -222,37 +414,10 @@ export default function Home() {
     // A time one side put forward and the other hasn't agreed to yet.
     const timeFromMe = match.state === "time_from_me";
     const timeFromThem = match.state === "time_from_them";
-    // A proposed time that has already gone by. There is nothing to confirm —
-    // the server refuses a past time — so the card must not keep asking.
-    // Friendlies are swept away entirely; a league match still has to be
-    // played, so it goes back to arranging one.
-    const staleProposal =
-      (timeFromMe || timeFromThem) && !!scheduled && scheduled.getTime() < Date.now();
     const unsettled = sentInvite || timeFromMe || timeFromThem;
-    // 198c replaced the lime date column and the dimmed name with the two
-    // card states below, so neither flag is read any more.
-    const label =
-      match.state === "played"
-        ? t("דווח תוצאה")
-        : staleProposal
-          ? t("הזמן עבר · קבעו זמן חדש")
-        : match.state === "no_time"
-          ? t("קבעו זמן")
-          : timeFromThem
-            ? t("אשר את השעה")
-            : match.state === "confirm_mine"
-              ? t("אשר תוצאה")
-              : voided
-                ? t("תיאום במחזור אחר")
-                : null;
-    const target =
-      match.state === "no_time" || staleProposal
-        ? `/matches/${match.id}`
-        : match.state === "confirm_mine"
-          ? `/matches/${match.id}/confirm`
-          : voided
-            ? `/matches/${match.id}/reschedule`
-            : `/matches/${match.id}`;
+    // What the card offers to do about it — the same answer the big card at
+    // the top of the screen gets, from the same place.
+    const { label, target } = askOf(match);
 
     // 199b — the card is tinted with the opponent's own colour, so a week of
     // matches looks like a week of different people. What used to be said by
@@ -425,34 +590,24 @@ export default function Home() {
 
     return (
       <>
-        <div className="hwe-head">
-          <div className="hwe-head-text">
-            <h2 className="hwe-title">
-              {t("אין משחקים השבוע")}
-            </h2>
-            {days !== null && (
-              <div className="hwe-next">
-                {days === 0
-                  ? t("המחזור הבא מתחיל היום")
-                  : days === 1
-                    ? t("המחזור הבא מתחיל מחר")
-                    : t("המחזור הבא מתחיל ב-{day} {date}", {
-                        day: weekdayName(nextStart, t),
-                        date: dayMonth(nextStart),
-                      })}
-              </div>
-            )}
-          </div>
-          <button type="button" className="hwe-go" onClick={() => navigate("/new-match")}>
-            {t("קבע משחק")}
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true">
-              <path d="M5 12h13M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-        </div>
-
-        {/* Pinned to the bottom of the diary, against the leagues bar. A player
-            with no history at all has nothing to pin, and gets nothing. */}
+        {/* 203b — the headline and the button this block used to open with
+            are gone: the card at the top of the screen already says there is
+            nothing on and offers the two ways out of that, and saying it
+            twice on one screen made the screen look stuck. What is left is
+            the one thing nothing else says — the last result, and the one
+            line that is not on it: when there will be something to play. */}
+        {days !== null && (
+          <p className="ha-quiet">
+            {days === 0
+              ? t("המחזור הבא מתחיל היום")
+              : days === 1
+                ? t("המחזור הבא מתחיל מחר")
+                : t("המחזור הבא מתחיל ב-{day} {date}", {
+                    day: weekdayName(nextStart, t),
+                    date: dayMonth(nextStart),
+                  })}
+          </p>
+        )}
         {hasLast && (
           <div className="hwe-last">
             <div className="hwe-last-top" dir="ltr">
@@ -497,46 +652,114 @@ export default function Home() {
     );
   }
 
+  // 203b — a feed with almost nothing in it is worse than a short one: it
+  // reads as a broken section rather than a quiet week. One honest filler
+  // line, not a page of invented activity.
+  const feedItems = feed.length > 0 && feed.length < 3
+    ? [...feed, { id: 0, type: "invite_friend", payload: {}, people: [], count: 0 }]
+    : feed;
+
   return (
-    <div className="hw">
-      <div className="hw-hero">
-        <div className="hw-top">
-          <span className="hw-name">{user?.name}</span>
-          <div className="hw-top-side">
-            <span className="hw-leagues">
-              {sportLeagues.length === 1 ? t("ליגה אחת") : t("{n} ליגות", { n: sportLeagues.length })}
-            </span>
-            <button
-              type="button"
-              className="hw-bell"
-              onClick={() => navigate("/notifications")}
-              aria-label={t("התראות")}
-            >
-              <BellIcon aria-hidden="true" />
-              {notifCount > 0 && <span className="hw-bell-dot" aria-hidden="true" />}
-            </button>
+    <div className="ha">
+      <header className="ha-greet">
+        <div className="ha-greet-text">
+          <h1 className="ha-hello" dir="auto">
+            {hello} 👋
+          </h1>
+          <p className="ha-sub" dir="auto">
+            {helloSub}
+          </p>
+        </div>
+        {/* The bell's dot is warm red rather than the sport's accent: the
+            accent is everywhere on this screen and says "this is yours", and
+            this one thing has to say "this is new". */}
+        <button
+          type="button"
+          className="ha-bell"
+          onClick={() => navigate("/notifications")}
+          aria-label={t("התראות")}
+        >
+          <BellIcon aria-hidden="true" />
+          {notifCount > 0 && <span className="ha-bell-dot" aria-hidden="true" />}
+        </button>
+      </header>
+
+      {error && <p className="hw-error error">{t(error)}</p>}
+
+      {!week ? <SkeletonMatchRow /> : next ? nextCard(next) : noNextCard()}
+
+      {invites.length > 0 && (
+        <section className="ha-sec">
+          <div className="ha-sec-head">
+            <h2 className="ha-sec-title">{t("הזמנות למשחק ידידותי")}</h2>
+            {invites.length > 2 && (
+              <button type="button" className="ha-sec-link" onClick={() => navigate("/invites")}>
+                {t("עוד {n} הזמנות", { n: invites.length - 2 })}
+              </button>
+            )}
           </div>
-        </div>
+          {invites.slice(0, 2).map((invite) => {
+            const when = invite.proposed_at ? new Date(invite.proposed_at) : null;
+            return (
+              <div className="hw-card hw-card--invite" key={`i${invite.id}`}>
+                <div className="hw-date" dir="ltr">
+                  {when ? (
+                    <>
+                      <span className="hw-date-day">{weekdayName(when, t)}</span>
+                      <span className="hw-date-num">{when.getDate()}</span>
+                      <span className="hw-date-time">{hhmm(when)}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="hw-date-num">?</span>
+                      <span className="hw-date-time">{t("אין תאריך")}</span>
+                    </>
+                  )}
+                </div>
+                <div className="hw-body">
+                  <span className="hw-opponent">{invite.from_name}</span>
+                  <span className="hw-sub">
+                    {`${t("משחק ידידותי")} · ${t("הזמין/ה אותך")}`}
+                  </span>
+                  <div className="hw-action hw-action--pair">
+                    <button
+                      type="button"
+                      className="hw-btn hw-btn--lime hw-btn--sm"
+                      disabled={busyId === invite.id}
+                      onClick={() =>
+                        act(invite.id, () =>
+                          acceptFriendlyInvitation(api, {
+                            id: invite.id,
+                            scheduled_at: invite.proposed_at,
+                          })
+                        )
+                      }
+                    >
+                      {t("אשר")}
+                    </button>
+                    <button
+                      type="button"
+                      className="hw-btn hw-btn--ghost hw-btn--sm"
+                      disabled={busyId === invite.id}
+                      onClick={() => act(invite.id, () => api.declineFriendlyInvite(invite.id))}
+                    >
+                      {t("דחה")}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </section>
+      )}
 
-        <div className="hw-nums" dir="ltr">
-          <span className="hw-num">
-            <span dir="ltr">{winRate !== null ? winRate : "–"}%</span>
-            <span className="hw-num-unit">{t("ניצחונות")}</span>
-          </span>
-          {/* The W/L letters only work inside an English run — in Hebrew the
-              letters and the digits fight over the order, so the record is
-              just the two numbers. */}
-          <span className="hw-num" dir="ltr">
-            {language === "en"
-              ? `${stats ? stats.wins : 0}W-${stats ? stats.losses : 0}L`
-              : `${stats ? stats.wins : 0}-${stats ? stats.losses : 0}`}
-          </span>
-          <span className="hw-num">
-            {t("{n} שוחקו", { n: stats ? stats.matches_played : 0 })}
-          </span>
-        </div>
-
-        {scale && (
+      {/* The NTRP scale is not in the 203b spec, which is all about other
+          people. It stays because it is the one number the player asked to
+          see here — in a pairs sport it is the pair's, which is the thing
+          that actually enters a league — only moved below the match, where
+          the screen now starts. */}
+      {scale && (
+        <div className="ha-card ha-scale">
           <div className="hw-scale">
             <div className="hw-scale-head">
               <span className="hw-scale-label">
@@ -566,9 +789,6 @@ export default function Home() {
               </span>
               <span>7.0</span>
             </div>
-            {/* The personal number is not dropped, only moved below the one
-                the screen is about — and it leads to the pair's page, where
-                both players' levels sit beside the pair's. */}
             {lensPair && (myRating || pairLevelMissing) && (
               <Link to={`/pairs/${lensPair.id}`} className="hw-scale-mine">
                 {pairLevelMissing
@@ -577,92 +797,54 @@ export default function Home() {
               </Link>
             )}
           </div>
-        )}
-      </div>
-
-      {error && <p className="hw-error error">{t(error)}</p>}
-
-      {/* One card used to share the diary's height with the strip of league
-          tiles below it. With the strip gone a single match stretched down the
-          whole screen, so a lone card keeps its own height instead of growing
-          into the space. Two or more still divide it. */}
-      <div
-        className={`hw-diary${emptyState ? " hw-diary--empty" : ""}${
-          matches.length === 1 && invites.length === 0 ? " hw-diary--one" : ""
-        }`}
-      >
-        <div className="hw-meta" dir="ltr">
-          {metaLine}
         </div>
-        {!week ? (
-          <SkeletonMatchRow />
-        ) : (
-          <>
-            {matches.length > 0 ? matches.map(cardFor) : invites.length === 0 ? emptyWeek() : null}
+      )}
 
-            {invites.length > 0 && (
-              <div className="hw-invites">
-                <div className="hw-sec" dir="ltr">
-                  <span className="hw-sec-name">{t("הזמנות למשחק ידידותי")}</span>
-                  <span className="hw-sec-rule" />
-                  <span className="hw-sec-count">{invites.length}</span>
-                </div>
-                {invites.slice(0, 2).map((invite) => {
-                  const when = invite.proposed_at ? new Date(invite.proposed_at) : null;
-                  return (
-                    <div className="hw-card hw-card--invite" key={`i${invite.id}`}>
-                      <div className="hw-date" dir="ltr">
-                        {when ? (
-                          <>
-                            <span className="hw-date-day">{weekdayName(when, t)}</span>
-                            <span className="hw-date-num">{when.getDate()}</span>
-                            <span className="hw-date-time">{hhmm(when)}</span>
-                          </>
-                        ) : (
-                          <>
-                            <span className="hw-date-num">?</span>
-                            <span className="hw-date-time">{t("אין תאריך")}</span>
-                          </>
-                        )}
-                      </div>
-                      <div className="hw-body">
-                        <span className="hw-opponent">{invite.from_name}</span>
-                        <span className="hw-sub">
-                          {`${t("משחק ידידותי")} · ${t("הזמין/ה אותך")}`}
-                        </span>
-                        <div className="hw-action hw-action--pair">
-                          <button
-                            type="button"
-                            className="hw-btn hw-btn--lime hw-btn--sm"
-                            disabled={busyId === invite.id}
-                            onClick={() => act(invite.id, () => acceptFriendlyInvitation(api, { id: invite.id, scheduled_at: invite.proposed_at }))}
-                          >
-                            {t("אשר")}
-                          </button>
-                          <button
-                            type="button"
-                            className="hw-btn hw-btn--ghost hw-btn--sm"
-                            disabled={busyId === invite.id}
-                            onClick={() => act(invite.id, () => api.declineFriendlyInvite(invite.id))}
-                          >
-                            {t("דחה")}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-                {invites.length > 2 && (
-                  <button type="button" className="hw-more" onClick={() => navigate("/invites")}>
-                    {t("עוד {n} הזמנות", { n: invites.length - 2 })}
-                  </button>
-                )}
-              </div>
+      {rest.length > 0 && (
+        <section className="ha-sec">
+          <div className="ha-sec-head">
+            <h2 className="ha-sec-title">{t("גם השבוע")}</h2>
+            {round && (
+              <span className="ha-sec-note" dir="auto">
+                {t("מחזור {n}", { n: round.number })}
+              </span>
             )}
+          </div>
+          <div className="ha-rest">{rest.map(cardFor)}</div>
+        </section>
+      )}
 
-          </>
+      {/* The week with nothing in it keeps its countdown and its last
+          result — the CTA card above says what to do, these say where the
+          player stands. */}
+      {week && matches.length === 0 && invites.length === 0 && (
+        <section className="ha-sec ha-sec--empty">{emptyWeek()}</section>
+      )}
+
+      {openGames.length > 0 && (
+        <section className="ha-sec">
+          <div className="ha-sec-head">
+            <h2 className="ha-sec-title">{t("אירועים לידך")}</h2>
+            <Link to="/games/open" className="ha-sec-link">
+              {`${t("הכל")} ${openGames.length}`}
+            </Link>
+          </div>
+          {/* Bleeds off the end of the screen on purpose: a row of cards that
+              stops neatly at the gutter looks like all there is. */}
+          <div className="ha-rail">{openGames.slice(0, 8).map(openGameCard)}</div>
+        </section>
+      )}
+
+      <section className="ha-sec">
+        <div className="ha-sec-head">
+          <h2 className="ha-sec-title">{t("מה קורה סביבך")}</h2>
+        </div>
+        {feedItems.length > 0 ? (
+          <ActivityFeed items={feedItems} />
+        ) : (
+          <p className="ha-quiet">{t("עוד שקט סביבך")}</p>
         )}
-      </div>
+      </section>
     </div>
   );
 }

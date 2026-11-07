@@ -194,6 +194,12 @@ export const api = {
         pairId ? `${sportId ? "&" : "?"}pair_id=${pairId}` : ""
       }`
     ),
+  // 203b — the home screen's "around you" feed, and the clap on one of its
+  // rows. The clap is a toggle: one call, whichever way it ends up.
+  activity: (sportId, limit = 6) =>
+    request(`/activity?limit=${limit}${sportId ? `&sport_id=${sportId}` : ""}`),
+  clapActivity: (eventId) => request(`/activity/${eventId}/clap`, { method: "POST" }),
+
   openMatches: () => request("/matches/open"),
   remindOpenMatch: (matchId) => request(`/matches/${matchId}/remind`, { method: "POST" }),
 

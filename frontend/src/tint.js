@@ -25,3 +25,10 @@ export function tintFor(name) {
   }
   return PALETTE[hash % PALETTE.length];
 }
+
+/* 203b puts the same colour behind a face instead of behind a card. The
+   cards mix their own alpha out of the triplet, so tintFor stays a triplet
+   and this is the one that hands back something `background` can take. */
+export function tintColor(name) {
+  return `rgb(${tintFor(name)})`;
+}
