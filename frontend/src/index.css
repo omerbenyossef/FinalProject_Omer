@@ -9924,3 +9924,218 @@ button:active { transform: translateY(1px); }
   display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;
   font: 500 11.5px "IBM Plex Mono", var(--mono); letter-spacing: .04em; color: #8b93a6;
 }
+
+
+/* 200b — the settings screen. The player first (their face, their name,
+   where they play), then the four settings they actually change, then
+   everything else grouped and quiet. */
+.st {
+  padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+}
+.st-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px 0;
+}
+.st-back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(148, 163, 184, 0.1);
+  color: var(--ink);
+  cursor: pointer;
+}
+.st-back svg { width: 18px; height: 18px; }
+.st-edit {
+  height: 32px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 16px;
+  background: none;
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.3);
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.st-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px 18px;
+  text-align: center;
+}
+/* A gap, then the sport's ring, then a soft glow under it. */
+.st-face {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #1d2938;
+  box-shadow:
+    0 0 0 4px var(--paper),
+    0 0 0 6px rgba(var(--court-rgb), 0.55),
+    0 10px 40px -8px rgba(var(--court-rgb), 0.5);
+  font: 400 34px/1 "Anton", var(--display);
+  color: #c9cfdb;
+  text-transform: uppercase;
+}
+.st-face img { width: 100%; height: 100%; object-fit: cover; }
+.st-name {
+  margin: 0;
+  font: 400 34px/1 "Anton", var(--display);
+  text-transform: uppercase;
+  letter-spacing: .01em;
+  color: var(--ink);
+}
+.st-sub { margin: 0; font-weight: 500; font-size: 12.5px; color: #a3abbb; }
+
+.st-editor {
+  margin: 0 18px 18px;
+  padding: 14px;
+  border-radius: 18px;
+  background: #161b22;
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.08);
+}
+
+.st-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  padding: 0 18px;
+}
+.st-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 14px;
+  border: 0;
+  border-radius: 18px;
+  background: #161b22;
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.08);
+  text-align: start;
+  cursor: default;
+}
+button.st-tile { cursor: pointer; }
+/* The two a player changes most carry the sport's colour. */
+.st-tile.is-key {
+  background: linear-gradient(160deg, rgba(var(--court-rgb), 0.18), rgba(var(--court-rgb), 0.04) 60%), #161b22;
+  box-shadow: inset 0 1px 0 rgba(var(--court-rgb), 0.35);
+}
+.st-tile-icon { display: flex; color: var(--court); }
+.st-tile-icon svg { width: 22px; height: 22px; }
+.st-tile-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.st-tile-label {
+  font: 500 10.5px "IBM Plex Mono", monospace;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: #8b93a6;
+}
+.st-tile-value {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.st-group { padding: 18px 18px 0; }
+.st-group-label {
+  margin: 0 0 8px;
+  padding: 0 4px;
+  font: 500 10.5px "IBM Plex Mono", monospace;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: #6f7787;
+}
+.st-list {
+  border-radius: 18px;
+  background: #161b22;
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.08);
+  overflow: hidden;
+}
+.st-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 0;
+  background: none;
+  text-align: start;
+  color: var(--ink);
+}
+button.st-row { cursor: pointer; }
+.st-row + .st-row,
+.st-row + .settings-password,
+.settings-password + .st-row { border-top: 1px solid rgba(148, 163, 184, 0.1); }
+.st-row-icon {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: rgba(var(--court-rgb), 0.12);
+  color: var(--court);
+}
+.st-row-icon svg { width: 18px; height: 18px; }
+.st-row-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.st-row-title { font-weight: 600; font-size: 15px; }
+.st-row-sub { font-weight: 500; font-size: 12px; color: #8b93a6; text-wrap: pretty; }
+.st-row-end { flex: none; display: flex; align-items: center; gap: 6px; min-width: 0; }
+.st-row-value {
+  font-weight: 500;
+  font-size: 13.5px;
+  color: #a3abbb;
+  max-width: 42vw;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.st-row-chev { width: 14px; height: 14px; color: #6f7787; }
+.st-row-btn {
+  border: 0;
+  background: none;
+  padding: 0;
+  font-weight: 600;
+  font-size: 13.5px;
+  color: var(--court);
+  cursor: pointer;
+}
+/* Leaving, and the one that cannot be undone. */
+.st-row.is-danger .st-row-icon { background: rgba(255, 122, 107, 0.12); color: #ff7a6b; }
+.st-row.is-danger .st-row-title { color: #ff7a6b; }
+.st-error { margin: 0; padding: 10px 14px; font-size: 13px; color: #ff7a6b; }
+
+.st .settings-password { padding: 12px 14px; }
+.st-legal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 22px 18px 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.st-legal a { color: var(--muted); }
+
+/* 44x26, as the handoff draws it. */
+.st-toggle { width: 44px; height: 26px; border-radius: 13px; padding: 3px; background: #2b323d; }
+.st-toggle .toggle-knob { width: 20px; height: 20px; background: #8b93a6; }
+.st-toggle.on { background: var(--court); }
+.st-toggle.on .toggle-knob { background: #0e1116; }

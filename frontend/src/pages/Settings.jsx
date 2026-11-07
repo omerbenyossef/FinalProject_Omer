@@ -1,19 +1,313 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { api } from "../api";
+import { api, mediaUrl } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
 import { useSport } from "../SportContext.jsx";
 import { getExistingSubscription, isPushSupported, subscribeToPush, unsubscribeFromPush } from "../push.js";
-import PageHelp from "../PageHelp.jsx";
 import Toggle from "../Toggle.jsx";
 import RatingQuestionnaire from "../RatingQuestionnaire.jsx";
+import PhotoPicker from "../PhotoPicker.jsx";
+import {
+  BellIcon,
+  CalendarIcon,
+  ChatIcon,
+  ChevronIcon,
+  CloseIcon,
+  PersonIcon,
+  PinIcon,
+  RanksIcon,
+  SearchIcon,
+  SettingsIcon,
+  TennisIcon,
+  TrophyIcon,
+} from "../Icons.jsx";
 import { monthName } from "../matchUtils.js";
 
 const PROVISIONAL_MATCHES = 3;
 
 function monthAbbrev(dateStr, t) {
-  return monthName(new Date(dateStr), t);
+  if (!dateStr) return "";
+  const date = new Date(dateStr);
+  return `${monthName(date, t)} ${date.getFullYear()}`;
+}
+
+/* 200b — the settings screen.
+   What was a column of undifferentiated rows is now the player first (their
+   face, their name, where they play), then the four settings they actually
+   change, then everything else grouped and quiet.
+
+   The four tiles are bound to real data only. The mockup shows Availability
+   and Home courts; this app has neither, and a tile that reads "Evenings ·
+   Sat" for everybody would be a lie printed in a box. The four it does have
+   are the level, the area, the travel radius and the sports. */
+
+function Tile({ icon, label, value, highlighted = false, onClick }) {
+  const Tag = onClick ? "button" : "div";
+  return (
+    <Tag
+      type={onClick ? "button" : undefined}
+      className={`st-tile${highlighted ? " is-key" : ""}`}
+      onClick={onClick}
+    >
+      <span className="st-tile-icon" aria-hidden="true">
+        {icon}
+      </span>
+      <span className="st-tile-body">
+        <span className="st-tile-label">{label}</span>
+        <span className="st-tile-value" dir="auto">
+          {value}
+        </span>
+      </span>
+    </Tag>
+  );
+}
+
+function Group({ label, children }) {
+  return (
+    <section className="st-group">
+      <h2 className="st-group-label">{label}</h2>
+      <div className="st-list">{children}</div>
+    </section>
+  );
+}
+
+function Row({ icon, title, sub, value, onClick, right, danger = false }) {
+  const Tag = onClick ? "button" : "div";
+  return (
+    <Tag
+      type={onClick ? "button" : undefined}
+      className={`st-row${danger ? " is-danger" : ""}`}
+      onClick={onClick}
+    >
+      <span className="st-row-icon" aria-hidden="true">
+        {icon}
+      </span>
+      <span className="st-row-body">
+        <span className="st-row-title">{title}</span>
+        {sub && <span className="st-row-sub">{sub}</span>}
+      </span>
+      {right ?? (
+        <span className="st-row-end">
+          {value && (
+            <span className="st-row-value" dir="auto">
+              {value}
+            </span>
+          )}
+          {onClick && !danger && <ChevronIcon className="st-row-chev" aria-hidden="true" />}
+        </span>
+      )}
+    </Tag>
+  );
+}
+
+export default function Settings() {
+  const { user, updateUser, logout } = useAuth();
+  const { t, language, setLanguage } = useLanguage();
+  const { selectedSportId, sports } = useSport();
+  const navigate = useNavigate();
+  const [myRatings, setMyRatings] = useState([]);
+  const [retaking, setRetaking] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [settingPassword, setSettingPassword] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  function reloadRatings() {
+    api.myRatings().then(setMyRatings).catch(() => {});
+  }
+
+  useEffect(() => {
+    reloadRatings();
+  }, []);
+
+  function handleLogout() {
+    logout();
+    navigate("/signin");
+  }
+
+  const sportName = sports.find((s) => s.id === selectedSportId)?.name;
+  const myRating = myRatings.find((r) => r.sport_id === selectedSportId) || null;
+  // The sports this player is actually rated in — not the six the table holds.
+  const mySports = sports
+    .filter((s) => myRatings.some((r) => r.sport_id === s.id))
+    .map((s) => t(s.name));
+
+  const since = user?.created_at ? monthAbbrev(user.created_at, t) : null;
+  const subLine = [user?.area, since && t("חבר/ה מאז {month}", { month: since })]
+    .filter(Boolean)
+    .join(" · ");
+
+  return (
+    <div className="st">
+      <div className="st-top">
+        <button
+          type="button"
+          className="st-back"
+          onClick={() => navigate(-1)}
+          aria-label={t("חזרה")}
+        >
+          <ChevronIcon aria-hidden="true" />
+        </button>
+        <button type="button" className="st-edit" onClick={() => setEditing((v) => !v)}>
+          {editing ? t("סיום") : t("עריכת פרופיל")}
+        </button>
+      </div>
+
+      <header className="st-hero">
+        <span className="st-face">
+          {user?.photo_url ? (
+            <img src={mediaUrl(user.photo_url)} alt="" />
+          ) : (
+            (user?.name || "?").trim()[0]
+          )}
+        </span>
+        <h1 className="st-name">{user?.name}</h1>
+        {subLine && <p className="st-sub">{subLine}</p>}
+      </header>
+
+      {/* The editor the "edit profile" button opens, in place rather than on
+          a screen of its own: three fields and a photo do not need one. */}
+      {editing && (
+        <div className="st-editor">
+          <PhotoPicker />
+          <IdentityRow
+            label={t("שם")}
+            value={user?.name}
+            required
+            onSave={async (v) => updateUser(await api.updateProfile({ name: v }))}
+          />
+          <IdentityRow
+            label={t("אזור")}
+            value={user?.area}
+            placeholder={t("לא הוגדר")}
+            onSave={async (v) => updateUser(await api.updateProfile({ area: v }))}
+          />
+          <IdentityRow
+            label={t("רדיוס נסיעה")}
+            value={user?.travel_radius_km}
+            type="number"
+            unit="KM"
+            placeholder={t("לא הוגדר")}
+            onSave={async (v) =>
+              updateUser(
+                await api.updateProfile({ travel_radius_km: v === null ? null : Number(v) })
+              )
+            }
+          />
+        </div>
+      )}
+
+      <div className="st-tiles">
+        <Tile
+          highlighted
+          icon={<RanksIcon />}
+          label={`${sportName ? t(sportName) : ""} ${t("רמה")}`.trim()}
+          value={myRating ? `NTRP ${myRating.level.toFixed(1)}` : t("לא מדורג")}
+          onClick={() => setRetaking(true)}
+        />
+        <Tile
+          highlighted
+          icon={<PinIcon />}
+          label={t("אזור")}
+          value={user?.area || t("לא הוגדר")}
+          onClick={() => setEditing(true)}
+        />
+        <Tile
+          icon={<SearchIcon />}
+          label={t("רדיוס נסיעה")}
+          value={
+            user?.travel_radius_km != null
+              ? t("{n} ק״מ", { n: user.travel_radius_km })
+              : t("לא הוגדר")
+          }
+          onClick={() => setEditing(true)}
+        />
+        <Tile
+          icon={<TennisIcon />}
+          label={t("ענפים")}
+          value={mySports.length ? mySports.join(" · ") : t("לא מדורג")}
+        />
+      </div>
+
+      <Group label={t("NOTIFICATIONS")}>
+        <NotificationsSection user={user} updateUser={updateUser} />
+      </Group>
+
+      <Group label={t("כללי")}>
+        <Row
+          icon={<ChatIcon />}
+          title={t("שפה")}
+          value={language === "en" ? "English" : "עברית"}
+          onClick={() => setLanguage(language === "en" ? "he" : "en")}
+        />
+        <Row
+          icon={<PersonIcon />}
+          title={t("אימייל")}
+          sub={user?.google_sub ? t("מחשבון Google") : null}
+          value={user?.email}
+        />
+        <Row
+          icon={<SettingsIcon />}
+          title={t("הגדרת סיסמה")}
+          sub={t("סיסמה נוספת לחשבון, למקרה שההתחברות עם Google לא עובדת.")}
+          onClick={() => setSettingPassword((v) => !v)}
+        />
+        {settingPassword && <PasswordSection />}
+        <LeaveLeagueRow />
+        <Row
+          icon={<CloseIcon />}
+          title={t("התנתקות")}
+          danger
+          onClick={() => setLoggingOut(true)}
+        />
+        <EndActionsRow />
+      </Group>
+
+      <div className="st-legal">
+        <Link to="/privacy">{t("מדיניות פרטיות")}</Link>
+        <span aria-hidden="true">·</span>
+        <Link to="/terms">{t("תנאי שימוש")}</Link>
+      </div>
+
+      {loggingOut && (
+        <div className="confirm-sheet-overlay" onClick={() => setLoggingOut(false)}>
+          <div className="confirm-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="confirm-sheet-handle" />
+            <div className="confirm-sheet-title">{t("להתנתק?")}</div>
+            <p className="add-round-subtitle">{t("תצטרכו להתחבר שוב כדי לחזור.")}</p>
+            <div className="add-round-actions">
+              <button
+                type="button"
+                className="confirm-sheet-btn-confirm confirm-sheet-btn-danger"
+                onClick={handleLogout}
+              >
+                {t("התנתקות")}
+              </button>
+              <button
+                type="button"
+                className="link-btn add-round-cancel"
+                onClick={() => setLoggingOut(false)}
+              >
+                {t("ביטול")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {retaking && selectedSportId && (
+        <RatingQuestionnaire
+          retake
+          sportId={selectedSportId}
+          sportName={sportName}
+          onClose={() => {
+            setRetaking(false);
+            reloadRatings();
+          }}
+        />
+      )}
+    </div>
+  );
 }
 
 /* A second way into your own account. An account opened with Google has no
@@ -71,156 +365,6 @@ function PasswordSection() {
         {t("שמור סיסמה")}
       </button>
     </form>
-  );
-}
-
-export default function Settings() {
-  const { user, updateUser, logout } = useAuth();
-  const { t } = useLanguage();
-  const { selectedSportId, sports } = useSport();
-  const navigate = useNavigate();
-  const [myRatings, setMyRatings] = useState([]);
-  const [retaking, setRetaking] = useState(false);
-
-  function reloadRatings() {
-    api
-      .myRatings()
-      .then(setMyRatings)
-      .catch(() => {});
-  }
-
-  useEffect(() => {
-    reloadRatings();
-  }, []);
-
-  function handleLogout() {
-    logout();
-    navigate("/signin");
-  }
-
-  const sportName = sports.find((s) => s.id === selectedSportId)?.name;
-  const myRating = myRatings.find((r) => r.sport_id === selectedSportId) || null;
-
-  return (
-    <div>
-      <header className="page-head">
-        <div className="page-title-row">
-          <h1>{t("הגדרות")}</h1>
-          <PageHelp
-            pageKey="settings"
-            title="עמוד ההגדרות"
-            text="כאן תוכלו לערוך את הפרופיל שלכם, להפעיל התראות, ולשנות שפה או מראה."
-          />
-        </div>
-        <div className="settings-chips">
-          <LanguageChip />
-        </div>
-      </header>
-
-      <div className="settings-section">
-        <IdentityRow
-          label={t("שם")}
-          value={user?.name}
-          required
-          onSave={async (v) => updateUser(await api.updateProfile({ name: v }))}
-        />
-        <IdentityRow
-          label={t("אזור")}
-          value={user?.area}
-          placeholder={t("לא הוגדר")}
-          onSave={async (v) => updateUser(await api.updateProfile({ area: v }))}
-        />
-        <IdentityRow
-          label={t("רדיוס נסיעה")}
-          value={user?.travel_radius_km}
-          type="number"
-          unit="KM"
-          placeholder={t("לא הוגדר")}
-          onSave={async (v) => updateUser(await api.updateProfile({ travel_radius_km: v === null ? null : Number(v) }))}
-        />
-        <AccountRow user={user} />
-      </div>
-
-      <div className="settings-section">
-        <div className="settings-level-label">{t("YOUR LEVEL")}</div>
-        {myRating ? (
-          <>
-            <div className="settings-level-num" dir="ltr">
-              {myRating.level.toFixed(1)}
-            </div>
-            <div className="settings-level-status" dir="ltr">
-              {myRating.provisional
-                ? t("PROVISIONAL · {n} MATCHES LEFT", {
-                    n: Math.max(0, PROVISIONAL_MATCHES - myRating.rated_matches),
-                  })
-                : myRating.finalized_at
-                ? t("FINAL SINCE {month}", { month: monthAbbrev(myRating.finalized_at, t) })
-                : t("FINAL")}
-            </div>
-            <p className="settings-level-note">{t("הרמה נקבעת מהתוצאות שלך, לא נקבעת ידנית.")}</p>
-            <button type="button" className="settings-link-action" onClick={() => setRetaking(true)}>
-              {t("RETAKE THE QUESTIONNAIRE")}
-            </button>
-          </>
-        ) : (
-          <div className="settings-level-status">{t("לא מדורג")}</div>
-        )}
-      </div>
-
-      <div className="settings-section">
-        <div className="profile-section-header" style={{ justifyContent: "flex-start" }}>
-          <span>{t("NOTIFICATIONS")}</span>
-        </div>
-        <NotificationsSection user={user} updateUser={updateUser} />
-      </div>
-
-      <div className="settings-section">
-        <div className="profile-section-header" style={{ justifyContent: "flex-start" }}>
-          <span>{t("הגדרת סיסמה")}</span>
-        </div>
-        <PasswordSection />
-      </div>
-
-      <div className="settings-section">
-        <LeaveLeagueRow />
-        <EndActionsRow onLogout={handleLogout} />
-      </div>
-
-      <div className="settings-legal">
-        <Link to="/privacy">{t("מדיניות פרטיות")}</Link>
-        <span aria-hidden="true">·</span>
-        <Link to="/terms">{t("תנאי שימוש")}</Link>
-      </div>
-
-      <div className="settings-footer">{t("SAVED AUTOMATICALLY")}</div>
-
-      {retaking && selectedSportId && (
-        <RatingQuestionnaire
-          retake
-          sportId={selectedSportId}
-          sportName={sportName}
-          onClose={() => {
-            setRetaking(false);
-            reloadRatings();
-          }}
-        />
-      )}
-    </div>
-  );
-}
-
-function LanguageChip() {
-  const { language, setLanguage } = useLanguage();
-
-  function cycle() {
-    setLanguage(language === "en" ? "he" : "en");
-  }
-
-  // The chip names the language it is in, so it never translates itself.
-  return (
-    <button type="button" className="settings-chip" onClick={cycle}>
-      {language === "en" ? "English" : "עברית"}
-    </button>
   );
 }
 
@@ -290,21 +434,6 @@ function IdentityRow({ label, value, placeholder, unit, type = "text", required,
    nothing here to edit. Shown because knowing which account you are in is
    worth a line, and because a player with two Google addresses will want to
    check which one Rally knows them by. */
-function AccountRow({ user }) {
-  const { t } = useLanguage();
-  return (
-    <div className="settings-detail-row">
-      <div>
-        <div className="settings-detail-title">{t("אימייל")}</div>
-        <div className="settings-detail-value mono" dir="ltr">
-          {user?.email}
-        </div>
-      </div>
-      <div className="settings-detail-note">{t("מחשבון Google")}</div>
-    </div>
-  );
-}
-
 function NotificationsSection({ user, updateUser }) {
   const { t } = useLanguage();
   const [supported, setSupported] = useState(true);
@@ -379,49 +508,67 @@ function NotificationsSection({ user, updateUser }) {
 
   return (
     <>
-      <div className="settings-detail-row">
-        <div className="settings-detail-title">{t("התראות במכשיר")}</div>
-        {supported && !loading && (
-          <Toggle className="settings-toggle" checked={subscribed} onChange={togglePush} disabled={busy} label={t("התראות במכשיר")} />
-        )}
-      </div>
+      {supported && !loading && (
+        <Row
+          icon={<BellIcon />}
+          title={t("התראות במכשיר")}
+          right={
+            <Toggle
+              className="st-toggle"
+              checked={subscribed}
+              onChange={togglePush}
+              disabled={busy}
+              label={t("התראות במכשיר")}
+            />
+          }
+        />
+      )}
 
       {subscribed && (
-        <div className="settings-detail-row">
-          <div className="settings-detail-title">{tested ? t(tested) : t("בדיקת התראה")}</div>
-          <button type="button" className="link-btn" onClick={sendTest} disabled={busy}>
-            {t("שלח")}
-          </button>
-        </div>
+        <Row
+          icon={<BellIcon />}
+          title={tested ? t(tested) : t("בדיקת התראה")}
+          right={
+            <button type="button" className="st-row-btn" onClick={sendTest} disabled={busy}>
+              {t("שלח")}
+            </button>
+          }
+        />
       )}
 
       {/* There used to be a "result to confirm" row here: a toggle that was
           checked, disabled and locked, with an empty onChange. It existed to
-          say that those always arrive, but a switch nobody can move reads as a
-          broken control. The two rows below are the only real choices. */}
-      <div className="settings-detail-row">
-        <div className="settings-detail-title">{t("הצעות שעה")}</div>
-        <Toggle
-          className="settings-toggle"
-          checked={!!user?.notify_time_proposals}
-          onChange={(v) => savePref({ time_proposals: v })}
-          label={t("הצעות שעה")}
-        />
-      </div>
+          say that those always arrive, but a switch nobody can move reads as
+          a broken control. The rows below are the only real choices. */}
+      <Row
+        icon={<CalendarIcon />}
+        title={t("הצעות שעה")}
+        right={
+          <Toggle
+            className="st-toggle"
+            checked={!!user?.notify_time_proposals}
+            onChange={(v) => savePref({ time_proposals: v })}
+            label={t("הצעות שעה")}
+          />
+        }
+      />
 
-      <div className="settings-detail-row">
-        <div className="settings-detail-title">{t("פתיחת מחזור")}</div>
-        <Toggle
-          className="settings-toggle"
-          checked={!!user?.notify_round_opens}
-          onChange={(v) => savePref({ round_opens: v })}
-          label={t("פתיחת מחזור")}
-        />
-      </div>
+      <Row
+        icon={<TrophyIcon />}
+        title={t("פתיחת מחזור")}
+        right={
+          <Toggle
+            className="st-toggle"
+            checked={!!user?.notify_round_opens}
+            onChange={(v) => savePref({ round_opens: v })}
+            label={t("פתיחת מחזור")}
+          />
+        }
+      />
 
       <QuietHoursRow user={user} onSave={savePref} />
 
-      {error && <p className="error">{t(error)}</p>}
+      {error && <p className="st-error">{t(error)}</p>}
     </>
   );
 }
@@ -454,20 +601,23 @@ function QuietHoursRow({ user, onSave }) {
   }
 
   return (
-    <div className="settings-detail-row">
-      <span className="settings-id-label">{t("שעות שקט")}</span>
-      {editing ? (
-        <div className="settings-quiet-edit" dir="ltr" onBlur={handleGroupBlur}>
-          <input type="time" value={draftFrom} onChange={(e) => setDraftFrom(e.target.value)} autoFocus />
-          <span aria-hidden="true">→</span>
-          <input type="time" value={draftTo} onChange={(e) => setDraftTo(e.target.value)} />
-        </div>
-      ) : (
-        <button type="button" className="settings-id-value" onClick={startEdit} dir="ltr">
-          {from} → {to}
-        </button>
-      )}
-    </div>
+    <Row
+      icon={<CalendarIcon />}
+      title={t("שעות שקט")}
+      right={
+        editing ? (
+          <div className="settings-quiet-edit" dir="ltr" onBlur={handleGroupBlur}>
+            <input type="time" value={draftFrom} onChange={(e) => setDraftFrom(e.target.value)} autoFocus />
+            <span aria-hidden="true">→</span>
+            <input type="time" value={draftTo} onChange={(e) => setDraftTo(e.target.value)} />
+          </div>
+        ) : (
+          <button type="button" className="st-row-btn" onClick={startEdit} dir="ltr">
+            {from} → {to}
+          </button>
+        )
+      }
+    />
   );
 }
 
@@ -520,10 +670,8 @@ function LeaveLeagueRow() {
   if (loaded && leagues.length === 0) return null;
 
   return (
-    <div className="settings-detail-row">
-      <button type="button" className="settings-link-action" onClick={handleClick}>
-        {t("עזיבת ליגה")}
-      </button>
+    <>
+      <Row icon={<TrophyIcon />} title={t("עזיבת ליגה")} onClick={handleClick} />
 
       {picking && !target && (
         <div className="confirm-sheet-overlay" onClick={() => setPicking(false)}>
@@ -579,13 +727,13 @@ function LeaveLeagueRow() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
 
-// settings114b.md — sign-out and delete-account collapse to one gray mono
+// Deleting the account. Signing out is its own row above; this one keeps the
 // line, no danger button or dedicated "danger zone".
-function EndActionsRow({ onLogout }) {
+function EndActionsRow() {
   const { t } = useLanguage();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -615,16 +763,8 @@ function EndActionsRow({ onLogout }) {
   }
 
   return (
-    <div className="settings-detail-row" style={{ flexDirection: "column", alignItems: "stretch" }}>
-      <div className="settings-end-row" dir="ltr">
-        <button type="button" className="settings-end-action" onClick={onLogout}>
-          {t("SIGN OUT")}
-        </button>
-        <span aria-hidden="true">·</span>
-        <button type="button" className="settings-end-action" onClick={openDelete}>
-          {t("DELETE ACCOUNT")}
-        </button>
-      </div>
+    <>
+      <Row icon={<CloseIcon />} title={t("מחיקת החשבון")} danger onClick={openDelete} />
 
       {deleting && (
         <form onSubmit={handleDeleteSubmit} style={{ marginTop: 14 }}>
@@ -657,6 +797,6 @@ function EndActionsRow({ onLogout }) {
           </div>
         </form>
       )}
-    </div>
+    </>
   );
 }

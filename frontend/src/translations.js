@@ -1816,6 +1816,18 @@ const PAIRS = [
   ],
   ["הרמה של הצמד היא {mine}, והליגה הזו פתוחה לרמות {min}–{max}. אפשר לראות הכול כאן, אבל אי אפשר להצטרף.",
    "Your pair's level is {mine}, and this league is open to {min}–{max}. You can read everything here, but not join."],
+
+  // 200b — the settings screen.
+  ["עריכת פרופיל", "Edit profile"],
+  ["חבר/ה מאז {month}", "Member since {month}"],
+  ["רמה", "LEVEL"],
+  ["ענפים", "SPORTS"],
+  ["{n} ק״מ", "{n} km"],
+  ["כללי", "MORE"],
+  ["להתנתק?", "Log out?"],
+  ["תצטרכו להתחבר שוב כדי לחזור.", "You will have to sign in again to come back."],
+  ["מחיקת החשבון", "Delete account"],
+  ["שפה", "Language"],
 ];
 
 const heToEn = {};
