@@ -233,8 +233,13 @@ export default function Home() {
 
     return (
       <article className="ha-next" onClick={() => navigate(`/matches/${match.id}`)}>
+        {/* The drawn court, not the venue's photograph. A real photo of a
+            real court is a busy picture with a fence in front of it, and the
+            chip and the venue name have to sit on top of it — next to the
+            clean illustration on the open-game cards below it, the two did
+            not look like the same app. The photo stays on the venue; it is
+            just not what this card opens with. */}
         <CourtImage
-          photoUrl={match.venue?.image_url}
           surface={match.venue?.surface}
           height={96}
           className="ha-next-court"
@@ -317,8 +322,8 @@ export default function Home() {
         : t("{n} מקומות פנויים", { n: game.seats_left });
     return (
       <article className="ha-og" key={`g${game.id}`} onClick={() => navigate("/games?tab=open")}>
+        {/* Drawn, for the same reason the next-match card is. */}
         <CourtImage
-          photoUrl={game.venue_image_url}
           surface={game.venue_surface}
           height={70}
           className="ha-og-court"
