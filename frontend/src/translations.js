@@ -1886,6 +1886,7 @@ const PAIRS = [
   ["מחכה ל{name}", "Waiting for {name}"],
   ["נסגר {day}", "ends {day}"],
   ["אין לך משחקים פתוחים", "No open matches"],
+  ["עבר הזמן", "Past their time"],
 ];
 
 const heToEn = {};

@@ -10,7 +10,6 @@ import { tintColor, tintFor } from "../tint.js";
 import { PlusIcon } from "../Icons.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
 import {
-  calendarDaysUntil as daysUntil,
   dayMonthPadded as dayMonth,
   weekdayName,
 } from "../matchUtils.js";
@@ -102,11 +101,29 @@ export default function Play() {
   // Somebody else reporting a result is this screen's business too.
   useLiveData(load);
 
+  // How many days away a date is, which can be negative. calendarDaysUntil
+  // clamps at zero — it is written for countdowns — and a match from August
+  // came back as "0 days away", which is how three closed rounds all ended up
+  // under a heading that said "Today".
+  const todayKey = startOfDay(new Date()).getTime();
+  const dayOffset = (date) => Math.round((startOfDay(date).getTime() - todayKey) / 86400000);
+
   const rows = matches ?? [];
   const needsYou = rows.filter((m) => NEEDS_ME.has(m.state));
   const rest = rows.filter((m) => !NEEDS_ME.has(m.state));
-  const scheduled = rest.filter((m) => m.scheduled_at);
-  const undated = rest.filter((m) => !m.scheduled_at);
+  // A match whose time has gone by is not something to plan around, and a
+  // list of upcoming matches that opens with August is not a list of
+  // upcoming matches. They are still real — a voided one has to be moved to
+  // another round by somebody — so they go to the bottom under their own
+  // heading rather than away.
+  const isPast = (m) =>
+    m.state === "not_played" || (m.scheduled_at && dayOffset(new Date(m.scheduled_at)) < 0);
+  const past = rest
+    .filter(isPast)
+    .sort((a, b) => new Date(b.scheduled_at ?? 0) - new Date(a.scheduled_at ?? 0));
+  const live = rest.filter((m) => !isPast(m));
+  const scheduled = live.filter((m) => m.scheduled_at);
+  const undated = live.filter((m) => !m.scheduled_at);
 
   // The sub-line under the title: the first of these that is true, so the
   // screen opens by naming the thing that is actually owed.
@@ -128,7 +145,12 @@ export default function Play() {
     if (next) {
       const at = new Date(next.scheduled_at);
       return t("הבא: {day} {time} מול {name}", {
-        day: daysUntil(at) === 0 ? t("היום") : daysUntil(at) === 1 ? t("מחר") : weekdayName(at, t),
+        day:
+          dayOffset(at) === 0
+            ? t("היום")
+            : dayOffset(at) === 1
+              ? t("מחר")
+              : weekdayName(at, t),
         time: hhmm(at),
         name: next.opponent_name,
       });
@@ -151,11 +173,13 @@ export default function Play() {
       .sort((a, b) => a[0] - b[0])
       .map(([key, items]) => {
         const day = new Date(key);
-        const away = daysUntil(day);
+        const away = dayOffset(day);
         return {
           key: `d${key}`,
           title: away === 0 ? t("היום") : away === 1 ? t("מחר") : weekdayName(day, t),
-          sub: `${weekdayName(day, t)} ${dayMonth(day)}`,
+          // The weekday alone is ambiguous past this week — "Sunday" could be
+          // in four days or in eleven — so the date rides along beside it.
+          sub: away <= 1 ? `${weekdayName(day, t)} ${dayMonth(day)}` : dayMonth(day),
           items,
         };
       });
@@ -167,6 +191,16 @@ export default function Play() {
       const played = at ? `${t("שוחק")} ${weekdayName(at, t)}` : t("שוחק");
       return `${played} · ${t("מחכה לתוצאה")}`;
     }
+    // A row at the bottom of the screen is months old, and the time of day it
+    // was meant to be played at says nothing — the date does, and so does
+    // whatever was agreed about why it never happened.
+    if (at && isPast(match))
+      return [
+        `${weekdayName(at, t)} ${dayMonth(at)}`,
+        match.note ? t(match.note) : match.place,
+      ]
+        .filter(Boolean)
+        .join(" · ");
     if (at) return [hhmm(at), match.place].filter(Boolean).join(" · ");
     const parts = [];
     if (match.round) parts.push(t("מחזור {n}", { n: match.round }));
@@ -181,6 +215,14 @@ export default function Play() {
       return { kind: "go", label: t("דווח תוצאה"), to: `/matches/${match.id}` };
     if (match.state === "confirm_mine")
       return { kind: "go", label: t("אשר תוצאה"), to: `/matches/${match.id}/confirm` };
+    // A proposed time that has already gone by cannot be confirmed — the
+    // server refuses a past time — so the row must not keep offering it.
+    // What is left to do is agree a new one.
+    const stale =
+      (match.state === "time_from_them" || match.state === "time_from_me") &&
+      match.scheduled_at &&
+      new Date(match.scheduled_at).getTime() < Date.now();
+    if (stale) return { kind: "outline", label: t("קבעו זמן"), to: `/matches/${match.id}` };
     if (match.state === "time_from_them")
       return { kind: "go", label: t("אשר את השעה"), to: `/matches/${match.id}` };
     if (match.state === "no_time")
@@ -316,6 +358,7 @@ export default function Play() {
               {group(t("מחכה לך"), null, needsYou, "needs")}
               {dayGroups.map((g) => group(g.title, g.sub, g.items, g.key))}
               {group(t("בלי תאריך"), null, undated, "undated")}
+              {group(t("עבר הזמן"), null, past, "past")}
             </>
           )}
         </div>
