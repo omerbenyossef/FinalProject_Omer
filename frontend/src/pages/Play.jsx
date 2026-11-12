@@ -7,7 +7,7 @@ import { useLanguage } from "../LanguageContext.jsx";
 import { useLiveData } from "../liveData.js";
 import Avatar from "../Avatar.jsx";
 import { tintColor, tintFor } from "../tint.js";
-import { PlusIcon } from "../Icons.jsx";
+import { ChevronIcon, PlusIcon } from "../Icons.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
 import {
   dayMonthPadded as dayMonth,
@@ -41,11 +41,6 @@ function startOfDay(date) {
 function hhmm(date) {
   return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
 }
-
-// What the row offers on the right, and what the line under the name says.
-// One place, so a match cannot be "waiting for you" in the group heading and
-// "all set" on its own row.
-const NEEDS_ME = new Set(["played", "confirm_mine", "time_from_them"]);
 
 export default function Play() {
   const { selectedSportId } = useSport();
@@ -109,38 +104,35 @@ export default function Play() {
   const dayOffset = (date) => Math.round((startOfDay(date).getTime() - todayKey) / 86400000);
 
   const rows = matches ?? [];
-  const needsYou = rows.filter((m) => NEEDS_ME.has(m.state));
-  const rest = rows.filter((m) => !NEEDS_ME.has(m.state));
-  // A match whose time has gone by is not something to plan around, and a
-  // list of upcoming matches that opens with August is not a list of
-  // upcoming matches. They are still real — a voided one has to be moved to
-  // another round by somebody — so they go to the bottom under their own
-  // heading rather than away.
-  const isPast = (m) =>
-    m.state === "not_played" || (m.scheduled_at && dayOffset(new Date(m.scheduled_at)) < 0);
-  const past = rest
-    .filter(isPast)
-    .sort((a, b) => new Date(b.scheduled_at ?? 0) - new Date(a.scheduled_at ?? 0));
-  const live = rest.filter((m) => !isPast(m));
-  const scheduled = live.filter((m) => m.scheduled_at);
-  const undated = live.filter((m) => !m.scheduled_at);
+  // This list answers one question: what do I still have to go and play.
+  //
+  // So a match that has been played is not in it, whoever the score is
+  // waiting on, and neither is one both sides agreed never happened. Those
+  // are paperwork, not fixtures — they have their own screen, and the line
+  // at the foot of the list leads to it rather than mixing them in here.
+  const done = (m) =>
+    m.state === "not_played" ||
+    m.state === "played" ||
+    m.state === "confirm_mine" ||
+    m.state === "waiting_on_them";
+  const owed = rows.filter(done);
+  const toPlay = rows.filter((m) => !done(m));
+  // A proposed time that has already gone by is void — the server will not
+  // confirm it — so the match has no date any more and belongs with the
+  // others that need one, not under a day heading in the past.
+  const scheduled = toPlay.filter(
+    (m) => m.scheduled_at && new Date(m.scheduled_at).getTime() >= Date.now()
+  );
+  const undated = toPlay.filter((m) => !scheduled.includes(m));
 
   // The sub-line under the title: the first of these that is true, so the
   // screen opens by naming the thing that is actually owed.
   const subline = (() => {
     if (matches == null) return "";
-    const toScore = rows.filter((m) => m.state === "played" || m.state === "confirm_mine").length;
-    if (toScore)
-      return toScore === 1
-        ? t("משחק אחד מחכה לתוצאה")
-        : t("{n} משחקים מחכים לתוצאה", { n: toScore });
-    const toSchedule = rows.filter(
-      (m) => m.state === "no_time" || m.state === "time_from_them"
-    ).length;
-    if (toSchedule)
-      return toSchedule === 1
+    if (undated.length)
+      return undated.length === 1
         ? t("משחק אחד מחכה לתיאום")
-        : t("{n} משחקים מחכים לתיאום", { n: toSchedule });
+        : t("{n} משחקים מחכים לתיאום", { n: undated.length });
     const next = scheduled[0];
     if (next) {
       const at = new Date(next.scheduled_at);
@@ -186,22 +178,15 @@ export default function Play() {
   })();
 
   function contextLine(match) {
-    const at = match.scheduled_at ? new Date(match.scheduled_at) : null;
-    if (match.state === "played" || match.state === "confirm_mine") {
-      const played = at ? `${t("שוחק")} ${weekdayName(at, t)}` : t("שוחק");
-      return `${played} · ${t("מחכה לתוצאה")}`;
+    // Only a match with a time still ahead of it prints a time. One whose
+    // proposed time has gone by is sitting under "not scheduled", and
+    // printing the dead date there would contradict the heading above it —
+    // so it says what it is waiting on instead: the round, and when it
+    // closes.
+    if (scheduled.includes(match)) {
+      const at = new Date(match.scheduled_at);
+      return [hhmm(at), match.place].filter(Boolean).join(" · ");
     }
-    // A row at the bottom of the screen is months old, and the time of day it
-    // was meant to be played at says nothing — the date does, and so does
-    // whatever was agreed about why it never happened.
-    if (at && isPast(match))
-      return [
-        `${weekdayName(at, t)} ${dayMonth(at)}`,
-        match.note ? t(match.note) : match.place,
-      ]
-        .filter(Boolean)
-        .join(" · ");
-    if (at) return [hhmm(at), match.place].filter(Boolean).join(" · ");
     const parts = [];
     if (match.round) parts.push(t("מחזור {n}", { n: match.round }));
     if (match.round_ends_at)
@@ -310,7 +295,7 @@ export default function Play() {
   }
 
   const tabs = [
-    { key: "matches", label: t("המשחקים שלי"), count: rows.length },
+    { key: "matches", label: t("המשחקים שלי"), count: matches == null ? null : toPlay.length },
     { key: "open", label: t("אירועים"), count: gameCount },
     { key: "leagues", label: t("ליגות"), count: leagueCount },
   ];
@@ -346,7 +331,7 @@ export default function Play() {
         <div className="pl-matches">
           {matches == null ? (
             <SkeletonBar />
-          ) : rows.length === 0 ? (
+          ) : toPlay.length === 0 ? (
             <div className="pl-empty">
               <p className="pl-empty-text">{t("אין לך משחקים פתוחים")}</p>
               <Link to="/games?tab=open" className="btn-secondary btn-small">
@@ -355,11 +340,21 @@ export default function Play() {
             </div>
           ) : (
             <>
-              {group(t("מחכה לך"), null, needsYou, "needs")}
               {dayGroups.map((g) => group(g.title, g.sub, g.items, g.key))}
               {group(t("בלי תאריך"), null, undated, "undated")}
-              {group(t("עבר הזמן"), null, past, "past")}
             </>
+          )}
+
+          {/* The matches that have been played and are waiting on a score are
+              not fixtures, so they are not in the list — but they must not
+              vanish either. One line to the screen that is about them. */}
+          {owed.length > 0 && (
+            <Link to="/needs-you" className="pl-owed">
+              {owed.length === 1
+                ? t("משחק אחד מחכה לתוצאה")
+                : t("{n} משחקים מחכים לתוצאה", { n: owed.length })}
+              <ChevronIcon aria-hidden="true" />
+            </Link>
           )}
         </div>
       )}

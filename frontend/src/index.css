@@ -10687,6 +10687,15 @@ button.st-row { cursor: pointer; }
 }
 .pl-empty-text { margin: 0; font: 500 14px "IBM Plex Sans", var(--sans); color: #a3abbb; }
 
+/* The one line out of the list, to the matches that are waiting on a score
+   rather than on somebody turning up. */
+.pl-owed {
+  display: flex; align-items: center; gap: 8px; margin-top: 4px;
+  padding: 12px 2px; border-top: 1px solid rgba(148, 163, 184, .08);
+  color: #a3abbb; font: 600 13px "IBM Plex Sans", var(--sans); text-decoration: none;
+}
+.pl-owed .chevron-icon { width: 14px; height: 14px; color: #6f7787; }
+
 /* ---- the friendly button, over every tab ---- */
 .pl-fab {
   position: fixed; inset-inline-end: 18px; bottom: 96px; z-index: 5;
