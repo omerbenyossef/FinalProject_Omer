@@ -63,6 +63,7 @@ def _out(venue: models.Venue) -> schemas.VenueOut:
         sport_id=venue.sport_id,
         sport_name=venue.sport.name if venue.sport else None,
         booking_url=venue.booking_url,
+        city_id=venue.city_id,
         image_url=venue.image_url,
         surface=_clean_surface(venue.surface),
     )
@@ -97,6 +98,7 @@ def create_venue(
         sport_id=payload.sport_id,
         booking_url=_clean_url(payload.booking_url),
         surface=_clean_surface(payload.surface),
+        city_id=payload.city_id,
     )
     db.add(venue)
     db.commit()
@@ -120,6 +122,7 @@ def update_venue(
     venue.sport_id = payload.sport_id
     venue.booking_url = _clean_url(payload.booking_url)
     venue.surface = _clean_surface(payload.surface)
+    venue.city_id = payload.city_id
     db.commit()
     db.refresh(venue)
     return _out(venue)

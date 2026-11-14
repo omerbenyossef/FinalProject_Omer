@@ -691,6 +691,12 @@ class OpenGameOut(BaseModel):
     # colour, not a venue.
     venue_image_url: Optional[str] = None
     venue_surface: Optional[str] = None
+    # 213a — a game's city is its venue's city; it has none of its own,
+    # because the court cannot move. Both names travel, so the list can be
+    # read and filtered in either language without a second request.
+    city_id: Optional[int] = None
+    city_name: Optional[str] = None
+    city_name_en: Optional[str] = None
     level_min: float
     level_max: float
     is_doubles: bool = False
@@ -978,6 +984,7 @@ class VenueOut(BaseModel):
     sport_id: Optional[int] = None
     sport_name: Optional[str] = None
     booking_url: Optional[str] = None
+    city_id: Optional[int] = None
     # Path to the picture endpoint, or None — never the image itself.
     image_url: Optional[str] = None
     # hard | clay | grass, or None. Only picks the colour of the court a card
@@ -993,6 +1000,7 @@ class VenueIn(BaseModel):
     area: Optional[str] = Field(default=None, max_length=120)
     # None means the venue hosts any sport.
     sport_id: Optional[int] = None
+    city_id: Optional[int] = None
     booking_url: Optional[str] = Field(default=None, max_length=500)
     surface: Optional[str] = Field(default=None, max_length=10)
     # The picture is not part of the form: it has its own endpoint, because it
@@ -1412,3 +1420,35 @@ class PlayersNearMeOut(BaseModel):
     count: int = 0
     area: Optional[str] = None
     people: list[PairPlayerOut] = []
+
+
+class CityOut(BaseModel):
+    """One place on the fixed list, with how many open games are in it right
+    now — which is the only thing that makes one suggestion better than
+    another when somebody is typing."""
+
+    id: int
+    name_he: str
+    name_en: str
+    games: int = 0
+
+
+class CitiesOut(BaseModel):
+    cities: list[CityOut] = []
+    # The city this player last looked at, and the few before it, so the
+    # screen opens where they left off instead of asking again.
+    selected_id: Optional[int] = None
+    recent_ids: list[int] = []
+    notify_open_games: bool = False
+    notify_city_id: Optional[int] = None
+
+
+class SelectCityRequest(BaseModel):
+    # null clears the filter and shows every area again.
+    city_id: Optional[int] = None
+
+
+class OpenGameAlertRequest(BaseModel):
+    enabled: bool
+    # null means anywhere; otherwise only games in this city.
+    city_id: Optional[int] = None

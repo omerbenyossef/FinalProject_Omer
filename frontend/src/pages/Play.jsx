@@ -13,7 +13,7 @@ import {
   dayMonthPadded as dayMonth,
   weekdayName,
 } from "../matchUtils.js";
-import OpenGames from "./OpenGames.jsx";
+import JoinGames from "./JoinGames.jsx";
 import Leagues from "./Leagues.jsx";
 
 /* 205a — Play.
@@ -51,6 +51,7 @@ export default function Play() {
 
   const [matches, setMatches] = useState(null);
   const [gameCount, setGameCount] = useState(null);
+  const [myGames, setMyGames] = useState([]);
   const [leagueCount, setLeagueCount] = useState(null);
 
   // The tab the reader last chose, because this screen is somewhere they come
@@ -84,8 +85,18 @@ export default function Play() {
       .catch(() => setMatches([]));
     api
       .openGames(selectedSportId)
-      .then((games) => setGameCount(games.filter((g) => !g.blocked_reason).length))
-      .catch(() => setGameCount(0));
+      .then((games) => {
+        setGameCount(games.filter((g) => !g.mine && !g.joined && !g.blocked_reason).length);
+        // A game I opened or took a seat in is a fixture of mine: a time, a
+        // place, and people turning up. It is not on the join page any more
+        // — that page is other people's games — so this is where it lives.
+        // Once it fills it becomes a real match and leaves again.
+        setMyGames(games.filter((g) => (g.mine || g.joined) && !g.match_id));
+      })
+      .catch(() => {
+        setGameCount(0);
+        setMyGames([]);
+      });
     api
       .myLeagues(selectedPair?.id)
       .then((leagues) => setLeagueCount(leagues.filter((l) => l.sport?.id === selectedSportId).length))
@@ -155,12 +166,25 @@ export default function Play() {
   // the day is the heading people actually scan for.
   const dayGroups = (() => {
     const byDay = new Map();
-    for (const match of scheduled) {
-      const at = new Date(match.scheduled_at);
+    const put = (at, item) => {
       const key = startOfDay(at).getTime();
       if (!byDay.has(key)) byDay.set(key, []);
-      byDay.get(key).push(match);
+      byDay.get(key).push(item);
+    };
+    for (const match of scheduled) put(new Date(match.scheduled_at), { kind: "match", match });
+    // An open game of mine sits in the same day as a league match, because
+    // on the day itself they are the same thing: somewhere to be, with a
+    // racket.
+    for (const game of myGames) {
+      const at = new Date(game.starts_at);
+      if (at.getTime() >= Date.now()) put(at, { kind: "game", game });
     }
+    for (const items of byDay.values())
+      items.sort(
+        (a, b) =>
+          new Date(a.match?.scheduled_at ?? a.game.starts_at) -
+          new Date(b.match?.scheduled_at ?? b.game.starts_at)
+      );
     return [...byDay.entries()]
       .sort((a, b) => a[0] - b[0])
       .map(([key, items]) => {
@@ -277,7 +301,46 @@ export default function Play() {
     );
   }
 
+  // A game of mine that has not filled yet. It is deliberately not a match
+  // row: there is no opponent to name, and the thing it is waiting for is
+  // somebody taking the seat, not a time or a score.
+  function gameRow(game) {
+    const at = new Date(game.starts_at);
+    const left = game.seats_left;
+    return (
+      <button
+        type="button"
+        className="pl-row pl-row--game"
+        key={`g${game.id}`}
+        onClick={() => navigate("/games/open")}
+      >
+        <span className="pl-game-mark" aria-hidden="true">
+          +
+        </span>
+        <span className="pl-row-text">
+          <span className="pl-row-name" dir="auto">
+            {game.where
+              ? t("{format} ב{venue}", {
+                  format: game.is_doubles ? t("זוגות") : t("יחידים"),
+                  venue: game.where,
+                })
+              : game.is_doubles
+                ? t("זוגות")
+                : t("יחידים")}
+          </span>
+          <span className="pl-row-ctx" dir="auto">
+            {[hhmm(at), game.mine ? t("האירוע שלך") : t("הצטרפת")].filter(Boolean).join(" · ")}
+          </span>
+        </span>
+        <span className="pl-chip">
+          {left === 1 ? t("נותר מקום אחד") : t("נותרו {n} מקומות", { n: left })}
+        </span>
+      </button>
+    );
+  }
+
   function group(title, sub, items, key) {
+    items = items.map((i) => (i.kind ? i : { kind: "match", match: i }));
     if (!items.length) return null;
     return (
       <section className="pl-group" key={key}>
@@ -289,14 +352,18 @@ export default function Play() {
             </span>
           )}
         </div>
-        <div className="pl-card">{items.map(matchRow)}</div>
+        <div className="pl-card">
+          {items.map((item) =>
+            item.kind === "game" ? gameRow(item.game) : matchRow(item.match)
+          )}
+        </div>
       </section>
     );
   }
 
   const tabs = [
-    { key: "matches", label: t("המשחקים שלי"), count: matches == null ? null : toPlay.length },
-    { key: "open", label: t("אירועים"), count: gameCount },
+    { key: "matches", label: t("המשחקים שלי"), count: matches == null ? null : toPlay.length + myGames.length },
+    { key: "open", label: t("להצטרף"), count: gameCount },
     { key: "leagues", label: t("ליגות"), count: leagueCount },
   ];
 
@@ -361,7 +428,7 @@ export default function Play() {
 
       {/* The two lists are the screens that already existed, with their own
           top bars off: here they are tabs, not pages somebody pushed. */}
-      {tab === "open" && <OpenGames embedded />}
+      {tab === "open" && <JoinGames />}
       {tab === "leagues" && <Leagues embedded />}
 
       {/* A friendly is one tap and no list, so it is not a tab — it is the

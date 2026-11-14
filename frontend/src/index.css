@@ -10680,6 +10680,16 @@ button.st-row { cursor: pointer; }
 }
 .pl-chip svg { width: 11px; height: 11px; }
 
+/* An open game of mine, in among the matches. No opponent to put a face to
+   yet — the mark says what it is waiting for. */
+.pl-row--game { background: rgba(var(--court-rgb, 198, 242, 78), .05); }
+.pl-game-mark {
+  flex: none; width: 40px; height: 40px; border-radius: 50%; box-sizing: border-box;
+  border: 1.5px dashed rgba(var(--court-rgb, 198, 242, 78), .55);
+  display: grid; place-items: center;
+  font: 600 18px "IBM Plex Sans", var(--sans); color: var(--court, #c6f24e);
+}
+
 .pl-empty {
   display: flex; flex-direction: column; align-items: flex-start; gap: 12px;
   padding: 22px 18px; border-radius: 20px; background: #161b22;
@@ -10721,3 +10731,152 @@ button.st-row { cursor: pointer; }
   font: 600 12.5px "IBM Plex Sans", var(--sans); cursor: pointer;
 }
 .og-chip.is-on { background: #eef1f7; color: #0e1116; font-weight: 700; }
+
+/* ============================================================
+   join-a-game 213a / 213b / 212b
+
+   The tab this replaces was three things at once: the games I opened, the
+   games I could take, and a button to open another. The one thing people
+   come here to do — take a seat in somebody else's game — shared the screen
+   with two things they didn't. This page does that one thing, and the only
+   control on it is the one that decides whether a game is reachable: where
+   it is.
+   ============================================================ */
+
+.jg { display: flex; flex-direction: column; gap: 18px; }
+.jg-h1 { margin: 0; font: 700 24px/1.15 "IBM Plex Sans", var(--sans); color: #f4f6fa; }
+
+/* ---- the city bar ---- */
+.jg-search { display: flex; gap: 8px; }
+.jg-field {
+  flex: 1; min-width: 0; height: 46px; border-radius: 23px; background: #161b22;
+  display: flex; align-items: center; gap: 9px; padding: 0 16px;
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, .16);
+}
+/* A chosen city, or one being typed, is the thing the whole list depends on,
+   so the field says so in the sport's own colour. */
+.jg-field.is-on {
+  box-shadow: inset 0 0 0 1.5px rgba(var(--court-rgb, 198, 242, 78), .55);
+}
+.jg-field > svg { flex: none; width: 17px; height: 17px; color: #8b93a6; }
+.jg-field.is-on > svg { color: var(--court, #c6f24e); }
+.jg-input {
+  flex: 1; min-width: 0; border: 0; background: none; color: #eef1f7;
+  font: 500 14.5px "IBM Plex Sans", var(--sans); outline: none;
+}
+.jg-input::placeholder { color: #8b93a6; }
+.jg-field-city { flex: 1; min-width: 0; font: 600 14.5px "IBM Plex Sans", var(--sans); }
+.jg-clear {
+  flex: none; width: 28px; height: 28px; border: 0; border-radius: 50%;
+  background: rgba(148, 163, 184, .14); color: #c9cfdb;
+  display: grid; place-items: center; cursor: pointer;
+}
+.jg-clear svg { width: 13px; height: 13px; }
+
+/* ---- what you are typing ---- */
+.jg-sug {
+  margin-top: -8px; border-radius: 18px; overflow: hidden; background: #161b22;
+  box-shadow: 0 18px 40px -16px rgba(0, 0, 0, .7);
+}
+.jg-sug-row {
+  width: 100%; display: flex; align-items: center; gap: 12px;
+  padding: 13px 16px; border: 0; border-top: 1px solid rgba(148, 163, 184, .08);
+  background: none; color: #eef1f7; text-align: start; cursor: pointer;
+}
+.jg-sug-row:first-child { border-top: 0; }
+.jg-sug-row--empty { color: #8b93a6; font: 500 14px "IBM Plex Sans", var(--sans); cursor: default; }
+.jg-sug-row > svg { flex: none; width: 16px; height: 16px; color: #8b93a6; }
+.jg-sug-name { flex: 1; min-width: 0; font: 600 15px "IBM Plex Sans", var(--sans); }
+/* The part that matched what was typed, so the row says why it is here. */
+.jg-sug-hit { color: var(--court, #c6f24e); font-weight: 700; }
+.jg-sug-count { flex: none; font: 500 12.5px "IBM Plex Sans", var(--sans); color: #8b93a6; }
+
+.jg-recent { margin-top: -8px; display: flex; flex-direction: column; gap: 8px; }
+.jg-recent-label { font: 600 12.5px "IBM Plex Sans", var(--sans); color: #8b93a6; }
+.jg-recent-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.jg-chip {
+  height: 32px; padding: 0 14px; border: 0; border-radius: 16px;
+  background: rgba(148, 163, 184, .10); color: #d6d9e0;
+  font: 600 13px "IBM Plex Sans", var(--sans); cursor: pointer;
+}
+
+.jg-formats { display: flex; gap: 8px; flex-wrap: wrap; }
+.jg-format {
+  height: 30px; padding: 0 13px; border: 0; border-radius: 15px;
+  background: rgba(148, 163, 184, .10); color: #a3abbb;
+  font: 600 12.5px "IBM Plex Sans", var(--sans); cursor: pointer;
+}
+.jg-format.is-on { background: #eef1f7; color: #0e1116; font-weight: 700; }
+
+.jg-count { margin: -6px 0 0; font: 600 13px "IBM Plex Sans", var(--sans); color: #8b93a6; }
+.jg-count-city { color: #eef1f7; }
+.jg-error { margin: 0; }
+
+/* ---- the game ---- */
+.jg-list { display: flex; flex-direction: column; gap: 12px; }
+.jg-card {
+  border-radius: 24px; overflow: hidden;
+  background: linear-gradient(
+      160deg,
+      rgba(var(--court-rgb, 198, 242, 78), .14),
+      rgba(var(--court-rgb, 198, 242, 78), .03) 55%
+    ),
+    #161b22;
+  box-shadow: inset 0 1px 0 rgba(var(--court-rgb, 198, 242, 78), .4),
+    inset 0 0 0 1px rgba(var(--court-rgb, 198, 242, 78), .14);
+}
+.jg-top { display: flex; align-items: flex-start; gap: 12px; padding: 16px; }
+.jg-when {
+  flex: none; width: 52px; padding: 7px 0; border-radius: 14px;
+  background: rgba(14, 17, 22, .55);
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+}
+.jg-when-day { font: 600 10.5px "IBM Plex Sans", var(--sans); color: #a3abbb; }
+.jg-when-time { font: 400 18px/1 "Anton", var(--display); color: #f4f6fa; }
+.jg-when-date { font: 500 10px "IBM Plex Sans", var(--sans); color: #6f7787; }
+.jg-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+/* Who opened it, in words. A face here made the card about the person; it is
+   about the game, and the name is what you need to answer the invitation. */
+.jg-host { font: 600 12.5px "IBM Plex Sans", var(--sans); color: #c9cfdb; }
+.jg-title { margin: 0; font: 700 18px/1.25 "IBM Plex Sans", var(--sans); color: #f4f6fa; }
+.jg-level { font: 500 13px "IBM Plex Sans", var(--sans); color: #8b93a6; }
+
+.jg-foot {
+  padding: 14px 16px 16px; background: rgba(14, 17, 22, .35);
+  border-top: 1px solid rgba(var(--court-rgb, 198, 242, 78), .14);
+  display: flex; flex-direction: column; gap: 12px;
+}
+.jg-status { display: flex; flex-direction: column; gap: 2px; }
+.jg-status-main { font: 700 14px "IBM Plex Sans", var(--sans); color: #f4f6fa; }
+.jg-status-sub { font: 500 12px "IBM Plex Sans", var(--sans); color: #8b93a6; }
+.jg-join {
+  width: 100%; height: 46px; border: 0; border-radius: 23px;
+  background: var(--court, #c6f24e); color: #0e1116;
+  font: 700 15px "IBM Plex Sans", var(--sans); cursor: pointer;
+  box-shadow: 0 8px 22px -8px rgba(var(--court-rgb, 198, 242, 78), .7);
+}
+/* After joining: the same pill, no longer asking for anything. */
+.jg-in {
+  width: 100%; height: 46px; border: 0; border-radius: 23px; cursor: pointer;
+  background: rgba(var(--court-rgb, 198, 242, 78), .14); color: var(--court, #c6f24e);
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font: 700 15px "IBM Plex Sans", var(--sans); box-sizing: border-box;
+}
+.jg-in svg { width: 14px; height: 14px; }
+
+/* ---- nothing to join ---- */
+.jg-empty {
+  display: flex; flex-direction: column; gap: 12px; align-items: flex-start;
+  padding: 22px 18px; border-radius: 20px; background: #161b22;
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, .08);
+}
+.jg-empty-title { margin: 0; font: 700 16px "IBM Plex Sans", var(--sans); color: #f4f6fa; }
+.jg-empty-text { margin: 0; font: 500 13.5px/1.45 "IBM Plex Sans", var(--sans); color: #8b93a6; }
+.jg-notify {
+  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding-top: 6px; font: 600 13.5px "IBM Plex Sans", var(--sans); color: #d6d9e0;
+}
+.jg-showall {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  font: 600 13px "IBM Plex Sans", var(--sans); color: var(--court, #c6f24e);
+}

@@ -91,6 +91,9 @@ def _out(db: Session, game: models.OpenGame, user: models.User) -> schemas.OpenG
         where=game.where,
         venue_image_url=game.venue.image_url if game.venue else None,
         venue_surface=game.venue.surface if game.venue else None,
+        city_id=game.venue.city_id if game.venue else None,
+        city_name=game.venue.city.name_he if game.venue and game.venue.city else None,
+        city_name_en=game.venue.city.name_en if game.venue and game.venue.city else None,
         level_min=game.level_min,
         level_max=game.level_max,
         is_doubles=bool(game.is_doubles),
@@ -202,6 +205,7 @@ def _hand_over_to_match(db: Session, game: models.OpenGame) -> models.Match | No
 def list_open_games(
     sport_id: int,
     mine: bool = False,
+    city_id: int | None = None,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
@@ -215,6 +219,13 @@ def list_open_games(
     query = _live(_loaded(db).filter(models.OpenGame.sport_id == sport_id))
     if mine:
         query = query.filter(models.OpenGame.created_by == current_user.id)
+    if city_id is not None:
+        # Through the venue, because a game has no city of its own. A game
+        # with no venue at all has no city either, so it drops out of a
+        # filtered list rather than showing up in every city.
+        query = query.join(models.Venue, models.Venue.id == models.OpenGame.venue_id).filter(
+            models.Venue.city_id == city_id
+        )
     games = query.order_by(models.OpenGame.starts_at).all()
     return [_out(db, g, current_user) for g in games]
 
@@ -266,8 +277,55 @@ def open_game(
     # The people around this player are the ones who can take the other seat.
     activity.open_game_created(db, current_user, game)
     db.commit()
+    _alert_watchers(db, game, current_user)
     db.refresh(game)
     return _out(db, game, current_user)
+
+
+def _alert_watchers(db: Session, game: models.OpenGame, host: models.User) -> None:
+    """Tell everyone who asked to hear about a new game here.
+
+    After the commit, and never allowed to fail the request: the game is
+    open either way, and a push that did not go out is not a reason for the
+    person who opened it to see an error.
+
+    Narrowed to people who could actually take a seat — the right sport, the
+    right level, and the city they asked about — because a notification
+    about a game you cannot join is the kind that teaches people to turn
+    notifications off."""
+    city_id = game.venue.city_id if game.venue else None
+    try:
+        watchers = (
+            db.query(models.User)
+            .filter(
+                models.User.notify_open_games.is_(True),
+                models.User.id != host.id,
+                models.User.deleted_at.is_(None),
+                models.User.is_demo.isnot(True),
+            )
+            .all()
+        )
+        for user in watchers:
+            wanted = user.notify_open_games_city_id
+            if wanted is not None and wanted != city_id:
+                continue
+            if _blocked_reason(db, game, user):
+                continue
+            where = game.where or ""
+            notify_user(
+                db,
+                user.id,
+                title="נפתח אירוע חדש",
+                body=f"{host.name} פתח אירוע{f' ב{where}' if where else ''}",
+                title_en="A new game is open",
+                body_en=f"{host.name} opened a game{f' at {where}' if where else ''}",
+                url="/games?tab=open",
+                type="open_game",
+                actor_name=host.name,
+            )
+    except Exception:
+        # Best effort, by design. See the docstring.
+        pass
 
 
 def _seat(db: Session, game: models.OpenGame, user: models.User, pair: models.Pair | None) -> None:
@@ -286,6 +344,12 @@ def join(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
+    # Lock the game row first, so two people tapping Join at the same moment
+    # are serialized and the second one reads the seat the first one took.
+    # Without it both pass the "not full" check and the game ends up with
+    # three people in two seats. SQLite ignores FOR UPDATE and serializes
+    # writes anyway; Postgres, where this actually races, honours it.
+    db.query(models.OpenGame).filter(models.OpenGame.id == game_id).with_for_update().first()
     game = _loaded(db).filter(models.OpenGame.id == game_id).first()
     if not game or game.status != models.OpenGameStatus.open:
         raise HTTPException(status_code=404, detail="האירוע לא נמצא")

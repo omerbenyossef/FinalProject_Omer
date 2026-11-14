@@ -114,8 +114,18 @@ export const api = {
   myLeagues: (pairId) => request(`/leagues/mine${pairId ? `?pair_id=${pairId}` : ""}`),
 
   // 189b — games somebody opened that anyone at the right level can join.
-  openGames: (sportId, { mine = false } = {}) =>
-    request(`/open-games?sport_id=${sportId}${mine ? "&mine=true" : ""}`),
+  openGames: (sportId, { mine = false, cityId = null } = {}) =>
+    request(
+      `/open-games?sport_id=${sportId}${mine ? "&mine=true" : ""}${
+        cityId ? `&city_id=${cityId}` : ""
+      }`
+    ),
+
+  // 213a — the fixed list of places, each with how many games are in it.
+  cities: (sportId) => request(`/cities${sportId ? `?sport_id=${sportId}` : ""}`),
+  selectCity: (cityId) => request("/cities/select", { method: "POST", body: { city_id: cityId } }),
+  setOpenGameAlert: (enabled, cityId) =>
+    request("/cities/alert", { method: "POST", body: { enabled, city_id: cityId } }),
   createOpenGame: (body) => request("/open-games", { method: "POST", body }),
   joinOpenGame: (id) => request(`/open-games/${id}/join`, { method: "POST" }),
   leaveOpenGame: (id) => request(`/open-games/${id}/leave`, { method: "POST" }),

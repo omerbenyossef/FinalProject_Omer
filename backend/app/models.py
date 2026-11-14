@@ -75,6 +75,16 @@ class User(Base):
     travel_radius_km = Column(Float, nullable=True)
     # "he" (the default) or "en" — set from the app when the reader switches.
     language = Column(String, nullable=True)
+    # 213a — the city whose games this player is looking at, and the last few
+    # they looked at before it. Kept on the account rather than in the
+    # browser: the phone and the laptop are the same person looking for a
+    # game in the same place.
+    last_city_id = Column(Integer, ForeignKey("cities.id"), nullable=True)
+    recent_city_ids = Column(JSON, nullable=True)
+    # "Tell me when somebody opens a game" — the one thing an empty list can
+    # offer. Null is off; the city narrows it, and null city means anywhere.
+    notify_open_games = Column(Boolean, nullable=True)
+    notify_open_games_city_id = Column(Integer, ForeignKey("cities.id"), nullable=True)
     notify_time_proposals = Column(Boolean, nullable=False, default=True)
     notify_round_opens = Column(Boolean, nullable=False, default=True)
     quiet_hours_from = Column(String, nullable=True, default="22:00")
@@ -541,6 +551,24 @@ class OpenGameJoin(Base):
     pair = relationship("Pair", foreign_keys=[pair_id])
 
 
+class City(Base):
+    """A place on a fixed list, so an area is one thing and not three.
+
+    "Where" was free text and a user's `area` was whatever they typed, which
+    meant "תל אביב", "ת״א" and "Tel Aviv" were three different cities and a
+    filter on any of them found a third of the games. A row with both names
+    on it is the same city however it is written or read."""
+
+    __tablename__ = "cities"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name_en = Column(String, nullable=False)
+    name_he = Column(String, nullable=False)
+
+    def label(self, language: str | None) -> str:
+        return self.name_en if language == "en" else self.name_he
+
+
 class Venue(Base):
     """A place people actually play, with the address that books it.
 
@@ -567,6 +595,10 @@ class Venue(Base):
     # admin can set it; players only ever see it.
     image = Column(Text, nullable=True)
     image_updated_at = Column(DateTime, nullable=True)
+    # Which city this venue is in, from the fixed list. The game's city is
+    # its venue's city: a game has no city of its own, because the court it
+    # is played on cannot move.
+    city_id = Column(Integer, ForeignKey("cities.id"), nullable=True, index=True)
     # hard | clay | grass. Only used to colour the drawn court a card falls
     # back to when the venue has no photograph — blue for hard, green for the
     # other two — so an unknown surface is no worse than a guess.
@@ -583,6 +615,7 @@ class Venue(Base):
         return f"/venues/{self.id}/image?v={stamp}"
 
     sport = relationship("Sport")
+    city = relationship("City")
 
 
 class MatchMessage(Base):

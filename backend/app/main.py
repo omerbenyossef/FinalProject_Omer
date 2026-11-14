@@ -10,6 +10,7 @@ from .database import Base, engine, SessionLocal
 from .routers import (
     activity,
     auth,
+    cities,
     chat,
     home,
     friendly,
@@ -132,6 +133,60 @@ def seed_sports() -> None:
 
 
 seed_sports()
+
+
+# 213a — the fixed list of places. Free text made "תל אביב", "ת״א" and
+# "Tel Aviv" three different areas, so a filter on any of them found a third
+# of the games. Both names live on one row; the client shows whichever the
+# reader is reading in. The list is the places people actually play in, and
+# grows by adding a line here rather than by somebody typing.
+DEFAULT_CITIES = [
+    ("Tel Aviv", "תל אביב"),
+    ("Ramat Gan", "רמת גן"),
+    ("Givatayim", "גבעתיים"),
+    ("Herzliya", "הרצליה"),
+    ("Ra'anana", "רעננה"),
+    ("Kfar Saba", "כפר סבא"),
+    ("Hod Hasharon", "הוד השרון"),
+    ("Petah Tikva", "פתח תקווה"),
+    ("Rishon LeZion", "ראשון לציון"),
+    ("Holon", "חולון"),
+    ("Bat Yam", "בת ים"),
+    ("Rehovot", "רחובות"),
+    ("Ness Ziona", "נס ציונה"),
+    ("Modi'in", "מודיעין"),
+    ("Jerusalem", "ירושלים"),
+    ("Haifa", "חיפה"),
+    ("Netanya", "נתניה"),
+    ("Hadera", "חדרה"),
+    ("Ashdod", "אשדוד"),
+    ("Ashkelon", "אשקלון"),
+    ("Be'er Sheva", "באר שבע"),
+    ("Eilat", "אילת"),
+    ("Tiberias", "טבריה"),
+    ("Nahariya", "נהריה"),
+    ("Kiryat Ono", "קריית אונו"),
+    ("Ramat Hasharon", "רמת השרון"),
+    ("Yehud", "יהוד"),
+    ("Rosh Ha'ayin", "ראש העין"),
+    ("Lod", "לוד"),
+    ("Ramla", "רמלה"),
+]
+
+
+def seed_cities() -> None:
+    db = SessionLocal()
+    try:
+        existing = {c.name_he for c in db.query(models.City).all()}
+        for name_en, name_he in DEFAULT_CITIES:
+            if name_he not in existing:
+                db.add(models.City(name_en=name_en, name_he=name_he))
+        db.commit()
+    finally:
+        db.close()
+
+
+seed_cities()
 
 
 def clear_public_league_codes() -> None:
@@ -391,6 +446,7 @@ app.include_router(chat.router)
 app.include_router(venues.router)
 app.include_router(notifications.router)
 app.include_router(activity.router)
+app.include_router(cities.router)
 
 
 @app.get("/health")
