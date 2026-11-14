@@ -10882,3 +10882,114 @@ button.st-row { cursor: pointer; }
   border: 0; background: none; padding: 0; cursor: pointer;
   font: 600 13px "IBM Plex Sans", var(--sans); color: var(--court, #c6f24e);
 }
+
+/* ============================================================
+   home-214 — what is next for me
+
+   The screen this replaces had grown into a magazine: a photograph of a
+   court, a carousel of other people's games, a feed of other people's
+   results. All of it true, none of it the answer — and the one thing the
+   reader came for sat in the middle of it looking like everything else.
+
+   Nothing here is a picture. The next match, the one thing the app is
+   waiting on, three numbers, two ways out.
+   ============================================================ */
+
+.content:has(.hm) { padding: 0; }
+
+.hm {
+  display: flex; flex-direction: column; gap: 22px;
+  padding: 10px 18px 24px; box-sizing: border-box;
+  background: #0e1116; color: #eef1f7; min-height: 100%;
+}
+
+.hm-hello {
+  margin: 0; font: 700 24px/1.15 "IBM Plex Sans", var(--sans); color: #f4f6fa;
+}
+.hm-error { margin: 0; }
+
+/* The card that carries the sport's colour. Only ever one or two on the
+   screen, which is what makes it mean anything. */
+.hm-glow {
+  border-radius: 22px; padding: 18px; display: flex; flex-direction: column; gap: 12px;
+  background: linear-gradient(
+      160deg,
+      rgba(var(--court-rgb, 198, 242, 78), .16),
+      rgba(var(--court-rgb, 198, 242, 78), .03) 60%
+    ),
+    #161b22;
+  box-shadow: inset 0 1px 0 rgba(var(--court-rgb, 198, 242, 78), .35),
+    inset 0 0 0 1px rgba(var(--court-rgb, 198, 242, 78), .12);
+}
+.hm-plain {
+  border-radius: 20px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px;
+  background: #161b22; box-shadow: inset 0 0 0 1px rgba(148, 163, 184, .08);
+}
+.hm-label {
+  font: 600 12px "IBM Plex Sans", var(--sans); color: var(--court, #c6f24e);
+}
+.hm-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.hm-col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.hm-when { font: 700 21px/1.2 "IBM Plex Sans", var(--sans); color: #f4f6fa; }
+.hm-task { font: 700 18px/1.2 "IBM Plex Sans", var(--sans); color: #f4f6fa; }
+.hm-sub {
+  font: 500 13px/1.35 "IBM Plex Sans", var(--sans); color: #a3abbb;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.hm-plain .hm-sub { font-size: 12.5px; }
+
+.hm-go, .hm-outline {
+  flex: none; height: 34px; padding: 0 14px; border-radius: 17px; border: 0;
+  font: 700 13px "IBM Plex Sans", var(--sans); cursor: pointer; white-space: nowrap;
+}
+.hm-go { background: var(--court, #c6f24e); color: #0e1116; }
+/* The next step is never the loudest thing on the screen: the match is. */
+.hm-outline {
+  background: none; color: var(--court, #c6f24e);
+  box-shadow: inset 0 0 0 1.5px var(--court, #c6f24e);
+}
+
+/* Nothing owed. */
+.hm-glow--set { align-items: flex-start; gap: 12px; }
+.hm-check {
+  width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
+  background: rgba(var(--court-rgb, 198, 242, 78), .16); color: var(--court, #c6f24e);
+}
+.hm-check svg { width: 16px; height: 16px; }
+.hm-set { font: 700 22px/1.2 "IBM Plex Sans", var(--sans); color: #f4f6fa; }
+.hm-go--wide { height: 36px; padding: 0 16px; border-radius: 18px; }
+
+/* Three numbers. No icons: a number with a word under it is already a tile. */
+.hm-stats { display: flex; gap: 8px; }
+.hm-stat {
+  flex: 1; min-width: 0; border-radius: 18px; padding: 13px 14px;
+  display: flex; flex-direction: column; gap: 10px;
+  background: #161b22; box-shadow: inset 0 0 0 1px rgba(148, 163, 184, .08);
+}
+.hm-stat-value { font: 700 22px/1.1 "IBM Plex Sans", var(--sans); color: #eef1f7; }
+.hm-stat-label {
+  font: 500 11.5px/1.2 "IBM Plex Sans", var(--sans); color: #8b93a6;
+}
+
+/* Two ways off this screen. Both the same green, so neither is the answer —
+   the cards above are. */
+.hm-tiles { display: flex; gap: 10px; }
+.hm-tile {
+  position: relative; flex: 1; min-width: 0; min-height: 88px; border: 0;
+  border-radius: 20px; padding: 14px; cursor: pointer; text-align: start;
+  display: flex; flex-direction: column; gap: 3px;
+  background: linear-gradient(160deg, rgba(47, 138, 90, .35), rgba(47, 138, 90, .08) 60%), #161b22;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08);
+  color: #eef1f7;
+}
+.hm-tile-title { font: 700 16px "IBM Plex Sans", var(--sans); padding-inline-end: 34px; }
+.hm-tile-sub {
+  font: 500 12px/1.35 "IBM Plex Sans", var(--sans); color: #c9cfdb;
+  padding-inline-end: 34px;
+}
+.hm-tile-arrow {
+  position: absolute; top: 12px; inset-inline-end: 12px;
+  width: 30px; height: 30px; border-radius: 50%;
+  background: rgba(255, 255, 255, .10);
+  display: grid; place-items: center; font-size: 14px; color: #eef1f7;
+}

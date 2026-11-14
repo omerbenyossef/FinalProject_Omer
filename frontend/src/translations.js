@@ -1922,6 +1922,23 @@ const PAIRS = [
   ["מחזורים הבאים", "Later rounds"],
   ["נפתח {date}", "opens {date}"],
   ["נסגר {day} {date}", "ends {day} {date}"],
+  // 214 — the home screen that answers "what is next for me".
+  ["המשחק הבא שלך", "Your next match"],
+  ["הצעד הבא", "Next step"],
+  ["{name} הציע/ה שעה", "{name} suggested a time"],
+  ["הגב", "Respond"],
+  ["קבעו זמן למשחק", "Schedule your match"],
+  ["צפה במשחק", "View match"],
+  ["בליגה שלך", "In your league"],
+  ["אין כרגע אירועים לידך", "No open games near you right now"],
+  ["אירוע אחד לידך השבוע", "1 open game near you this week"],
+  ["{n} אירועים לידך השבוע", "{n} open games near you this week"],
+  ["הכל מתואם", "all matches scheduled"],
+  ["משחק אחד לתאם", "1 match to schedule"],
+  ["{n} משחקים לתאם", "{n} matches to schedule"],
+  ["ניצחונות רצופים", "Win streak"],
+  ["{name} הזמין/ה אותך למשחק", "{name} invited you to play"],
+  ["לתשובה", "Respond"],
 ];
 
 const heToEn = {};
