@@ -388,6 +388,20 @@ def _round_ends_at(league: models.League, round_number: int | None) -> datetime 
     return first_end + timedelta(days=(league.round_length_days or 7) * (round_number - 1))
 
 
+def _round_starts_at(league: models.League, round_number: int | None) -> datetime | None:
+    """When a round opens: the moment the one before it closed. Round 1 opens
+    when the schedule does.
+
+    Needed because every round in a league ends on a Saturday — rounds are
+    whole weeks — so "ends Sat" is true of all of them and says nothing about
+    which one is actually being played now."""
+    if not league or not league.schedule_started_at or not round_number:
+        return None
+    if round_number <= 1:
+        return league.schedule_started_at
+    return _round_ends_at(league, round_number - 1)
+
+
 def _classify_open_item(match: models.Match, user_id: int, round_over: bool = False) -> str | None:
     """Which of needsyou112a.md's four tile types (or None) a match is for
     this viewer. Mirrors matchUtils.js's matchScheduleState/getActionCandidates

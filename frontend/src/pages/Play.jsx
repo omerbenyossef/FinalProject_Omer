@@ -142,7 +142,15 @@ export default function Play() {
   const scheduled = toPlay.filter(
     (m) => m.scheduled_at && new Date(m.scheduled_at).getTime() >= Date.now()
   );
-  const undated = toPlay.filter((m) => !scheduled.includes(m));
+  // A match in a round nobody has reached yet is not "waiting for a time" —
+  // there is nothing to arrange until the round opens. Two of them sat under
+  // "not scheduled" next to a live one, all three saying "ends SAT", because
+  // every round in a league ends on a Saturday.
+  const notYet = (m) =>
+    m.round_starts_at && new Date(m.round_starts_at).getTime() > Date.now();
+  const rest2 = toPlay.filter((m) => !scheduled.includes(m));
+  const later = rest2.filter(notYet);
+  const undated = rest2.filter((m) => !notYet(m));
 
   // The sub-line under the title: the first of these that is true, so the
   // screen opens by naming the thing that is actually owed.
@@ -221,8 +229,18 @@ export default function Play() {
     }
     const parts = [];
     if (match.round) parts.push(t("מחזור {n}", { n: match.round }));
-    if (match.round_ends_at)
-      parts.push(t("נסגר {day}", { day: weekdayName(new Date(match.round_ends_at), t) }));
+    // With the date, not just the weekday: rounds are whole weeks, so every
+    // one of them ends on a Saturday and "ends Sat" told the reader nothing
+    // about which round they were looking at.
+    if (notYet(match))
+      parts.push(t("נפתח {date}", { date: dayMonth(new Date(match.round_starts_at)) }));
+    else if (match.round_ends_at)
+      parts.push(
+        t("נסגר {day} {date}", {
+          day: weekdayName(new Date(match.round_ends_at), t),
+          date: dayMonth(new Date(match.round_ends_at)),
+        })
+      );
     if (!parts.length) parts.push(match.league_name || t("ידידותי"));
     return parts.join(" · ");
   }
@@ -417,6 +435,7 @@ export default function Play() {
             <>
               {dayGroups.map((g) => group(g.title, g.sub, g.items, g.key))}
               {group(t("בלי תאריך"), null, undated, "undated")}
+              {group(t("מחזורים הבאים"), null, later, "later")}
             </>
           )}
 

@@ -17,7 +17,7 @@ from ..auth import get_current_user
 from ..database import get_db
 from ..match_sides import in_pair, mine as match_mine, my_side_is_first, opponent_label, opponents, teammate
 from ..rating_utils import get_rating, match_winner_id, round_to_half
-from .leagues import _compute_my_standing, _current_round_number, _round_ends_at
+from .leagues import _compute_my_standing, _current_round_number, _round_ends_at, _round_starts_at
 from .matches import _auto_confirm_overdue
 from .schedule import _not_played_void
 
@@ -644,6 +644,7 @@ def my_matches(
                 venue=_venue_out(match),
                 note=_void_note(match, current_user.id) if _not_played_void(match) else None,
                 round_ends_at=_round_ends_at(league, match.round_number) if league else None,
+                round_starts_at=_round_starts_at(league, match.round_number) if league else None,
             )
         )
 

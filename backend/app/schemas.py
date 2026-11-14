@@ -1156,6 +1156,11 @@ class HomeWeekMatchOut(BaseModel):
     # so a row has to know when its round closes. Null for a friendly, which
     # has no round to close.
     round_ends_at: Optional[UtcDatetime] = None
+    # And when it opens. Every round ends on a Saturday, so the closing date
+    # alone cannot tell a round being played now from one three weeks out —
+    # which is how two matches in rounds nobody had reached yet ended up
+    # under "not scheduled", both saying "ends SAT".
+    round_starts_at: Optional[UtcDatetime] = None
 
 
 class RescheduleRoundOptionOut(BaseModel):

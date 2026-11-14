@@ -1919,6 +1919,9 @@ const PAIRS = [
   ["נפתח אירוע חדש", "A new game is open"],
   ["משחק אחד ממחזור שנסגר", "1 match from a closed round"],
   ["{n} משחקים ממחזורים שנסגרו", "{n} matches from closed rounds"],
+  ["מחזורים הבאים", "Later rounds"],
+  ["נפתח {date}", "opens {date}"],
+  ["נסגר {day} {date}", "ends {day} {date}"],
 ];
 
 const heToEn = {};
