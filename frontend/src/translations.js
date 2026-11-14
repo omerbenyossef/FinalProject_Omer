@@ -1917,6 +1917,8 @@ const PAIRS = [
   ["עדכנו אותי על אירועים ב{city}", "Notify me for {city}"],
   ["הצג את כל האזורים", "Show all areas"],
   ["נפתח אירוע חדש", "A new game is open"],
+  ["משחק אחד ממחזור שנסגר", "1 match from a closed round"],
+  ["{n} משחקים ממחזורים שנסגרו", "{n} matches from closed rounds"],
 ];
 
 const heToEn = {};

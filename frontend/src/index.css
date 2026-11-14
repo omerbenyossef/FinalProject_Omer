@@ -10596,9 +10596,11 @@ button.st-row { cursor: pointer; }
 .pl {
   position: relative;
   display: flex; flex-direction: column; gap: 20px;
-  /* The floating button's height plus a gap, so the last row is never under
-     it — the one thing a button that hovers always gets wrong. */
-  padding: 8px 18px 92px; box-sizing: border-box;
+  /* Clear of the floating button at the bottom of the viewport: it sits
+     96px up and is 52px tall, so anything less than this leaves the last
+     row underneath it — the one thing a button that hovers always gets
+     wrong. */
+  padding: 8px 18px 160px; box-sizing: border-box;
   background: #0e1116; color: #eef1f7; min-height: 100%;
 }
 

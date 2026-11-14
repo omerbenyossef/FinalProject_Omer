@@ -126,8 +126,16 @@ export default function Play() {
     m.state === "played" ||
     m.state === "confirm_mine" ||
     m.state === "waiting_on_them";
+  // A league match whose round has already closed is not a fixture either,
+  // whatever state it is in. Three of them sat under "not scheduled" saying
+  // "ends SAT" about a Saturday in September — offering to arrange a match
+  // in a round that is over. The app already has a screen for leftover
+  // business, and that is where they belong.
+  const leftover = (m) =>
+    !done(m) && m.round_ends_at && new Date(m.round_ends_at).getTime() < Date.now();
   const owed = rows.filter(done);
-  const toPlay = rows.filter((m) => !done(m));
+  const stale = rows.filter(leftover);
+  const toPlay = rows.filter((m) => !done(m) && !leftover(m));
   // A proposed time that has already gone by is void — the server will not
   // confirm it — so the match has no date any more and belongs with the
   // others that need one, not under a day heading in the past.
@@ -420,6 +428,14 @@ export default function Play() {
               {owed.length === 1
                 ? t("משחק אחד מחכה לתוצאה")
                 : t("{n} משחקים מחכים לתוצאה", { n: owed.length })}
+              <ChevronIcon aria-hidden="true" />
+            </Link>
+          )}
+          {stale.length > 0 && (
+            <Link to="/needs-you" className="pl-owed">
+              {stale.length === 1
+                ? t("משחק אחד ממחזור שנסגר")
+                : t("{n} משחקים ממחזורים שנסגרו", { n: stale.length })}
               <ChevronIcon aria-hidden="true" />
             </Link>
           )}
