@@ -9,9 +9,11 @@ import { TrophyIcon, ChevronIcon } from "../Icons.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
 import {
   NTRP_STEPS,
+  calendarDaysUntil,
   currentRoundNumber,
+  monthName,
   roundDueDateObj,
-  weekdayFull,
+  weekdayName,
 } from "../matchUtils.js";
 import { SportIcon } from "../SportSwitcher.jsx";
 import { usePairs } from "../PairContext.jsx";
@@ -59,6 +61,25 @@ const OPEN_OPTIONS = [
 ];
 // Local calendar day, not toISOString — that shifts to UTC and can land on the
 // day before.
+// The shared weekday and month labels are stored in capitals, because other
+// screens print them in mono where capitals are the typeface's own voice.
+// Here they are words in a sentence, and "ends SATURDAY" reads as an alarm.
+// Hebrew has no letter case, so lowercasing is a no-op there.
+function sentenceCase(label) {
+  return label.charAt(0) + label.slice(1).toLowerCase();
+}
+
+function shortDate(date, t) {
+  return `${date.getDate()} ${sentenceCase(monthName(date, t))}`;
+}
+
+// A weekday only tells you which day when it is inside the coming week. Past
+// that it is ambiguous — "Sat" could be in two days or in sixteen — so the
+// date says it instead.
+function dayLabel(date, t) {
+  return calendarDaysUntil(date) > 7 ? shortDate(date, t) : sentenceCase(weekdayName(date, t));
+}
+
 function isoDay(date) {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
@@ -461,7 +482,7 @@ export default function Leagues({ embedded = false }) {
           total
             ? t("מחזור {n} מתוך {total}", { n: round, total })
             : t("מחזור {n}", { n: round }),
-          endsAt ? t("נסגר {day}", { day: weekdayFull(new Date(endsAt), t) }) : null,
+          endsAt ? t("נסגר {day}", { day: dayLabel(new Date(endsAt), t) }) : null,
         ]
           .filter(Boolean)
           .join(" · ");
@@ -540,7 +561,11 @@ export default function Leagues({ embedded = false }) {
               {[
                 `NTRP ${(league.level_min ?? 1.5).toFixed(1)}–${(league.level_max ?? 7).toFixed(1)}`,
                 league.starts_at
-                  ? t("מתחילה {date}", { date: longDate(league.starts_at, language) })
+                  ? t("מתחילה {date}", {
+                      date: `${sentenceCase(
+                        weekdayName(new Date(league.starts_at), t)
+                      )} ${shortDate(new Date(league.starts_at), t)}`,
+                    })
                   : null,
               ]
                 .filter(Boolean)
@@ -666,7 +691,7 @@ export default function Leagues({ embedded = false }) {
                             needs.match.league_name,
                             needs.match.round_ends_at
                               ? t("נסגר {day}", {
-                                  day: weekdayFull(new Date(needs.match.round_ends_at), t),
+                                  day: dayLabel(new Date(needs.match.round_ends_at), t),
                                 })
                               : null,
                           ]
