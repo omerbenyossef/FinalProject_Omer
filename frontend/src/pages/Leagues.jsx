@@ -66,7 +66,7 @@ const OPEN_OPTIONS = [
 // Here they are words in a sentence, and "ends SATURDAY" reads as an alarm.
 // Hebrew has no letter case, so lowercasing is a no-op there.
 function sentenceCase(label) {
-  return label.charAt(0) + label.slice(1).toLowerCase();
+  return label.charAt(0).toUpperCase() + label.slice(1).toLowerCase();
 }
 
 function shortDate(date, t) {

@@ -11129,3 +11129,115 @@ button.st-row { cursor: pointer; }
   font: 600 15px "IBM Plex Sans", var(--sans); color: var(--court, #c6f24e);
   text-align: start;
 }
+
+/* ============================================================
+   player-220b — somebody else's page
+
+   It used to be a column of mono headings — PLAYER, HEAD TO HEAD, LAST
+   MEETINGS, SHARED LEAGUES — above numbers with no sentence around them.
+   A page about a person should read like one.
+   ============================================================ */
+
+.content:has(.pv) { padding: 0; }
+
+.pv {
+  display: flex; flex-direction: column; gap: 18px;
+  padding: 4px 18px 24px; box-sizing: border-box;
+  background: #0e1116; color: #eef1f7; min-height: 100%;
+}
+.pv-top { padding: 10px 0 2px; }
+.pv-back {
+  width: 36px; height: 36px; border: 0; border-radius: 50%;
+  background: rgba(148, 163, 184, .10); color: #eef1f7;
+  display: grid; place-items: center; cursor: pointer;
+}
+/* The app-wide chevron points forward; a way back points the other way, and
+   which way that is depends on the language. Same rule as .back-link. */
+.pv-back .chevron-icon { width: 18px; height: 18px; transform: scaleX(-1); }
+[dir="ltr"] .pv-back .chevron-icon { transform: none; }
+
+.pv-head { display: flex; align-items: center; gap: 14px; }
+.pv-head .avatar { flex: none; }
+.pv-id { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.pv-name {
+  margin: 0; font: 700 26px/1.1 "IBM Plex Sans", var(--sans); color: #eef1f7;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.pv-sub { font: 500 13px "IBM Plex Sans", var(--sans); color: #8b93a6; }
+
+/* Four numbers in one strip, divided rather than boxed: they are one
+   thought about this player, not four cards. */
+.pv-stats { display: flex; border-radius: 18px; background: #161b22; padding: 18px 4px; }
+.pv-stat {
+  flex: 1; min-width: 0; padding: 0 12px;
+  display: flex; flex-direction: column; gap: 4px;
+  border-inline-start: 1px solid rgba(148, 163, 184, .10);
+}
+.pv-stat:first-child { border-inline-start: 0; }
+.pv-stat-value {
+  font: 700 18px/1.15 "IBM Plex Sans", var(--sans); color: #eef1f7;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* A streak is words, not a figure — "3 losses" in a column sized for "4.5".
+   It gets its own size rather than making every number smaller. */
+.pv-stat--words .pv-stat-value { font-size: 15px; }
+.pv-stat-label { font: 500 11.5px "IBM Plex Sans", var(--sans); color: #8b93a6; }
+
+.pv-sec { display: flex; flex-direction: column; gap: 10px; }
+.pv-sec-title { margin: 0; font: 600 13px "IBM Plex Sans", var(--sans); color: #8b93a6; }
+.pv-card { border-radius: 18px; overflow: hidden; background: #161b22; }
+
+.pv-row {
+  display: flex; align-items: center; gap: 12px; padding: 8px 16px;
+  border-top: 1px solid rgba(148, 163, 184, .10);
+}
+.pv-row:first-child { border-top: 0; }
+/* The result in a word, in its own colour: a row of W and L is a scorecard,
+   and this is a page somebody reads. */
+.pv-badge {
+  flex: none; min-width: 40px; height: 22px; padding: 0 8px; border-radius: 11px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font: 700 11px "IBM Plex Sans", var(--sans);
+}
+.pv-badge.is-win { background: rgba(var(--court-rgb, 198, 242, 78), .16); color: var(--court, #c6f24e); }
+.pv-badge.is-loss { background: rgba(255, 122, 107, .14); color: #ff7a6b; }
+.pv-row-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.pv-row-when { font: 600 14px "IBM Plex Sans", var(--sans); color: #eef1f7; }
+.pv-row-sub {
+  font: 500 11.5px "IBM Plex Sans", var(--sans); color: #8b93a6;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pv-score { flex: none; font: 700 16px "IBM Plex Sans", var(--sans); color: #eef1f7; }
+
+.pv-total {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 8px 16px; border-top: 1px solid rgba(148, 163, 184, .10);
+  background: rgba(14, 17, 22, .25);
+}
+.pv-total-label { font: 500 12.5px "IBM Plex Sans", var(--sans); color: #8b93a6; }
+.pv-total-value { font: 600 12.5px "IBM Plex Sans", var(--sans); color: #c9cfdb; }
+.pv-total-value b { color: var(--court, #c6f24e); }
+
+.pv-league {
+  width: 100%; display: flex; align-items: center; gap: 12px; padding: 13px 16px;
+  border: 0; border-top: 1px solid rgba(148, 163, 184, .10);
+  background: none; color: inherit; text-align: start; cursor: pointer;
+}
+.pv-league:first-child { border-top: 0; }
+.pv-league-name {
+  flex: 1; min-width: 0; font: 600 15px "IBM Plex Sans", var(--sans); color: #eef1f7;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pv-league-ranks {
+  flex: none; white-space: nowrap;
+  font: 500 13px "IBM Plex Sans", var(--sans); color: #8b93a6;
+}
+.pv-league-ranks b { color: #eef1f7; font-weight: 700; }
+.pv-chev { flex: none; width: 16px; height: 16px; color: #8b93a6; }
+
+.pv-invite {
+  align-self: center; margin-top: 2px; height: 38px; padding: 0 16px;
+  border: 0; border-radius: 19px; background: none; cursor: pointer;
+  box-shadow: inset 0 0 0 1px var(--court, #c6f24e); color: var(--court, #c6f24e);
+  font: 500 13.5px "IBM Plex Sans", var(--sans);
+}

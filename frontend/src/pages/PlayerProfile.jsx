@@ -7,23 +7,42 @@ import { useLanguage } from "../LanguageContext.jsx";
 import Avatar from "../Avatar.jsx";
 import { ChevronIcon } from "../Icons.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
-import { formatSets, monthName } from "../matchUtils.js";
+import { tintColor } from "../tint.js";
+import { monthName } from "../matchUtils.js";
 
+/* 220b — somebody else's page.
 
-function joinedLabel(joinedAt, t) {
-  const d = new Date(joinedAt);
-  return t("הצטרף ב-{month} {year}", { month: monthName(d, t), year: d.getFullYear() });
+   It used to be a column of mono headings — PLAYER, HEAD TO HEAD, LAST
+   MEETINGS, SHARED LEAGUES — above numbers with no sentence around them.
+   This says the same things as a page about a person: who they are, how
+   they have done, every time the two of you have met, and where you both
+   stand in the leagues you share. */
+
+// The shared month labels are stored in capitals for the screens that set
+// them in mono. In a sentence they are just shouting.
+function sentenceCase(label) {
+  return label.charAt(0).toUpperCase() + label.slice(1).toLowerCase();
 }
 
-function leagueCountLabel(n, t) {
-  return n === 1 ? t("ליגה אחת") : t("{n} ליגות", { n });
+// "1st" reads as a placing in English; Hebrew has no ordinal suffix to glue
+// to a digit, so there it stays a number.
+function place(rank, language) {
+  if (rank == null) return "—";
+  if (language !== "en") return String(rank);
+  const teens = rank % 100;
+  const suffix = teens >= 11 && teens <= 13 ? "th" : ["th", "st", "nd", "rd"][rank % 10] ?? "th";
+  return `${rank}${suffix}`;
+}
+
+function firstName(name) {
+  return (name || "").trim().split(/\s+/)[0] || "";
 }
 
 export default function PlayerProfile() {
   const { playerId } = useParams();
   const { user } = useAuth();
   const { selectedSportId } = useSport();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [h2h, setH2h] = useState(null);
@@ -52,162 +71,193 @@ export default function PlayerProfile() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [numericPlayerId]);
 
-  // my-profile-171a: my own profile is its own screen now, so this one is
-  // only ever about someone else.
+  // my-profile-171a: my own profile is its own screen, so this one is only
+  // ever about somebody else.
   if (isSelf) return <Navigate to="/me" replace />;
+
+  const back = (
+    <div className="pv-top">
+      <button
+        type="button"
+        className="pv-back"
+        onClick={() => navigate(-1)}
+        aria-label={t("חזרה")}
+      >
+        <ChevronIcon aria-hidden="true" />
+      </button>
+    </div>
+  );
 
   if (error) return <p className="error">{t(error)}</p>;
 
   if (!profile) {
     return (
-      <div>
-        <div className="pp-nav">
-          <button type="button" className="pp-nav-back" onClick={() => navigate(-1)} aria-label={t("חזרה")}>
-            <ChevronIcon aria-hidden="true" />
-          </button>
-          <span className="pp-nav-label">{t("PLAYER")}</span>
-        </div>
-        <SkeletonBar width={180} height={38} style={{ marginTop: 18 }} />
-        <SkeletonBar width={140} height={12} style={{ marginTop: 10 }} />
+      <div className="pv">
+        {back}
+        <SkeletonBar width={180} height={38} />
+        <SkeletonBar width={140} height={12} />
       </div>
     );
   }
 
-  const neverPlayed = h2h && h2h.matches.length === 0;
-  const recentMeetings = h2h ? h2h.matches.slice(0, 3) : [];
-  const leadState = h2h && !neverPlayed ? (h2h.wins > h2h.losses ? "lead" : h2h.wins < h2h.losses ? "trail" : "even") : null;
+  const first = firstName(profile.name);
+  const joined = new Date(profile.joined_at);
+  const meetings = h2h?.matches ?? [];
+  const record = `${profile.wins}–${profile.losses}`;
+  const streak =
+    profile.streak > 0 && profile.streak_won != null
+      ? profile.streak_won
+        ? profile.streak === 1
+          ? t("{n} ניצחון", { n: 1 })
+          : t("{n} ניצחונות", { n: profile.streak })
+        : profile.streak === 1
+          ? t("{n} הפסד", { n: 1 })
+          : t("{n} הפסדים", { n: profile.streak })
+      : "—";
 
-  function goToChallenge() {
-    navigate("/friendly/new", { state: { presetOpponent: { id: profile.id, name: profile.name } } });
-  }
+  const stats = [
+    { value: profile.ntrp != null ? profile.ntrp.toFixed(1) : "—", label: t("NTRP") },
+    { value: profile.rank != null ? `#${profile.rank}` : "—", label: t("דירוג") },
+    { value: record, label: t("מאזן") },
+    { value: streak, label: t("רצף"), words: true },
+  ];
 
   return (
-    <div className="pp-page">
-      <div className="pp-nav">
-        <button type="button" className="pp-nav-back" onClick={() => navigate(-1)} aria-label={t("חזרה")}>
-          <ChevronIcon aria-hidden="true" />
-        </button>
-        <span className="pp-nav-label">{t("PLAYER")}</span>
+    <div className="pv">
+      {back}
+
+      <header className="pv-head">
+        <Avatar
+          name={profile.name}
+          photoUrl={profile.photo_url}
+          size={60}
+          background={tintColor(profile.name)}
+          color="#0e1116"
+          fontSize={24}
+        />
+        <div className="pv-id">
+          <h1 className="pv-name" dir="auto">
+            {profile.name}
+          </h1>
+          <span className="pv-sub" dir="auto">
+            {[
+              profile.league_count === 1
+                ? t("ליגה אחת")
+                : t("{n} ליגות", { n: profile.league_count }),
+              t("הצטרף ב-{month} {year}", {
+                month: sentenceCase(monthName(joined, t)),
+                year: joined.getFullYear(),
+              }),
+            ].join(" · ")}
+          </span>
+        </div>
+      </header>
+
+      <div className="pv-stats">
+        {stats.map((stat) => (
+          <div className={`pv-stat${stat.words ? " pv-stat--words" : ""}`} key={stat.label}>
+            <span className="pv-stat-value" dir="auto">
+              {stat.value}
+            </span>
+            <span className="pv-stat-label">{stat.label}</span>
+          </div>
+        ))}
       </div>
 
-      {/* The one screen that is entirely about a person, so their face leads
-          it. Without a photo the circle is dropped rather than shown as an
-          initial — the name is right there, an inch high. */}
-      {profile.photo_url && (
-        <div className="pp-photo">
-          <Avatar name={profile.name} photoUrl={profile.photo_url} size={72} />
-        </div>
+      {meetings.length > 0 && (
+        <section className="pv-sec">
+          <h2 className="pv-sec-title">
+            {t("משחקים מול")} <bdi>{first}</bdi>
+          </h2>
+          <div className="pv-card">
+            {meetings.map((m) => {
+              const iWon = m.my_score > m.opponent_score;
+              const at = m.played_at ? new Date(m.played_at) : null;
+              // One set reads as the score people remember ("6–4"); more
+              // than one would not fit, so those say how the match went.
+              const score =
+                m.sets?.length === 1
+                  ? `${m.sets[0].player1_games}–${m.sets[0].player2_games}`
+                  : `${m.my_score}–${m.opponent_score}`;
+              return (
+                <div className="pv-row" key={m.id}>
+                  <span className={`pv-badge${iWon ? " is-win" : " is-loss"}`}>
+                    {sentenceCase(iWon ? t("ניצחון") : t("הפסד"))}
+                  </span>
+                  <span className="pv-row-text">
+                    <span className="pv-row-when" dir="auto">
+                      {at ? `${at.getDate()} ${sentenceCase(monthName(at, t))}` : t("ידידותי")}
+                    </span>
+                    <span className="pv-row-sub" dir="auto">
+                      {m.kind === "friendly"
+                        ? t("ידידותי")
+                        : [
+                            m.league_name,
+                            m.round_number
+                              ? sentenceCase(t("מחזור {n}", { n: m.round_number }))
+                              : null,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
+                    </span>
+                  </span>
+                  <span className="pv-score" dir="ltr">
+                    {score}
+                  </span>
+                </div>
+              );
+            })}
+            <div className="pv-total">
+              <span className="pv-total-label">{t("סך הכול")}</span>
+              <span className="pv-total-value">
+                <b>{h2h.wins}</b>
+                {` ${h2h.wins === 1 ? t("ניצחון") : t("ניצחונות")} · ${h2h.losses} ${
+                  h2h.losses === 1 ? t("הפסד") : t("הפסדים")
+                }`}
+              </span>
+            </div>
+          </div>
+        </section>
       )}
-
-      <h1 className="pp-name">
-        <span dir="auto" style={{ unicodeBidi: "isolate" }}>
-          {profile.name}
-        </span>
-      </h1>
-      <p className="pp-sub" dir="ltr">
-        {leagueCountLabel(profile.league_count, t)} · {joinedLabel(profile.joined_at, t)}
-      </p>
-
-      <div className="pp-stats">
-        <div className="pp-stat">
-          <div className="pp-stat-num" dir="ltr">
-            {profile.ntrp != null ? profile.ntrp.toFixed(1) : "—"}
-          </div>
-          <div className="pp-stat-label">{t("NTRP")}</div>
-        </div>
-        <div className="pp-stat">
-          <div className="pp-stat-num" dir="ltr">
-            {profile.rank != null ? (
-              <>
-                {profile.rank}
-                <span className="pp-stat-of">/{profile.total_players}</span>
-              </>
-            ) : (
-              "—"
-            )}
-          </div>
-          <div className="pp-stat-label">{profile.rank != null ? t("RANK") : t("UNRANKED")}</div>
-        </div>
-        <div className="pp-stat">
-          <div className="pp-stat-num" dir="ltr">
-            {profile.wins}-{profile.losses}
-          </div>
-          <div className="pp-stat-label">{t("RECORD")}</div>
-        </div>
-        <div className="pp-stat">
-          <div className={`pp-stat-num${profile.streak > 0 && !profile.streak_won ? " dim" : ""}`} dir="ltr">
-            {profile.streak > 0 ? `${profile.streak_won ? "W" : "L"}${profile.streak}` : "—"}
-          </div>
-          <div className="pp-stat-label">{t("STREAK")}</div>
-        </div>
-      </div>
-
-      {neverPlayed ? (
-          <p className="pp-never-played">{t("NEVER PLAYED")}</p>
-        ) : h2h ? (
-          <>
-            <div className="pp-h2h">
-              <div className="pp-h2h-label">{t("HEAD TO HEAD")}</div>
-              <div className="pp-h2h-row">
-                <span className="pp-h2h-score" dir="ltr">
-                  {h2h.wins}-{h2h.losses}
-                </span>
-                <span className={`pp-h2h-lead${leadState === "lead" ? " lime" : ""}`}>
-                  {leadState === "lead" ? t("YOU LEAD") : leadState === "trail" ? t("HE LEADS") : t("EVEN")}
-                </span>
-              </div>
-            </div>
-
-            <div className="pp-meetings">
-              <div className="pp-meetings-label">{t("LAST MEETINGS")}</div>
-              {recentMeetings.map((m) => {
-                const iWon = m.my_score > m.opponent_score;
-                const context = m.kind === "friendly" ? t("ידידותי") : `${m.league_name} · R${m.round_number}`;
-                return (
-                  <div className="pp-meeting-row" key={m.id}>
-                    <span className={`pp-meeting-badge${iWon ? " win" : " loss"}`}>{iWon ? "W" : "L"}</span>
-                    <span className="pp-meeting-context">
-                      {m.kind === "friendly" ? (
-                        context
-                      ) : (
-                        <>
-                          <span dir="auto" style={{ unicodeBidi: "isolate" }}>{m.league_name}</span> · {t("מחזור {n}", { n: m.round_number })}
-                        </>
-                      )}
-                    </span>
-                    <span className="pp-meeting-score" dir="ltr">
-                      {formatSets(iWon ? m.sets : m.sets?.map((s) => ({ player1_games: s.player2_games, player2_games: s.player1_games })))}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </>
-      ) : null}
 
       {profile.shared_leagues.length > 0 && (
-        <div className="pp-shared">
-          <div className="pp-shared-label">{t("SHARED LEAGUES")}</div>
-          {profile.shared_leagues.map((l) => (
-            <div className="pp-shared-row" key={l.id}>
-              <span className="pp-shared-name">
-                <span dir="auto" style={{ unicodeBidi: "isolate" }}>
-                  {l.name}
+        <section className="pv-sec">
+          <h2 className="pv-sec-title">{t("ליגות משותפות")}</h2>
+          <div className="pv-card">
+            {profile.shared_leagues.map((league) => (
+              <button
+                type="button"
+                className="pv-league"
+                key={league.id}
+                onClick={() => navigate(`/leagues/${league.id}`)}
+              >
+                <span className="pv-league-name" dir="auto">
+                  {league.name}
                 </span>
-              </span>
-              <span className="pp-shared-ranks">
-                {t("אתה")} {l.my_rank != null ? `#${l.my_rank}` : "—"} ·{" "}
-                {t("הוא")} {l.opponent_rank != null ? `#${l.opponent_rank}` : "—"}
-              </span>
-            </div>
-          ))}
-        </div>
+                <span className="pv-league-ranks">
+                  {`${sentenceCase(t("אתה"))} `}
+                  <b>{place(league.my_rank, language)}</b>
+                  {" · "}
+                  <bdi>{first}</bdi>{" "}
+                  <b>{place(league.opponent_rank, language)}</b>
+                </span>
+                <ChevronIcon className="pv-chev" aria-hidden="true" />
+              </button>
+            ))}
+          </div>
+        </section>
       )}
 
-      <button type="button" className="pp-challenge" onClick={goToChallenge}>
-          <span className="pp-dot-lime" aria-hidden="true" />
-        <span className="pp-challenge-label">{t("הזמן למשחק חברות")}</span>
-        <ChevronIcon aria-hidden="true" />
+      <button
+        type="button"
+        className="pv-invite"
+        onClick={() =>
+          navigate("/friendly/new", {
+            state: { presetOpponent: { id: profile.id, name: profile.name } },
+          })
+        }
+      >
+        {t("הזמן למשחק ידידותי")}
       </button>
     </div>
   );

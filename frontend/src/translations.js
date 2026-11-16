@@ -1464,7 +1464,7 @@ const PAIRS = [
   ["הוא מוביל", "HE LEADS"],
   ["תיקו", "EVEN"],
   ["המפגשים האחרונים", "LAST MEETINGS"],
-  ["ליגות משותפות", "SHARED LEAGUES"],
+  ["ליגות משותפות", "Leagues together"],
   ["לא שיחקתם", "NEVER PLAYED"],
   ["לא מדורג", "UNRANKED"],
   ["הזמן למשחק חברות", "Invite to a friendly match"],
@@ -1953,6 +1953,18 @@ const PAIRS = [
   ["ליגה אחת שהסתיימה", "1 finished league"],
   ["{n} ליגות שהסתיימו", "{n} finished leagues"],
   ["אין ליגות פתוחות ברמה שלך", "No open leagues at your level"],
+  // 220b — somebody else's page.
+  ["מאזן", "Record"],
+  ["רצף", "Streak"],
+  ["משחקים מול", "Matches vs"],
+  ["{n} ניצחונות", "{n} wins"],
+  ["{n} הפסדים", "{n} losses"],
+  ["ניצחון אחד", "1 win"],
+  ["הפסד אחד", "1 loss"],
+  ["סך הכול", "Total"],
+  ["הזמן למשחק ידידותי", "Invite to a friendly match"],
+  ["{n} ניצחון", "{n} win"],
+  ["{n} הפסד", "{n} loss"],
 ];
 
 const heToEn = {};
