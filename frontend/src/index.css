@@ -11121,13 +11121,17 @@ button.st-row { cursor: pointer; }
   font: 700 14px "IBM Plex Sans", var(--sans); cursor: pointer;
 }
 
-/* The way to a new league: a line at the foot of the screen, not a button
-   competing with the list above it. */
+/* The way to a new league: one quiet pill under the list, centred — the same
+   shape as the invite button on a player's page. It was a full-width line
+   with a rule above it, which read as another row of the list rather than
+   as the one thing you can do to the whole of it. */
 .lg2-new {
-  width: 100%; border: 0; background: none; cursor: pointer;
-  border-top: 1px solid rgba(148, 163, 184, .10); padding: 14px 0;
-  font: 600 15px "IBM Plex Sans", var(--sans); color: var(--court, #c6f24e);
-  text-align: start;
+  align-self: center; margin-bottom: 6px;
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 38px; padding: 0 16px; border: 0; border-radius: 19px;
+  background: none; cursor: pointer;
+  box-shadow: inset 0 0 0 1px var(--court, #c6f24e); color: var(--court, #c6f24e);
+  font: 500 13.5px "IBM Plex Sans", var(--sans);
 }
 
 /* ============================================================
