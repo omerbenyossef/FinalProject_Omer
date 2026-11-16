@@ -4,20 +4,16 @@ import { api } from "../api";
 import { useAuth } from "../AuthContext.jsx";
 import { useSport } from "../SportContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
-import { useOpenAction } from "../OpenActionContext.jsx";
 import EmptyState from "../EmptyState.jsx";
-import { TrophyIcon, ChevronIcon, PlusIcon } from "../Icons.jsx";
+import { TrophyIcon, ChevronIcon } from "../Icons.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
 import {
-  leagueRuleLabels,
   NTRP_STEPS,
   currentRoundNumber,
-  activeRoundStatus,
-  matchSides,
+  roundDueDateObj,
   weekdayFull,
 } from "../matchUtils.js";
 import { SportIcon } from "../SportSwitcher.jsx";
-import OpenLeagueCard from "../OpenLeagueCard.jsx";
 import { usePairs } from "../PairContext.jsx";
 import RatingQuestionnaire from "../RatingQuestionnaire.jsx";
 
@@ -29,170 +25,6 @@ function rankLabel(rank, language, t) {
   const suffix =
     teens >= 11 && teens <= 13 ? "th" : ["th", "st", "nd", "rd"][rank % 10] ?? "th";
   return `${rank}${suffix}`;
-}
-
-/* 190b — one row per league of mine: where I stand, how far through the
-   season it is, and when I play next. Replaces 175a's row, which said the
-   same things in one grey meta line and left the standing out of it
-   altogether.
-
-   The next-match line is deliberately neutral ("הבא: …"), not "X is waiting
-   for your reply" — that wording belongs to the home screen, and on a list of
-   six leagues it reads as six accusations. */
-function MyLeagueRow({ league, nextEntry, userId, t, language }) {
-  const round = currentRoundNumber(league.schedule_started_at, league.round_length_days || 7);
-  const total = league.planned_rounds ?? null;
-  // Nothing on the server marks a season finished, so the only signal is the
-  // round count running past the planned number of rounds.
-  const over = total != null && round != null && round > total;
-  const players = league.my_members_total ?? league.member_count ?? 0;
-  const place = league.my_rank;
-  const { daysLeft } = activeRoundStatus(league.schedule_started_at, league.round_length_days || 7);
-
-  const meta = [];
-  if (over) meta.push(t("העונה נגמרה"));
-  else if (round != null) meta.push(total ? t("מחזור {n}/{total}", { n: round, total }) : t("מחזור {n}", { n: round }));
-  if (!over && daysLeft != null)
-    meta.push(daysLeft === 1 ? t("נותר יום אחד") : t("נותרו {n} ימים", { n: daysLeft }));
-  if (!over && daysLeft == null && players) meta.push(t("{n} שחקנים", { n: players }));
-
-  // "הבא: שבת 09:00 מול נועם ברק". In padel the opponent is a pair, so the
-  // name comes from matchSides rather than from player1/player2.
-  let nextLine = null;
-  if (!over && nextEntry) {
-    const m = nextEntry.match;
-    const facing = matchSides(m, userId).opponentLabel;
-    if (m.scheduled_at) {
-      const at = new Date(m.scheduled_at);
-      const hhmm = `${String(at.getHours()).padStart(2, "0")}:${String(at.getMinutes()).padStart(2, "0")}`;
-      nextLine = t("הבא: {day} {time} מול {name}", {
-        day: weekdayFull(at, t),
-        time: hhmm,
-        name: facing,
-      });
-    } else {
-      nextLine = t("הבא: עוד לא נקבעה שעה");
-    }
-  }
-
-  return (
-    <Link to={`/leagues/${league.id}`} className={`lg-row${over ? " is-over" : ""}`}>
-      {/* Where I stand, as the first thing on the row — LTR, because "#3" and
-          "OF 12" are a number and a count, not words. */}
-      <span className="lg-place" dir="ltr">
-        {place != null ? (
-          <>
-            <span className="lg-place-n">#{place}</span>
-            <span className="lg-place-of">OF {players}</span>
-          </>
-        ) : (
-          <span className="lg-place-of">{players ? `OF ${players}` : "—"}</span>
-        )}
-      </span>
-      <span className="lg-row-body">
-        {/* The block keeps the row's own alignment; only the name itself runs
-            in its own direction, so a Hebrew league name doesn't flush right
-            in an English list. */}
-        <span className="lg-row-name">
-          <span dir="auto" style={{ unicodeBidi: "isolate" }}>{league.name}</span>
-        </span>
-        {meta.length > 0 && (
-          <span className="lg-row-meta">
-            {meta.map((part, i) => (
-              <span key={i} style={{ display: "contents" }}>
-                {i > 0 && <span aria-hidden="true"> · </span>}
-                <span dir="auto" style={{ unicodeBidi: "isolate" }}>{part}</span>
-              </span>
-            ))}
-          </span>
-        )}
-        {nextLine && (
-          <span className="lg-row-next" dir="auto" style={{ unicodeBidi: "isolate" }}>
-            {nextLine}
-          </span>
-        )}
-      </span>
-      <ChevronIcon className="lg-row-chev" aria-hidden="true" />
-    </Link>
-  );
-}
-
-/* A season that is over: the place is the whole point of the row. */
-function DoneLeagueRow({ league, language, t }) {
-  const players = league.my_members_total ?? league.member_count ?? 0;
-  const place = league.my_rank;
-  return (
-    <Link to={`/leagues/${league.id}`} className="lg-row is-over">
-      <span className="lg-place" dir="ltr">
-        {place != null ? (
-          <>
-            <span className="lg-place-n">#{place}</span>
-            <span className="lg-place-of">OF {players}</span>
-          </>
-        ) : (
-          <span className="lg-place-of">{players ? `OF ${players}` : "—"}</span>
-        )}
-      </span>
-      <span className="lg-row-body">
-        <span className="lg-row-name">
-          <span dir="auto" style={{ unicodeBidi: "isolate" }}>{league.name}</span>
-        </span>
-        <span className="lg-row-meta">
-          {place != null
-            ? t("סיימת {place}", { place: rankLabel(place, language, t) })
-            : t("העונה נגמרה")}
-          {" · "}
-          <span dir="ltr" style={{ unicodeBidi: "isolate" }}>
-            {league.my_wins ?? 0}-{league.my_losses ?? 0}
-          </span>
-        </span>
-      </span>
-      <ChevronIcon className="lg-row-chev" aria-hidden="true" />
-    </Link>
-  );
-}
-
-function SectionHead({ title, end }) {
-  return (
-    <div className="lg-sec">
-      <span className="lg-sec-title">{title}</span>
-      <span className="lg-sec-rule" aria-hidden="true" />
-      {end}
-    </div>
-  );
-}
-
-function OpenLeagueRow({ league, outOfLevel, t }) {
-  const ruleLabels = leagueRuleLabels(league, t);
-  return (
-    <Link
-      to={`/leagues/${league.id}/preview`}
-      className={`lg-row lg-row--open${outOfLevel ? " is-out-of-level" : ""}`}
-    >
-      <span className="lg-row-body">
-        <span className="lg-row-name-row">
-          <span className="lg-row-name">
-            <span dir="auto" style={{ unicodeBidi: "isolate" }}>
-              {league.name}
-            </span>
-          </span>
-        </span>
-        <span className="lg-row-meta">
-          {league.is_doubles
-            ? t("{n} צמדים", { n: league.member_count })
-            : t("{n} שחקנים", { n: league.member_count })}{" "}
-          · {ruleLabels.frequencyLabel} ·{" "}
-          <span dir="ltr" style={{ unicodeBidi: "isolate" }}>
-            NTRP {(league.level_min ?? 1.5).toFixed(1)}–
-            {(league.level_max ?? 7).toFixed(1)}
-          </span>
-        </span>
-      </span>
-      <span className={`lg-row-join${outOfLevel ? " is-quiet" : ""}`}>
-        {outOfLevel ? t("הצצה") : t("הצטרף")}
-      </span>
-    </Link>
-  );
 }
 
 function RowSkeletons({ rows = 2 }) {
@@ -255,6 +87,9 @@ export default function Leagues({ embedded = false }) {
   const [leagues, setLeagues] = useState([]);
   const [myLeagues, setMyLeagues] = useState([]);
   const [myLevel, setMyLevel] = useState(null);
+  // 216 — the same server-computed match states the home screen reads, so
+  // "needs you" here and the next step there can never disagree.
+  const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showSheet, setShowSheet] = useState(false);
@@ -274,7 +109,6 @@ export default function Leagues({ embedded = false }) {
   const { user } = useAuth();
   const { sports, selectedSportId } = useSport();
   const { t, language } = useLanguage();
-  const { nextMatches } = useOpenAction();
   const { activePairs, selectedPair, pairLensReady } = usePairs();
   const [joiningId, setJoiningId] = useState(null);
   const [joinedIds, setJoinedIds] = useState([]);
@@ -290,8 +124,13 @@ export default function Leagues({ embedded = false }) {
       if (user) {
         const mine = await api.myLeagues(selectedPair?.id);
         setMyLeagues(mine);
+        api
+          .myMatches(selectedSportId, selectedPair?.id)
+          .then(setMatches)
+          .catch(() => setMatches([]));
       } else {
         setMyLeagues([]);
+        setMatches([]);
       }
     } catch (err) {
       setError(err.message);
@@ -472,7 +311,6 @@ export default function Leagues({ embedded = false }) {
     return ta - tb;
   };
   const openForMe = openLeagues.filter((l) => takesMe(l) && hasRoom(l)).sort(bySoonest);
-  const openOutOfRange = openLeagues.filter((l) => !takesMe(l) && hasRoom(l)).sort(bySoonest);
   const myLeaguesForSport = myLeagues.filter(bySelectedSport);
 
 
@@ -485,8 +323,6 @@ export default function Leagues({ embedded = false }) {
   };
   const mineLive = myLeaguesForSport.filter((l) => !isDone(l));
   const mineDone = myLeaguesForSport.filter(isDone);
-  const nextFor = (leagueId) =>
-    nextMatches.find((e) => e.league_id === leagueId && e.match.status !== "completed") || null;
 
   const TABS = [
     { key: "mine", label: t("שלי"), count: mineLive.length },
@@ -494,41 +330,273 @@ export default function Leagues({ embedded = false }) {
     { key: "done", label: t("הסתיימו"), count: mineDone.length },
   ];
 
-  return (
-    <div className={`lgp${embedded ? " lgp--embedded" : ""}`}>
-      {/* 1 · one level down from the hub, so the way back is named. The sport
-          is shown, not offered: switching it is the header's job, and two
-          sport controls on one screen is one too many. Inside the Play
-          screen there is nothing to go back to — it is a tab there — so the
-          bar is not drawn at all. */}
-      {!embedded && (
-      <div className="lgp-top">
-        <Link to="/games" className="lgp-back">
-          <ChevronIcon aria-hidden="true" />
-          {t("משחקים")}
-        </Link>
-        {selectedSport && (
-          <span className="lgp-sport">
-            <SportIcon sport={selectedSport} aria-hidden="true" />
-            {t(selectedSport.name)}
+  // 216 — the one thing this league is asking of me, in the same order the
+  // home screen asks it. Built from the same server-computed states, so the
+  // two screens cannot disagree about what is owed.
+  const needs = (() => {
+    const inSport = (m) => m.league_name;
+    const played = matches.find((m) => inSport(m) && m.state === "played");
+    if (played)
+      return {
+        title: t("דווח את התוצאה"),
+        match: played,
+        action: t("דווח תוצאה"),
+        to: `/matches/${played.id}`,
+      };
+    const confirm = matches.find((m) => inSport(m) && m.state === "confirm_mine");
+    if (confirm)
+      return {
+        title: t("אשר את התוצאה"),
+        match: confirm,
+        action: t("אשר תוצאה"),
+        to: `/matches/${confirm.id}/confirm`,
+      };
+    const proposed = matches.find((m) => inSport(m) && m.state === "time_from_them");
+    if (proposed)
+      return {
+        title: t("{name} הציע/ה שעה", { name: proposed.opponent_name }),
+        match: proposed,
+        action: t("הגב"),
+        to: `/matches/${proposed.id}`,
+      };
+    const open = matches
+      .filter(
+        (m) =>
+          inSport(m) &&
+          m.state === "no_time" &&
+          (!m.round_starts_at || new Date(m.round_starts_at).getTime() <= Date.now()) &&
+          (!m.round_ends_at || new Date(m.round_ends_at).getTime() > Date.now())
+      )
+      .sort(
+        (a, b) =>
+          new Date(a.round_ends_at ?? 8640000000000000) -
+          new Date(b.round_ends_at ?? 8640000000000000)
+      )[0];
+    if (open)
+      return {
+        title: open.round ? t("תאמו את מחזור {n}", { n: open.round }) : t("קבעו זמן למשחק"),
+        match: open,
+        action: t("קבעו זמן"),
+        to: `/matches/${open.id}`,
+      };
+    return null;
+  })();
+
+  const toSchedule = matches.filter(
+    (m) =>
+      m.league_name &&
+      m.state === "no_time" &&
+      (!m.round_ends_at || new Date(m.round_ends_at).getTime() > Date.now()) &&
+      (!m.round_starts_at || new Date(m.round_starts_at).getTime() <= Date.now())
+  ).length;
+
+  // Leagues that are asking for something come first; after that, whichever
+  // round closes soonest, because that is the one about to be lost.
+  const needyLeagueIds = new Set(
+    matches
+      .filter((m) => m.league_name && ["played", "confirm_mine", "time_from_them", "no_time"].includes(m.state))
+      .map((m) => m.league_name)
+  );
+  const mineSorted = [...mineLive].sort((a, b) => {
+    const needA = needyLeagueIds.has(a.name) ? 0 : 1;
+    const needB = needyLeagueIds.has(b.name) ? 0 : 1;
+    if (needA !== needB) return needA - needB;
+    const endA = roundDueDateObj(
+      a.schedule_started_at,
+      currentRoundNumber(a.schedule_started_at, a.round_length_days || 7),
+      a.round_length_days || 7
+    );
+    const endB = roundDueDateObj(
+      b.schedule_started_at,
+      currentRoundNumber(b.schedule_started_at, b.round_length_days || 7),
+      b.round_length_days || 7
+    );
+    return new Date(endA ?? 8640000000000000) - new Date(endB ?? 8640000000000000);
+  });
+
+  const subline = (() => {
+    if (loading) return "";
+    if (activeTab === "open")
+      return openForMe.length === 0
+        ? t("אין ליגות פתוחות ברמה שלך")
+        : openForMe.length === 1
+          ? t("ליגה אחת פתוחה ברמה שלך")
+          : t("{n} ליגות פתוחות ברמה שלך", { n: openForMe.length });
+    if (activeTab === "done")
+      return mineDone.length === 1
+        ? t("ליגה אחת שהסתיימה")
+        : t("{n} ליגות שהסתיימו", { n: mineDone.length });
+    if (toSchedule)
+      return toSchedule === 1 ? t("משחק אחד לתאם") : t("{n} משחקים לתאם", { n: toSchedule });
+    return mineLive.length === 1 ? t("ליגה אחת") : t("{n} ליגות", { n: mineLive.length });
+  })();
+
+  // "4 מתוך 6" in Hebrew, "4th of 6" in English: Hebrew has no ordinal
+  // suffix to glue to a digit.
+  function placeOf(place, total) {
+    if (place == null) return null;
+    return (
+      <span className="lg2-place" dir={language === "en" ? "ltr" : "auto"}>
+        <b>{language === "en" ? rankLabel(place, language, t) : place}</b>
+        {` ${t("מתוך")} ${total}`}
+      </span>
+    );
+  }
+
+  function mineRow(league) {
+    const round = currentRoundNumber(league.schedule_started_at, league.round_length_days || 7);
+    const total = league.planned_rounds ?? null;
+    const endsAt = roundDueDateObj(league.schedule_started_at, round, league.round_length_days || 7);
+    const players = league.my_members_total ?? league.member_count ?? 0;
+    const started = Boolean(league.schedule_started_at);
+    const missing = league.capacity ? league.capacity - players : null;
+
+    const status = !started
+      ? missing && missing > 0
+        ? missing === 1
+          ? t("ממתינים לשחקן אחד נוסף")
+          : t("ממתינים לעוד {n} שחקנים", { n: missing })
+        : t("עוד לא התחילה")
+      : [
+          total
+            ? t("מחזור {n} מתוך {total}", { n: round, total })
+            : t("מחזור {n}", { n: round }),
+          endsAt ? t("נסגר {day}", { day: weekdayFull(new Date(endsAt), t) }) : null,
+        ]
+          .filter(Boolean)
+          .join(" · ");
+
+    return (
+      <Link to={`/leagues/${league.id}`} className="lg2-row" key={league.id}>
+        <span className="lg2-row-text">
+          <span className="lg2-row-name" dir="auto">
+            {league.name}
           </span>
-        )}
-      </div>
+          <span className="lg2-row-sub" dir="auto">
+            {status}
+          </span>
+        </span>
+        {started && placeOf(league.my_rank, players)}
+        <ChevronIcon className="lg2-chev" aria-hidden="true" />
+      </Link>
+    );
+  }
+
+  function doneRow(league) {
+    const players = league.my_members_total ?? league.member_count ?? 0;
+    const rounds = league.planned_rounds ?? null;
+    const ended = league.schedule_started_at
+      ? new Date(
+          new Date(league.schedule_started_at).getTime() +
+            (rounds ?? 0) * (league.round_length_days || 7) * 86400000
+        )
+      : null;
+    const status = [
+      ended
+        ? t("הסתיימה {date}", {
+            date: ended.toLocaleDateString(language === "en" ? "en-GB" : "he-IL", {
+              month: "long",
+              year: "numeric",
+            }),
+          })
+        : null,
+      rounds ? t("{n} מחזורים", { n: rounds }) : null,
+    ]
+      .filter(Boolean)
+      .join(" · ");
+
+    return (
+      <Link to={`/leagues/${league.id}`} className="lg2-row" key={league.id}>
+        <span className="lg2-row-text">
+          <span className="lg2-row-name" dir="auto">
+            {league.name}
+          </span>
+          <span className="lg2-row-sub" dir="auto">
+            {status}
+          </span>
+        </span>
+        {placeOf(league.my_rank, players)}
+        <ChevronIcon className="lg2-chev" aria-hidden="true" />
+      </Link>
+    );
+  }
+
+  function openCard(league) {
+    const joined = joinedIds.includes(league.id);
+    const taken = (league.member_count ?? league.joined ?? 0) + (joined ? 1 : 0);
+    const left = league.capacity ? Math.max(0, league.capacity - taken) : null;
+    return (
+      <article className="lg2-open" key={league.id}>
+        <div
+          className="lg2-open-top"
+          onClick={() => navigate(`/leagues/${league.id}/preview`)}
+          role="presentation"
+        >
+          <div className="lg2-open-text">
+            <span className="lg2-open-name" dir="auto">
+              {league.name}
+            </span>
+            <span className="lg2-row-sub" dir="auto">
+              {[
+                `NTRP ${(league.level_min ?? 1.5).toFixed(1)}–${(league.level_max ?? 7).toFixed(1)}`,
+                league.starts_at
+                  ? t("מתחילה {date}", { date: longDate(league.starts_at, language) })
+                  : null,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </span>
+          </div>
+          {league.capacity != null && (
+            <span className="lg2-place" dir={language === "en" ? "ltr" : "auto"}>
+              <b>{taken}</b>
+              {` ${t("מתוך")} ${league.capacity}`}
+            </span>
+          )}
+        </div>
+        <div className="lg2-open-foot">
+          <span className={`lg2-spots${left != null && left <= 2 ? " is-low" : ""}`}>
+            {left == null
+              ? t("יש מקום")
+              : left === 1
+                ? t("מקום אחד פנוי")
+                : t("{n} מקומות פנויים", { n: left })}
+          </span>
+          <button
+            type="button"
+            className="lg2-join"
+            disabled={joiningId === league.id || joined}
+            onClick={() => joinFromCard(league)}
+          >
+            {joined ? t("הצטרפת") : t("הצטרף")}
+          </button>
+        </div>
+      </article>
+    );
+  }
+
+  const openIsEmpty = activeTab === "open" && !loading && openForMe.length === 0;
+
+  return (
+    <div className={`lgp lg2${embedded ? " lgp--embedded" : ""}`}>
+      {!embedded && (
+        <div className="lgp-top">
+          <Link to="/games" className="lgp-back">
+            <ChevronIcon aria-hidden="true" />
+            {t("משחקים")}
+          </Link>
+          {selectedSport && (
+            <span className="lgp-sport">
+              <SportIcon sport={selectedSport} aria-hidden="true" />
+              {t(selectedSport.name)}
+            </span>
+          )}
+        </div>
       )}
 
-      <header className="lgp-head">
-        {!embedded && (
-          <div className="lgp-head-text">
-            <h1 className="lgp-title">{t("ליגות")}</h1>
-            <p className="lgp-sub">{t("הכל במקום אחד")}</p>
-          </div>
-        )}
-        {user && (
-          <button type="button" className="lgp-new" onClick={requestCreate}>
-            <PlusIcon aria-hidden="true" />
-            {t("ליגה חדשה")}
-          </button>
-        )}
+      <header className="lg2-head">
+        <h1 className="lg2-title">{t("הליגות שלי")}</h1>
+        <p className="lg2-sub">{subline}</p>
       </header>
 
       {!user && (
@@ -548,18 +616,21 @@ export default function Leagues({ embedded = false }) {
 
       {user && (
         <>
-          <div className="lgp-tabs" role="tablist">
+          {/* Outlined, not filled: the row of tabs above this one is the
+              screen's own, and two identical bars one under the other read
+              as one control that somehow has six options. */}
+          <div className="lg2-tabs" role="tablist">
             {TABS.map((tab) => (
               <button
                 type="button"
                 key={tab.key}
                 role="tab"
                 aria-selected={activeTab === tab.key}
-                className={`lgp-tab${activeTab === tab.key ? " is-on" : ""}`}
+                className={`lg2-tab${activeTab === tab.key ? " is-on" : ""}`}
                 onClick={() => setActiveTab(tab.key)}
               >
-                <span className="lgp-tab-label">{tab.label}</span>
-                <span className="lgp-tab-count" dir="ltr">
+                <span>{tab.label}</span>
+                <span className="lg2-tab-count" dir="ltr">
                   {loading ? "" : tab.count}
                 </span>
               </button>
@@ -579,109 +650,57 @@ export default function Leagues({ embedded = false }) {
                 }
               >
                 {t("עוד אין לך ליגה בענף הזה.")}
-                {openForMe.length > 0 && (
-                  <>
-                    {" "}
-                    <button type="button" className="lgp-inline-link" onClick={() => setActiveTab("open")}>
-                      {t("יש {n} פתוחות ברמה שלך", { n: openForMe.length })}
-                    </button>
-                  </>
-                )}
               </EmptyState>
             ) : (
               <>
-                <div className="lg-list">
-                  {mineLive.map((league) => (
-                    <MyLeagueRow
-                      key={league.id}
-                      league={league}
-                      nextEntry={nextFor(league.id)}
-                      userId={user?.id}
-                      t={t}
-                      language={language}
-                    />
-                  ))}
-                </div>
-
-                {/* The one nudge on this tab: what else you could be in. Hidden
-                    entirely when there is nothing open, rather than shown as a
-                    card that says zero. */}
-                {openForMe.length > 0 && (
-                  <div className="lgp-teaser">
-                    <div className="lgp-teaser-text">
-                      <span className="lgp-teaser-title">
-                        {openForMe.length === 1
-                          ? t("ליגה אחת פתוחה ברמה שלך")
-                          : t("{n} ליגות פתוחות ברמה שלך", { n: openForMe.length })}
-                      </span>
-                      <span className="lgp-teaser-names" dir="auto" style={{ unicodeBidi: "isolate" }}>
-                        {openForMe.map((l) => l.name).join(" · ")}
-                      </span>
+                {needs && (
+                  <section className="lg2-needs">
+                    <span className="lg2-needs-label">{t("מחכה לך")}</span>
+                    <div className="lg2-needs-row">
+                      <div className="lg2-needs-text">
+                        <span className="lg2-needs-title" dir="auto">
+                          {needs.title}
+                        </span>
+                        <span className="lg2-row-sub" dir="auto">
+                          {[
+                            needs.match.league_name,
+                            needs.match.round_ends_at
+                              ? t("נסגר {day}", {
+                                  day: weekdayFull(new Date(needs.match.round_ends_at), t),
+                                })
+                              : null,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        className="lg2-needs-go"
+                        onClick={() => navigate(needs.to)}
+                      >
+                        {needs.action}
+                      </button>
                     </div>
-                    <button type="button" className="lgp-teaser-link" onClick={() => setActiveTab("open")}>
-                      {t("לצפייה")}
-                    </button>
-                  </div>
+                  </section>
                 )}
+                <div className="lg2-list">{mineSorted.map(mineRow)}</div>
               </>
             ))}
 
           {activeTab === "open" &&
             (loading ? (
               <RowSkeletons />
+            ) : openForMe.length === 0 ? (
+              <div className="lg2-empty">
+                <span className="lg2-empty-title">{t("אין כרגע ליגות פתוחות")}</span>
+                <p className="lg2-empty-text">{t("ליגות חדשות ברמה שלך יופיעו כאן.")}</p>
+                <button type="button" className="lg2-empty-go" onClick={requestCreate}>
+                  {`+ ${t("פתח ליגה משלך")}`}
+                </button>
+              </div>
             ) : (
-              <>
-                {openForMe.length === 0 ? (
-                  <EmptyState
-                    icon={<TrophyIcon aria-hidden="true" />}
-                    action={
-                      <button type="button" className="btn-secondary btn-small" onClick={requestCreate}>
-                        {t("פתח ליגה משלך")}
-                      </button>
-                    }
-                  >
-                    {t("אין כרגע ליגות פתוחות ברמה שלך")}
-                  </EmptyState>
-                ) : (
-                  <div className="olc-list">
-                    {openForMe.map((league) => (
-                      <OpenLeagueCard
-                        key={league.id}
-                        league={league}
-                        myLevel={entrantLevel}
-                        levelIsPair={inPairsSport}
-                        busy={joiningId === league.id}
-                        joined={joinedIds.includes(league.id)}
-                        onJoin={() => joinFromCard(league)}
-                        onOpen={() => navigate(`/leagues/${league.id}/preview`)}
-                      />
-                    ))}
-                  </div>
-                )}
-
-                {/* Out-of-range leagues keep their own heading inside this tab.
-                    The handoff scopes this tab to "open leagues at the user's
-                    level", which would hide them again — and being able to see
-                    every open league, clearly marked as out of reach, was
-                    asked for directly. A dimmed row inside the list above
-                    would leave a reader working out why some of them look
-                    faded. */}
-                {openOutOfRange.length > 0 && (
-                  <>
-                    <SectionHead title={t("מחוץ לטווח שלי")} />
-                    <p className="lg-sec-note">
-                      {inPairsSport
-                        ? t("אפשר להיכנס ולראות הכול, אבל לא להצטרף — הרמה של הצמד מחוץ לטווח של הליגות האלה.")
-                        : t("אפשר להיכנס ולראות הכול, אבל לא להצטרף — הרמה שלך מחוץ לטווח של הליגות האלה.")}
-                    </p>
-                    <div className="lg-list">
-                      {openOutOfRange.map((league) => (
-                        <OpenLeagueRow key={league.id} league={league} outOfLevel t={t} />
-                      ))}
-                    </div>
-                  </>
-                )}
-              </>
+              <div className="lg2-opens">{openForMe.map(openCard)}</div>
             ))}
 
           {activeTab === "done" &&
@@ -692,12 +711,16 @@ export default function Leagues({ embedded = false }) {
                 {t("עוד לא סיימת עונה בענף הזה.")}
               </EmptyState>
             ) : (
-              <div className="lg-list">
-                {mineDone.map((league) => (
-                  <DoneLeagueRow key={league.id} league={league} language={language} t={t} />
-                ))}
-              </div>
+              <div className="lg2-list">{mineDone.map(doneRow)}</div>
             ))}
+
+          {/* The empty "open" tab offers the same thing in its own card, so
+              this row would be the second of two identical buttons. */}
+          {!openIsEmpty && (
+            <button type="button" className="lg2-new" onClick={requestCreate}>
+              {`+ ${t("ליגה חדשה")}`}
+            </button>
+          )}
         </>
       )}
 

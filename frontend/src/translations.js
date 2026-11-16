@@ -1939,6 +1939,20 @@ const PAIRS = [
   ["ניצחונות רצופים", "Win streak"],
   ["{name} הזמין/ה אותך למשחק", "{name} invited you to play"],
   ["לתשובה", "Respond"],
+  // 216 — the leagues tab.
+  ["מתוך", "of"],
+  ["ממתינים לשחקן אחד נוסף", "Waiting for 1 more player"],
+  ["ממתינים לעוד {n} שחקנים", "Waiting for {n} more players"],
+  ["מחזור {n} מתוך {total}", "Round {n} of {total}"],
+  ["הסתיימה {date}", "Ended {date}"],
+  ["מתחילה {date}", "starts {date}"],
+  ["יש מקום", "Spots left"],
+  ["תאמו את מחזור {n}", "Schedule round {n}"],
+  ["אין כרגע ליגות פתוחות", "No open leagues right now"],
+  ["ליגות חדשות ברמה שלך יופיעו כאן.", "New leagues at your level will show up here."],
+  ["ליגה אחת שהסתיימה", "1 finished league"],
+  ["{n} ליגות שהסתיימו", "{n} finished leagues"],
+  ["אין ליגות פתוחות ברמה שלך", "No open leagues at your level"],
 ];
 
 const heToEn = {};

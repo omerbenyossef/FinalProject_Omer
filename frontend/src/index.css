@@ -10993,3 +10993,139 @@ button.st-row { cursor: pointer; }
   background: rgba(255, 255, 255, .10);
   display: grid; place-items: center; font-size: 14px; color: #eef1f7;
 }
+
+/* ============================================================
+   leagues-216 — follow the leagues I am in, find ones to join
+
+   The screen it replaces said everything in mono capitals and green squares:
+   "#1 OF 8", "ROUND 6/7 · 6D LEFT", "2 PLAYERS". Each of them was a fact
+   worth having and none of them was a sentence. This one says the same
+   things in words, in the same language as the home screen.
+   ============================================================ */
+
+.lg2 { display: flex; flex-direction: column; gap: 18px; }
+.lg2-head { display: flex; flex-direction: column; gap: 4px; }
+.lg2-title { margin: 0; font: 700 24px/1.15 "IBM Plex Sans", var(--sans); color: #f4f6fa; }
+.lg2-sub { margin: 0; font: 500 13.5px "IBM Plex Sans", var(--sans); color: #8b93a6; }
+
+/* Outlined, where the screen's own tabs above are filled: two identical bars
+   one under the other read as one control with six options. */
+.lg2-tabs {
+  display: flex; gap: 4px; padding: 4px; border-radius: 22px;
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, .14);
+}
+.lg2-tab {
+  flex: 1; min-width: 0; height: 36px; border: 0; border-radius: 18px;
+  background: none; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  color: #a3abbb; font: 600 13px "IBM Plex Sans", var(--sans);
+}
+.lg2-tab.is-on {
+  background: rgba(var(--court-rgb, 198, 242, 78), .14);
+  color: var(--court, #c6f24e); font-weight: 700;
+}
+.lg2-tab-count { font: 600 11px "IBM Plex Mono", monospace; color: #6f7787; }
+.lg2-tab.is-on .lg2-tab-count { color: inherit; opacity: .7; }
+
+/* The one thing a league is asking of me, in the sport's colour — the same
+   card the home screen uses, because it is the same promise. */
+.lg2-needs {
+  border-radius: 22px; padding: 18px; display: flex; flex-direction: column; gap: 12px;
+  background: linear-gradient(
+      160deg,
+      rgba(var(--court-rgb, 198, 242, 78), .16),
+      rgba(var(--court-rgb, 198, 242, 78), .03) 60%
+    ),
+    #161b22;
+  box-shadow: inset 0 1px 0 rgba(var(--court-rgb, 198, 242, 78), .35),
+    inset 0 0 0 1px rgba(var(--court-rgb, 198, 242, 78), .12);
+}
+.lg2-needs-label { font: 600 12px "IBM Plex Sans", var(--sans); color: var(--court, #c6f24e); }
+.lg2-needs-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.lg2-needs-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.lg2-needs-title { font: 700 19px/1.2 "IBM Plex Sans", var(--sans); color: #f4f6fa; }
+.lg2-needs-go {
+  flex: none; height: 34px; padding: 0 14px; border: 0; border-radius: 17px;
+  background: var(--court, #c6f24e); color: #0e1116;
+  font: 700 13px "IBM Plex Sans", var(--sans); cursor: pointer; white-space: nowrap;
+}
+
+/* One card, rows separated by lines. */
+.lg2-list {
+  border-radius: 20px; overflow: hidden; background: #161b22;
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, .08);
+}
+.lg2-row {
+  display: flex; align-items: center; gap: 12px; padding: 14px 16px;
+  border-top: 1px solid rgba(148, 163, 184, .10);
+  color: inherit; text-decoration: none;
+}
+.lg2-row:first-child { border-top: 0; }
+.lg2-row-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.lg2-row-name {
+  font: 700 16px "IBM Plex Sans", var(--sans); color: #f4f6fa;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.lg2-row-sub {
+  font: 500 12.5px/1.35 "IBM Plex Sans", var(--sans); color: #8b93a6;
+  overflow: hidden; text-overflow: ellipsis;
+}
+/* "4th of 6" on one line: the place is the number people look for, the total
+   is the context around it. */
+.lg2-place {
+  flex: none; white-space: nowrap;
+  font: 500 13px "IBM Plex Sans", var(--sans); color: #8b93a6;
+}
+.lg2-place b { font-weight: 700; color: #eef1f7; }
+.lg2-chev { flex: none; width: 16px; height: 16px; color: #6f7787; }
+
+/* A league somebody else opened. */
+.lg2-opens { display: flex; flex-direction: column; gap: 10px; }
+.lg2-open {
+  border-radius: 20px; padding: 15px 16px; display: flex; flex-direction: column; gap: 12px;
+  background: #161b22; box-shadow: inset 0 0 0 1px rgba(148, 163, 184, .08);
+}
+.lg2-open-top { display: flex; align-items: flex-start; gap: 12px; cursor: pointer; }
+.lg2-open-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.lg2-open-name {
+  font: 700 17px "IBM Plex Sans", var(--sans); color: #f4f6fa;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.lg2-open-foot {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  border-top: 1px solid rgba(148, 163, 184, .10); padding-top: 12px;
+}
+.lg2-spots { font: 600 12.5px "IBM Plex Sans", var(--sans); color: #8b93a6; }
+/* Two seats or fewer is the point at which "later" stops being a plan. */
+.lg2-spots.is-low { color: #ffb547; }
+.lg2-join {
+  flex: none; height: 32px; padding: 0 15px; border: 0; border-radius: 16px;
+  background: var(--court, #c6f24e); color: #0e1116;
+  font: 700 13px "IBM Plex Sans", var(--sans); cursor: pointer;
+}
+.lg2-join:disabled { opacity: .6; cursor: default; }
+
+.lg2-empty {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 48px 18px; text-align: center;
+}
+.lg2-empty-title { font: 700 17px "IBM Plex Sans", var(--sans); color: #f4f6fa; }
+.lg2-empty-text {
+  margin: 0; max-width: 260px;
+  font: 500 13.5px/1.5 "IBM Plex Sans", var(--sans); color: #8b93a6;
+}
+.lg2-empty-go {
+  margin-top: 6px; height: 40px; padding: 0 18px; border: 0; border-radius: 20px;
+  background: none; color: var(--court, #c6f24e);
+  box-shadow: inset 0 0 0 1.5px var(--court, #c6f24e);
+  font: 700 14px "IBM Plex Sans", var(--sans); cursor: pointer;
+}
+
+/* The way to a new league: a line at the foot of the screen, not a button
+   competing with the list above it. */
+.lg2-new {
+  width: 100%; border: 0; background: none; cursor: pointer;
+  border-top: 1px solid rgba(148, 163, 184, .10); padding: 14px 0;
+  font: 600 15px "IBM Plex Sans", var(--sans); color: var(--court, #c6f24e);
+  text-align: start;
+}

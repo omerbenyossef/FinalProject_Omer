@@ -395,13 +395,6 @@ export default function Play() {
 
   return (
     <div className="pl">
-      <header className="pl-head">
-        <h1 className="pl-title">{t("בוא נשחק")} 🎾</h1>
-        <p className="pl-sub" dir="auto">
-          {subline}
-        </p>
-      </header>
-
       <div className="pl-tabs" role="tablist">
         {tabs.map((item) => (
           <button
@@ -422,6 +415,12 @@ export default function Play() {
 
       {tab === "matches" && (
         <div className="pl-matches">
+          <header className="pl-head">
+            <h1 className="pl-title">{t("המשחקים שלי")}</h1>
+            <p className="pl-sub" dir="auto">
+              {subline}
+            </p>
+          </header>
           {matches == null ? (
             <SkeletonBar />
           ) : toPlay.length === 0 ? (
