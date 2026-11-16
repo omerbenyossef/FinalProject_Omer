@@ -11245,3 +11245,107 @@ button.st-row { cursor: pointer; }
   box-shadow: inset 0 0 0 1px var(--court, #c6f24e); color: var(--court, #c6f24e);
   font: 500 13.5px "IBM Plex Sans", var(--sans);
 }
+
+/* ============================================================
+   ranks-221b — where everybody stands
+
+   The table used to be a fixed-height column with its own scroll, a bar
+   chart in every row, and my own row pinned to the bottom as a second copy
+   of itself. The bars said the same thing as the number beside them, and
+   the pinned row meant the one place I wanted to find was never where the
+   list said it was.
+   ============================================================ */
+
+.content:has(.rk2) { padding: 0; }
+
+.rk2 {
+  display: flex; flex-direction: column; gap: 16px;
+  padding: 18px 18px 24px; box-sizing: border-box;
+  background: #0e1116; color: #eef1f7; min-height: 100%;
+}
+.rk2-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.rk2-title { margin: 0; font: 700 28px/1 "IBM Plex Sans", var(--sans); color: #eef1f7; }
+.rk2-count { font: 500 13px "IBM Plex Sans", var(--sans); color: #8b93a6; }
+
+/* My own place, in the sport's colour: the one row of this table the reader
+   came to find. Tapping it jumps the list to me. */
+.rk2-me {
+  display: flex; align-items: center; width: 100%; border: 0; cursor: pointer;
+  border-radius: 20px; padding: 16px 6px 16px 18px; text-align: start;
+  background: linear-gradient(
+      160deg,
+      rgba(var(--court-rgb, 198, 242, 78), .16),
+      rgba(var(--court-rgb, 198, 242, 78), .03) 60%
+    ),
+    #161b22;
+  box-shadow: inset 0 1px 0 rgba(var(--court-rgb, 198, 242, 78), .35),
+    inset 0 0 0 1px rgba(var(--court-rgb, 198, 242, 78), .12);
+  color: inherit;
+}
+.rk2-me-place {
+  flex: none; display: flex; flex-direction: column; gap: 4px; padding-inline-end: 14px;
+}
+.rk2-me-label { font: 600 12px "IBM Plex Sans", var(--sans); color: var(--court, #c6f24e); }
+.rk2-me-rank { display: flex; align-items: baseline; gap: 6px; }
+.rk2-me-rank b { font: 700 22px/1 "IBM Plex Sans", var(--sans); }
+.rk2-me-rank i {
+  font: 500 14px "IBM Plex Sans", var(--sans); font-style: normal; color: #8b93a6;
+}
+.rk2-me-stats { flex: 1; display: flex; min-width: 0; }
+.rk2-me-stat {
+  flex: 1; min-width: 0; padding: 0 12px; display: flex; flex-direction: column; gap: 3px;
+  border-inline-start: 1px solid rgba(148, 163, 184, .12);
+}
+.rk2-me-stat:first-child { border-inline-start: 0; }
+.rk2-me-stat b { font: 700 16px/1 "IBM Plex Sans", var(--sans); }
+.rk2-me-stat i {
+  font: 500 11px "IBM Plex Sans", var(--sans); font-style: normal; color: #8b93a6;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.rk2-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.rk2-all { font: 600 13px "IBM Plex Sans", var(--sans); color: #8b93a6; }
+.rk2-sort {
+  height: 30px; padding: 0 12px; border: 0; border-radius: 15px; cursor: pointer;
+  background: rgba(148, 163, 184, .10); color: #c9cfdb;
+  display: inline-flex; align-items: center; gap: 6px;
+  font: 500 12.5px "IBM Plex Sans", var(--sans);
+}
+.rk2-sort b { color: #eef1f7; font-weight: 600; }
+.rk2-sort svg { width: 14px; height: 14px; }
+
+.rk2-card { border-radius: 18px; overflow: hidden; background: #161b22; }
+.rk2-list { list-style: none; margin: 0; padding: 0; }
+.rk2-row {
+  display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+  border-top: 1px solid rgba(148, 163, 184, .08);
+}
+.rk2-row:first-child { border-top: 0; }
+.rk2-link {
+  flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px;
+  color: inherit; text-decoration: none;
+}
+.rk2-rank { flex: none; width: 18px; font: 600 13px "IBM Plex Sans", var(--sans); color: #8b93a6; }
+.rk2-row .avatar { flex: none; }
+.rk2-who { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.rk2-name {
+  font: 600 15px "IBM Plex Sans", var(--sans); color: #eef1f7;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.rk2-sub { font: 500 12px "IBM Plex Sans", var(--sans); color: #8b93a6; }
+.rk2-val {
+  flex: none; min-width: 30px; text-align: end;
+  font: 700 15px "IBM Plex Sans", var(--sans); color: #eef1f7;
+}
+
+/* My row inside the list, rather than a copy of it pinned below. */
+.rk2-row.is-me {
+  background: rgba(var(--court-rgb, 198, 242, 78), .07);
+  box-shadow: inset 3px 0 0 var(--court, #c6f24e);
+}
+[dir="rtl"] .rk2-row.is-me { box-shadow: inset -3px 0 0 var(--court, #c6f24e); }
+.rk2-row.is-me .rk2-rank, .rk2-row.is-me .rk2-val { color: var(--court, #c6f24e); }
+.rk2-you { font: 500 12px "IBM Plex Sans", var(--sans); color: var(--court, #c6f24e); }
+
+.rk2-note { padding: 20px 16px; text-align: center; }
+.rk2-sentinel { height: 1px; }

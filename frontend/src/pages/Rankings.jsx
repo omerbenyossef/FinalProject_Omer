@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuth } from "../AuthContext.jsx";
 import { useSport } from "../SportContext.jsx";
 import { useLanguage } from "../LanguageContext.jsx";
@@ -8,7 +8,7 @@ import Avatar from "../Avatar.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
 import EmptyState from "../EmptyState.jsx";
 import EmptyLine from "../EmptyLine.jsx";
-import { ChevronDownIcon, ChevronIcon, CheckIcon, RanksIcon } from "../Icons.jsx";
+import { ChevronDownIcon, CheckIcon, RanksIcon } from "../Icons.jsx";
 
 const SORT_KEY = "rally.ranks.sort";
 const PAGE_LIMIT = 50;
@@ -17,20 +17,16 @@ function fmtNum(n) {
   return n.toLocaleString("en-US");
 }
 
-// ranks-entry-173: a bar is a level on the 1.0–7.0 scale, not a share of the
-// leader's — that's what makes two rows comparable and keeps half a level the
-// same distance everywhere. Nobody reaches full width.
-function barPct(entry, sort) {
-  if (!entry) return 0;
-  if (sort === "ntrp") return Math.max(0, Math.min(100, Math.round((entry.ntrp / 7) * 100)));
-  return Math.max(0, Math.min(100, entry.win_pct));
+// The shared labels are stored for screens that set them in mono capitals.
+// Here they are words under a number.
+function sentenceCase(label) {
+  return label.charAt(0).toUpperCase() + label.slice(1).toLowerCase();
 }
 
 export default function Rankings() {
   const { user } = useAuth();
   const { selectedSportId } = useSport();
-  const { t } = useLanguage();
-  const navigate = useNavigate();
+  const { t, language } = useLanguage();
 
   const [sort, setSort] = useState(() => localStorage.getItem(SORT_KEY) || "ntrp");
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -47,8 +43,6 @@ export default function Rankings() {
   const listRef = useRef(null);
   const sentinelRef = useRef(null);
   const myRowRef = useRef(null);
-  const pageWrapRef = useRef(null);
-  const [pageHeight, setPageHeight] = useState(null);
 
   const loadFirstPage = useCallback(() => {
     if (!selectedSportId) return;
@@ -97,25 +91,6 @@ export default function Rankings() {
     return () => observer.disconnect();
   }, [loadMore, players.length]);
 
-  useEffect(() => {
-    function measure() {
-      if (!pageWrapRef.current) return;
-      const top = pageWrapRef.current.getBoundingClientRect().top;
-      const tabbar = document.querySelector(".tabbar");
-      const tabbarHeight = tabbar ? tabbar.getBoundingClientRect().height : 0;
-      setPageHeight(Math.max(320, window.innerHeight - top - tabbarHeight));
-    }
-    measure();
-    window.addEventListener("resize", measure);
-    const tabbar = document.querySelector(".tabbar");
-    const ro = tabbar ? new ResizeObserver(measure) : null;
-    if (ro && tabbar) ro.observe(tabbar);
-    return () => {
-      window.removeEventListener("resize", measure);
-      if (ro) ro.disconnect();
-    };
-  }, [loading]);
-
   function handleSortChange(next) {
     if (next !== sort) {
       localStorage.setItem(SORT_KEY, next);
@@ -146,198 +121,163 @@ export default function Rankings() {
   const meNoRating = me && me.ntrp == null;
   const meInsufficientRecord = me && !meNoRating && sort === "record" && me.rank == null;
 
+  // "8th" is a placing in English; Hebrew has no ordinal suffix to glue to a
+  // digit, so there it stays the number.
+  function place(rank) {
+    if (rank == null) return "—";
+    if (language !== "en") return String(rank);
+    const teens = rank % 100;
+    const suffix = teens >= 11 && teens <= 13 ? "th" : ["th", "st", "nd", "rd"][rank % 10] ?? "th";
+    return `${rank}${suffix}`;
+  }
+
+  function row(p, isMe) {
+    const sub =
+      sort === "ntrp" ? `${p.wins}W · ${p.losses}L` : `NTRP ${p.ntrp.toFixed(1)}`;
+    const value = sort === "ntrp" ? p.ntrp.toFixed(1) : `${p.win_pct}%`;
+    const body = (
+      <>
+        <span className="rk2-rank" dir="ltr">
+          {p.rank}
+        </span>
+        <Avatar
+          name={p.display_name}
+          photoUrl={p.photo_url}
+          size={36}
+          background={isMe ? "var(--court, #c6f24e)" : "#222a36"}
+          color={isMe ? "#0e1116" : "#c9cfdb"}
+          fontFamily='"IBM Plex Sans", var(--sans)'
+          fontSize={14}
+        />
+        <span className="rk2-who">
+          <span className="rk2-name" dir="auto">
+            {p.display_name}
+            {isMe && <span className="rk2-you">{` · ${t("אתה")}`}</span>}
+          </span>
+          <span className="rk2-sub" dir="ltr">
+            {sub}
+          </span>
+        </span>
+        <span className="rk2-val" dir="ltr">
+          {value}
+        </span>
+      </>
+    );
+    return isMe ? (
+      <li className="rk2-row is-me" key={p.id} ref={myRowRef}>
+        {body}
+      </li>
+    ) : (
+      <li className="rk2-row" key={p.id}>
+        <Link to={`/players/${p.id}`} className="rk2-link">
+          {body}
+        </Link>
+      </li>
+    );
+  }
+
   return (
-    <div className="rk-page" ref={pageWrapRef} style={pageHeight ? { height: `${pageHeight}px` } : undefined}>
-      <header className="rk-head">
-        <button type="button" className="rk-back" onClick={() => navigate(-1)}>
-          <ChevronIcon aria-hidden="true" />
-          <span>{t("פרופיל")}</span>
-        </button>
-
-        <div className="rk-titlerow">
-          <h1 className="rk-title">{t("דירוג שחקנים")}</h1>
-          {!loading && sportReady && (
-            <span className="rk-scale">{t("{n} שחקנים · 1.0–7.0", { n: fmtNum(total) })}</span>
-          )}
-        </div>
-
-        <p className="rk-eyebrow" dir="ltr">
-          {t("YOUR PLACE")} · <span dir="auto" style={{ unicodeBidi: "isolate" }}>{me?.display_name ?? user.name}</span>
-        </p>
-
-        {!loading && sportReady && meNoRating ? (
-          <EmptyLine
-            sentence={t("אתה עוד לא מדורג.")}
-            meta={`${Math.max(0, minMatches - (me?.matches_played ?? 0))} MATCHES UNTIL YOU ENTER THE TABLE`}
-          />
-        ) : (
-          <>
-            <div className="rk-place">
-              <span className="rk-place-num">
-                {loading || !sportReady ? <SkeletonBar width={70} height={50} /> : me?.rank}
-              </span>
-              {!loading && sportReady && (
-                <span className="rk-place-of" dir="ltr">
-                  {t("מתוך {n}", { n: fmtNum(total) })}
-                </span>
-              )}
-            </div>
-
-            {!loading && sportReady && me && (
-              <p className="rk-mine" dir="ltr">
-                {`NTRP ${me.ntrp.toFixed(1)} · ${me.wins}-${me.losses} · ${me.win_pct}% ${t("WINS")}`}
-              </p>
-            )}
-          </>
+    <div className="rk2">
+      <header className="rk2-head">
+        <h1 className="rk2-title">{t("דירוג")}</h1>
+        {!loading && sportReady && (
+          <span className="rk2-count">{t("{n} שחקנים", { n: fmtNum(total) })}</span>
         )}
-
-        <p className="rk-sortline" dir="ltr">
-          {!loading && sportReady && <span>{t("SORTED BY")}</span>}
-          <button
-            type="button"
-            className="rk-sort"
-            onClick={() => setSheetOpen(true)}
-            aria-haspopup="listbox"
-            aria-expanded={sheetOpen}
-          >
-            {sort === "ntrp" ? "NTRP" : t("RECORD")}
-            <ChevronDownIcon aria-hidden="true" />
-          </button>
-        </p>
       </header>
 
-      {!loading && !error && total > 0 && (
-        <div className="rk-col-head">
-          <span className="rk-col-rank" dir="ltr">
-            #
+      {/* Where I stand, in the sport's colour — the one row of this table the
+          reader came to find. */}
+      {!loading && sportReady && me && !meNoRating && !meInsufficientRecord && (
+        <button type="button" className="rk2-me" onClick={scrollToMe}>
+          <span className="rk2-me-place">
+            <span className="rk2-me-label">{t("המקום שלך")}</span>
+            <span className="rk2-me-rank">
+              <b dir="ltr">{place(me.rank)}</b>
+              <i dir="auto">{t("מתוך {n}", { n: fmtNum(total) })}</i>
+            </span>
           </span>
-          <span className="rk-col-player">{t("PLAYER")}</span>
-          <span className="rk-col-bar" dir="ltr">
-            {sort === "ntrp" ? "1.0 —————— 7.0" : t("WIN %")}
+          <span className="rk2-me-stats">
+            <span className="rk2-me-stat">
+              <b dir="ltr">{me.ntrp.toFixed(1)}</b>
+              <i>NTRP</i>
+            </span>
+            <span className="rk2-me-stat">
+              <b dir="ltr">{`${me.wins}–${me.losses}`}</b>
+              <i>W–L</i>
+            </span>
+            <span className="rk2-me-stat">
+              <b dir="ltr">{`${me.win_pct}%`}</b>
+              <i>{sentenceCase(t("ניצחונות"))}</i>
+            </span>
           </span>
-          <span className="rk-col-val" dir="ltr">
-            {sort === "ntrp" ? "NTRP" : t("W %")}
-          </span>
-        </div>
+        </button>
       )}
 
-      <ul className="rk-list" ref={listRef}>
-        {(loading || !sportReady) &&
-          Array.from({ length: 8 }).map((_, i) => (
-            <li className="rk-row rk-row-skel" key={i}>
-              <SkeletonBar width={26} height={16} />
-              <span className="rk-face">
-                <SkeletonBar width={28} height={28} />
+      {!loading && sportReady && meNoRating && (
+        <EmptyLine
+          sentence={t("אתה עוד לא מדורג.")}
+          meta={t("עוד {n} משחקים ותיכנס לטבלה", {
+            n: Math.max(0, minMatches - (me?.matches_played ?? 0)),
+          })}
+        />
+      )}
+      {!loading && sportReady && meInsufficientRecord && (
+        <EmptyLine
+          sentence={t("עוד {n} משחקים ותיכנס לדירוג לפי מאזן", {
+            n: Math.max(0, minMatches - (me?.matches_played ?? 0)),
+          })}
+        />
+      )}
+
+      <div className="rk2-bar">
+        <span className="rk2-all">{t("כל השחקנים")}</span>
+        <button
+          type="button"
+          className="rk2-sort"
+          onClick={() => setSheetOpen(true)}
+          aria-haspopup="listbox"
+          aria-expanded={sheetOpen}
+        >
+          {`${t("מיון")}: `}
+          <b>{sort === "ntrp" ? "NTRP" : t("מאזן")}</b>
+          <ChevronDownIcon aria-hidden="true" />
+        </button>
+      </div>
+
+      {error && !loading ? (
+        <div className="rk2-card rk2-note">
+          <p>{t("לא הצלחנו לטעון את הדירוג")}</p>
+          <button type="button" className="link-btn" onClick={loadFirstPage}>
+            {t("נסה שוב")}
+          </button>
+        </div>
+      ) : loading || !sportReady ? (
+        <ul className="rk2-card rk2-list">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <li className="rk2-row" key={i}>
+              <SkeletonBar width={18} height={14} />
+              <SkeletonBar width={36} height={36} />
+              <span className="rk2-who">
+                <SkeletonBar width={110} height={14} />
+                <SkeletonBar width={54} height={10} style={{ marginTop: 4 }} />
               </span>
-              <span className="rk-who">
-                <SkeletonBar width={90} height={14} />
-                <SkeletonBar width={50} height={10} style={{ marginTop: 4 }} />
-              </span>
-              <SkeletonBar height={3} style={{ flex: 1 }} />
-              <SkeletonBar width={30} height={12} />
+              <SkeletonBar width={30} height={14} />
             </li>
           ))}
-
-        {!loading && error && (
-          <li className="rk-error">
-            <p>{t("לא הצלחנו לטעון את הדירוג")}</p>
-            <button type="button" className="link-btn" onClick={loadFirstPage}>
-              {t("נסה שוב")}
-            </button>
-          </li>
-        )}
-
-        {!loading && !error && total === 0 && (
-          <li className="rk-empty">
-            <EmptyState icon={<RanksIcon aria-hidden="true" />}>
-              {sort === "record"
-                ? t("עדיין אין שחקן עם מספיק משחקים למיון לפי מאזן")
-                : t("עדיין אין דירוג שחקנים בענף הזה")}
-            </EmptyState>
-          </li>
-        )}
-
-        {!loading &&
-          !error &&
-          players.map((p) => (
-            <li
-              className={`rk-row${p.rank === 1 ? " is-leader" : ""}`}
-              key={p.id}
-              ref={p.id === user.id ? myRowRef : undefined}
-            >
-              <span className="rk-rank" dir="ltr">
-                {p.rank}
-              </span>
-              <span className="rk-face">
-                <Avatar name={p.display_name} photoUrl={p.photo_url} size={28} />
-              </span>
-              <span className="rk-who">
-                {p.id === user.id ? (
-                  <span className="rk-name">
-                    <span dir="auto" style={{ unicodeBidi: "isolate" }}>{p.display_name}</span>
-                  </span>
-                ) : (
-                  <Link to={`/players/${p.id}`} className="rk-name player-name-link">
-                    <span dir="auto" style={{ unicodeBidi: "isolate" }}>{p.display_name}</span>
-                  </Link>
-                )}
-                <span className="rk-sub" dir="ltr">
-                  {sort === "ntrp" ? `${p.wins}-${p.losses}` : `NTRP ${p.ntrp.toFixed(1)}`}
-                </span>
-              </span>
-              <span className="rk-bar">
-                <i style={{ width: `${barPct(p, sort)}%` }} />
-              </span>
-              <span className="rk-val" dir="ltr">
-                {sort === "ntrp" ? p.ntrp.toFixed(1) : `${p.win_pct}%`}
-              </span>
-            </li>
-          ))}
-
-        {!loading && !error && nextCursor && <li ref={sentinelRef} className="rk-sentinel" aria-hidden="true" />}
-      </ul>
-
-      {!loading && sportReady && me && (
-        <>
-          {meInsufficientRecord ? (
-            <div className="rk-me-note">
-              <p className="rk-me-note-text">
-                {t("עוד {n} משחקים ותיכנס לדירוג לפי מאזן", { n: Math.max(0, minMatches - me.matches_played) })}
-              </p>
-            </div>
-          ) : meNoRating ? (
-            <div className="rk-me-note">
-              <p className="rk-me-note-text" dir="ltr">
-                {`${Math.max(0, minMatches - me.matches_played)} MATCHES UNTIL YOU ENTER THE TABLE`}
-              </p>
-            </div>
-          ) : (
-            <button type="button" className="rk-me" onClick={scrollToMe}>
-              <span className="rk-rank" dir="ltr">
-                {me.rank}
-              </span>
-              {/* The pinned row is the same row, so it carries the same face. */}
-              <span className="rk-face">
-                <Avatar name={me.display_name} photoUrl={user?.photo_url} size={28} />
-              </span>
-              <span className="rk-who">
-                <span className="rk-name">
-                  <span dir="auto" style={{ unicodeBidi: "isolate" }}>{me.display_name}</span>
-                  <span className="rk-you"> · {t("אתה")}</span>
-                </span>
-                <span className="rk-sub" dir="ltr">
-                  {sort === "ntrp" ? `${me.wins}-${me.losses}` : `NTRP ${me.ntrp.toFixed(1)}`}
-                </span>
-              </span>
-              <span className="rk-bar">
-                <i style={{ width: `${barPct(me, sort)}%` }} />
-              </span>
-              <span className="rk-val" dir="ltr">
-                {sort === "ntrp" ? me.ntrp.toFixed(1) : `${me.win_pct}%`}
-              </span>
-            </button>
-          )}
-        </>
+        </ul>
+      ) : total === 0 ? (
+        <div className="rk2-card rk2-note">
+          <EmptyState icon={<RanksIcon aria-hidden="true" />}>
+            {sort === "record"
+              ? t("עדיין אין שחקן עם מספיק משחקים למיון לפי מאזן")
+              : t("עדיין אין דירוג שחקנים בענף הזה")}
+          </EmptyState>
+        </div>
+      ) : (
+        <ul className="rk2-card rk2-list" ref={listRef}>
+          {players.map((p) => row(p, p.id === user.id))}
+          {nextCursor && <li ref={sentinelRef} className="rk2-sentinel" aria-hidden="true" />}
+        </ul>
       )}
 
       {sheetOpen && (

@@ -1437,7 +1437,7 @@ const PAIRS = [
   ["לאישור השעה", "Confirm the time"],
 
   // Rankings screen (99b)
-  ["המקום שלך", "YOUR PLACE"],
+  ["המקום שלך", "Your place"],
   ["מתוך {n}", "of {n}"],
   ["שחקנים", "PLAYERS"],
   ["ממוין לפי", "SORTED BY"],
@@ -1965,6 +1965,10 @@ const PAIRS = [
   ["הזמן למשחק ידידותי", "Invite to a friendly match"],
   ["{n} ניצחון", "{n} win"],
   ["{n} הפסד", "{n} loss"],
+  // 221b — the ranks tab.
+  ["כל השחקנים", "All players"],
+  ["מיון", "Sort"],
+  ["עוד {n} משחקים ותיכנס לטבלה", "{n} matches until you enter the table"],
 ];
 
 const heToEn = {};
