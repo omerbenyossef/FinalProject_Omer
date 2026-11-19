@@ -1969,6 +1969,7 @@ const PAIRS = [
   ["כל השחקנים", "All players"],
   ["מיון", "Sort"],
   ["עוד {n} משחקים ותיכנס לטבלה", "{n} matches until you enter the table"],
+  ["עוד לא התחילה", "Not started yet"],
 ];
 
 const heToEn = {};

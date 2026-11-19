@@ -457,7 +457,7 @@ export default function Leagues({ embedded = false }) {
   function placeOf(place, total) {
     if (place == null) return null;
     return (
-      <span className="lg2-place" dir={language === "en" ? "ltr" : "auto"}>
+      <span className="lg2-place">
         <b>{language === "en" ? rankLabel(place, language, t) : place}</b>
         {` ${t("מתוך")} ${total}`}
       </span>
@@ -479,25 +479,33 @@ export default function Leagues({ embedded = false }) {
           : t("ממתינים לעוד {n} שחקנים", { n: missing })
         : t("עוד לא התחילה")
       : [
+          // Capital R: the shared "round {n}" is stored lowercase for the
+          // places it sits mid-sentence, and this line starts with it.
           total
             ? t("מחזור {n} מתוך {total}", { n: round, total })
-            : t("מחזור {n}", { n: round }),
+            : sentenceCase(t("מחזור {n}", { n: round })),
           endsAt ? t("נסגר {day}", { day: dayLabel(new Date(endsAt), t) }) : null,
         ]
           .filter(Boolean)
           .join(" · ");
 
     return (
-      <Link to={`/leagues/${league.id}`} className="lg2-row" key={league.id}>
+      // The row is laid out left to right whichever language the app is in:
+      // the name sits above its own place, the status under it on the left.
+      // Only the name follows its own direction, isolated, so a Hebrew league
+      // cannot turn the line it is on around.
+      <Link to={`/leagues/${league.id}`} className="lg2-row" dir="ltr" key={league.id}>
         <span className="lg2-row-text">
-          <span className="lg2-row-name" dir="auto">
-            {league.name}
+          <span className="lg2-row-name">
+            <span dir="auto" style={{ unicodeBidi: "isolate" }}>
+              {league.name}
+            </span>
           </span>
-          <span className="lg2-row-sub" dir="auto">
-            {status}
+          <span className="lg2-row-line">
+            <span className="lg2-row-sub">{status}</span>
+            {started && placeOf(league.my_rank, players)}
           </span>
         </span>
-        {started && placeOf(league.my_rank, players)}
         <ChevronIcon className="lg2-chev" aria-hidden="true" />
       </Link>
     );
@@ -679,24 +687,22 @@ export default function Leagues({ embedded = false }) {
             ) : (
               <>
                 {needs && (
-                  <section className="lg2-needs">
+                  <section className="lg2-needs" dir="ltr">
                     <span className="lg2-needs-label">{t("מחכה לך")}</span>
                     <div className="lg2-needs-row">
                       <div className="lg2-needs-text">
                         <span className="lg2-needs-title" dir="auto">
                           {needs.title}
                         </span>
-                        <span className="lg2-row-sub" dir="auto">
-                          {[
-                            needs.match.league_name,
-                            needs.match.round_ends_at
-                              ? t("נסגר {day}", {
-                                  day: dayLabel(new Date(needs.match.round_ends_at), t),
-                                })
-                              : null,
-                          ]
-                            .filter(Boolean)
-                            .join(" · ")}
+                        <span className="lg2-row-sub">
+                          <span dir="auto" style={{ unicodeBidi: "isolate" }}>
+                            {needs.match.league_name}
+                          </span>
+                          {needs.match.round_ends_at
+                            ? ` · ${t("נסגר {day}", {
+                                day: dayLabel(new Date(needs.match.round_ends_at), t),
+                              })}`
+                            : ""}
                         </span>
                       </div>
                       <button

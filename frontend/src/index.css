@@ -11041,7 +11041,10 @@ button.st-row { cursor: pointer; }
     inset 0 0 0 1px rgba(var(--court-rgb, 198, 242, 78), .12);
 }
 .lg2-needs-label { font: 600 12px "IBM Plex Sans", var(--sans); color: var(--court, #c6f24e); }
-.lg2-needs-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.lg2-needs-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+/* The line under the title belongs to the title, not to the button beside
+   it: same edge, directly underneath. */
+.lg2-needs-text { text-align: start; }
 .lg2-needs-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .lg2-needs-title { font: 700 19px/1.2 "IBM Plex Sans", var(--sans); color: #f4f6fa; }
 .lg2-needs-go {
@@ -11056,15 +11059,20 @@ button.st-row { cursor: pointer; }
   box-shadow: inset 0 0 0 1px rgba(148, 163, 184, .08);
 }
 .lg2-row {
-  display: flex; align-items: center; gap: 12px; padding: 14px 16px;
+  display: flex; align-items: center; gap: 10px; padding: 14px 12px 14px 16px;
   border-top: 1px solid rgba(148, 163, 184, .10);
   color: inherit; text-decoration: none;
 }
 .lg2-row:first-child { border-top: 0; }
-.lg2-row-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.lg2-row-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+/* The name sits over its own placing, right edge to right edge, so a column
+   of leagues reads as a column of names rather than as ragged text. */
 .lg2-row-name {
-  font: 700 16px "IBM Plex Sans", var(--sans); color: #f4f6fa;
+  text-align: right; font: 700 16px "IBM Plex Sans", var(--sans); color: #f4f6fa;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.lg2-row-line {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
 }
 .lg2-row-sub {
   font: 500 12.5px/1.35 "IBM Plex Sans", var(--sans); color: #8b93a6;
@@ -11074,7 +11082,7 @@ button.st-row { cursor: pointer; }
    is the context around it. */
 .lg2-place {
   flex: none; white-space: nowrap;
-  font: 500 13px "IBM Plex Sans", var(--sans); color: #8b93a6;
+  font: 500 13.5px "IBM Plex Sans", var(--sans); color: #8b93a6;
 }
 .lg2-place b { font-weight: 700; color: #eef1f7; }
 .lg2-chev { flex: none; width: 16px; height: 16px; color: #6f7787; }
@@ -11125,6 +11133,7 @@ button.st-row { cursor: pointer; }
    shape as the invite button on a player's page. It was a full-width line
    with a rule above it, which read as another row of the list rather than
    as the one thing you can do to the whole of it. */
+.lg2-new:active { background: rgba(var(--court-rgb, 198, 242, 78), .10); }
 .lg2-new {
   align-self: center; margin-bottom: 6px;
   display: inline-flex; align-items: center; gap: 6px;
