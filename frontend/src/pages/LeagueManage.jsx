@@ -6,7 +6,8 @@ import { useLanguage } from "../LanguageContext.jsx";
 import Avatar from "../Avatar.jsx";
 import LeagueRulesForm from "../LeagueRulesForm.jsx";
 import { ChevronIcon } from "../Icons.jsx";
-import { leagueRuleLabels, formatDayMonth } from "../matchUtils.js";
+import { leagueRuleLabels, formatDayMonth, nextSchedulePreview, roundDueDate } from "../matchUtils.js";
+import { AddRoundConfirmSheet } from "./LeagueDetail.jsx";
 import { SkeletonPageHeader } from "../Skeleton.jsx";
 
 export default function LeagueManage() {
@@ -23,6 +24,7 @@ export default function LeagueManage() {
   const [expanded, setExpanded] = useState(null);
   const [inviteToken, setInviteToken] = useState(null);
   const [inviteLoading, setInviteLoading] = useState(false);
+  const [showAddRoundConfirm, setShowAddRoundConfirm] = useState(false);
 
   async function loadAll() {
     try {
@@ -68,6 +70,30 @@ export default function LeagueManage() {
 
   const ruleLabels = leagueRuleLabels(league, t);
   const roundsCount = new Set(allMatches.map((m) => m.round_number).filter(Boolean)).size;
+  // Adding a round to the schedule is an admin's job, so it lives here rather
+  // than on the Matches tab, which is everyone's board for the round they are
+  // playing right now.
+  const nextRound = roundsCount + 1;
+  const { pairs: nextPairs, roundsToCreate } = nextSchedulePreview(members, allMatches);
+  const nextRoundDueDate = roundDueDate(
+    league.schedule_started_at || new Date().toISOString(),
+    nextRound + Math.max(roundsToCreate, 1) - 1,
+    league.round_length_days
+  );
+
+  async function handleAddRound() {
+    setBusy(true);
+    setError("");
+    try {
+      await api.generateSchedule(leagueId);
+      await loadAll();
+      setShowAddRoundConfirm(false);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
 
   function toggle(section) {
     setExpanded((cur) => (cur === section ? null : section));
@@ -209,7 +235,31 @@ export default function LeagueManage() {
           </div>
           <ChevronIcon className="manage-nav-chevron chevron-icon" aria-hidden="true" />
         </Link>
+
+        {isCreator && allMatches.length > 0 && nextPairs.length > 0 && (
+          <button
+            type="button"
+            className="schedule-add-round-btn manage-add-round"
+            onClick={() => setShowAddRoundConfirm(true)}
+          >
+            {roundsToCreate > 1
+              ? t("+ {n} מחזורים", { n: roundsToCreate })
+              : t("+ מחזור {n}", { n: nextRound })}
+          </button>
+        )}
       </div>
+      )}
+
+      {showAddRoundConfirm && (
+        <AddRoundConfirmSheet
+          nextRound={nextRound}
+          roundsToCreate={roundsToCreate}
+          pairs={nextPairs}
+          dueDate={nextRoundDueDate}
+          busy={busy}
+          onConfirm={handleAddRound}
+          onClose={() => setShowAddRoundConfirm(false)}
+        />
       )}
 
       <div className="danger-zone">

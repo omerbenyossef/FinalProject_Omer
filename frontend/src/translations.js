@@ -1989,6 +1989,13 @@ const PAIRS = [
   ["לנסות {flex}", "Try {flex}"],
   ["לנסות כל יום", "Try any day"],
   ["שלח ל{name} · {when}", "Send to {name} · {when}"],
+  ["מחזור {n} מתוך {total}", "Round {n} of {total}"],
+  ["הסתיים {date}", "ended {date}"],
+  ["אתה לא משחק במחזור הזה", "You're off this round"],
+  ["דווחו תוצאה", "Report score"],
+  ["ניצחתי", "Won"],
+  ["הפסדתי", "Lost"],
+  ["אין שעה עדיין", "No time yet"],
 ];
 
 const heToEn = {};

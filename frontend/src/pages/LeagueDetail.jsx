@@ -10,7 +10,6 @@ import RatingQuestionnaire from "../RatingQuestionnaire.jsx";
 import { UserPlusIcon, CalendarIcon, ChevronIcon, SettingsIcon, PlusIcon } from "../Icons.jsx";
 import {
   formatSets,
-  roundDueDate,
   roundDueDateObj,
   nextSchedulePreview,
   matchScheduleState,
@@ -18,18 +17,41 @@ import {
   formatWeekdayTime,
   formatWeekdayDateTime,
   activeRoundStatus,
-  daysLeftPhrase,
   daysUntilOpen,
   getActionCandidates,
   buildOpenAction,
   isMyMatch,
   matchSides,
+  monthName,
+  weekdayName,
   standingIsMine,
   standingSide,
 } from "../matchUtils.js";
 import { SkeletonPageHeader, SkeletonHeroStat, SkeletonStandingsTable } from "../Skeleton.jsx";
 import PageHelp from "../PageHelp.jsx";
 import EmptyLine from "../EmptyLine.jsx";
+
+// Sentence case, because the shared weekday/month labels are stored upper
+// case for the mono screens and this page has no caps on it at all.
+function sentenceCase(label) {
+  const text = String(label ?? "");
+  return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+}
+
+function shortDate(date, t) {
+  return `${date.getDate()} ${sentenceCase(monthName(date, t))}`;
+}
+
+// A weekday is only a useful name for a day inside the coming week; past
+// that, "Sat" could be any Saturday, so the date is the clearer answer.
+function dayLabel(date, t) {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  const target = new Date(date);
+  target.setHours(0, 0, 0, 0);
+  const days = Math.round((target - start) / 86400000);
+  return days >= 0 && days <= 7 ? sentenceCase(weekdayName(date, t)) : shortDate(date, t);
+}
 
 function groupMatchesByRound(matches) {
   const groups = new Map();
@@ -65,7 +87,6 @@ export default function LeagueDetail() {
   const [inviteError, setInviteError] = useState("");
   const [inviteLoading, setInviteLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("standings");
-  const [showAddRoundConfirm, setShowAddRoundConfirm] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [selectedRound, setSelectedRound] = useState(null);
   const [ratingFlow, setRatingFlow] = useState(null); // { existingResult } | null
@@ -190,11 +211,6 @@ export default function LeagueDetail() {
     } finally {
       setBusy(false);
     }
-  }
-
-  async function handleAddRound() {
-    await handleGenerateSchedule();
-    setShowAddRoundConfirm(false);
   }
 
   async function handleReportScore(matchId, sets) {
@@ -334,12 +350,6 @@ export default function LeagueDetail() {
   const roundsCount = new Set(allMatches.map((m) => m.round_number).filter(Boolean)).size;
   const nextRound = roundsCount + 1;
   const { pairs: nextPairs, roundsToCreate } = nextSchedulePreview(members, allMatches);
-  const lastNewRound = nextRound + Math.max(roundsToCreate, 1) - 1;
-  const nextRoundDueDate = roundDueDate(
-    league.schedule_started_at || new Date().toISOString(),
-    lastNewRound,
-    league.round_length_days
-  );
   const isLatestRound = shownRound === latestRound;
   const shownRoundMatches = groupedRounds.find((g) => g.round === shownRound)?.matches || [];
   // My match leads the tab as its own block (149a); the list below is
@@ -347,21 +357,15 @@ export default function LeagueDetail() {
   const myShownMatch =
     shownRoundMatches.find((m) => isMyMatch(m, user?.id)) ?? null;
   const otherMatches = shownRoundMatches.filter((m) => m !== myShownMatch);
-  const shownRoundCloses = shownRound
-    ? roundDueDate(league.schedule_started_at, shownRound, league.round_length_days)
-    : "";
   const shownRoundDue = shownRound
     ? roundDueDateObj(league.schedule_started_at, shownRound, league.round_length_days || 7)
-    : null;
-  const shownRoundDaysLeft = shownRoundDue
-    ? Math.max(0, Math.ceil((shownRoundDue.getTime() - Date.now()) / 86400000))
     : null;
   const prevRound = existingRoundNumbers.filter((r) => r < shownRound).sort((a, b) => b - a)[0] ?? null;
   const nextRoundNav = existingRoundNumbers.filter((r) => r > shownRound).sort((a, b) => a - b)[0] ?? null;
   const legacyMatches = allMatches.filter((m) => !m.round_number);
 
   const roundLengthDays = league.round_length_days || 7;
-  const { round: headCurrentRound, daysLeft: headDaysLeft } = activeRoundStatus(
+  const { round: headCurrentRound } = activeRoundStatus(
     league.schedule_started_at,
     roundLengthDays
   );
@@ -504,8 +508,14 @@ export default function LeagueDetail() {
                   }),
                 ]
               : [
-                  headCurrentRound !== null ? t("מחזור {n}", { n: headCurrentRound }) : null,
-                  headCurrentRound !== null ? daysLeftPhrase(headDaysLeft, t) : null,
+                  // Days left used to sit here too; it now appears once, on the
+                  // round row below, where the round it belongs to is named.
+                  headCurrentRound !== null
+                    ? t("מחזור {n} מתוך {total}", {
+                        n: headCurrentRound,
+                        total: Math.max(roundsCount, headCurrentRound),
+                      })
+                    : null,
                 ]),
             t("{n} שחקנים", { n: members.length }),
           ]
@@ -525,7 +535,7 @@ export default function LeagueDetail() {
               className={activeTab === "stats" ? "is-on" : ""}
               onClick={() => setActiveTab("stats")}
             >
-              {t("הסטטיסטיקה שלי")}
+              {sentenceCase(t("הסטטיסטיקה שלי"))}
             </button>
           )}
           <button
@@ -755,28 +765,6 @@ export default function LeagueDetail() {
 
         {activeTab === "matches" && (
           <div className="league-matches-tab">
-            {hasSchedule && isCreator && (
-              <div className="schedule-status-card">
-                <div>
-                  <div className="schedule-status-label">{t("לוח משחקים")}</div>
-                  <div className="schedule-status-value">
-                    {t("{rounds} מחזורים · {games} משחקים", { rounds: roundsCount, games: allMatches.length })}
-                  </div>
-                </div>
-                {nextPairs.length > 0 && (
-                  <button
-                    type="button"
-                    className="schedule-add-round-btn"
-                    onClick={() => setShowAddRoundConfirm(true)}
-                  >
-                    {roundsToCreate > 1
-                      ? t("+ {n} מחזורים", { n: roundsToCreate })
-                      : t("+ מחזור {n}", { n: nextRound })}
-                  </button>
-                )}
-              </div>
-            )}
-
             {!hasSchedule && (
               <div className="schedule-empty">
                 <CalendarIcon className="schedule-empty-icon" aria-hidden="true" />
@@ -815,17 +803,19 @@ export default function LeagueDetail() {
                   <div className="round-line-nav">
                     <button
                       type="button"
-                      className="round-arrow"
+                      className="round-arrow prev"
                       disabled={prevRound === null}
                       onClick={() => setSelectedRound(prevRound)}
                       aria-label={t("מחזור קודם")}
                     >
                       <ChevronIcon aria-hidden="true" />
                     </button>
-                    <span className="round-line-num">{t("מחזור {n}", { n: shownRound })}</span>
+                    <span className="round-line-num">
+                      {sentenceCase(t("מחזור {n}", { n: shownRound }))}
+                    </span>
                     <button
                       type="button"
-                      className="round-arrow next"
+                      className="round-arrow"
                       disabled={nextRoundNav === null}
                       onClick={() => setSelectedRound(nextRoundNav)}
                       aria-label={t("מחזור הבא")}
@@ -833,11 +823,11 @@ export default function LeagueDetail() {
                       <ChevronIcon aria-hidden="true" />
                     </button>
                   </div>
-                  {shownRoundCloses && (
+                  {shownRoundDue && (
                     <span className="round-line-closes">
-                      {isLatestRound
-                        ? t("נסגר ב-{date}", { date: shownRoundCloses })
-                        : t("נסגר ב-{date} (עבר)", { date: shownRoundCloses })}
+                      {shownRoundDue.getTime() >= Date.now()
+                        ? t("נסגר {day}", { day: dayLabel(shownRoundDue, t) })
+                        : t("הסתיים {date}", { date: shortDate(shownRoundDue, t) })}
                     </span>
                   )}
                 </div>
@@ -867,7 +857,6 @@ export default function LeagueDetail() {
                         userId={user?.id}
                         busy={busy}
                         maxSets={league.best_of}
-                        daysLeft={shownRoundDaysLeft}
                         onSchedule={() => navigate(`/matches/${myShownMatch.id}`)}
                         onQuickConfirmSchedule={() => handleQuickConfirmSchedule(myShownMatch.id)}
                         onCancelSchedule={() => handleCancelSchedule(myShownMatch.id)}
@@ -876,20 +865,17 @@ export default function LeagueDetail() {
                         onNeedsConfirm={() => navigate(`/matches/${myShownMatch.id}/confirm`)}
                       />
                     ) : (
-                      <p className="mm-none">{t("אין לך משחק במחזור הזה")}</p>
+                      <div className="lmx-mine lmx-mine--plain lmx-mine--bye">
+                        {t("אתה לא משחק במחזור הזה")}
+                      </div>
                     )}
 
                     {otherMatches.length > 0 && (
                       <>
-                        <div className="fx-head">{t("שאר המחזור")}</div>
-                        <div className="fixtures">
+                        <div className="lmx-rest-head">{t("שאר המחזור")}</div>
+                        <div className="lmx-rest">
                           {otherMatches.map((match) => (
-                            <FixtureRow
-                              key={match.id}
-                              match={match}
-                              userId={user?.id}
-                              maxSets={league.best_of}
-                            />
+                            <OtherMatchRow key={match.id} match={match} />
                           ))}
                         </div>
                       </>
@@ -959,18 +945,6 @@ export default function LeagueDetail() {
         </button>
       )}
 
-      {showAddRoundConfirm && (
-        <AddRoundConfirmSheet
-          nextRound={nextRound}
-          roundsToCreate={roundsToCreate}
-          pairs={nextPairs}
-          dueDate={nextRoundDueDate}
-          busy={busy}
-          onConfirm={handleAddRound}
-          onClose={() => setShowAddRoundConfirm(false)}
-        />
-      )}
-
       {showLeaveConfirm && (
         <LeaveLeagueConfirmSheet
           busy={busy}
@@ -1025,7 +999,7 @@ function LeaveLeagueConfirmSheet({ busy, isCreator, onConfirm, onClose }) {
   );
 }
 
-function AddRoundConfirmSheet({ nextRound, roundsToCreate, pairs, dueDate, busy, onConfirm, onClose }) {
+export function AddRoundConfirmSheet({ nextRound, roundsToCreate, pairs, dueDate, busy, onConfirm, onClose }) {
   const { t } = useLanguage();
 
   return (
@@ -1082,7 +1056,6 @@ function MyMatchBlock({
   userId,
   busy,
   maxSets,
-  daysLeft,
   onSchedule,
   onQuickConfirmSchedule,
   onCancelSchedule,
@@ -1133,7 +1106,16 @@ function MyMatchBlock({
     );
   }
 
-  const when = match.scheduled_at ? formatWeekdayTime(new Date(match.scheduled_at), t) : "";
+  const at = match.scheduled_at ? new Date(match.scheduled_at) : null;
+  const when = at ? formatWeekdayTime(at, t) : "";
+  // "Sat 21 · 18:00 · Court 2" — the day as a name, because a round is a few
+  // days long and the date alone makes you count.
+  const dayPart = at ? `${sentenceCase(weekdayName(at, t))} ${at.getDate()}` : "";
+  const timePart = at
+    ? `${String(at.getHours()).padStart(2, "0")}:${String(at.getMinutes()).padStart(2, "0")}`
+    : "";
+  const whenLine = [dayPart, timePart, match.court].filter(Boolean).join(" · ");
+  const playedLine = [dayPart, match.court].filter(Boolean).join(" · ");
   const claimSets = mine(match.corrected_sets ?? match.sets);
   const finalSets = mine(match.sets);
   const iWon =
@@ -1142,17 +1124,26 @@ function MyMatchBlock({
         finalSets.filter((s) => s.player2_games > s.player1_games).length
       : null;
 
-  let meta = null;
+  // One card, four shapes: a label, the line under the opponent's name, and
+  // whatever is on the right — a button, a result, or nothing at all. It
+  // glows while the match is still something I have to carry; once it is
+  // played, or parked, it is a plain card like any other.
+  let label = t("המשחק שלך");
+  let sub = null;
   let action = null;
+  let result = null;
+  let plain = false;
+  let onCard = null;
   let voided = false;
 
   if (match.status === "disputed" && match.void_reason === "not_played" && !match.corrected_sets) {
     // Voided, not disputed: say who reported it, whether the other side ever
     // answered, and offer the one thing still open — a new round for it.
     voided = true;
+    plain = true;
     const iReported = match.reported_by === userId;
     const answered = match.confirmed_by != null;
-    meta = [
+    sub = [
       iReported ? t("דיווחת שהמשחק לא בוצע") : t("היריב דיווח שהמשחק לא בוצע"),
       answered
         ? iReported
@@ -1166,110 +1157,173 @@ function MyMatchBlock({
     action = (
       <button
         type="button"
-        className="mm-btn"
+        className="lmx-btn"
         onClick={() => navigate(`/matches/${match.id}/reschedule`)}
       >
         {t("תיאום במחזור אחר")}
       </button>
     );
   } else if (match.status === "disputed") {
-    meta = t("התוצאות לא תואמות · המשחק לא נספר");
+    plain = true;
+    sub = t("התוצאות לא תואמות · המשחק לא נספר");
     action = (
-      <button type="button" className="mm-btn ghost" onClick={onNeedsConfirm}>
+      <button type="button" className="lmx-btn lmx-btn--ghost" onClick={onNeedsConfirm}>
         {t("הצג")}
       </button>
     );
   } else if (match.status === "completed") {
-    meta = [formatSets(finalSets), iWon === null ? null : iWon ? t("ניצחת") : t("הפסדת")]
-      .filter(Boolean)
-      .join(" · ");
-    action = (
-      <button type="button" className="mm-btn ghost" onClick={() => setEditing(true)}>
-        {t("תקן תוצאה")}
-      </button>
+    // Played: the score is the point of the card, so it takes the right side
+    // and the card itself is what you press to correct it.
+    plain = true;
+    label = `${t("המשחק שלך")} · ${t("שוחק").toLowerCase()}`;
+    sub = playedLine;
+    onCard = () => setEditing(true);
+    result = (
+      <span className="lmx-result">
+        <span className={`lmx-chip${iWon ? "" : " lmx-chip--lost"}`}>
+          {iWon ? t("ניצחתי") : t("הפסדתי")}
+        </span>
+        <span className="lmx-score" dir="ltr">
+          {formatSets(finalSets)}
+        </span>
+      </span>
     );
   } else if (match.status === "pending_confirmation") {
     if (iNeedToConfirm) {
-      meta = t("היריב דיווח {score}", { score: formatSets(claimSets) });
+      sub = t("היריב דיווח {score}", { score: formatSets(claimSets) });
       action = (
-        <button type="button" className="mm-btn" onClick={onNeedsConfirm}>
+        <button type="button" className="lmx-btn" onClick={onNeedsConfirm}>
           {t("אשר תוצאה")}
         </button>
       );
     } else {
-      meta = t("דיווחת {score} · ממתין ליריב", { score: formatSets(claimSets) });
+      plain = true;
+      sub = t("דיווחת {score} · ממתין ליריב", { score: formatSets(claimSets) });
     }
   } else if (rowStatus === "no_time") {
-    meta = [t("עוד לא נקבעה שעה"), daysLeft != null ? daysLeftPhrase(daysLeft, t) : null]
-      .filter(Boolean)
-      .join(" · ");
+    sub = t("עוד לא נקבעה שעה");
     action = (
-      <button type="button" className="mm-btn" onClick={onSchedule}>
+      <button type="button" className="lmx-btn" onClick={onSchedule}>
         {t("קבעו זמן")}
       </button>
     );
   } else if (rowStatus === "sent") {
-    meta = t("ממתין לאישור השעה שהצעת");
+    sub = t("ממתין לאישור השעה שהצעת");
     action = (
-      <button type="button" className="mm-secondary" onClick={onCancelSchedule} disabled={busy}>
+      <button type="button" className="lmx-btn lmx-btn--ghost" onClick={onCancelSchedule} disabled={busy}>
         {t("בטל")}
       </button>
     );
   } else if (rowStatus === "asked_you") {
-    meta = t("הציע לך {when}", { when });
+    sub = t("הציע לך {when}", { when });
     action = (
-      <div className="mm-actions">
-        <button type="button" className="mm-btn" onClick={onQuickConfirmSchedule} disabled={busy}>
+      <div className="lmx-actions">
+        <button type="button" className="lmx-btn" onClick={onQuickConfirmSchedule} disabled={busy}>
           {t("אשר")}
         </button>
-        <button type="button" className="mm-secondary" onClick={onSchedule}>
+        <button type="button" className="lmx-link" onClick={onSchedule}>
           {t("שנה את הזמן")}
         </button>
       </div>
     );
   } else {
-    meta = [when, match.court].filter(Boolean).join(" · ");
+    sub = whenLine;
     if (scheduleState === "ready") {
+      // The time has come and gone with no score on it.
       action = (
-        <button type="button" className="mm-btn" onClick={() => setReporting(true)}>
-          {t("דווח")}
+        <button type="button" className="lmx-btn" onClick={() => setReporting(true)}>
+          {t("דווחו תוצאה")}
+        </button>
+      );
+    } else {
+      label = `${t("המשחק שלך")} · ${t("מאושר").toLowerCase()}`;
+      action = (
+        <button type="button" className="lmx-btn lmx-btn--ghost" onClick={onSchedule}>
+          {t("החלף")}
         </button>
       );
     }
   }
 
+  const Shell = onCard ? "button" : "div";
   return (
-    <div className={`mm-block${voided ? " mm-block--void" : ""}`}>
-      <div className="mm-label">{t("המשחק שלך")}</div>
-      <div className="mm-row">
+    <Shell
+      {...(onCard ? { type: "button", onClick: onCard } : {})}
+      className={`lmx-mine${plain ? " lmx-mine--plain" : ""}${voided ? " lmx-mine--void" : ""}`}
+    >
+      <div className={`lmx-mine-label${plain ? " lmx-mine-label--muted" : ""}`}>{label}</div>
+      <div className="lmx-mine-row">
         {sides.opponent ? (
-          <Avatar name={sides.opponent.name} photoUrl={sides.opponent.photo_url} size={36} />
+          <Avatar name={sides.opponent.name} photoUrl={sides.opponent.photo_url} size={40} />
         ) : (
           /* Doubles: both faces, since there is no single opponent. */
-          <span className="mm-faces">
+          <span className="lmx-faces">
             {sides.opponents.map((p) => (
-              <Avatar key={p.id} name={p.name} photoUrl={p.photo_url} size={30} />
+              <Avatar key={p.id} name={p.name} photoUrl={p.photo_url} size={32} />
             ))}
           </span>
         )}
-        <div className="mm-body">
-          <div className="mm-name">
+        <div className="lmx-mine-body">
+          <div className="lmx-mine-name">
             <span dir="auto" style={{ unicodeBidi: "isolate" }}>
               {sides.opponentLabel}
             </span>
           </div>
           {sides.teammate && (
-            <div className="mm-mate" dir="auto" style={{ unicodeBidi: "isolate" }}>
+            <div className="lmx-mine-mate" dir="auto" style={{ unicodeBidi: "isolate" }}>
               {t("איתך")} {sides.teammate.name}
             </div>
           )}
-          <div className="mm-meta">{meta}</div>
+          <div className="lmx-mine-sub">{sub}</div>
         </div>
+        {result}
         {action}
       </div>
-    </div>
+    </Shell>
   );
 }
+
+// Everyone else's match in the round: two names, and the one thing worth
+// knowing about it — when it is, or how it went.
+function OtherMatchRow({ match }) {
+  const { t } = useLanguage();
+  const navigate = useNavigate();
+  const sides = matchSides(match, null);
+  const at = match.scheduled_at ? new Date(match.scheduled_at) : null;
+
+  let right = <span className="lmx-row-state">{t("אין שעה עדיין")}</span>;
+  if (match.status === "completed") {
+    right = (
+      <span className="lmx-row-score" dir="ltr">
+        {formatSets(match.sets)}
+      </span>
+    );
+  } else if (at) {
+    right = (
+      <span className="lmx-row-when" dir="ltr">
+        {`${sentenceCase(weekdayName(at, t))} ${String(at.getHours()).padStart(2, "0")}:${String(
+          at.getMinutes()
+        ).padStart(2, "0")}`}
+      </span>
+    );
+  }
+
+  return (
+    <button type="button" className="lmx-row" onClick={() => navigate(`/matches/${match.id}`)}>
+      <span className="lmx-row-names" dir="ltr">
+        <span dir="auto" style={{ unicodeBidi: "isolate" }}>
+          {sides.side1Label}
+        </span>
+        <span className="lmx-row-vs">vs</span>
+        <span dir="auto" style={{ unicodeBidi: "isolate" }}>
+          {sides.side2Label}
+        </span>
+      </span>
+      {right}
+    </button>
+  );
+}
+
 
 function FixtureRow({
   match,

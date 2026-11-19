@@ -2014,42 +2014,39 @@ a { color: var(--court); text-decoration: none; }
   display: flex;
   align-items: center;
   gap: 8px;
-  font: 500 13px "IBM Plex Mono", "IBM Plex Sans", monospace;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font: 500 13.5px "IBM Plex Sans", var(--sans);
   color: #8b93a6;
-}
-:lang(he) .ld-meta {
-  font-family: "IBM Plex Sans", monospace;
 }
 .ld-meta .sep {
   color: #3a424e;
 }
 
+/* The same outline segmented control the Leagues tab uses — three tabs are a
+   choice, not a heading, and they should look the same wherever they appear. */
 .ld-tabs {
   margin-top: 18px;
   display: flex;
-  border-top: 1px solid rgba(148, 163, 184, 0.14);
-  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+  gap: 4px;
+  padding: 4px;
+  border-radius: 21px;
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.14);
 }
 .ld-tabs button {
   flex: 1;
-  padding: 14px 0;
+  min-width: 0;
+  height: 34px;
+  padding: 0;
   border: 0;
+  border-radius: 17px;
   background: none;
   cursor: pointer;
-  font: 500 13.5px "IBM Plex Mono", "IBM Plex Sans", monospace;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #7b8496;
-}
-:lang(he) .ld-tabs button {
-  font-family: "IBM Plex Sans", monospace;
-  letter-spacing: 0em;
+  font: 600 13px "IBM Plex Sans", var(--sans);
+  color: #a3abbb;
 }
 .ld-tabs button.is-on {
-  color: #eef1f7;
-  box-shadow: inset 0 -2px 0 0 #eef1f7;
+  background: rgba(var(--court-rgb, 198, 242, 78), 0.14);
+  color: var(--court, #c6f24e);
+  font-weight: 700;
 }
 
 .ms-label {
@@ -2340,9 +2337,10 @@ a { color: var(--court); text-decoration: none; }
 }
 
 .league-matches-tab {
+  margin-top: 18px;
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 18px;
 }
 
 .round-title-row {
@@ -2373,7 +2371,6 @@ a { color: var(--court); text-decoration: none; }
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  margin-top: 18px;
 }
 .round-line-nav {
   display: flex;
@@ -2381,14 +2378,12 @@ a { color: var(--court); text-decoration: none; }
   gap: 10px;
 }
 .round-line-num {
-  font: 400 24px/1 "Anton", sans-serif;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
+  font: 700 18px/1 "IBM Plex Sans", var(--sans);
   color: #eef1f7;
 }
 .round-arrow {
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   padding: 0;
   border-radius: 50%;
   border: 1px solid rgba(148, 163, 184, 0.22);
@@ -2404,20 +2399,20 @@ a { color: var(--court); text-decoration: none; }
   height: 12px;
   stroke-width: 2;
 }
-.round-arrow.next {
+/* The chevron is flipped app-wide to point forward, so "previous" is the one
+   that needs turning back — in either direction. */
+.round-arrow.prev {
   transform: scaleX(-1);
 }
 .round-arrow:disabled {
   border-color: rgba(148, 163, 184, 0.12);
   background: transparent;
-  color: rgba(148, 163, 184, 0.35);
+  color: #4b5363;
   cursor: default;
 }
 .round-line-closes {
-  font: 500 11.5px "IBM Plex Mono", "IBM Plex Sans", monospace;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #6f7787;
+  font: 500 13px "IBM Plex Sans", var(--sans);
+  color: #8b93a6;
 }
 
 /* --- 149a: המשחק שלי בראש הטאב --- */
@@ -2714,10 +2709,8 @@ a.fx-report svg {
 }
 .all-rounds-meta {
   margin-inline-start: auto;
-  font: 500 11.5px "IBM Plex Mono", "IBM Plex Sans", monospace;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #6f7787;
+  font: 500 12.5px "IBM Plex Sans", var(--sans);
+  color: #8b93a6;
 }
 .all-rounds-row svg {
   width: 12px;
@@ -11515,3 +11508,93 @@ button.st-row { cursor: pointer; }
 }
 .ft-page .sched-send { background: var(--court, #c6f24e); color: #0e1116; }
 .ft-page .ft-results-head { margin-top: 20px; }
+
+/* ===== League › Matches: the round's board ===================== */
+
+/* My match. It glows while it is still mine to carry, and goes plain once it
+   is played or parked — the card itself says whether anything is owed. */
+.lmx-mine {
+  display: block; width: 100%; text-align: start; border: 0; color: inherit;
+  padding: 16px 16px 16px 18px; border-radius: 22px;
+  background: linear-gradient(
+      160deg,
+      rgba(var(--court-rgb, 198, 242, 78), .16),
+      rgba(var(--court-rgb, 198, 242, 78), .03) 60%
+    ),
+    #161b22;
+  box-shadow: inset 0 1px 0 rgba(var(--court-rgb, 198, 242, 78), .35),
+    inset 0 0 0 1px rgba(var(--court-rgb, 198, 242, 78), .12);
+}
+button.lmx-mine { cursor: pointer; }
+.lmx-mine--plain {
+  background: #161b22;
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, .08);
+}
+.lmx-mine--bye {
+  padding: 18px; font: 500 13.5px "IBM Plex Sans", var(--sans); color: #8b93a6;
+}
+.lmx-mine-label { font: 600 12px "IBM Plex Sans", var(--sans); color: var(--court, #c6f24e); }
+.lmx-mine-label--muted { color: #8b93a6; }
+.lmx-mine-row { margin-top: 10px; display: flex; align-items: center; gap: 12px; }
+.lmx-faces { flex: none; display: flex; }
+.lmx-faces > :last-child { margin-inline-start: -10px; }
+.lmx-mine-body { flex: 1; min-width: 0; }
+.lmx-mine-name {
+  font: 700 17px "IBM Plex Sans", var(--sans); color: #eef1f7;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.lmx-mine-mate { font: 500 12px "IBM Plex Sans", var(--sans); color: #8b93a6; }
+.lmx-mine-sub { margin-top: 3px; font: 500 12.5px "IBM Plex Sans", var(--sans); color: #a3abbb; }
+
+.lmx-btn {
+  flex: none; height: 36px; padding: 0 16px; border: 0; border-radius: 18px;
+  background: var(--court, #c6f24e); color: var(--court-contrast, #0e1116);
+  font: 700 13.5px "IBM Plex Sans", var(--sans); cursor: pointer;
+}
+.lmx-btn--ghost {
+  background: none; box-shadow: inset 0 0 0 1px rgba(148, 163, 184, .3);
+  color: #eef1f7; font-weight: 600; font-size: 13px;
+}
+.lmx-btn:disabled { opacity: .5; cursor: default; }
+.lmx-actions { flex: none; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.lmx-link {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  font: 600 12px "IBM Plex Sans", var(--sans); color: #8b93a6; text-decoration: underline;
+}
+/* The voided state is a sentence, not a label: it takes the row's width and
+   the action drops underneath it. */
+.lmx-mine--void .lmx-mine-row { flex-wrap: wrap; }
+.lmx-mine--void .lmx-btn { flex: 1 1 100%; margin-top: 12px; }
+
+.lmx-result { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+.lmx-chip {
+  padding: 2px 8px; border-radius: 9px;
+  background: rgba(var(--court-rgb, 198, 242, 78), .16); color: var(--court, #c6f24e);
+  font: 600 11px "IBM Plex Sans", var(--sans);
+}
+.lmx-chip--lost { background: rgba(255, 122, 107, .14); color: #ff7a6b; }
+.lmx-score { font: 700 20px/1 "IBM Plex Sans", var(--sans); color: #eef1f7; }
+
+/* The rest of the round: one card, one row per match. */
+.lmx-rest-head { font: 600 13px "IBM Plex Sans", var(--sans); color: #8b93a6; }
+.lmx-rest {
+  margin-top: 8px; border-radius: 16px; overflow: hidden;
+  background: #161b22; box-shadow: inset 0 0 0 1px rgba(148, 163, 184, .08);
+}
+.lmx-row {
+  width: 100%; border: 0; background: none; cursor: pointer; text-align: start;
+  padding: 13px 16px; border-top: 1px solid rgba(148, 163, 184, .10);
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  color: #eef1f7;
+}
+.lmx-row:first-child { border-top: 0; }
+.lmx-row-names {
+  min-width: 0; display: flex; align-items: baseline; gap: 7px;
+  font: 600 14.5px "IBM Plex Sans", var(--sans);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.lmx-row-vs { flex: none; font: 500 12px "IBM Plex Sans", var(--sans); color: #8b93a6; }
+.lmx-row-state { flex: none; font: 500 12.5px "IBM Plex Sans", var(--sans); color: #8b93a6; }
+.lmx-row-when { flex: none; font: 500 12.5px "IBM Plex Sans", var(--sans); color: #c9cfdb; }
+.lmx-row-score { flex: none; font: 700 14px "IBM Plex Sans", var(--sans); color: #eef1f7; }
+.manage-add-round { margin-top: 12px; width: 100%; }
