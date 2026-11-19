@@ -1972,6 +1972,23 @@ const PAIRS = [
   ["עוד לא התחילה", "Not started yet"],
   ["עוד", "More"],
   ["הצג פחות", "Show less"],
+  // Find a time — the search that replaced the list of every half hour.
+  ["המגרש", "Court"],
+  ["מצא זמן", "Find a time"],
+  ["מצא זמנים", "Find times"],
+  ["בחרו יום ושעה. נציג את 4 הזמנים הפנויים הקרובים ביותר.", "Pick a day and time. We'll show the 4 closest free slots."],
+  ["כל יום", "Any day"],
+  ["בסביבות", "Around"],
+  ["גמישות", "Flexible by"],
+  ["30 דק׳", "30 min"],
+  ["כל היום", "All day"],
+  ["הזמנים הפנויים הקרובים", "Closest free slots"],
+  ["חיפוש מחדש", "Search again"],
+  ["בדיוק", "Exact"],
+  ["אין זמן פנוי בסביבות {time}", "No free slots around {time}"],
+  ["לנסות {flex}", "Try {flex}"],
+  ["לנסות כל יום", "Try any day"],
+  ["שלח ל{name} · {when}", "Send to {name} · {when}"],
 ];
 
 const heToEn = {};

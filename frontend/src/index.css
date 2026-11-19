@@ -11371,3 +11371,147 @@ button.st-row { cursor: pointer; }
 
 .rk2-note { padding: 20px 16px; text-align: center; }
 .rk2-sentinel { height: 1px; }
+
+/* ============================================================
+   find-a-time — the search that replaced the list of every half hour
+
+   The screen used to print thirty-four rows, 07:00 to midnight, and ask the
+   reader to find the three that were free. The question people actually
+   arrive with is "can we play around six", so that is the question the
+   screen asks: a day, a time, how flexible — and the four nearest free
+   slots as the answer.
+   ============================================================ */
+
+.ft-hint {
+  margin: 0 0 12px; font: 500 12.5px/1.45 "IBM Plex Sans", var(--sans); color: #8b93a6;
+}
+
+.ft-days {
+  display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none;
+  margin-inline: -18px; padding-inline: 18px;
+}
+.ft-days::-webkit-scrollbar { display: none; }
+.ft-day {
+  flex: 1 0 auto; min-width: 74px; height: 58px; border: 0; border-radius: 14px;
+  background: #161b22; box-shadow: inset 0 0 0 1px rgba(148, 163, 184, .08);
+  color: #c9cfdb; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+}
+.ft-day.on {
+  background: rgba(var(--court-rgb, 198, 242, 78), .14);
+  box-shadow: inset 0 0 0 1px var(--court, #c6f24e);
+  color: var(--court, #c6f24e);
+}
+.ft-day-word { font: 600 11.5px "IBM Plex Sans", var(--sans); }
+.ft-day-num { font: 700 19px/1 "IBM Plex Sans", var(--sans); }
+
+.ft-fields { display: flex; gap: 8px; }
+.ft-field-wrap { flex: 1; min-width: 0; position: relative; }
+.ft-field {
+  width: 100%; border: 0; border-radius: 14px; padding: 10px 14px; cursor: pointer;
+  background: #161b22; box-shadow: inset 0 0 0 1px rgba(148, 163, 184, .08);
+  color: #eef1f7; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  text-align: start;
+}
+.ft-field.is-open { box-shadow: inset 0 0 0 1px rgba(var(--court-rgb, 198, 242, 78), .5); }
+.ft-field svg { flex: none; width: 16px; height: 16px; color: #8b93a6; }
+.ft-field-text { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ft-field-label { font: 500 11.5px "IBM Plex Sans", var(--sans); color: #8b93a6; }
+.ft-field-value {
+  font: 700 17px "IBM Plex Sans", var(--sans); color: #eef1f7;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* The dropdown hangs off its own field, so it cannot be mistaken for a list
+   that belongs to the whole screen. */
+.ft-menu {
+  position: absolute; z-index: 20; inset-inline-start: 0; top: calc(100% + 6px); width: 100%;
+  border-radius: 14px; overflow: hidden; background: #1d232c;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, .5);
+}
+.ft-menu--tall { max-height: 260px; overflow-y: auto; }
+.ft-menu-row {
+  width: 100%; border: 0; background: none; cursor: pointer; text-align: start;
+  padding: 11px 14px; border-top: 1px solid rgba(148, 163, 184, .10);
+  color: #eef1f7; font: 600 14px "IBM Plex Sans", var(--sans);
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+.ft-menu-row:first-child { border-top: 0; }
+.ft-menu-row.on { color: var(--court, #c6f24e); }
+.ft-menu-row svg { width: 14px; height: 14px; }
+
+.ft-results-head {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+}
+.ft-results-title { font: 600 13px "IBM Plex Sans", var(--sans); color: #8b93a6; }
+.ft-again {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  font: 600 12.5px "IBM Plex Sans", var(--sans); color: var(--court, #c6f24e);
+}
+
+.ft-slots { display: flex; flex-direction: column; gap: 8px; }
+.ft-slot {
+  display: flex; align-items: center; gap: 12px; width: 100%; cursor: pointer;
+  border: 0; border-radius: 14px; padding: 11px 14px; text-align: start;
+  background: #161b22; box-shadow: inset 0 0 0 1px rgba(148, 163, 184, .08);
+  color: #eef1f7;
+}
+.ft-slot.on {
+  background: rgba(var(--court-rgb, 198, 242, 78), .10);
+  box-shadow: inset 0 0 0 1.5px var(--court, #c6f24e);
+}
+.ft-slot-time { flex: none; width: 58px; font: 700 18px "IBM Plex Sans", var(--sans); }
+.ft-slot-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ft-slot-day {
+  display: flex; align-items: center; gap: 6px;
+  font: 600 13.5px "IBM Plex Sans", var(--sans); color: #eef1f7;
+}
+/* The slot that is exactly what was asked for says so, because the other
+   three are compromises and it is worth knowing which is which. */
+.ft-exact {
+  padding: 1px 6px; border-radius: 8px;
+  background: var(--court, #c6f24e); color: #0e1116;
+  font: 600 11px "IBM Plex Sans", var(--sans);
+}
+.ft-slot-sub {
+  font: 500 12px "IBM Plex Sans", var(--sans); color: #8b93a6;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ft-radio {
+  flex: none; width: 20px; height: 20px; border-radius: 50%;
+  box-shadow: inset 0 0 0 1.5px rgba(148, 163, 184, .35);
+}
+.ft-slot.on .ft-radio {
+  background: var(--court, #c6f24e); box-shadow: none;
+  display: grid; place-items: center;
+}
+.ft-slot.on .ft-radio::after {
+  content: ""; width: 8px; height: 8px; border-radius: 50%; background: #0e1116;
+}
+
+.ft-none { margin: 0; font: 500 14px "IBM Plex Sans", var(--sans); color: #8b93a6; }
+.ft-widen {
+  align-self: flex-start; border: 0; background: none; padding: 0; cursor: pointer;
+  font: 600 13px "IBM Plex Sans", var(--sans); color: var(--court, #c6f24e);
+}
+
+/* find-a-time · this screen drops the mono, letter-spaced caps the rest of
+   the scheduling flow uses: it is a short form, and a form reads as prose. */
+.ft-page .sched-sub {
+  font: 500 13px "IBM Plex Sans", var(--sans); letter-spacing: 0; text-transform: none;
+}
+.ft-page .sched-title { font-size: 26px; }
+.ft-page .sched-step-title {
+  font: 600 14px "IBM Plex Sans", var(--sans); letter-spacing: 0; text-transform: none; color: #eef1f7;
+}
+.ft-page .sched-step-n {
+  width: 22px; height: 22px; font: 700 12px "IBM Plex Sans", var(--sans);
+  background: rgba(var(--court-rgb, 198, 242, 78), .16); color: var(--court, #c6f24e);
+}
+.ft-page .sched-step.done .sched-step-n { background: var(--court, #c6f24e); color: #0e1116; }
+.ft-page .sched-court-edit {
+  font: 600 13px "IBM Plex Sans", var(--sans); letter-spacing: 0;
+  text-decoration: none; color: var(--court, #c6f24e);
+}
+.ft-page .sched-send { background: var(--court, #c6f24e); color: #0e1116; }
+.ft-page .ft-results-head { margin-top: 20px; }

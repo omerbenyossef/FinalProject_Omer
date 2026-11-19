@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { api, mediaUrl } from "../api";
+import { api } from "../api";
 import { useLanguage } from "../LanguageContext.jsx";
 import { useSport } from "../SportContext.jsx";
 import BookCourtLink from "../BookCourtLink.jsx";
 import VenueCard from "../VenueCard.jsx";
-import { ChevronIcon, CheckIcon, SearchIcon } from "../Icons.jsx";
+import { ChevronDownIcon, ChevronIcon, CheckIcon, SearchIcon } from "../Icons.jsx";
 import { SkeletonBar } from "../Skeleton.jsx";
-import { daysWord, detailOpponent, hasHebrewChars, roundDueDateObj, weekdayName } from "../matchUtils.js";
+import { detailOpponent, monthName, roundDueDateObj, weekdayName } from "../matchUtils.js";
 
 
 function buildDayOptions(roundEndDate, roundStartDate) {
@@ -79,10 +79,6 @@ function slotState(day, time, minutes, busyWindows, gapMs) {
   return { kind: "free" };
 }
 
-// One time per proposal for now. The multi-slot machinery underneath still
-// works — the server takes up to five and the opponent's screen can pick
-// between them — so raising this is the only change needed to bring it back.
-const MAX_PICKS = 1;
 
 // One venue, as a card you can look at. The old row had two tap targets side
 // by side with nothing to tell them apart — "hours" only looked, the name
@@ -105,6 +101,48 @@ function StepLabel({ n, children, hint, done }) {
   );
 }
 
+// The shared weekday and month labels are stored in capitals for the screens
+// that set them in mono. Here they are words in a sentence.
+function sentenceCase(label) {
+  return label.charAt(0).toUpperCase() + label.slice(1).toLowerCase();
+}
+
+// A weekday says which day only inside the coming week; past that the date
+// says it.
+function dayLabel(date, t) {
+  const days = Math.round(
+    (new Date(date).setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0)) / 86400000
+  );
+  if (days > 7 || days < 0)
+    return `${date.getDate()} ${sentenceCase(monthName(date, t))}`;
+  return sentenceCase(weekdayName(date, t));
+}
+
+// How far from the asked-for time the search will look. "All day" is the
+// whole of the day's slots, which is why it carries no window at all.
+const FLEX_OPTIONS = [30, 60, 120, 0];
+function flexLabel(mins, t, language) {
+  if (mins === 0) return t("כל היום");
+  if (mins === 30) return language === "en" ? "30 min" : t("30 דק׳");
+  if (mins === 60) return language === "en" ? "1 hr" : t("שעה");
+  return language === "en" ? "2 hr" : t("שעתיים");
+}
+
+function lengthLabel(mins, t, language) {
+  if (language === "en") {
+    if (mins === 60) return "1 hr";
+    if (mins === 90) return "1.5 hr";
+    if (mins === 120) return "2 hr";
+    return `${mins} min`;
+  }
+  if (mins === 60) return t("שעה");
+  if (mins === 90) return t("שעה וחצי");
+  if (mins === 120) return t("שעתיים");
+  return `${mins} ${t("דק׳")}`;
+}
+
+const RESULT_COUNT = 4;
+
 const DURATION_OPTIONS = [60, 90, 120];
 function durationLabel(minutes) {
   if (minutes === 60) return "1H";
@@ -114,7 +152,7 @@ function durationLabel(minutes) {
 
 export default function ProposeSchedule() {
   const { matchId } = useParams();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
   const { selectedSportId } = useSport();
@@ -122,11 +160,18 @@ export default function ProposeSchedule() {
   const [error, setError] = useState("");
   const [conflictWarning, setConflictWarning] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [selectedDay, setSelectedDay] = useState(null);
   // Several slots can be offered at once, across days — the opponent picks
   // one. Kept as start timestamps so a pick survives switching days.
   const [picks, setPicks] = useState([]);
   const [duration, setDuration] = useState(null);
+  // The search: a day (or any), a time to aim at, and how far around it to
+  // look. The list of every half hour in the day is gone — nobody reads
+  // thirty-four rows to find the three that are free.
+  const [dayChoice, setDayChoice] = useState("any");
+  const [around, setAround] = useState("18:00");
+  const [flex, setFlex] = useState(60);
+  const [openField, setOpenField] = useState(null);
+  const [results, setResults] = useState(null);
   const [court, setCourt] = useState("");
   // Venues the app knows, so "where" can be a choice with a booking link
   // behind it rather than a line of text nobody can act on.
@@ -218,62 +263,78 @@ export default function ProposeSchedule() {
   const gapMs = (detail.conflict_gap_minutes ?? 60) * 60000;
   const slotMinutes = isFriendly ? duration || 60 : detail.duration_minutes || 60;
   const stateFor = (day, time) => slotState(day, time, slotMinutes, busyWindows, gapMs);
-  const freeSlotsOn = (day) =>
-    TIME_SLOTS.filter((slot) => {
-      const kind = stateFor(day, slot).kind;
-      return kind === "free" || kind === "tight";
-    }).length;
-
   const slotMs = (day, time) => {
     const [h, m] = time.split(":").map(Number);
     const d = new Date(day);
     d.setHours(h, m, 0, 0);
     return d.getTime();
   };
-  const picksOn = (day) => {
-    const from = new Date(day).setHours(0, 0, 0, 0);
-    // Inclusive of the closing midnight: that instant is this day's last slot,
-    // and no other day offers it (every day starts at 07:00).
-    const to = from + 86400000;
-    return picks.filter((ms) => ms >= from && ms <= to).length;
-  };
-  function togglePick(day, time) {
-    const ms = slotMs(day, time);
-    setPicks((prev) => {
-      if (prev.includes(ms)) return prev.filter((x) => x !== ms);
-      // At one pick, tapping another time means "that one instead" — being
-      // told the limit is reached and having to un-tap first is a worse
-      // answer than simply moving the pick.
-      if (MAX_PICKS === 1) return [ms];
-      return prev.length >= MAX_PICKS ? prev : [...prev, ms];
-    });
+  // The search. Candidates are the free half hours inside the window around
+  // the asked-for time, nearest first; ties go to the earlier one, which on
+  // "any day" is also the sooner day.
+  function runSearch(nextFlex = flex, nextDay = dayChoice) {
+    const [ah, am] = around.split(":").map(Number);
+    const scan = nextDay === "any" ? days : days.filter((d) => d.getTime() === nextDay);
+    const windowMs = nextFlex === 0 ? null : nextFlex * 60000;
+    const out = [];
+    const firstDay = scan.length ? scan[0].getTime() : null;
+    for (const day of scan) {
+      const target = new Date(day);
+      target.setHours(ah, am, 0, 0);
+      for (const slot of TIME_SLOTS) {
+        const state = stateFor(day, slot);
+        if (state.kind === "past" || state.kind === "busy") continue;
+        const ms = slotMs(day, slot);
+        const dist = Math.abs(ms - target.getTime());
+        if (windowMs !== null && dist > windowMs) continue;
+        out.push({
+          ms,
+          slot,
+          dist,
+          exact: dist === 0 && day.getTime() === (nextDay === "any" ? firstDay : nextDay),
+        });
+      }
+    }
+    out.sort((a, b) => a.dist - b.dist || a.ms - b.ms);
+    const top = out.slice(0, RESULT_COUNT);
+    setResults(top);
+    setPicks(top.length ? [top[0].ms] : []);
+    setOpenField(null);
   }
 
-  function slotNote(state) {
-    if (state.kind === "past") return t("עבר");
-    if (state.kind === "tight") return t("צמוד למשחק אחר");
-    if (state.kind !== "busy") return null;
-    if (state.whose === "me") return t("יש לך משחק");
-    if (state.whose === "both") return t("שניכם תפוסים");
-    return t("{name} תפוס", { name: detailOpponent(detail).label });
-  }
+  // Nothing, or not much: offer the one step that would widen it, in the
+  // order that costs the reader least.
+  const widen =
+    flex !== 0 && flex < 120
+      ? {
+          label: t("לנסות {flex}", { flex: flexLabel(120, t, language) }),
+          run: () => {
+            setFlex(120);
+            runSearch(120, dayChoice);
+          },
+        }
+      : flex !== 0
+        ? {
+            label: t("לנסות {flex}", { flex: flexLabel(0, t, language) }),
+            run: () => {
+              setFlex(0);
+              runSearch(0, dayChoice);
+            },
+          }
+        : dayChoice !== "any"
+          ? {
+              label: t("לנסות כל יום"),
+              run: () => {
+                setDayChoice("any");
+                runSearch(flex, "any");
+              },
+            }
+          : null;
 
   // Steps are numbered as they are shown, and a friendly has one more of
   // them than a league match does.
   const timeStep = isFriendly ? 3 : 2;
-  const sendStep = timeStep + 1;
 
-  // What the send button is about to say, in words rather than in state.
-  const pickedLabel =
-    picks.length === 1
-      ? (() => {
-          const d = new Date(picks[0]);
-          const hh = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-          return `${weekdayName(d, t)} ${d.getDate()}.${d.getMonth() + 1} · ${hh}`;
-        })()
-      : picks.length > 1
-      ? t("{count} זמנים", { count: picks.length })
-      : null;
   const chosenVenue = venueId ? venues.find((v) => v.id === venueId) ?? null : null;
   const placeLabel = chosenVenue ? chosenVenue.name : court.trim() || null;
 
@@ -313,7 +374,6 @@ export default function ProposeSchedule() {
         <button type="button" className="sched-nav-back" onClick={() => navigate(-1)} aria-label={t("חזרה")}>
           <ChevronIcon aria-hidden="true" />
         </button>
-        <span className="sched-nav-label">{t("הזנת זמן")}</span>
         {/* The conversation that produced this time is one tap away, because
             it is where any correction to it will happen too. */}
         <button
@@ -330,19 +390,11 @@ export default function ProposeSchedule() {
       <p className="sched-sub" dir="ltr">
         {detail.round_number ? (
           <>
-            {hasHebrewChars(detail.league_name) ? (
-              <span className="sched-sub-sans" dir="auto" style={{ unicodeBidi: "isolate" }}>
-                {detail.league_name}
-              </span>
-            ) : (
-              detail.league_name?.toUpperCase()
-            )}{" "}
-            · {t("מחזור {n}", { n: detail.round_number })}
-            {roundEnd &&
-              (() => {
-                const n = Math.max(0, Math.ceil((roundEnd.getTime() - Date.now()) / 86400000));
-                return ` · ${t("נסגר בעוד")} ${n} ${daysWord(n, t)}`;
-              })()}
+            <span dir="auto" style={{ unicodeBidi: "isolate" }}>
+              {detail.league_name}
+            </span>
+            {` · ${sentenceCase(t("מחזור {n}", { n: detail.round_number }))}`}
+            {roundEnd && ` · ${t("נסגר {day}", { day: dayLabel(roundEnd, t) })}`}
           </>
         ) : (
           t("ידידותי")
@@ -460,13 +512,13 @@ export default function ProposeSchedule() {
   }
 
   return (
-    <div className="sched-page">
+    <div className="sched-page ft-page">
       {header}
 
       {/* 1 · where, already chosen on the screen before this one. It stays
           visible and changeable — the time is picked against it. */}
       <StepLabel n={1} done={!!venueId || !!court.trim()}>
-        {t("מקום")}
+        {t("המגרש")}
       </StepLabel>
       {editingCourt ? (
         <div className="sched-court-row">
@@ -544,93 +596,187 @@ export default function ProposeSchedule() {
         </>
       )}
 
-      {/* 3 · when. */}
-      <StepLabel
-        n={timeStep}
-        done={picks.length > 0}
-        hint={
-          MAX_PICKS > 1
-            ? t("אפשר לסמן כמה זמנים, והיריב יבחר אחד מהם")
-            : t("סמנו את השעה שסיכמתם בצ'אט, והיריב יאשר אותה")
-        }
-      >
-        {t("יום ושעה")}
+      {/* 3 · when. Not a list of every half hour in the day — a search.
+          The question somebody arrives with is "can we play around six",
+          and the answer is the few free slots nearest to that, not
+          thirty-four rows to read. */}
+      <StepLabel n={timeStep} done={false}>
+        {t("מצא זמן")}
       </StepLabel>
-      <div className="sched-days">
-        {days.map((d) => {
-          const isSelected = selectedDay && d.getTime() === selectedDay.getTime();
-          const nothingLeft = freeSlotsOn(d) === 0;
-          return (
-            <button
-              type="button"
-              key={d.getTime()}
-              className={`sched-day${isSelected ? " on" : ""}${nothingLeft ? " off" : ""}`}
-              disabled={nothingLeft}
-              onClick={() => setSelectedDay(d)}
-            >
-              <span className="sched-day-weekday">{weekdayName(d, t)}</span>
-              <span className="sched-day-date">{d.getDate()}</span>
-              {picksOn(d) > 0 && <span className="sched-day-picks">{picksOn(d)}</span>}
-            </button>
-          );
-        })}
-      </div>
-      <div className="sched-times">
-        {TIME_SLOTS.map((slot) => {
-          const isSelected = selectedDay ? picks.includes(slotMs(selectedDay, slot)) : false;
-          const state = selectedDay ? stateFor(selectedDay, slot) : { kind: "free" };
-          const maxed = MAX_PICKS > 1 && !isSelected && picks.length >= MAX_PICKS;
-          const taken = state.kind === "past" || state.kind === "busy" || maxed;
-          const note = slotNote(state);
-          return (
-            <button
-              type="button"
-              key={slot}
-              className={`sched-time-row${isSelected ? " on" : ""}${taken ? " off" : ""}${
-                state.kind === "tight" ? " tight" : ""
-              }`}
-              disabled={taken}
-              onClick={() => togglePick(selectedDay, slot)}
-            >
-              <span dir="ltr">{slotLabel(slot)}</span>
-              <span className="sched-time-end">
-                {note && <span className="sched-time-note">{note}</span>}
-                {isSelected && <CheckIcon aria-hidden="true" />}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+      {results === null && (
+        <p className="ft-hint">{t("בחרו יום ושעה. נציג את 4 הזמנים הפנויים הקרובים ביותר.")}</p>
+      )}
 
-      {/* 4 · and only now does anything leave the app. */}
-      <StepLabel n={sendStep}>{t("שליחה")}</StepLabel>
-      <div className="sched-bottom">
-        {/* Spelled out, because everything above it was chosen in pieces and
-            on two different sites. */}
-        <div className="sched-recap">
-          <span className={pickedLabel ? undefined : "sched-recap-missing"} dir="auto">
-            {pickedLabel || t("טרם נבחרה שעה")}
-          </span>
-          <span className="sched-recap-sep" aria-hidden="true">
-            ·
-          </span>
-          <span className={placeLabel ? undefined : "sched-recap-missing"} dir="auto">
-            {placeLabel || t("טרם נקבעה")}
-          </span>
-        </div>
+      <div className="ft-days">
         <button
           type="button"
-          className="sched-send"
-          disabled={picks.length === 0 || busy || (isFriendly && !duration)}
-          onClick={() => handleSend(false)}
+          className={`ft-day${dayChoice === "any" ? " on" : ""}`}
+          onClick={() => setDayChoice("any")}
         >
-          {picks.length > 1
-            ? t("שלח {count} זמנים ל{name}", { count: picks.length, name: detailOpponent(detail).label })
-            : t("שלח ל{name} לאישור", { name: detailOpponent(detail).label })}
+          <span className="ft-day-word">{t("כל יום")}</span>
         </button>
-        <p className="sched-pending">
-          {picks.length > 1 ? t("HE PICKS ONE · THEN IT IS SET") : t("HE CONFIRMS · THEN IT IS SET")}
-        </p>
+        {days.map((d) => (
+          <button
+            type="button"
+            key={d.getTime()}
+            className={`ft-day${dayChoice === d.getTime() ? " on" : ""}`}
+            onClick={() => setDayChoice(d.getTime())}
+          >
+            <span className="ft-day-word">{sentenceCase(weekdayName(d, t))}</span>
+            <span className="ft-day-num">{d.getDate()}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="ft-fields">
+        <div className="ft-field-wrap">
+          <button
+            type="button"
+            className={`ft-field${openField === "around" ? " is-open" : ""}`}
+            onClick={() => setOpenField(openField === "around" ? null : "around")}
+          >
+            <span className="ft-field-text">
+              <span className="ft-field-label">{t("בסביבות")}</span>
+              <span className="ft-field-value" dir="ltr">
+                {around}
+              </span>
+            </span>
+            <ChevronDownIcon aria-hidden="true" />
+          </button>
+          {openField === "around" && (
+            <div className="ft-menu ft-menu--tall">
+              {TIME_SLOTS.filter((x) => x !== LAST_SLOT).map((slot) => (
+                <button
+                  type="button"
+                  key={slot}
+                  className={`ft-menu-row${around === slot ? " on" : ""}`}
+                  onClick={() => {
+                    setAround(slot);
+                    setOpenField(null);
+                  }}
+                >
+                  <span dir="ltr">{slot}</span>
+                  {around === slot && <CheckIcon aria-hidden="true" />}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="ft-field-wrap">
+          <button
+            type="button"
+            className={`ft-field${openField === "flex" ? " is-open" : ""}`}
+            onClick={() => setOpenField(openField === "flex" ? null : "flex")}
+          >
+            <span className="ft-field-text">
+              <span className="ft-field-label">{t("גמישות")}</span>
+              <span className="ft-field-value">{flexLabel(flex, t, language)}</span>
+            </span>
+            <ChevronDownIcon aria-hidden="true" />
+          </button>
+          {openField === "flex" && (
+            <div className="ft-menu">
+              {FLEX_OPTIONS.map((mins) => (
+                <button
+                  type="button"
+                  key={mins}
+                  className={`ft-menu-row${flex === mins ? " on" : ""}`}
+                  onClick={() => {
+                    setFlex(mins);
+                    setOpenField(null);
+                  }}
+                >
+                  <span>{flexLabel(mins, t, language)}</span>
+                  {flex === mins && <CheckIcon aria-hidden="true" />}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {results !== null && (
+        <>
+          <div className="ft-results-head">
+            <span className="ft-results-title">{t("הזמנים הפנויים הקרובים")}</span>
+            <button type="button" className="ft-again" onClick={() => setResults(null)}>
+              {t("חיפוש מחדש")}
+            </button>
+          </div>
+
+          {results.length === 0 ? (
+            <p className="ft-none">{t("אין זמן פנוי בסביבות {time}", { time: around })}</p>
+          ) : (
+            <div className="ft-slots">
+              {results.map((r) => {
+                const on = picks.includes(r.ms);
+                const at = new Date(r.ms);
+                return (
+                  <button
+                    type="button"
+                    key={r.ms}
+                    className={`ft-slot${on ? " on" : ""}`}
+                    onClick={() => setPicks([r.ms])}
+                  >
+                    <span className="ft-slot-time" dir="ltr">
+                      {slotLabel(r.slot)}
+                    </span>
+                    <span className="ft-slot-text">
+                      <span className="ft-slot-day">
+                        {`${sentenceCase(weekdayName(at, t))} ${at.getDate()}`}
+                        {r.exact && <span className="ft-exact">{t("בדיוק")}</span>}
+                      </span>
+                      <span className="ft-slot-sub" dir="auto">
+                        {[placeLabel, lengthLabel(slotMinutes, t, language)].filter(Boolean).join(" · ")}
+                      </span>
+                    </span>
+                    <span className="ft-radio" aria-hidden="true" />
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* One step wider, when the search came back short. */}
+          {results.length < RESULT_COUNT && widen && (
+            <button type="button" className="ft-widen" onClick={widen.run}>
+              {widen.label}
+            </button>
+          )}
+        </>
+      )}
+
+      {/* 4 · and only now does anything leave the app. */}
+      <div className="sched-bottom">
+        {results === null || picks.length === 0 ? (
+          <button
+            type="button"
+            className="sched-send"
+            disabled={isFriendly && !duration}
+            onClick={() => runSearch()}
+          >
+            {t("מצא זמנים")}
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="sched-send"
+            disabled={busy || (isFriendly && !duration)}
+            onClick={() => handleSend(false)}
+          >
+            {t("שלח ל{name} · {when}", {
+              name: (detailOpponent(detail).label || "").trim().split(/\s+/)[0],
+              when: (() => {
+                const d = new Date(picks[0]);
+                const hh = `${String(d.getHours()).padStart(2, "0")}:${String(
+                  d.getMinutes()
+                ).padStart(2, "0")}`;
+                return `${sentenceCase(weekdayName(d, t))} ${hh}`;
+              })(),
+            })}
+          </button>
+        )}
       </div>
 
       {conflictWarning && (
