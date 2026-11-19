@@ -1970,6 +1970,8 @@ const PAIRS = [
   ["מיון", "Sort"],
   ["עוד {n} משחקים ותיכנס לטבלה", "{n} matches until you enter the table"],
   ["עוד לא התחילה", "Not started yet"],
+  ["עוד", "More"],
+  ["הצג פחות", "Show less"],
 ];
 
 const heToEn = {};

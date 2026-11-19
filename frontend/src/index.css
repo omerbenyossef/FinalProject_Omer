@@ -8606,20 +8606,34 @@ button:active { transform: translateY(1px); }
 }
 .om-title--closed { font-size: 24px; }
 .om-intro {
-  margin: 10px 0 0; font: 400 15px/1.5 "IBM Plex Sans", var(--sans);
+  margin: 10px 0 0; font: 500 14.5px/1.5 "IBM Plex Sans", var(--sans);
   color: #8b93a6; max-width: 34ch; text-wrap: pretty;
 }
+/* Closed: one line, cut, with the way to the rest of it at the end. */
+.om-intro-row { margin-top: 10px; display: flex; align-items: baseline; gap: 6px; }
+.om-intro--one {
+  flex: 1; min-width: 0; margin: 0; max-width: none; cursor: pointer;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.om-more {
+  flex: none; margin-top: 6px; padding: 0; border: 0; background: none; cursor: pointer;
+  font: 600 13px "IBM Plex Sans", var(--sans); color: var(--court, #c6f24e);
+}
+.om-intro-row .om-more { margin-top: 0; }
 .om-error { margin: 12px 20px 0; }
 
 /* Both sections scroll as one list — no section has a scroller of its own. */
 .om-body { flex: 1; min-height: 0; overflow-y: auto; padding: 0 20px; }
 
-.om-section { display: flex; align-items: baseline; gap: 10px; margin-top: 26px; }
-.om-section.spaced { margin-top: 30px; }
-.om-section-name { font: 700 19px "IBM Plex Sans", var(--sans); color: #eef1f7;   text-transform: uppercase;
+/* A label and a number, one at each end: the rule between them was drawing
+   a line across a screen that is already a list of cards. */
+.om-section {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+  margin-top: 26px;
 }
-.om-section-rule { flex: 1; height: 1px; background: rgba(148, 163, 184, .14); }
-.om-section-count { font: 500 12px "IBM Plex Mono", "IBM Plex Sans", monospace; color: #8b93a6; }
+.om-section.spaced { margin-top: 30px; }
+.om-section-name { font: 600 13px "IBM Plex Sans", var(--sans); color: #8b93a6; }
+.om-section-count { font: 600 13px "IBM Plex Sans", var(--sans); color: #8b93a6; }
 .om-section-count.lime { color: var(--court, #c6f24e); }
 
 .om-cards { margin-top: 14px; display: flex; flex-direction: column; gap: 10px; }
@@ -8632,12 +8646,11 @@ button:active { transform: translateY(1px); }
   flex: 1; min-width: 0; font: 700 18px "IBM Plex Sans", var(--sans); color: #eef1f7;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.om-meta { flex: none; font: 500 12px "IBM Plex Mono", "IBM Plex Sans", monospace; color: #6f7787; }
+.om-meta { flex: none; font: 500 12px "IBM Plex Sans", var(--sans); color: #6f7787; }
 .om-titles { display: flex; flex-direction: column; gap: 3px; }
 .om-frame {
-  font: 500 12px "IBM Plex Mono", "IBM Plex Sans", monospace; color: #6f7787;
+  font: 500 12px "IBM Plex Sans", var(--sans); color: #6f7787;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  text-transform: uppercase;
 }
 .om-body-line {
   margin: 0; font: 400 15px/1.5 "IBM Plex Sans", var(--sans); color: #c9cfdb; text-wrap: pretty;

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { useLanguage } from "../LanguageContext.jsx";
 import { useAuth } from "../AuthContext.jsx";
-import { formatWeekdayDateTime, matchSides } from "../matchUtils.js";
+import { formatWeekdayDateTime, matchSides, monthName } from "../matchUtils.js";
 import Avatar from "../Avatar.jsx";
 import { useOpenAction } from "../OpenActionContext.jsx";
 import { ChevronIcon } from "../Icons.jsx";
@@ -31,10 +31,16 @@ function countPhrase(n, t) {
   return t(COUNT_WORDS[n]);
 }
 
-function playedOn(item) {
+// The shared month labels are stored in capitals for the screens that set
+// them in mono. Here they are part of a date somebody reads.
+function sentenceCase(label) {
+  return label.charAt(0).toUpperCase() + label.slice(1).toLowerCase();
+}
+
+function playedOn(item, t) {
   if (!item.played_on) return "";
   const d = new Date(item.played_on);
-  return `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}`;
+  return `${d.getDate()} ${sentenceCase(monthName(d, t))}`;
 }
 
 // Which competition the match belonged to. Without it a row is just a name and
@@ -46,7 +52,7 @@ function Frame({ item, t }) {
       <span dir="auto" style={{ unicodeBidi: "isolate" }}>
         {item.league_name}
       </span>
-      {item.round ? ` · ${t("מחזור {n}", { n: item.round })}` : ""}
+      {item.round ? ` · ${sentenceCase(t("מחזור {n}", { n: item.round }))}` : ""}
     </span>
   );
 }
@@ -108,6 +114,8 @@ export default function OpenMatches() {
   // Which row has its score form open. A match from a closed round is
   // reported here, on the screen that's asking for the report.
   const [reportingId, setReportingId] = useState(null);
+  // Local, and closed on every visit: it is an explanation, not a setting.
+  const [introOpen, setIntroOpen] = useState(false);
 
   const load = useCallback(() => {
     api
@@ -162,6 +170,13 @@ export default function OpenMatches() {
   const you = data.waiting_on_you ?? [];
   const them = data.waiting_on_them ?? [];
   const total = you.length + them.length;
+  const intro =
+    total === 1
+      ? t("משחק אחד ממחזורים קודמים עוד לא נספר בטבלה. עד שייסגר הוא לא משפיע על הדירוג.")
+      : t(
+          "{count} ממחזורים קודמים עוד לא נספרו בטבלה. עד שהם ייסגרו הם לא משפיעים על הדירוג.",
+          { count: countPhrase(total, t) }
+        );
 
   return (
     <div className="om">
@@ -180,14 +195,34 @@ export default function OpenMatches() {
         ) : (
           <>
             <h1 className="om-title">{t("משחקים שעוד לא נסגרו")}</h1>
-            <p className="om-intro">
-              {total === 1
-                ? t("משחק אחד ממחזורים קודמים עוד לא נספר בטבלה. עד שייסגר הוא לא משפיע על הדירוג.")
-                : t(
-                    "{count} ממחזורים קודמים עוד לא נספרו בטבלה. עד שהם ייסגרו הם לא משפיעים על הדירוג.",
-                    { count: countPhrase(total, t) }
-                  )}
-            </p>
+            {/* Two sentences of explanation sat above the matches themselves
+                and pushed them off the first screen. It is worth reading
+                once, so it is one line until somebody asks for the rest. */}
+            {introOpen ? (
+              <>
+                <p className="om-intro">{intro}</p>
+                <button type="button" className="om-more" onClick={() => setIntroOpen(false)}>
+                  {t("הצג פחות")}
+                </button>
+              </>
+            ) : (
+              <div className="om-intro-row">
+                <span
+                  className="om-intro om-intro--one"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setIntroOpen(true)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") setIntroOpen(true);
+                  }}
+                >
+                  {intro}
+                </span>
+                <button type="button" className="om-more" onClick={() => setIntroOpen(true)}>
+                  {t("עוד")}
+                </button>
+              </div>
+            )}
           </>
         )}
       </div>
@@ -199,7 +234,6 @@ export default function OpenMatches() {
           <>
             <div className="om-section">
               <span className="om-section-name">{t("מחכה לך")}</span>
-              <span className="om-section-rule" />
               <span className="om-section-count lime" dir="ltr">
                 {you.length}
               </span>
@@ -216,7 +250,7 @@ export default function OpenMatches() {
                       />
                       <span className="om-name">{item.opponent_name}</span>
                       <span className="om-meta" dir="ltr">
-                        {playedOn(item)}
+                        {playedOn(item, t)}
                       </span>
                     </div>
                     <Frame item={item} t={t} />
@@ -404,7 +438,7 @@ export default function OpenMatches() {
                       />
                       <span className="om-row-name">{item.opponent_name}</span>
                       <span className="om-meta" dir="ltr">
-                        {playedOn(item)}
+                        {playedOn(item, t)}
                       </span>
                     </div>
                     <Frame item={item} t={t} />
