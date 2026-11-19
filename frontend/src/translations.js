@@ -1996,6 +1996,9 @@ const PAIRS = [
   ["ניצחתי", "Won"],
   ["הפסדתי", "Lost"],
   ["אין שעה עדיין", "No time yet"],
+  ["אין עדיין סטטיסטיקה", "No stats yet"],
+  ["המקום, הניצחונות והמשחקים שלך יופיעו כאן אחרי המשחק הראשון.", "Your place, wins and matches will show up here after your first match."],
+  ["המשחקים שלך", "Your matches"],
 ];
 
 const heToEn = {};

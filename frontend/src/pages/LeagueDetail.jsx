@@ -15,11 +15,8 @@ import {
   matchScheduleState,
   scheduleRowStatus,
   formatWeekdayTime,
-  formatWeekdayDateTime,
   activeRoundStatus,
   daysUntilOpen,
-  getActionCandidates,
-  buildOpenAction,
   isMyMatch,
   matchSides,
   monthName,
@@ -36,6 +33,15 @@ import EmptyLine from "../EmptyLine.jsx";
 function sentenceCase(label) {
   const text = String(label ?? "");
   return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+}
+
+// "4th" in English, plain "4" everywhere else.
+function placeLabel(rank, language) {
+  if (rank == null) return "–";
+  if (language !== "en") return String(rank);
+  const teens = rank % 100;
+  const suffix = teens >= 11 && teens <= 13 ? "th" : (["th", "st", "nd", "rd"][rank % 10] ?? "th");
+  return `${rank}${suffix}`;
 }
 
 function shortDate(date, t) {
@@ -71,10 +77,10 @@ function groupMatchesByRound(matches) {
 export default function LeagueDetail() {
   const { leagueId } = useParams();
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { nextMatches, reload: reloadOpenAction } = useOpenAction();
+  const { reload: reloadOpenAction } = useOpenAction();
 
   const [league, setLeague] = useState(null);
   const [members, setMembers] = useState([]);
@@ -87,7 +93,6 @@ export default function LeagueDetail() {
   const [inviteError, setInviteError] = useState("");
   const [inviteLoading, setInviteLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("standings");
-  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [selectedRound, setSelectedRound] = useState(null);
   const [ratingFlow, setRatingFlow] = useState(null); // { existingResult } | null
   const [myRatings, setMyRatings] = useState([]);
@@ -273,19 +278,6 @@ export default function LeagueDetail() {
     }
   }
 
-  async function handleLeaveLeague() {
-    setBusy(true);
-    setError("");
-    try {
-      await api.leaveLeague(leagueId);
-      navigate("/leagues");
-    } catch (err) {
-      setError(err.message);
-      setBusy(false);
-      setShowLeaveConfirm(false);
-    }
-  }
-
   const groupedRounds = groupMatchesByRound(allMatches);
   const existingRoundNumbers = groupedRounds.map((g) => g.round).filter((r) => r !== "none");
   const latestRound = existingRoundNumbers.length > 0 ? Math.max(...existingRoundNumbers) : null;
@@ -331,6 +323,8 @@ export default function LeagueDetail() {
       const myScore = iAmPlayer1 ? m.player1_score : m.player2_score;
       const theirScore = iAmPlayer1 ? m.player2_score : m.player1_score;
       return {
+        id: m.id,
+        at: m.scheduled_at ? new Date(m.scheduled_at) : null,
         round: m.round_number,
         opponentName: sides.opponentLabel,
         status: m.status,
@@ -339,13 +333,13 @@ export default function LeagueDetail() {
       };
     });
   const myCompletedRounds = myRoundRows.filter((r) => r.status === "completed");
+  // The tab's own list: what I have played here, most recent first.
+  const myPlayedList = [...myCompletedRounds].reverse();
   const myLastWon = myCompletedRounds.length ? myCompletedRounds[myCompletedRounds.length - 1].won : null;
   let myStreak = 0;
   for (let i = myCompletedRounds.length - 1; i >= 0 && myCompletedRounds[i].won === myLastWon; i--) {
     myStreak++;
   }
-  const myLeaderPoints = standings.length ? standings[0].points : 0;
-  const myWinsBehind = Math.ceil(Math.max(myLeaderPoints - (myStanding?.points ?? 0), 0) / 3);
   const hasSchedule = allMatches.length > 0;
   const roundsCount = new Set(allMatches.map((m) => m.round_number).filter(Boolean)).size;
   const nextRound = roundsCount + 1;
@@ -374,103 +368,9 @@ export default function LeagueDetail() {
   // nobody can play in.
   const opensInDays = daysUntilOpen(league.starts_at);
   const opensOn = league.starts_at ? new Date(league.starts_at) : null;
-  const rankDelta = myStanding?.rank_delta ?? 0;
-  // A points tie at the bottom of the table still means "behind" even though
-  // the win-count gap rounds to 0 — only rank 1 counts as actually leading.
-  const winsBehindDisplay = Math.max(myWinsBehind, 1);
-  const plannedRounds = existingRoundNumbers.length + roundsToCreate;
-  const stripRounds = myRoundRows;
-  const rankDeltaLabel =
-    rankDelta > 0
-      ? rankDelta === 1
-        ? t("עלית מקום אחד")
-        : t("עלית {n} מקומות", { n: rankDelta })
-      : rankDelta < 0
-      ? Math.abs(rankDelta) === 1
-        ? t("ירדת מקום אחד")
-        : t("ירדת {n} מקומות", { n: Math.abs(rankDelta) })
-      : t("בלי שינוי");
-  const behindLabel =
-    myRank === 1
-      ? t("אתה מוביל")
-      : winsBehindDisplay === 1
-      ? t("ניצחון אחד מהמוביל")
-      : t("{n} ניצחונות מהמוביל", { n: winsBehindDisplay });
-  const lastCompleted = myCompletedRounds[myCompletedRounds.length - 1] ?? null;
-  const streakSub = lastCompleted ? t("מול {name}", { name: lastCompleted.opponentName }) : "";
-
-  const leagueEntries = nextMatches.filter((e) => e.league_id === Number(leagueId));
-  const leagueOpenAction = buildOpenAction(getActionCandidates(leagueEntries, user?.id), user?.id, t);
-  // buildOpenAction only knows about matches that need doing something, so a
-  // match that's simply scheduled for later — the normal case before you've
-  // played at all — left this block empty and the tab never said when you play
-  // next. Fall back to the soonest match still ahead of me.
-  const myNextMatch =
-    allMatches
-      .filter((m) => isMyMatch(m, user?.id) && m.status === "pending")
-      .sort((a, b) => {
-        if (a.scheduled_at && b.scheduled_at) return new Date(a.scheduled_at) - new Date(b.scheduled_at);
-        if (a.scheduled_at) return -1;
-        if (b.scheduled_at) return 1;
-        return (a.round_number ?? 0) - (b.round_number ?? 0);
-      })[0] ?? null;
-  let leagueActionMatch = null;
-  let leagueActionOpponentName = "";
-  let leagueActionSub = "";
-  let leagueActionBtnLabel = "";
-  if (leagueOpenAction) {
-    const actionMatch = leagueOpenAction.match;
-    leagueActionMatch = actionMatch;
-    leagueActionOpponentName = matchSides(actionMatch, user?.id).opponentLabel;
-    if (leagueOpenAction.kind === "confirm") {
-      leagueActionSub = t("יש לך תוצאה לאישור");
-      leagueActionBtnLabel = t("לאישור");
-    } else if (leagueOpenAction.kind === "schedule") {
-      leagueActionSub = t("לאישור השעה");
-      leagueActionBtnLabel = t("אשר שעה");
-    } else {
-      const dueForAction = roundDueDateObj(
-        leagueOpenAction.entry.schedule_started_at,
-        actionMatch.round_number,
-        roundLengthDays
-      );
-      const daysLeftForAction = Math.max(
-        dueForAction ? Math.ceil((dueForAction.getTime() - Date.now()) / 86400000) : 0,
-        0
-      );
-      leagueActionSub =
-        daysLeftForAction === 1 ? t("נותר יום אחד לדיווח") : t("נותרו {n} ימים לדיווח", { n: daysLeftForAction });
-      leagueActionBtnLabel = t("דווח");
-    }
-  } else if (myNextMatch) {
-    leagueActionMatch = myNextMatch;
-    leagueActionOpponentName = matchSides(myNextMatch, user?.id).opponentLabel;
-    if (myNextMatch.scheduled_at) {
-      // Already set and still ahead — nothing to press, just say when.
-      leagueActionSub = [formatWeekdayDateTime(new Date(myNextMatch.scheduled_at), t), myNextMatch.court]
-        .filter(Boolean)
-        .join(" · ");
-    } else {
-      leagueActionSub = t("עוד לא נקבעה שעה");
-      leagueActionBtnLabel = t("קבעו זמן");
-    }
-  }
-
-  function handleOpenLeagueAction() {
-    if (!leagueOpenAction) {
-      if (leagueActionMatch) navigate(`/matches/${leagueActionMatch.id}`);
-      return;
-    }
-    if (leagueOpenAction.kind === "confirm") {
-      navigate(`/matches/${leagueOpenAction.match.id}/confirm`);
-    } else {
-      setActiveTab("matches");
-      setSelectedRound(leagueOpenAction.match.round_number ?? null);
-    }
-  }
 
   return (
-    <div>
+    <div className="ld-page">
       <header className="ld-head">
         <div className="ld-head-nav">
           <Link to="/leagues" className="back-link">
@@ -483,7 +383,7 @@ export default function LeagueDetail() {
               title="עמוד הליגה"
               text="כאן תראו את טבלת הדירוג, את המשחקים שלכם ושל שאר חברי הליגה, ואת הסטטיסטיקה האישית שלכם בליגה הזו."
             />
-            {(isCreator || user?.is_admin) && (
+            {(isCreator || user?.is_admin || isMember) && (
               <Link to={`/leagues/${leagueId}/manage`} className="ld-head-settings" aria-label={t("הגדרות הליגה")}>
                 <SettingsIcon aria-hidden="true" />
               </Link>
@@ -585,105 +485,77 @@ export default function LeagueDetail() {
       <div>
         {activeTab === "stats" && isMember && (
           <div className="my-stats">
-            {leagueActionMatch && (
-              <div className="ms-open">
-                <div className="ms-open-body">
-                  <div className="ms-open-title">
-                    {leagueActionMatch.round_number != null && (
-                      <>{t("מחזור {n}", { n: leagueActionMatch.round_number })} · </>
-                    )}
-                    <span dir="auto" style={{ unicodeBidi: "isolate" }}>
-                      {leagueActionOpponentName}
-                    </span>
-                  </div>
-                  <div className="ms-open-sub">{leagueActionSub}</div>
-                </div>
-                {leagueActionBtnLabel && (
-                  <button type="button" className="ms-open-btn" onClick={handleOpenLeagueAction}>
-                    {leagueActionBtnLabel}
-                  </button>
-                )}
-              </div>
-            )}
-
             {myPlayedNone ? (
-              <EmptyLine sentence={t("עוד לא שיחקת בליגה הזאת, אז אין עדיין סטטיסטיקה.")} />
+              /* Nothing to summarise yet, and nothing else belongs on this
+                 tab — open matches live on Matches, where they are acted on. */
+              <div className="msx-empty">
+                <div className="msx-empty-title">{t("אין עדיין סטטיסטיקה")}</div>
+                <p className="msx-empty-text">
+                  {t("המקום, הניצחונות והמשחקים שלך יופיעו כאן אחרי המשחק הראשון.")}
+                </p>
+              </div>
             ) : (
               <>
-                <div className="ms-quad">
-                  <div className="ms-quad-cell">
-                    <div className="ms-quad-label">{t("מקום")}</div>
-                    <div className="ms-quad-value" dir="ltr">
-                      {myRank ?? "–"}
-                      {myRank != null && <span className="ms-quad-unit">/{members.length}</span>}
-                    </div>
-                    <div className="ms-quad-sub">{rankDeltaLabel}</div>
-                  </div>
-
-                  <div className="ms-quad-cell">
-                    <div className="ms-quad-label">{t("נקודות")}</div>
-                    <div className="ms-quad-value" dir="ltr">
-                      {myStanding?.points ?? 0}
-                    </div>
-                    <div className="ms-quad-sub">{behindLabel}</div>
-                  </div>
-
-                  <div className="ms-quad-cell">
-                    <div className="ms-quad-label">{t("מאזן")}</div>
-                    <div className="ms-quad-value" dir="ltr">
-                      {myStanding?.wins ?? 0}-{myStanding?.losses ?? 0}
-                    </div>
-                    <div className="ms-quad-sub">
-                      {myWinRate != null ? t("{n}% ניצחונות", { n: myWinRate }) : ""}
-                    </div>
-                  </div>
-
-                  <div className="ms-quad-cell">
-                    <div className="ms-quad-label">{t("רצף")}</div>
-                    <div className="ms-quad-value" dir="ltr">
-                      {myStreak > 0 ? `${myLastWon ? "W" : "L"}${myStreak}` : "–"}
-                    </div>
-                    <div className="ms-quad-sub">{streakSub}</div>
-                  </div>
-                </div>
-
-                <div className="ms-strip-head">
-                  <span>{t("מחזור אחרי מחזור")}</span>
-                  <span dir="ltr">
-                    {myCompletedRounds.length} / {plannedRounds}
+                {/* The same card the Ranks page opens with, on league data. */}
+                <div className="rk2-me rk2-me--static">
+                  <span className="rk2-me-place">
+                    <span className="rk2-me-label">{t("המקום שלך")}</span>
+                    <span className="rk2-me-rank">
+                      <b dir="ltr">{placeLabel(myRank, language)}</b>
+                      <i dir="auto">{t("מתוך {n}", { n: members.length })}</i>
+                    </span>
+                  </span>
+                  <span className="rk2-me-stats">
+                    <span className="rk2-me-stat">
+                      <b dir="ltr">{`${myStanding?.wins ?? 0}–${myStanding?.losses ?? 0}`}</b>
+                      <i>W–L</i>
+                    </span>
+                    <span className="rk2-me-stat">
+                      <b dir="ltr">{myStanding?.points ?? 0}</b>
+                      <i>{sentenceCase(t("נקודות"))}</i>
+                    </span>
+                    <span className="rk2-me-stat">
+                      <b dir="ltr">{myWinRate != null ? `${myWinRate}%` : "–"}</b>
+                      <i>{sentenceCase(t("ניצחונות"))}</i>
+                    </span>
                   </span>
                 </div>
-                <div className="ms-strip">
-                  {stripRounds.map((r) => (
-                    <div
-                      className={`ms-strip-cell${r.status === "pending" ? " next" : ""}`}
-                      key={r.round}
+
+                <div className="msx-head">{t("המשחקים שלך")}</div>
+                <div className="msx-list">
+                  {myPlayedList.map((r) => (
+                    <button
+                      type="button"
+                      key={r.id}
+                      className="msx-row"
+                      onClick={() => navigate(`/matches/${r.id}`)}
                     >
-                      <span className={`ms-strip-wl${r.won ? " win" : ""}`}>
-                        {r.status === "completed" ? (r.won ? "W" : "L") : "–"}
+                      <span className={`msx-wl${r.won ? "" : " msx-wl--lost"}`}>
+                        {r.won ? "W" : "L"}
                       </span>
-                      <span className="ms-strip-num" dir="ltr">
-                        {t("מחזור {n}", { n: r.round })}
+                      <span className="msx-row-body">
+                        <span className="msx-row-name">
+                          {t("מול")}{" "}
+                          <span dir="auto" style={{ unicodeBidi: "isolate" }}>
+                            {r.opponentName}
+                          </span>
+                        </span>
+                        <span className="msx-row-sub" dir="ltr">
+                          {[
+                            sentenceCase(t("מחזור {n}", { n: r.round })),
+                            r.at ? shortDate(r.at, t) : null,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </span>
                       </span>
-                    </div>
+                      <span className="msx-row-score" dir="ltr">
+                        {formatSets(r.mySets)}
+                      </span>
+                    </button>
                   ))}
                 </div>
               </>
-            )}
-
-            {/* The creator can leave too. Playing in a league and running it
-                are separate things — created_by is untouched, so they keep
-                managing it — and an admin who opened a public league for other
-                people had no way out of it at all. */}
-            {isMember && (
-              <button
-                type="button"
-                className="league-leave-chip"
-                style={{ marginTop: 24 }}
-                onClick={() => setShowLeaveConfirm(true)}
-              >
-                {t("יציאה מהליגה")}
-              </button>
             )}
           </div>
         )}
@@ -945,15 +817,6 @@ export default function LeagueDetail() {
         </button>
       )}
 
-      {showLeaveConfirm && (
-        <LeaveLeagueConfirmSheet
-          busy={busy}
-          isCreator={isCreator}
-          onConfirm={handleLeaveLeague}
-          onClose={() => setShowLeaveConfirm(false)}
-        />
-      )}
-
       {ratingFlow && (
         <RatingQuestionnaire
           league={league}
@@ -967,7 +830,7 @@ export default function LeagueDetail() {
   );
 }
 
-function LeaveLeagueConfirmSheet({ busy, isCreator, onConfirm, onClose }) {
+export function LeaveLeagueConfirmSheet({ busy, isCreator, onConfirm, onClose }) {
   const { t } = useLanguage();
 
   return (

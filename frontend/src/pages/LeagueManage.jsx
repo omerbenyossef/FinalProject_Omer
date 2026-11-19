@@ -7,7 +7,7 @@ import Avatar from "../Avatar.jsx";
 import LeagueRulesForm from "../LeagueRulesForm.jsx";
 import { ChevronIcon } from "../Icons.jsx";
 import { leagueRuleLabels, formatDayMonth, nextSchedulePreview, roundDueDate } from "../matchUtils.js";
-import { AddRoundConfirmSheet } from "./LeagueDetail.jsx";
+import { AddRoundConfirmSheet, LeaveLeagueConfirmSheet } from "./LeagueDetail.jsx";
 import { SkeletonPageHeader } from "../Skeleton.jsx";
 
 export default function LeagueManage() {
@@ -25,6 +25,7 @@ export default function LeagueManage() {
   const [inviteToken, setInviteToken] = useState(null);
   const [inviteLoading, setInviteLoading] = useState(false);
   const [showAddRoundConfirm, setShowAddRoundConfirm] = useState(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
 
   async function loadAll() {
     try {
@@ -52,15 +53,18 @@ export default function LeagueManage() {
   // admin can also take, on any league, so that's what canAccess unlocks
   // for a non-creator admin — everything else below still checks isCreator.
   const canAccess = isCreator || !!user?.is_admin;
+  // Leaving the league is a member's own setting, and this page is where the
+  // settings are — so a plain member gets in too, with nothing but that.
+  const isMember = !!(user && members.some((m) => m.id === user.id));
 
   useEffect(() => {
-    if (league && user && !canAccess) {
+    if (league && user && !canAccess && !isMember) {
       navigate(`/leagues/${leagueId}`, { replace: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [league, user, canAccess]);
 
-  if (!league || !canAccess) {
+  if (!league || (!canAccess && !isMember)) {
     return (
       <div>
         <SkeletonPageHeader />
@@ -97,6 +101,19 @@ export default function LeagueManage() {
 
   function toggle(section) {
     setExpanded((cur) => (cur === section ? null : section));
+  }
+
+  async function handleLeaveLeague() {
+    setBusy(true);
+    setError("");
+    try {
+      await api.leaveLeague(leagueId);
+      navigate("/leagues");
+    } catch (err) {
+      setError(err.message);
+      setBusy(false);
+      setShowLeaveConfirm(false);
+    }
   }
 
   async function handleUpdateRules(rules) {
@@ -158,7 +175,7 @@ export default function LeagueManage() {
           {t("חזרה לליגה")}
         </Link>
         <div className="page-title-row">
-          <h1>{t("ניהול הליגה")}</h1>
+          <h1>{canAccess ? t("ניהול הליגה") : t("הגדרות הליגה")}</h1>
         </div>
         <div className="league-detail-meta">
           {t("{name} · הקמת אותה ב-{date}", {
@@ -170,7 +187,7 @@ export default function LeagueManage() {
 
       {error && <p className="error">{t(error)}</p>}
 
-      {!isCreator && (
+      {!isCreator && canAccess && (
         <p className="muted">
           {t("אתה נכנס לכאן כמנהל המערכת — הליגה הזו אינה שלך, ואפשר רק למחוק אותה.")}
         </p>
@@ -262,6 +279,26 @@ export default function LeagueManage() {
         />
       )}
 
+      {isMember && (
+        <button
+          type="button"
+          className="league-leave-chip manage-leave"
+          onClick={() => setShowLeaveConfirm(true)}
+        >
+          {t("יציאה מהליגה")}
+        </button>
+      )}
+
+      {showLeaveConfirm && (
+        <LeaveLeagueConfirmSheet
+          busy={busy}
+          isCreator={isCreator}
+          onConfirm={handleLeaveLeague}
+          onClose={() => setShowLeaveConfirm(false)}
+        />
+      )}
+
+      {canAccess && (
       <div className="danger-zone">
         <div className="danger-zone-title">{t("אזור מסוכן")}</div>
         <p className="danger-zone-text">
@@ -273,6 +310,7 @@ export default function LeagueManage() {
           {t("מחק את הליגה")}
         </button>
       </div>
+      )}
     </div>
   );
 }
