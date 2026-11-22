@@ -2006,6 +2006,10 @@ const PAIRS = [
   ["משחק אחד מהעבר בלי תוצאה", "1 past match with no result"],
   ["{n} משחקים מהעבר בלי תוצאה", "{n} past matches with no result"],
   ["דווחו מה קרה — תוצאה, או שהמשחק לא בוצע", "Report what happened — a score, or that it wasn't played"],
+  ["עוד לא נקבע כלום", "Nothing booked yet"],
+  ["אין לך משחקים לשחק", "No matches to play"],
+  ["אירוע אחד לידך", "1 event near you"],
+  ["{n} אירועים לידך", "{n} events near you"],
 ];
 
 const heToEn = {};

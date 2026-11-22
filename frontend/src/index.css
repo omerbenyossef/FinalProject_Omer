@@ -10536,7 +10536,8 @@ button.st-row { cursor: pointer; }
   padding: 22px 18px; border-radius: 20px; background: #161b22;
   box-shadow: inset 0 0 0 1px rgba(148, 163, 184, .08);
 }
-.pl-empty-text { margin: 0; font: 500 14px "IBM Plex Sans", var(--sans); color: #a3abbb; }
+.pl-empty-text { margin: 0; font: 600 15px "IBM Plex Sans", var(--sans); color: #eef1f7; }
+.pl-empty-sub { margin: 0; font: 500 13px "IBM Plex Sans", var(--sans); color: #8b93a6; }
 
 /* The one line out of the list, to the matches that are waiting on a score
    rather than on somebody turning up. */

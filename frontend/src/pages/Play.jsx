@@ -173,7 +173,9 @@ export default function Play() {
         name: next.opponent_name,
       });
     }
-    return t("עוד לא נקבע כלום. אפשר להצטרף לאירוע למטה");
+    // It used to end "join a game below", which it said whether or not there
+    // was a single game to join — and the tab beside it was reading 0.
+    return t("עוד לא נקבע כלום");
   })();
 
   // Scheduled matches, in day-sized groups: today, tomorrow, then each day by
@@ -424,10 +426,19 @@ export default function Play() {
             <SkeletonBar />
           ) : toPlay.length === 0 ? (
             <div className="pl-empty">
-              <p className="pl-empty-text">{t("אין לך משחקים פתוחים")}</p>
-              <Link to="/games?tab=open" className="btn-secondary btn-small">
-                {t("אירועים לידך")}
-              </Link>
+              <p className="pl-empty-text">{t("אין לך משחקים לשחק")}</p>
+              {/* Only offer the other tab when it has something in it. The
+                  button was here unconditionally, so a player with nothing to
+                  join was sent to an empty screen to find it. */}
+              {gameCount > 0 ? (
+                <Link to="/games?tab=open" className="btn-secondary btn-small">
+                  {gameCount === 1
+                    ? t("אירוע אחד לידך")
+                    : t("{n} אירועים לידך", { n: gameCount })}
+                </Link>
+              ) : (
+                <p className="pl-empty-sub">{t("אין כרגע אירועים לידך")}</p>
+              )}
             </div>
           ) : (
             <>
