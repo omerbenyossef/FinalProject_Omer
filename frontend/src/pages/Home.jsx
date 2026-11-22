@@ -233,9 +233,12 @@ export default function Home() {
 
       {matches == null ? (
         <SkeletonMatchRow />
-      ) : task ? (
+      ) : (
         <>
-          {nextMatch && (
+          {/* The next match always has its place on this screen, whether or
+              not anything is owed — and when there isn't one, the screen says
+              so in as many words rather than leaving the slot empty. */}
+          {nextMatch ? (
             <section className="hm-glow">
               <span className="hm-label">{t("המשחק הבא שלך")}</span>
               <div className="hm-row">
@@ -260,35 +263,59 @@ export default function Home() {
                 </button>
               </div>
             </section>
+          ) : (
+            <section className="hm-plain hm-none">
+              <span className="hm-label hm-label--muted">{t("המשחק הבא שלך")}</span>
+              <div className="hm-row">
+                <div className="hm-col">
+                  <span className="hm-task" dir="auto">
+                    {t("אין כרגע משחק קבוע באופק")}
+                  </span>
+                  {/* With a task open, the card under this one says what to do
+                      about it; two buttons for one thing is one too many. */}
+                  <span className="hm-sub" dir="auto">
+                    {task ? t("הצעד הבא יביא אותך לשם") : t("אף משחק לא נקבע לשעה")}
+                  </span>
+                </div>
+                {!task && (
+                  <button type="button" className="hm-outline" onClick={() => navigate(allSet.to)}>
+                    {allSet.label}
+                  </button>
+                )}
+              </div>
+            </section>
           )}
 
-          <section className="hm-plain">
-            <span className="hm-label">{t("הצעד הבא")}</span>
-            <div className="hm-row">
-              <div className="hm-col">
-                <span className="hm-task" dir="auto">
-                  {task.title}
-                </span>
-                <span className="hm-sub" dir="auto">
-                  {task.line}
-                </span>
+          {task ? (
+            <section className="hm-plain">
+              <span className="hm-label">{t("הצעד הבא")}</span>
+              <div className="hm-row">
+                <div className="hm-col">
+                  <span className="hm-task" dir="auto">
+                    {task.title}
+                  </span>
+                  <span className="hm-sub" dir="auto">
+                    {task.line}
+                  </span>
+                </div>
+                <button type="button" className="hm-outline" onClick={() => navigate(task.to)}>
+                  {task.action}
+                </button>
               </div>
-              <button type="button" className="hm-outline" onClick={() => navigate(task.to)}>
-                {task.action}
-              </button>
-            </div>
-          </section>
+            </section>
+          ) : (
+            nextMatch && (
+              /* The match above is the loud card, so "nothing owed" is a line,
+                 not a second hero. */
+              <section className="hm-clear">
+                <span className="hm-check" aria-hidden="true">
+                  <CheckIcon />
+                </span>
+                <span className="hm-clear-text">{t("הכל מסודר")}</span>
+              </section>
+            )
+          )}
         </>
-      ) : (
-        <section className="hm-glow hm-glow--set">
-          <span className="hm-check" aria-hidden="true">
-            <CheckIcon />
-          </span>
-          <span className="hm-set">{t("הכל מסודר")}</span>
-          <button type="button" className="hm-go hm-go--wide" onClick={() => navigate(allSet.to)}>
-            {allSet.label}
-          </button>
-        </section>
       )}
 
       <div className="hm-stats">

@@ -1999,6 +1999,9 @@ const PAIRS = [
   ["אין עדיין סטטיסטיקה", "No stats yet"],
   ["המקום, הניצחונות והמשחקים שלך יופיעו כאן אחרי המשחק הראשון.", "Your place, wins and matches will show up here after your first match."],
   ["המשחקים שלך", "Your matches"],
+  ["אין כרגע משחק קבוע באופק", "No match on the horizon"],
+  ["אף משחק לא נקבע לשעה", "Nothing is scheduled yet"],
+  ["הצעד הבא יביא אותך לשם", "The next step gets you there"],
 ];
 
 const heToEn = {};
