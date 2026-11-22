@@ -133,7 +133,6 @@ export default function Play() {
   // business, and that is where they belong.
   const leftover = (m) =>
     !done(m) && m.round_ends_at && new Date(m.round_ends_at).getTime() < Date.now();
-  const owed = rows.filter(done);
   const stale = rows.filter(leftover);
   const toPlay = rows.filter((m) => !done(m) && !leftover(m));
   // A proposed time that has already gone by is void — the server will not
@@ -438,22 +437,17 @@ export default function Play() {
             </>
           )}
 
-          {/* The matches that have been played and are waiting on a score are
-              not fixtures, so they are not in the list — but they must not
-              vanish either. One line to the screen that is about them. */}
-          {owed.length > 0 && (
-            <Link to="/needs-you" className="pl-owed">
-              {owed.length === 1
-                ? t("משחק אחד מחכה לתוצאה")
-                : t("{n} משחקים מחכים לתוצאה", { n: owed.length })}
-              <ChevronIcon aria-hidden="true" />
-            </Link>
-          )}
+          {/* The "waiting on a score" line used to sit here too. It counted
+              four different states — played, awaiting my confirmation,
+              awaiting theirs, and agreed not played — under one sentence that
+              claimed all of them wanted a score from this player, and most of
+              them didn't. The home screen names the one that is actually next
+              and leads to it; this list is for matches still to play. */}
           {stale.length > 0 && (
             <Link to="/needs-you" className="pl-owed">
               {stale.length === 1
-                ? t("משחק אחד ממחזור שנסגר")
-                : t("{n} משחקים ממחזורים שנסגרו", { n: stale.length })}
+                ? t("משחק אחד מהעבר בלי תוצאה")
+                : t("{n} משחקים מהעבר בלי תוצאה", { n: stale.length })}
               <ChevronIcon aria-hidden="true" />
             </Link>
           )}
