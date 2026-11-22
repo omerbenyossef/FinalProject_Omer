@@ -206,6 +206,21 @@ export default function Home() {
       (!m.round_starts_at || new Date(m.round_starts_at).getTime() <= now)
   ).length;
 
+  // A match in a round that has already closed never reaches the task ladder
+  // above — the ladder only offers to arrange a time while there is still a
+  // round to play it in. It is still unfinished business, though, and it has
+  // its own screen, so "nothing is waiting on you" would be a lie while any
+  // of these exist.
+  const stale = rows.filter(
+    (m) =>
+      !["played", "confirm_mine", "waiting_on_them", "not_played"].includes(m.state) &&
+      m.round_ends_at &&
+      new Date(m.round_ends_at).getTime() < now &&
+      // A match with a time still ahead of it is being played, late round or
+      // not — it is the card at the top of this screen, not leftover business.
+      !(m.scheduled_at && new Date(m.scheduled_at).getTime() >= now)
+  ).length;
+
   const hour = new Date().getHours();
   const greeting =
     hour >= 5 && hour < 12
@@ -274,10 +289,12 @@ export default function Home() {
                   {/* With a task open, the card under this one says what to do
                       about it; two buttons for one thing is one too many. */}
                   <span className="hm-sub" dir="auto">
-                    {task ? t("הצעד הבא יביא אותך לשם") : t("אף משחק לא נקבע לשעה")}
+                    {task || stale > 0
+                      ? t("הצעד הבא יביא אותך לשם")
+                      : t("אף משחק לא נקבע לשעה")}
                   </span>
                 </div>
-                {!task && (
+                {!task && stale === 0 && (
                   <button type="button" className="hm-outline" onClick={() => navigate(allSet.to)}>
                     {allSet.label}
                   </button>
@@ -312,15 +329,25 @@ export default function Home() {
               <div className="hm-row">
                 <div className="hm-col">
                   <span className="hm-task" dir="auto">
-                    {t("הכל מסודר")}
+                    {stale === 0
+                      ? t("הכל מסודר")
+                      : stale === 1
+                        ? t("משחק אחד ממחזור שנסגר")
+                        : t("{n} משחקים ממחזורים שנסגרו", { n: stale })}
                   </span>
                   <span className="hm-sub" dir="auto">
-                    {t("אין שום דבר שמחכה לך")}
+                    {stale === 0 ? t("אין משחק שמחכה לתיאום או לדיווח") : t("אפשר עדיין לסגור אותם")}
                   </span>
                 </div>
-                <span className="hm-check" aria-hidden="true">
-                  <CheckIcon />
-                </span>
+                {stale === 0 ? (
+                  <span className="hm-check" aria-hidden="true">
+                    <CheckIcon />
+                  </span>
+                ) : (
+                  <button type="button" className="hm-outline" onClick={() => navigate("/needs-you")}>
+                    {t("לצפייה")}
+                  </button>
+                )}
               </div>
             </section>
           )}
