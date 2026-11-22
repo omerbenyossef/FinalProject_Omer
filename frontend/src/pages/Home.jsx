@@ -229,15 +229,6 @@ export default function Home() {
         ? t("צהריים טובים, {name}")
         : t("ערב טוב, {name}");
 
-  // With nothing owed, the card says so and offers the one thing worth doing
-  // next — in the order that is most likely to end in a game being played.
-  const allSet = (() => {
-    if (gamesThisWeek > 0)
-      return { label: t("מצא משחק"), to: "/games?tab=open" };
-    if (nextMatch) return { label: t("צפה במשחק"), to: `/matches/${nextMatch.id}` };
-    return { label: t("הצטרף לליגה"), to: "/leagues/open" };
-  })();
-
   return (
     <div className="hm">
       <h1 className="hm-hello" dir="auto">
@@ -286,19 +277,16 @@ export default function Home() {
                   <span className="hm-task" dir="auto">
                     {t("אין כרגע משחק קבוע באופק")}
                   </span>
-                  {/* With a task open, the card under this one says what to do
-                      about it; two buttons for one thing is one too many. */}
+                  {/* No button: this card is a statement, not an offer. The
+                      action, when there is one, is on the card below, and
+                      somebody already in leagues reads "join a league" as the
+                      app having lost track of them. */}
                   <span className="hm-sub" dir="auto">
                     {task || stale > 0
                       ? t("הצעד הבא יביא אותך לשם")
                       : t("אף משחק לא נקבע לשעה")}
                   </span>
                 </div>
-                {!task && stale === 0 && (
-                  <button type="button" className="hm-outline" onClick={() => navigate(allSet.to)}>
-                    {allSet.label}
-                  </button>
-                )}
               </div>
             </section>
           )}
