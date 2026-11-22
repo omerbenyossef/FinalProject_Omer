@@ -10793,21 +10793,14 @@ button.st-row { cursor: pointer; }
 .hm-label--muted { color: #8b93a6; }
 .hm-none .hm-task { color: #c9cfdb; }
 
-/* Nothing owed, under a match card that is already the loud one. */
-.hm-clear {
-  display: flex; align-items: center; gap: 10px;
-  border-radius: 20px; padding: 12px 16px;
-  background: #161b22; box-shadow: inset 0 0 0 1px rgba(148, 163, 184, .08);
-}
-.hm-clear .hm-check { width: 28px; height: 28px; }
-.hm-clear .hm-check svg { width: 14px; height: 14px; }
-.hm-clear-text { font: 600 15px "IBM Plex Sans", var(--sans); color: #eef1f7; }
-
+/* Nothing owed: a check where the button would be, so the row keeps its
+   shape and the eye does not go looking for an action that isn't there. */
 .hm-check {
-  width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
+  flex: none;
+  width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
   background: rgba(var(--court-rgb, 198, 242, 78), .16); color: var(--court, #c6f24e);
 }
-.hm-check svg { width: 16px; height: 16px; }
+.hm-check svg { width: 15px; height: 15px; }
 
 /* Three numbers. No icons: a number with a word under it is already a tile. */
 .hm-stats { display: flex; gap: 8px; }

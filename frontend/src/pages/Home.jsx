@@ -304,16 +304,25 @@ export default function Home() {
               </div>
             </section>
           ) : (
-            nextMatch && (
-              /* The match above is the loud card, so "nothing owed" is a line,
-                 not a second hero. */
-              <section className="hm-clear">
+            /* Both slots keep their place: the screen should read the same
+               whether or not there is anything to do, and "nothing" is an
+               answer worth saying out loud. */
+            <section className="hm-plain hm-none">
+              <span className="hm-label hm-label--muted">{t("הצעד הבא")}</span>
+              <div className="hm-row">
+                <div className="hm-col">
+                  <span className="hm-task" dir="auto">
+                    {t("הכל מסודר")}
+                  </span>
+                  <span className="hm-sub" dir="auto">
+                    {t("אין שום דבר שמחכה לך")}
+                  </span>
+                </div>
                 <span className="hm-check" aria-hidden="true">
                   <CheckIcon />
                 </span>
-                <span className="hm-clear-text">{t("הכל מסודר")}</span>
-              </section>
-            )
+              </div>
+            </section>
           )}
         </>
       )}

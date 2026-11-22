@@ -2002,6 +2002,7 @@ const PAIRS = [
   ["אין כרגע משחק קבוע באופק", "No match on the horizon"],
   ["אף משחק לא נקבע לשעה", "Nothing is scheduled yet"],
   ["הצעד הבא יביא אותך לשם", "The next step gets you there"],
+  ["אין שום דבר שמחכה לך", "Nothing is waiting on you"],
 ];
 
 const heToEn = {};
