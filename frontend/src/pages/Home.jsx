@@ -332,11 +332,13 @@ export default function Home() {
                     {stale === 0
                       ? t("הכל מסודר")
                       : stale === 1
-                        ? t("משחק אחד ממחזור שנסגר")
-                        : t("{n} משחקים ממחזורים שנסגרו", { n: stale })}
+                        ? t("משחק אחד מהעבר בלי תוצאה")
+                        : t("{n} משחקים מהעבר בלי תוצאה", { n: stale })}
                   </span>
                   <span className="hm-sub" dir="auto">
-                    {stale === 0 ? t("אין משחק שמחכה לתיאום או לדיווח") : t("אפשר עדיין לסגור אותם")}
+                    {stale === 0
+                      ? t("אין משחק שמחכה לתיאום או לדיווח")
+                      : t("דווחו מה קרה — תוצאה, או שהמשחק לא בוצע")}
                   </span>
                 </div>
                 {stale === 0 ? (
@@ -345,7 +347,7 @@ export default function Home() {
                   </span>
                 ) : (
                   <button type="button" className="hm-outline" onClick={() => navigate("/needs-you")}>
-                    {t("לצפייה")}
+                    {t("דווח")}
                   </button>
                 )}
               </div>

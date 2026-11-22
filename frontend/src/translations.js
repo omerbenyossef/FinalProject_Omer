@@ -2003,7 +2003,9 @@ const PAIRS = [
   ["אף משחק לא נקבע לשעה", "Nothing is scheduled yet"],
   ["הצעד הבא יביא אותך לשם", "The next step gets you there"],
   ["אין משחק שמחכה לתיאום או לדיווח", "No match waiting to be scheduled or reported"],
-  ["אפשר עדיין לסגור אותם", "You can still close them"],
+  ["משחק אחד מהעבר בלי תוצאה", "1 past match with no result"],
+  ["{n} משחקים מהעבר בלי תוצאה", "{n} past matches with no result"],
+  ["דווחו מה קרה — תוצאה, או שהמשחק לא בוצע", "Report what happened — a score, or that it wasn't played"],
 ];
 
 const heToEn = {};
