@@ -2010,6 +2010,7 @@ const PAIRS = [
   ["אין לך משחקים לשחק", "No matches to play"],
   ["אירוע אחד לידך", "1 event near you"],
   ["{n} אירועים לידך", "{n} events near you"],
+  ["בחירת פרטנר", "Pick partner"],
 ];
 
 const heToEn = {};

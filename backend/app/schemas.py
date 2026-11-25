@@ -1138,6 +1138,11 @@ class HomeWeekMatchOut(BaseModel):
     # in pairs. A player with two partners sees both pairs' matches in one
     # list, so the row has to say which world it belongs to.
     partner_name: Optional[str] = None
+    # The other side, one name per player. `opponent_name` joins them into a
+    # single label ("Cohen/Levi"), which is a row's worth — the padel home
+    # card stacks the two of them on their own lines and wants first names,
+    # so it needs the people and not the label.
+    opponent_names: list[str] = []
     league_name: Optional[str] = None
     round: Optional[int] = None
     # Null when no time is agreed — the card shows its "no date" column.

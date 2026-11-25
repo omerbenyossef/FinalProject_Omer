@@ -8,8 +8,7 @@ import { useLanguage } from "../LanguageContext.jsx";
 import { useLiveData } from "../liveData.js";
 import { CheckIcon } from "../Icons.jsx";
 import { SkeletonMatchRow } from "../Skeleton.jsx";
-import { dayMonthPadded as dayMonth, weekdayName } from "../matchUtils.js";
-import Profile from "./Profile.jsx";
+import { monthName, weekdayName } from "../matchUtils.js";
 
 /* 214 — the home screen answers one question: what is next for me.
 
@@ -23,6 +22,26 @@ import Profile from "./Profile.jsx";
    and three numbers. Nothing on this screen is a picture. */
 
 const WEEK_MS = 7 * 86400000;
+
+// The shared weekday and month labels are stored upper case for the screens
+// that set them in mono; nothing on this one is in caps.
+function sentenceCase(label) {
+  const text = String(label ?? "");
+  return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+}
+
+// "Thu 26 Nov". The numeric form (26.11) read as a version number next to a
+// time, and the month written out never needs working out.
+function dayDate(date, t) {
+  return `${sentenceCase(weekdayName(date, t))} ${date.getDate()} ${sentenceCase(
+    monthName(date, t)
+  )}`;
+}
+
+// Padel cards name four people, and four full names do not fit a row.
+function firstName(name) {
+  return String(name || "").trim().split(/\s+/)[0] || "";
+}
 
 function hhmm(date) {
   return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
@@ -74,22 +93,18 @@ export default function Home() {
   }, [selectedPair?.id, pairLensReady]);
 
   const sportLeagues = (leagues ?? []).filter((l) => l.sport.id === selectedSportId);
-  const soloLeague = sportLeagues.length === 1 ? sportLeagues[0] : null;
 
-  // A player with no league, or with one whose schedule hasn't started, gets
-  // the dedicated first-day screens rather than a home screen with nothing to
-  // answer. Those still live on the old component.
-  const nothingYet = !!week && week.matches.length === 0 && week.invites.length === 0;
-  if (
-    leagues &&
-    nothingYet &&
-    (sportLeagues.length === 0 || (soloLeague && !soloLeague.schedule_started_at))
-  ) {
-    return <Profile />;
-  }
+  // There used to be a second home screen here, for a player with no league
+  // or one that hasn't started: a day counter, an NTRP bar and four ways to
+  // begin. One screen now answers for everybody — it says there is no match
+  // ahead and nothing owed, and the tiles under it lead to the games and the
+  // leagues, which is where starting actually happens.
 
   const rows = matches ?? [];
   const now = Date.now();
+  // Padel is 2 vs 2: the same screen, with four names on the cards instead of
+  // one. Everything else — the task ladder, the stats, the tiles — is shared.
+  const isPairs = !!sports.find((s) => s.id === selectedSportId)?.plays_in_pairs;
 
   // The soonest match with an agreed time still ahead of it.
   const nextMatch = rows
@@ -109,9 +124,9 @@ export default function Home() {
       return {
         title: t("{name} הזמין/ה אותך למשחק", { name: invite.from_name }),
         line: invite.proposed_at
-          ? `${weekdayName(new Date(invite.proposed_at), t)} ${dayMonth(
+          ? `${dayDate(new Date(invite.proposed_at), t)} · ${hhmm(
               new Date(invite.proposed_at)
-            )} · ${hhmm(new Date(invite.proposed_at))}`
+            )}`
           : t("משחק ידידותי"),
         action: t("לתשובה"),
         to: "/invites",
@@ -123,6 +138,7 @@ export default function Home() {
         line: t("מול {name}", { name: played.opponent_name }),
         action: t("דווח תוצאה"),
         to: `/matches/${played.id}`,
+        match: played,
       };
     const confirm = rows.find((m) => m.state === "confirm_mine");
     if (confirm)
@@ -131,18 +147,20 @@ export default function Home() {
         line: t("מול {name}", { name: confirm.opponent_name }),
         action: t("אשר תוצאה"),
         to: `/matches/${confirm.id}/confirm`,
+        match: confirm,
       };
     const proposed = rows.find((m) => m.state === "time_from_them");
     if (proposed)
       return {
         title: t("{name} הציע/ה שעה", { name: proposed.opponent_name }),
         line: proposed.scheduled_at
-          ? `${weekdayName(new Date(proposed.scheduled_at), t)} ${dayMonth(
+          ? `${dayDate(new Date(proposed.scheduled_at), t)} · ${hhmm(
               new Date(proposed.scheduled_at)
-            )} · ${hhmm(new Date(proposed.scheduled_at))}`
+            )}`
           : proposed.league_name || t("ידידותי"),
         action: t("הגב"),
         to: `/matches/${proposed.id}`,
+        match: proposed,
       };
     // A match with no date at all, in a round that is open: the one whose
     // round closes first, because that is the one that is about to be lost.
@@ -162,12 +180,15 @@ export default function Home() {
       return {
         title: t("קבעו זמן למשחק"),
         line: [
-          toSchedule.round ? t("מחזור {n}", { n: toSchedule.round }) : null,
-          t("מול {name}", { name: toSchedule.opponent_name }),
+          toSchedule.round ? sentenceCase(t("מחזור {n}", { n: toSchedule.round })) : null,
+          // In pairs the four names are a line of their own above this one.
+          isPairs ? null : t("מול {name}", { name: toSchedule.opponent_name }),
           toSchedule.round_ends_at
             ? t("נסגר {day} {date}", {
-                day: weekdayName(new Date(toSchedule.round_ends_at), t),
-                date: dayMonth(new Date(toSchedule.round_ends_at)),
+                day: sentenceCase(weekdayName(new Date(toSchedule.round_ends_at), t)),
+                date: `${new Date(toSchedule.round_ends_at).getDate()} ${sentenceCase(
+                  monthName(new Date(toSchedule.round_ends_at), t)
+                )}`,
               })
             : null,
         ]
@@ -175,6 +196,7 @@ export default function Home() {
           .join(" · "),
         action: t("קבעו זמן"),
         to: `/matches/${toSchedule.id}`,
+        match: toSchedule,
       };
     return null;
   })();
@@ -229,6 +251,64 @@ export default function Home() {
         ? t("צהריים טובים, {name}")
         : t("ערב טוב, {name}");
 
+  // The four names, as the two cards want them: stacked in the match card,
+  // on one line in the next-step card. A missing partner is a question mark
+  // with a way to answer it, not a blank.
+  const them = (match) => (match.opponent_names ?? []).map(firstName).filter(Boolean);
+  const partner = (match) => firstName(match.partner_name);
+  const isolate = (name) => (
+    <span dir="auto" style={{ unicodeBidi: "isolate" }}>
+      {name}
+    </span>
+  );
+
+  function playersBox(match) {
+    const mate = partner(match);
+    const facing = them(match);
+    return (
+      <div className="hm-players" dir="ltr">
+        <span className="hm-players-side">
+          <b>{t("את/ה")}</b>
+          {mate ? (
+            <b>{isolate(mate)}</b>
+          ) : (
+            <b className="hm-players-none">
+              ?
+              <button type="button" className="hm-pick" onClick={() => navigate("/partners")}>
+                {t("בחירת פרטנר")}
+              </button>
+            </b>
+          )}
+        </span>
+        <span className="hm-players-vs">vs</span>
+        <span className="hm-players-side hm-players-side--end">
+          {(facing.length ? facing : [match.opponent_name]).map((name, i) => (
+            <i key={i}>{isolate(name)}</i>
+          ))}
+        </span>
+      </div>
+    );
+  }
+
+  function playersLine(match) {
+    const mate = partner(match);
+    const facing = them(match);
+    return (
+      <span className="hm-pairline" dir="ltr">
+        {t("את/ה")}
+        {" & "}
+        {mate ? isolate(mate) : "?"}
+        <em>vs</em>
+        {(facing.length ? facing : [match.opponent_name]).map((name, i) => (
+          <span key={i}>
+            {i > 0 && " & "}
+            {isolate(name)}
+          </span>
+        ))}
+      </span>
+    );
+  }
+
   return (
     <div className="hm">
       <h1 className="hm-hello" dir="auto">
@@ -245,30 +325,54 @@ export default function Home() {
               not anything is owed — and when there isn't one, the screen says
               so in as many words rather than leaving the slot empty. */}
           {nextMatch ? (
-            <section className="hm-glow">
-              <span className="hm-label">{t("המשחק הבא שלך")}</span>
-              <div className="hm-row">
-                <div className="hm-col">
-                  <span className="hm-when" dir="auto">
-                    {`${weekdayName(new Date(nextMatch.scheduled_at), t)} ${dayMonth(
-                      new Date(nextMatch.scheduled_at)
-                    )} · ${hhmm(new Date(nextMatch.scheduled_at))}`}
+            isPairs ? (
+              <section className="hm-glow hm-glow--pair">
+                <span className="hm-label">{t("המשחק הבא שלך")}</span>
+                <span className="hm-when" dir="auto">
+                  {`${dayDate(new Date(nextMatch.scheduled_at), t)} · ${hhmm(
+                    new Date(nextMatch.scheduled_at)
+                  )}`}
+                </span>
+                {playersBox(nextMatch)}
+                <div className="hm-row">
+                  <span className="hm-venue" dir="auto">
+                    {nextMatch.place}
                   </span>
-                  <span className="hm-sub" dir="auto">
-                    {[t("מול {name}", { name: nextMatch.opponent_name }), nextMatch.place]
-                      .filter(Boolean)
-                      .join(" · ")}
-                  </span>
+                  <button
+                    type="button"
+                    className="hm-go hm-go--sm"
+                    onClick={() => navigate(`/matches/${nextMatch.id}`)}
+                  >
+                    {t("צפה במשחק")}
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  className="hm-go"
-                  onClick={() => navigate(`/matches/${nextMatch.id}`)}
-                >
-                  {t("צפה במשחק")}
-                </button>
-              </div>
-            </section>
+              </section>
+            ) : (
+              <section className="hm-glow">
+                <span className="hm-label">{t("המשחק הבא שלך")}</span>
+                <div className="hm-row">
+                  <div className="hm-col">
+                    <span className="hm-when" dir="auto">
+                      {`${dayDate(new Date(nextMatch.scheduled_at), t)} · ${hhmm(
+                        new Date(nextMatch.scheduled_at)
+                      )}`}
+                    </span>
+                    <span className="hm-sub" dir="auto">
+                      {[t("מול {name}", { name: nextMatch.opponent_name }), nextMatch.place]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className="hm-go"
+                    onClick={() => navigate(`/matches/${nextMatch.id}`)}
+                  >
+                    {t("צפה במשחק")}
+                  </button>
+                </div>
+              </section>
+            )
           ) : (
             <section className="hm-plain hm-none">
               <span className="hm-label hm-label--muted">{t("המשחק הבא שלך")}</span>
@@ -299,6 +403,7 @@ export default function Home() {
                   <span className="hm-task" dir="auto">
                     {task.title}
                   </span>
+                  {isPairs && task.match && playersLine(task.match)}
                   <span className="hm-sub" dir="auto">
                     {task.line}
                   </span>

@@ -140,6 +140,10 @@
   --court: #c6f24e;
   --court-deep: #a8d13a;
   --court-contrast: #0e1116;
+  /* The home screen's shortcut tiles are their own green, not the sport's
+     accent — they are a place to go, not a thing that is owed. Padel moves
+     it to blue with the rest. */
+  --tile-rgb: 47, 138, 90;
   --court-tint: rgba(var(--court-rgb), 0.12);
   --court-tint-strong: rgba(var(--court-rgb), 0.2);
   --surface-2: #242a33;
@@ -172,6 +176,7 @@
   --court-rgb: 108, 196, 255;
   --court: #6cc4ff;
   --court-deep: #49a9e8;
+  --tile-rgb: 44, 104, 186;
 }
 
 
@@ -10822,7 +10827,12 @@ button.st-row { cursor: pointer; }
   position: relative; flex: 1; min-width: 0; min-height: 88px; border: 0;
   border-radius: 20px; padding: 14px; cursor: pointer; text-align: start;
   display: flex; flex-direction: column; gap: 3px;
-  background: linear-gradient(160deg, rgba(47, 138, 90, .35), rgba(47, 138, 90, .08) 60%), #161b22;
+  background: linear-gradient(
+      160deg,
+      rgba(var(--tile-rgb, 47, 138, 90), .35),
+      rgba(var(--tile-rgb, 47, 138, 90), .08) 60%
+    ),
+    #161b22;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08);
   color: #eef1f7;
 }
@@ -11485,3 +11495,40 @@ button.lmx-mine { cursor: pointer; }
 /* Nothing on the league page may push the page sideways: a few pixels of
    horizontal scroll clip the first letter of every line on the left. */
 .ld-page { overflow-x: hidden; }
+
+/* Padel home: the same cards with four names on them. */
+.hm-glow--pair { border-radius: 20px; padding: 14px 16px; gap: 8px; }
+.hm-glow--pair .hm-when { font-size: 18px; }
+.hm-players {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px; border-radius: 12px; background: rgba(14, 17, 22, .35);
+}
+.hm-players-side {
+  flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px;
+}
+.hm-players-side--end { text-align: end; }
+.hm-players-side b {
+  font: 700 14px "IBM Plex Sans", var(--sans); color: #eef1f7;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.hm-players-side i {
+  font: 600 14px "IBM Plex Sans", var(--sans); font-style: normal; color: #c9cfdb;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.hm-players-vs { flex: none; font: 600 12px "IBM Plex Sans", var(--sans); color: #8b93a6; }
+/* No partner yet is a question with an answer next to it, not a blank. */
+.hm-players-none { display: flex; align-items: baseline; gap: 8px; }
+.hm-pick {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  font: 600 11.5px "IBM Plex Sans", var(--sans); color: var(--court, #c6f24e);
+}
+.hm-venue { font: 500 12.5px "IBM Plex Sans", var(--sans); color: #a3abbb; }
+.hm-go--sm { height: 30px; padding: 0 13px; border-radius: 15px; font-size: 13px; }
+
+/* The same four names on one line, where the card has no room to stack. */
+.hm-pairline {
+  font: 600 13.5px "IBM Plex Sans", var(--sans); color: #eef1f7;
+}
+.hm-pairline em {
+  margin: 0 5px; font: 500 13.5px "IBM Plex Sans", var(--sans); font-style: normal; color: #8b93a6;
+}
